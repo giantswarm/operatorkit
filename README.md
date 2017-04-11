@@ -1,11 +1,14 @@
 # operatorkit
 
-The operatorkit package implements an opinionated framework for developing Kubernetes operators. It can be used as a library
-in golang. It is built on top of our [microkit](https://github.com/giantswarm/microkit) framework which provides base functionality like logging and error handling.
+The operatorkit package implements an opinionated framework for developing 
+Kubernetes operators. It can be used as a library in golang. It is built on
+top of our [microkit](https://github.com/giantswarm/microkit) framework which
+provides base functionality like logging and error handling.
 
 ## Current Scope
 
-The initial scope is intentionally small and will be expanded as we and the community gain more experience developing operators.
+The initial scope is intentionally small and will be expanded as the community
+gains more experience developing operators.
 
 * Kubernetes clientset using [client-go](https://github.com/kubernetes/client-go) for accessing the K8s APIs.
 
