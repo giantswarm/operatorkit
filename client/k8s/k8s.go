@@ -60,12 +60,6 @@ func getRawClientConfig(config Config) (*rest.Config, error) {
 		if err != nil {
 			return nil, microerror.MaskAny(err)
 		}
-
-		if config.Address != "" {
-			config.Logger.Log("debug", "using explicit api server")
-			rawClientConfig.Host = config.Address
-		}
-
 	} else {
 		if config.Address == "" {
 			return nil, microerror.MaskAnyf(invalidConfigError, "kubernetes address must not be empty")
