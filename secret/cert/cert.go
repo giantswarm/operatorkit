@@ -64,7 +64,7 @@ type Service struct {
 }
 
 // SearchCerts watches for all secrets of a cluster  and returns it as
-// certificate bundle.
+// assets bundle.
 func (s *Service) SearchCerts(clusterID string) (certificatetpr.AssetsBundle, error) {
 	assetsBundle := make(certificatetpr.AssetsBundle)
 
@@ -83,7 +83,7 @@ func (s *Service) SearchCerts(clusterID string) (certificatetpr.AssetsBundle, er
 }
 
 // SearchCertsForComponent watches for secrets of a single cluster component and
-// returns it as certificate bundle.
+// returns it as assets bundle.
 func (s *Service) SearchCertsForComponent(clusterID, componentName string) (certificatetpr.AssetsBundle, error) {
 	// TODO we should also do a list. In case the secrets have already been
 	// created we might miss them with only watching.
