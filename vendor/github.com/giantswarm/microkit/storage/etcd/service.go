@@ -1,4 +1,4 @@
-// Package etcd provides a service that implements an etcd storage.
+// Package etcd provides a service that implements an etcd storage, using the etcd v3 protocol.
 package etcd
 
 import (

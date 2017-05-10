@@ -41,6 +41,9 @@ func NewResponseWriter(config ResponseWriterConfig) (ResponseWriter, error) {
 	}
 
 	newResponseWriter := &responseWriter{
+		// Internals.
+		hasWritten: false,
+
 		// Settings.
 		bodyBuffer:     config.BodyBuffer,
 		responseWriter: config.ResponseWriter,
@@ -51,6 +54,9 @@ func NewResponseWriter(config ResponseWriterConfig) (ResponseWriter, error) {
 }
 
 type responseWriter struct {
+	// Internals.
+	hasWritten bool
+
 	// Settings.
 	bodyBuffer     *bytes.Buffer
 	responseWriter http.ResponseWriter
@@ -59,6 +65,10 @@ type responseWriter struct {
 
 func (rw *responseWriter) BodyBuffer() *bytes.Buffer {
 	return rw.bodyBuffer
+}
+
+func (rw *responseWriter) HasWritten() bool {
+	return rw.hasWritten
 }
 
 func (rw *responseWriter) Header() http.Header {
@@ -70,6 +80,8 @@ func (rw *responseWriter) StatusCode() int {
 }
 
 func (rw *responseWriter) Write(b []byte) (int, error) {
+	rw.hasWritten = true
+
 	_, err := rw.bodyBuffer.Write(b)
 	if err != nil {
 		return 0, microerror.MaskAny(err)
