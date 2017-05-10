@@ -15,6 +15,8 @@ import (
 )
 
 const (
+	// WatchTimeOut is the time to wait on watches against the Kubernetes API
+	// before giving up and throwing an error.
 	WatchTimeOut = 90 * time.Second
 )
 
