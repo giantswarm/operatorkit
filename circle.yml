@@ -1,22 +1,20 @@
 machine:
-    services:
-        - docker
-    environment:
-        CGO_ENABLED: "0"
-        GOOS: "linux"
-        GOARCH: "amd64"
-        GOPATH: "$HOME/go"
-        GS_WD: "$HOME/go/src/github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
+  services:
+    - docker
 
 dependencies:
-    override:
-        - sudo add-apt-repository ppa:masterminds/glide -y
-        - sudo apt-get update
-        - sudo apt-get install glide -y
-        - mkdir -p $HOME/go/src/github.com/$CIRCLE_PROJECT_USERNAME
-        - cp -rf $HOME/$CIRCLE_PROJECT_REPONAME $HOME/go/src/github.com/$CIRCLE_PROJECT_USERNAME
+  override:
+    - |
+      wget -q $(curl -sS -H "Authorization: token $RELEASE_TOKEN" https://api.github.com/repos/giantswarm/architect/releases/latest | grep browser_download_url | head -n 1 | cut -d '"' -f 4)
+    - chmod +x ./architect
+    - ./architect version
 
 test:
-    override:
-        - cd $GS_WD && go test -v $(glide novendor)
-        - cd $GS_WD && go build -a -v -tags netgo -ldflags "-w -X main.gitCommit=$(git rev-parse --short HEAD)"
+  override:
+    - ./architect build
+
+deployment:
+  master:
+    branch: master
+    commands:
+      - ./architect deploy
