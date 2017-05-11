@@ -1,5 +1,6 @@
 package: github.com/giantswarm/operatorkit
 import:
+- package: github.com/giantswarm/certificatetpr
 - package: github.com/giantswarm/microkit
   subpackages:
   - error

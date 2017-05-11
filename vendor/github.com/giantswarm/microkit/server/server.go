@@ -242,7 +242,7 @@ func (s *server) Boot() {
 						return
 					}
 
-					responseWriter, err := s.newResponseWriter(w, r)
+					responseWriter, err := s.newResponseWriter(w)
 					if err != nil {
 						s.newErrorEncoderWrapper()(ctx, err, w)
 						return
@@ -365,11 +365,16 @@ func (s *server) newErrorEncoderWrapper() kithttp.ErrorEncoder {
 			}
 		}
 
+		rw, err := s.newResponseWriter(w)
+		if err != nil {
+			panic(err)
+		}
+
 		// Run the custom error encoder. This is used to let the implementing
 		// microservice do something with errors occured during runtime. Things like
-		// writing specific HTTP status codes to the given response writer can be
-		// done.
-		s.errorEncoder(ctx, responseError, w)
+		// writing specific HTTP status codes to the given response writer or
+		// writing data to the response body can be done.
+		s.errorEncoder(ctx, responseError, rw)
 
 		// Log the error and its errgo trace. This is really useful for debugging.
 		errDomain := errorDomain(serverError)
@@ -382,12 +387,15 @@ func (s *server) newErrorEncoderWrapper() kithttp.ErrorEncoder {
 		// general system health.
 		errorTotal.WithLabelValues(errDomain).Inc()
 
-		// Write the actual response body.
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"code":  responseError.Code(),
-			"error": responseError.Message(),
-			"from":  s.serviceName,
-		})
+		// Write the actual response body in case no response was already written
+		// inside the error encoder.
+		if !rw.HasWritten() {
+			json.NewEncoder(rw).Encode(map[string]interface{}{
+				"code":  responseError.Code(),
+				"error": responseError.Message(),
+				"from":  s.serviceName,
+			})
+		}
 	}
 }
 
@@ -573,7 +581,7 @@ func (s *server) newRequestContext(w http.ResponseWriter, r *http.Request) (cont
 // inject it into the called http.Handler so it can track the status code we are
 // interested in. It will help us gathering the response status code after it
 // was written by the underlying http.ResponseWriter.
-func (s *server) newResponseWriter(w http.ResponseWriter, r *http.Request) (ResponseWriter, error) {
+func (s *server) newResponseWriter(w http.ResponseWriter) (ResponseWriter, error) {
 	responseConfig := DefaultResponseWriterConfig()
 	responseConfig.ResponseWriter = w
 	responseWriter, err := NewResponseWriter(responseConfig)

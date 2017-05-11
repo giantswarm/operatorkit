@@ -1,0 +1,12 @@
+package: github.com/giantswarm/certificatetpr
+import:
+- package: k8s.io/client-go
+  version: ^2.0.0
+  subpackages:
+  - pkg/api/unversioned
+  - pkg/api/v1
+- package: github.com/stretchr/testify
+  version: v1.1.4
+  repo: git://github.com/stretchr/testify.git
+  subpackages:
+  - assert

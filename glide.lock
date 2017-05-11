@@ -1,5 +1,5 @@
-hash: ed7da1468b8c63d862b5a093d8c803b8eb3738f9f0e1bbcaee7dd86534c6cb1c
-updated: 2017-04-12T10:04:45.750258997+02:00
+hash: de14a3b29ce1c25aa706b1644ec7d80d58951847d4b40873489648e4a9f70c75
+updated: 2017-05-10T17:35:58.338558931+02:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -38,8 +38,10 @@ imports:
   - swagger
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
+- name: github.com/giantswarm/certificatetpr
+  version: 8e24e223b213128be8b87039e26001bb88284452
 - name: github.com/giantswarm/microkit
-  version: cf9f13e8b2a258bb89aa89a2487b22611cc37e62
+  version: ef2f8fdba32a0a0275d739abf84371e36880ecdc
   subpackages:
   - error
   - logger
