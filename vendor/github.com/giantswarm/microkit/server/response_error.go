@@ -30,7 +30,7 @@ func NewResponseError(config ResponseErrorConfig) (ResponseError, error) {
 
 	newResponseError := &responseError{
 		// Internals.
-		code:    CodeUnknownError,
+		code:    CodeInternalError,
 		message: errorMessage(config.Underlying),
 
 		// Settings.
