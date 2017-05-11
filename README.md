@@ -1,6 +1,8 @@
+[![CircleCI](https://circleci.com/gh/giantswarm/operatorkit.svg?&style=shield&circle-token=5f7e69042df6538d1e9c7ef0dd1387ca4d7a0d55)](https://circleci.com/gh/giantswarm/operatorkit)
+
 # operatorkit
 
-The operatorkit package implements an opinionated framework for developing 
+The operatorkit package implements an opinionated framework for developing
 Kubernetes operators. It can be used as a library in golang. It is built on
 top of our [microkit](https://github.com/giantswarm/microkit) framework which
 provides base functionality like logging and error handling.
