@@ -27,7 +27,7 @@ func TestCreateTPR(t *testing.T) {
 		Clientset: clientset,
 
 		Name:        "testname",
-		Group:       "example.com",
+		Domain:      "example.com",
 		Version:     "v1test1",
 		Description: "Test Desc",
 	}
@@ -44,7 +44,7 @@ func TestCreateTPR(t *testing.T) {
 	resp, err = clientset.ExtensionsV1beta1().ThirdPartyResources().List(v1.ListOptions{})
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(resp.Items))
-	assert.Equal(t, config.Name+"."+config.Group, resp.Items[0].Name)
+	assert.Equal(t, config.Name+"."+config.Domain, resp.Items[0].Name)
 	assert.Equal(t, 1, len(resp.Items[0].Versions))
 	assert.Equal(t, "v1test1", resp.Items[0].Versions[0].Name)
 	assert.Equal(t, "Test Desc", resp.Items[0].Description)
