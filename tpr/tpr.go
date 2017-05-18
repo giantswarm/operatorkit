@@ -30,7 +30,7 @@ type Config struct {
 	Description string
 }
 
-type tpr struct {
+type TPR struct {
 	clientset kubernetes.Interface
 
 	name          string
@@ -42,7 +42,7 @@ type tpr struct {
 	endpointList string
 }
 
-func New(config Config) (*tpr, error) {
+func New(config Config) (*TPR, error) {
 	if config.Clientset == nil {
 		return nil, microerror.MaskAnyf(invalidConfigError, "k8s clientset must be set")
 	}
@@ -59,7 +59,7 @@ func New(config Config) (*tpr, error) {
 		return nil, microerror.MaskAnyf(invalidConfigError, "description must not be empty")
 	}
 
-	tpr := &tpr{
+	tpr := &TPR{
 		clientset: config.Clientset,
 
 		name:          config.Name,
@@ -74,7 +74,7 @@ func New(config Config) (*tpr, error) {
 }
 
 // CreateAndWait create a TPR and waits till it is initialized in the cluster.
-func (t *tpr) CreateAndWait() error {
+func (t *TPR) CreateAndWait() error {
 	err := t.create()
 	if err != nil {
 		microerror.MaskAny(fmt.Errorf("creating TPR: %+v", err))
@@ -88,7 +88,7 @@ func (t *tpr) CreateAndWait() error {
 
 // create is extracted for testing because fake REST client does not work.
 // Therefore waitInit can not be tested.
-func (t *tpr) create() error {
+func (t *TPR) create() error {
 	tpr := &v1beta1.ThirdPartyResource{
 		ObjectMeta: v1.ObjectMeta{
 			Name: t.qualifiedName,
@@ -106,7 +106,7 @@ func (t *tpr) create() error {
 	return nil
 }
 
-func (t *tpr) waitInit() error {
+func (t *TPR) waitInit() error {
 	return util.Retry(tprInitRetryDelay, tprInitRetries, func() (bool, error) {
 		_, err := t.clientset.CoreV1().RESTClient().Get().RequestURI(t.endpointList).DoRaw()
 		if err != nil {
