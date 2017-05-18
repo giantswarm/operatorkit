@@ -5,7 +5,7 @@ import (
 	"time"
 
 	microerror "github.com/giantswarm/microkit/error"
-	"github.com/rossf7/pingdom-operator/pkg/util"
+	"github.com/giantswarm/operatorkit/util"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/errors"
 	"k8s.io/client-go/pkg/api/v1"
