@@ -77,11 +77,11 @@ func New(config Config) (*TPR, error) {
 func (t *TPR) CreateAndWait() error {
 	err := t.create()
 	if err != nil {
-		microerror.MaskAny(fmt.Errorf("creating TPR: %+v", err))
+		microerror.MaskAnyf(err, "creating TPR %s", t.qualifiedName)
 	}
 	err = t.waitInit()
 	if err != nil {
-		microerror.MaskAny(fmt.Errorf("waiting TPR initialization: %+v", err))
+		microerror.MaskAnyf(err, "waiting for TPR %s initialization", t.qualifiedName)
 	}
 	return nil
 }
@@ -101,7 +101,7 @@ func (t *TPR) create() error {
 
 	_, err := t.clientset.ExtensionsV1beta1().ThirdPartyResources().Create(tpr)
 	if err != nil && !errors.IsAlreadyExists(err) {
-		return microerror.MaskAnyf(err, "creating TPR %s", t.name)
+		return microerror.MaskAnyf(err, "creating TPR %s", t.qualifiedName)
 	}
 	return nil
 }
@@ -113,7 +113,7 @@ func (t *TPR) waitInit() error {
 			if errors.IsNotFound(err) {
 				return false, nil
 			}
-			return false, microerror.MaskAnyf(err, "requesting TPR %s", t.name)
+			return false, microerror.MaskAnyf(err, "requesting TPR %s", t.qualifiedName)
 		}
 		return true, nil
 	})
