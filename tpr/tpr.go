@@ -26,7 +26,7 @@ type Config struct {
 	// Settings.
 
 	// Name of the kind of ThirdPartyObjects. It should be in lower case
-	// and hyphen delimited.  Kind names will be converted to CamelCase
+	// and hyphen delimited. Kind names will be converted to CamelCase
 	// when creating ThirdPartyObjects. Hyphens in the kind are assumed to
 	// be word breaks. For instance the kind camel-case would be converted
 	// to CamelCase but camelcase would be converted to Camelcase.
@@ -36,11 +36,11 @@ type Config struct {
 	// create an unique pair.
 	Domain string
 
-	// API version, e.g. v1. When creating ThirdPartyObjects will be
+	// Version is API version, e.g. v1. When creating ThirdPartyObjects will be
 	// prefixed with Domain, e.g. example.com/v1.
 	Version string
 
-	// A free text description
+	// Description is free text description.
 	Description string
 }
 
