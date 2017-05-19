@@ -90,7 +90,7 @@ func New(config Config) (*TPR, error) {
 	return tpr, nil
 }
 
-// CreateAndWait create a TPR and waits till it is initialized in the cluster.
+// CreateAndWait creates a TPR and waits till it is initialized in the cluster.
 func (t *TPR) CreateAndWait() error {
 	err := t.create()
 	if err != nil {
