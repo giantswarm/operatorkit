@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cenkalti/backoff"
 	microerror "github.com/giantswarm/microkit/error"
-	"github.com/giantswarm/operatorkit/util"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/errors"
 	"k8s.io/client-go/pkg/api/v1"
@@ -14,8 +14,7 @@ import (
 )
 
 const (
-	tprInitRetries    = 30
-	tprInitRetryDelay = 3 * time.Second
+	tprInitMaxElapsedTime = 2 * time.Minute
 )
 
 type Config struct {
@@ -92,13 +91,22 @@ func New(config Config) (*TPR, error) {
 
 // CreateAndWait creates a TPR and waits till it is initialized in the cluster.
 func (t *TPR) CreateAndWait() error {
+	initBackOff := backoff.NewExponentialBackOff()
+	initBackOff.MaxElapsedTime = tprInitMaxElapsedTime
+	return t.CreateAndWaitBackOff(initBackOff)
+}
+
+// CreateAndWaitBackOff creates a TPR and waits till it is initialized in the
+// cluster. It allows to pass custom initialisation back off policy used to
+// poll for TPR readiness.
+func (t *TPR) CreateAndWaitBackOff(initBackOff backoff.BackOff) error {
 	err := t.create()
 	if err != nil {
-		microerror.MaskAnyf(err, "creating TPR %s", t.qualifiedName)
+		return microerror.MaskAnyf(err, "creating TPR %s", t.qualifiedName)
 	}
-	err = t.waitInit()
+	err = t.waitInit(initBackOff)
 	if err != nil {
-		microerror.MaskAnyf(err, "waiting for TPR %s initialization", t.qualifiedName)
+		return microerror.MaskAnyf(err, "waiting for TPR %s initialization", t.qualifiedName)
 	}
 	return nil
 }
@@ -123,15 +131,16 @@ func (t *TPR) create() error {
 	return nil
 }
 
-func (t *TPR) waitInit() error {
-	return util.Retry(tprInitRetryDelay, tprInitRetries, func() (bool, error) {
+func (t *TPR) waitInit(retry backoff.BackOff) error {
+	op := func() error {
 		_, err := t.clientset.CoreV1().RESTClient().Get().RequestURI(t.endpointList).DoRaw()
-		if err != nil {
-			if errors.IsNotFound(err) {
-				return false, nil
-			}
-			return false, microerror.MaskAnyf(err, "requesting TPR %s", t.qualifiedName)
-		}
-		return true, nil
-	})
+		return err
+	}
+
+	err := backoff.Retry(op, retry)
+
+	if errors.IsNotFound(err) {
+		err = tprInitTimeoutError
+	}
+	return microerror.MaskAnyf(err, "requesting TPR %s", t.qualifiedName)
 }
