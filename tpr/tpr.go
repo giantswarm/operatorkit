@@ -14,8 +14,7 @@ import (
 )
 
 const (
-	tprInitMaxRetries    = 30
-	tprInitRetryInterval = 3 * time.Second
+	tprInitMaxElapsedTime = 2 * time.Minute
 )
 
 type Config struct {
@@ -92,7 +91,9 @@ func New(config Config) (*TPR, error) {
 
 // CreateAndWait creates a TPR and waits till it is initialized in the cluster.
 func (t *TPR) CreateAndWait() error {
-	return t.CreateAndWaitBackOff(NewBackOff(tprInitRetryInterval, tprInitMaxRetries))
+	initBackOff := backoff.NewExponentialBackOff()
+	initBackOff.MaxElapsedTime = tprInitMaxElapsedTime
+	return t.CreateAndWaitBackOff(initBackOff)
 }
 
 // CreateAndWaitBackOff creates a TPR and waits till it is initialized in the
