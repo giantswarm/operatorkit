@@ -13,6 +13,10 @@ import (
 )
 
 const (
+	// ResyncPeriod is the interval at which the Informer cache is invalidated,
+	// and the lister function is called.
+	ResyncPeriod = 1 * time.Minute
+
 	tprInitMaxElapsedTime = 2 * time.Minute
 )
 
