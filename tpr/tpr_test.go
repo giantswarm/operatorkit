@@ -20,14 +20,35 @@ func newClientset(nodes int) *fake.Clientset {
 	return clientset
 }
 
+func TestKindAndGroup(t *testing.T) {
+	clientset := newClientset(3)
+
+	config := Config{
+		Clientset: clientset,
+
+		Name:        "test-name.example.com",
+		Version:     "v1test1",
+		Description: "Test Desc",
+	}
+
+	tpr, err := New(config)
+	assert.NoError(t, err, "New")
+
+	assert.Equal(t, "TestName", tpr.Kind())
+	assert.Equal(t, "example.com/v1test1", tpr.APIVersion())
+	assert.Equal(t, config.Name, tpr.Name())
+	assert.Equal(t, "example.com", tpr.Group())
+
+	// Rest of tests should be covered in extractKindAndGroup tests.
+}
+
 func TestCreateTPR(t *testing.T) {
 	clientset := newClientset(3)
 
 	config := Config{
 		Clientset: clientset,
 
-		Name:        "testname",
-		Domain:      "example.com",
+		Name:        "test-name.example.com",
 		Version:     "v1test1",
 		Description: "Test Desc",
 	}
@@ -44,7 +65,7 @@ func TestCreateTPR(t *testing.T) {
 	resp, err = clientset.ExtensionsV1beta1().ThirdPartyResources().List(v1.ListOptions{})
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(resp.Items))
-	assert.Equal(t, config.Name+"."+config.Domain, resp.Items[0].Name)
+	assert.Equal(t, config.Name, resp.Items[0].Name)
 	assert.Equal(t, 1, len(resp.Items[0].Versions))
 	assert.Equal(t, "v1test1", resp.Items[0].Versions[0].Name)
 	assert.Equal(t, "Test Desc", resp.Items[0].Description)
