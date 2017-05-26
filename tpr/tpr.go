@@ -92,19 +92,19 @@ func New(config Config) (*TPR, error) {
 	return tpr, nil
 }
 
-// Kind returns TPR kind extracted from Name. Useful when creating
+// Kind returns a TPR kind extracted from Name. Useful when creating
 // ThirdPartyObjects. See Config.Name godoc for details.
 func (t *TPR) Kind() string { return t.kind }
 
-// APIVersion returns TPR APIVersion created from group and version. It takes
+// APIVersion returns a TPR APIVersion created from group and version. It takes
 // format <group>/<version>. Useful for creating ThirdPartyObjects. See
 // Config.Name and Config.Version for details.
 func (t *TPR) APIVersion() string { return t.apiVersion }
 
-// Name returns TPR name provided with Config.Name.
+// Name returns a TPR name provided with Config.Name.
 func (t *TPR) Name() string { return t.name }
 
-// Group returns TPR group extracted from Name. See Config.Name godoc for details.
+// Group returns a TPR group extracted from Name. See Config.Name godoc for details.
 func (t *TPR) Group() string { return t.group }
 
 // CreateAndWait creates a TPR and waits till it is initialized in the cluster.
