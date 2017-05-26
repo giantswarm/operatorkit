@@ -41,3 +41,32 @@ func TestExtractKindAndGroup(t *testing.T) {
 		assert.Equal(t, tc.expectedGroup, group, "#%d", i)
 	}
 }
+
+func TestUnsafeGuessKindToResource(t *testing.T) {
+	tests := []struct {
+		kind             string
+		expectedResource string
+	}{
+		{
+			kind:             "Pod",
+			expectedResource: "pods",
+		},
+		{
+			kind:             "ReplicationController",
+			expectedResource: "replicationcontrollers",
+		},
+		{
+			kind:             "ImageRepository",
+			expectedResource: "imagerepositories",
+		},
+		{
+			kind:             "miss",
+			expectedResource: "misses",
+		},
+	}
+
+	for i, tc := range tests {
+		resource := unsafeGuessKindToResource(tc.kind)
+		assert.Equal(t, tc.expectedResource, resource, "#%d", i)
+	}
+}
