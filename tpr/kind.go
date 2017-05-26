@@ -38,3 +38,40 @@ func extractKindAndGroup(name string) (kind, group string, err error) {
 
 	return
 }
+
+// unpluralizedSuffixes is a list of resource suffixes that are the same when
+// plural and singular. This is only necessary because some bits of
+// (kubernetes) code are lazy and don't actually use the RESTMapper like they
+// should.
+//
+// Copied from:
+// https://github.com/kubernetes/kubernetes/blob/b0b711119b48854e0b73805e42be2bcc4b2bd604/staging/src/k8s.io/apimachinery/pkg/api/meta/restmapper.go#L131-L137
+var unpluralizedSuffixes = []string{
+	"endpoints",
+}
+
+// unsafeGuessKindToResource converts Kind to a plural resource name. It is
+// named after and has similar semantics to:
+// https://github.com/kubernetes/kubernetes/blob/b0b711119b48854e0b73805e42be2bcc4b2bd604/staging/src/k8s.io/apimachinery/pkg/api/meta/restmapper.go#L139-L164
+func unsafeGuessKindToResource(kind string) string {
+	if len(kind) == 0 {
+		return ""
+	}
+
+	resource := strings.ToLower(kind)
+
+	for _, skip := range unpluralizedSuffixes {
+		if strings.HasSuffix(resource, skip) {
+			return resource
+		}
+	}
+
+	switch string(resource[len(resource)-1]) {
+	case "s":
+		return resource + "es"
+	case "y":
+		return resource[:len(resource)-1] + "ies"
+	}
+
+	return resource + "s"
+}

@@ -1,7 +1,6 @@
 package tpr
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/cenkalti/backoff"
@@ -55,7 +54,8 @@ type TPR struct {
 	apiVersion  string // apiVersion is group/version
 	description string
 
-	endpoint string
+	// API for this TPR kind name.
+	resourceName string
 }
 
 func New(config Config) (*TPR, error) {
@@ -87,7 +87,7 @@ func New(config Config) (*TPR, error) {
 		apiVersion:  group + "/" + config.Version,
 		description: config.Description,
 
-		endpoint: fmt.Sprintf("/apis/%s/%s/%ss", group, config.Version, kind),
+		resourceName: unsafeGuessKindToResource(kind),
 	}
 	return tpr, nil
 }
@@ -106,6 +106,28 @@ func (t *TPR) Name() string { return t.name }
 
 // Group returns a TPR group extracted from Name. See Config.Name godoc for details.
 func (t *TPR) Group() string { return t.group }
+
+// Endpoint returns a TPR resource endpoint registered in the Kubernetes API
+// under a given namespace. The default namespace will be used when the
+// argument is an empty string.
+func (t *TPR) Endpoint(namespace string) string {
+	nsResource := t.resourceName
+	if len(namespace) != 0 {
+		nsResource = "namespace/" + namespace + "/" + t.resourceName
+	}
+	return "/apis/" + t.group + "/" + t.version + "/" + nsResource
+}
+
+// Endpoint returns a TPR watch resource endpoint registered in the Kubernetes
+// API under a given namespace. The default namespace will be used when the
+// argument is an empty string.
+func (t *TPR) WatchEndpoint(namespace string) string {
+	nsResource := "watch/" + t.resourceName
+	if len(namespace) != 0 {
+		nsResource = "namespace/" + namespace + "/watch/" + t.resourceName
+	}
+	return "/apis/" + t.group + "/" + t.version + "/" + nsResource
+}
 
 // CreateAndWait creates a TPR and waits till it is initialized in the cluster.
 func (t *TPR) CreateAndWait() error {
@@ -150,8 +172,9 @@ func (t *TPR) create() error {
 }
 
 func (t *TPR) waitInit(retry backoff.BackOff) error {
+	endpoint := t.Endpoint("")
 	op := func() error {
-		_, err := t.clientset.CoreV1().RESTClient().Get().RequestURI(t.endpoint).DoRaw()
+		_, err := t.clientset.CoreV1().RESTClient().Get().RequestURI(endpoint).DoRaw()
 		return err
 	}
 

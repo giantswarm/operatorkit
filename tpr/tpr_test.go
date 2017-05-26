@@ -20,7 +20,7 @@ func newClientset(nodes int) *fake.Clientset {
 	return clientset
 }
 
-func TestKindAndGroup(t *testing.T) {
+func TestKindGroupAndAPIVersion(t *testing.T) {
 	clientset := newClientset(3)
 
 	config := Config{
@@ -40,6 +40,72 @@ func TestKindAndGroup(t *testing.T) {
 	assert.Equal(t, "example.com", tpr.Group())
 
 	// Rest of tests should be covered in extractKindAndGroup tests.
+}
+
+func TestEndpoint(t *testing.T) {
+	clientset := newClientset(3)
+
+	config := Config{
+		Clientset: clientset,
+
+		Name:        "test-name.example.com",
+		Version:     "v1test1",
+		Description: "Test Desc",
+	}
+
+	tpr, err := New(config)
+	assert.NoError(t, err, "New")
+
+	tests := []struct {
+		namespace        string
+		expectedEndpoint string
+	}{
+		{
+			namespace:        "default",
+			expectedEndpoint: "/apis/example.com/v1test1/namespace/default/testnames",
+		},
+		{
+			namespace:        "",
+			expectedEndpoint: "/apis/example.com/v1test1/testnames",
+		},
+	}
+	for i, tc := range tests {
+		endpoint := tpr.Endpoint(tc.namespace)
+		assert.Equal(t, tc.expectedEndpoint, endpoint, "#%d", i)
+	}
+}
+
+func TestWatchEndpoint(t *testing.T) {
+	clientset := newClientset(3)
+
+	config := Config{
+		Clientset: clientset,
+
+		Name:        "test-name.example.com",
+		Version:     "v1test1",
+		Description: "Test Desc",
+	}
+
+	tpr, err := New(config)
+	assert.NoError(t, err, "New")
+
+	tests := []struct {
+		namespace             string
+		expectedWatchEndpoint string
+	}{
+		{
+			namespace:             "default",
+			expectedWatchEndpoint: "/apis/example.com/v1test1/namespace/default/watch/testnames",
+		},
+		{
+			namespace:             "",
+			expectedWatchEndpoint: "/apis/example.com/v1test1/watch/testnames",
+		},
+	}
+	for i, tc := range tests {
+		watchEndpoint := tpr.WatchEndpoint(tc.namespace)
+		assert.Equal(t, tc.expectedWatchEndpoint, watchEndpoint, "#%d", i)
+	}
 }
 
 func TestCreateTPR(t *testing.T) {
