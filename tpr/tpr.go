@@ -54,8 +54,7 @@ type TPR struct {
 	apiVersion  string // apiVersion is group/version
 	description string
 
-	// resourceName is the name of a resource registered in Kubernetes API
-	// for this TPR kind name.
+	// API for this TPR kind name.
 	resourceName string
 }
 
@@ -109,8 +108,8 @@ func (t *TPR) Name() string { return t.name }
 func (t *TPR) Group() string { return t.group }
 
 // Endpoint returns a TPR resource endpoint registered in the Kubernetes API
-// under a given namespace. Default namespace will be used when the argument is
-// an empty string.
+// under a given namespace. The default namespace will be used when the
+// argument is an empty string.
 func (t *TPR) Endpoint(namespace string) string {
 	nsResource := t.resourceName
 	if len(namespace) != 0 {
@@ -120,7 +119,7 @@ func (t *TPR) Endpoint(namespace string) string {
 }
 
 // Endpoint returns a TPR watch resource endpoint registered in the Kubernetes
-// API under a given namespace. Default namespace will be used when the
+// API under a given namespace. The default namespace will be used when the
 // argument is an empty string.
 func (t *TPR) WatchEndpoint(namespace string) string {
 	nsResource := "watch/" + t.resourceName
