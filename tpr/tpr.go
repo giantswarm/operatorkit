@@ -53,6 +53,7 @@ type TPR struct {
 	kind        string // see Config.Name
 	group       string // see Config.Name
 	version     string
+	apiVersion  string // apiVersion is group/version
 	description string
 
 	endpoint string
@@ -84,6 +85,7 @@ func New(config Config) (*TPR, error) {
 		kind:        kind,
 		group:       group,
 		version:     config.Version,
+		apiVersion:  group + "/" + config.Version,
 		description: config.Description,
 
 		endpoint: fmt.Sprintf("/apis/%s/%s/%ss", group, config.Version, kind),
@@ -91,11 +93,15 @@ func New(config Config) (*TPR, error) {
 	return tpr, nil
 }
 
-// Name returns TPR name provided with Config.Name.
-func (t *TPR) Name() string { return t.name }
-
 // Kind returns TPR kind extracted from Name. See Config.Name godoc for details.
 func (t *TPR) Kind() string { return t.kind }
+
+// APIVersion returns TPR APIVersion created from group and version. It takes
+// format <group>/<version>. See Config.Name and Config.Version for details.
+func (t *TPR) APIVersion() string { return t.apiVersion }
+
+// Name returns TPR name provided with Config.Name.
+func (t *TPR) Name() string { return t.name }
 
 // Group returns TPR group extracted from Name. See Config.Name godoc for details.
 func (t *TPR) Group() string { return t.group }

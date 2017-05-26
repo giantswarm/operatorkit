@@ -34,8 +34,9 @@ func TestKindAndGroup(t *testing.T) {
 	tpr, err := New(config)
 	assert.NoError(t, err, "New")
 
-	assert.Equal(t, config.Name, tpr.Name())
 	assert.Equal(t, "TestName", tpr.Kind())
+	assert.Equal(t, "example.com/v1test1", tpr.APIVersion())
+	assert.Equal(t, config.Name, tpr.Name())
 	assert.Equal(t, "example.com", tpr.Group())
 
 	// Rest of tests should be covered in extractKindAndGroup tests.
