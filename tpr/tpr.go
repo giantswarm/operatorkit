@@ -108,7 +108,7 @@ func (t *TPR) Name() string { return t.name }
 // Group returns a TPR group extracted from Name. See Config.Name godoc for details.
 func (t *TPR) Group() string { return t.group }
 
-// Endpoint returns a TPR resurce endpoint registered in the Kubernetes API
+// Endpoint returns a TPR resource endpoint registered in the Kubernetes API
 // under a given namespace. Default namespace will be used when the argument is
 // an empty string.
 func (t *TPR) Endpoint(namespace string) string {
@@ -119,7 +119,7 @@ func (t *TPR) Endpoint(namespace string) string {
 	return "/apis/" + t.group + "/" + t.version + "/" + nsResource
 }
 
-// Endpoint returns a TPR watch resurce endpoint registered in the Kubernetes
+// Endpoint returns a TPR watch resource endpoint registered in the Kubernetes
 // API under a given namespace. Default namespace will be used when the
 // argument is an empty string.
 func (t *TPR) WatchEndpoint(namespace string) string {

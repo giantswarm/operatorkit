@@ -40,7 +40,7 @@ func extractKindAndGroup(name string) (kind, group string, err error) {
 }
 
 // unpluralizedSuffixes is a list of resource suffixes that are the same plural
-// and singular. This is only necessary because some bits of [kubernetes] code
+// and singular. This is only necessary because some bits of (kubernetes) code
 // are lazy and don't actually use the RESTMapper like they should.
 //
 // Copied from:
