@@ -13,7 +13,7 @@ import (
 
 // extractKindAndGroup extracts kind and group from a name. For details see
 // Config.Name godoc.
-func extractKindAndGroup(name string) (kind string, group string, err error) {
+func extractKindAndGroup(name string) (kind, group string, err error) {
 	parts := strings.Split(name, ".")
 	if len(parts) < 3 {
 		return "", "", microerror.MaskAnyf(unexpectedlyShortResourceNameError, "%s, expected at least <kind>.<domain>.<tld>", name)
