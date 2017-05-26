@@ -26,17 +26,16 @@ type Config struct {
 
 	// Settings.
 
-	// Name takes the form <kind>.<domain>. The domain is also known as
-	// a group. You are expected to provide a unique kind and group name in
-	// order to avoid conflicts with other ThirdPartyResource objects. Kind
-	// names will be converted to CamelCase when creating instances of the
-	// ThirdPartyResource.  Hyphens in the kind are assumed to be word
+	// Name takes the form <kind>.<group> (Note: The group is also called
+	// a domain). You are expected to provide a unique kind and group name
+	// in order to avoid conflicts with other ThirdPartyResource objects.
+	// Kind names will be converted to CamelCase when creating instances of
+	// the ThirdPartyResource.  Hyphens in the kind are assumed to be word
 	// breaks. For instance the kind camel-case would be converted to
 	// CamelCase but camelcase would be converted to Camelcase.
 	Name string
 
-	// Version is API version, e.g. v1. When creating ThirdPartyObjects will be
-	// prefixed with Domain, e.g. example.com/v1.
+	// Version is TPR version, e.g. v1.
 	Version string
 
 	// Description is free text description.
@@ -93,11 +92,13 @@ func New(config Config) (*TPR, error) {
 	return tpr, nil
 }
 
-// Kind returns TPR kind extracted from Name. See Config.Name godoc for details.
+// Kind returns TPR kind extracted from Name. Useful when creating
+// ThirdPartyObjects. See Config.Name godoc for details.
 func (t *TPR) Kind() string { return t.kind }
 
 // APIVersion returns TPR APIVersion created from group and version. It takes
-// format <group>/<version>. See Config.Name and Config.Version for details.
+// format <group>/<version>. Useful for creating ThirdPartyObjects. See
+// Config.Name and Config.Version for details.
 func (t *TPR) APIVersion() string { return t.apiVersion }
 
 // Name returns TPR name provided with Config.Name.
