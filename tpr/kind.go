@@ -11,7 +11,7 @@ import (
 	https://github.com/kubernetes/kubernetes/blob/6a4d5cd7cc58e28c20ca133dab7b0e9e56192fe3/pkg/registry/extensions/thirdpartyresourcedata/util.go
 */
 
-// extractKindAndGroup extracts kind and group from a name. For details see
+// extractKindAndGroup extracts kind and group from a name. For details see the
 // Config.Name godoc.
 func extractKindAndGroup(name string) (kind, group string, err error) {
 	parts := strings.Split(name, ".")
@@ -22,8 +22,8 @@ func extractKindAndGroup(name string) (kind, group string, err error) {
 	// kind
 	kindPart := parts[0]
 	toUpper := true
-	for ix := range kindPart {
-		char := kindPart[ix]
+	for i := range kindPart {
+		char := kindPart[i]
 		if toUpper {
 			kind = kind + string([]byte{(char - 32)})
 			toUpper = false
