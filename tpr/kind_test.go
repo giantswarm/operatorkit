@@ -9,35 +9,35 @@ import (
 
 func TestExtractKindAndGroup(t *testing.T) {
 	tests := []struct {
-		Input         string
-		ExpectedKind  string
-		ExpectedGroup string
-		ExpectedError error
+		name          string
+		expectedKind  string
+		expectedGroup string
+		expectedError error
 	}{
 		{
-			Input:         "foo.company.com",
-			ExpectedKind:  "Foo",
-			ExpectedGroup: "company.com",
+			name:          "foo.company.com",
+			expectedKind:  "Foo",
+			expectedGroup: "company.com",
 		},
 		{
-			Input:         "cron-tab.company.com",
-			ExpectedKind:  "CronTab",
-			ExpectedGroup: "company.com",
+			name:          "cron-tab.company.com",
+			expectedKind:  "CronTab",
+			expectedGroup: "company.com",
 		},
 		{
-			Input:         "foo",
-			ExpectedError: unexpectedlyShortResourceNameError,
+			name:          "foo",
+			expectedError: unexpectedlyShortResourceNameError,
 		},
 		{
-			Input:         "foo.company",
-			ExpectedError: unexpectedlyShortResourceNameError,
+			name:          "foo.company",
+			expectedError: unexpectedlyShortResourceNameError,
 		},
 	}
 
-	for i, tt := range tests {
-		kind, group, err := extractKindAndGroup(tt.Input)
-		assert.Equal(t, tt.ExpectedError, errgo.Cause(err), "#%d", i)
-		assert.Equal(t, tt.ExpectedKind, kind, "#%d", i)
-		assert.Equal(t, tt.ExpectedGroup, group, "#%d", i)
+	for i, tc := range tests {
+		kind, group, err := extractKindAndGroup(tc.name)
+		assert.Equal(t, tc.expectedError, errgo.Cause(err), "#%d", i)
+		assert.Equal(t, tc.expectedKind, kind, "#%d", i)
+		assert.Equal(t, tc.expectedGroup, group, "#%d", i)
 	}
 }
