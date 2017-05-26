@@ -77,6 +77,8 @@ func New(config Config) (*TPR, error) {
 		return nil, microerror.MaskAny(err)
 	}
 
+	resource := unsafeGuessKindToResource(kind)
+
 	tpr := &TPR{
 		clientset: config.Clientset,
 
@@ -87,7 +89,7 @@ func New(config Config) (*TPR, error) {
 		apiVersion:  group + "/" + config.Version,
 		description: config.Description,
 
-		endpoint: fmt.Sprintf("/apis/%s/%s/%ss", group, config.Version, kind),
+		endpoint: fmt.Sprintf("/apis/%s/%s/%s", group, config.Version, resource),
 	}
 	return tpr, nil
 }
