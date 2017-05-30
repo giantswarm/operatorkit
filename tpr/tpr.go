@@ -113,18 +113,18 @@ func (t *TPR) Group() string { return t.group }
 func (t *TPR) Endpoint(namespace string) string {
 	nsResource := t.resourceName
 	if len(namespace) != 0 {
-		nsResource = "namespace/" + namespace + "/" + t.resourceName
+		nsResource = "namespaces/" + namespace + "/" + t.resourceName
 	}
 	return "/apis/" + t.group + "/" + t.version + "/" + nsResource
 }
 
-// Endpoint returns a TPR watch resource endpoint registered in the Kubernetes
-// API under a given namespace. The default namespace will be used when the
-// argument is an empty string.
+// WatchEndpoint returns a TPR watch resource endpoint registered in the
+// Kubernetes API under a given namespace. The default namespace will be used
+// when the argument is an empty string.
 func (t *TPR) WatchEndpoint(namespace string) string {
 	nsResource := "watch/" + t.resourceName
 	if len(namespace) != 0 {
-		nsResource = "namespace/" + namespace + "/watch/" + t.resourceName
+		nsResource = "namespaces/" + namespace + "/watch/" + t.resourceName
 	}
 	return "/apis/" + t.group + "/" + t.version + "/" + nsResource
 }

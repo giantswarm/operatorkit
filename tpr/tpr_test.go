@@ -62,7 +62,7 @@ func TestEndpoint(t *testing.T) {
 	}{
 		{
 			namespace:        "default",
-			expectedEndpoint: "/apis/example.com/v1test1/namespace/default/testnames",
+			expectedEndpoint: "/apis/example.com/v1test1/namespaces/default/testnames",
 		},
 		{
 			namespace:        "",
@@ -95,7 +95,7 @@ func TestWatchEndpoint(t *testing.T) {
 	}{
 		{
 			namespace:             "default",
-			expectedWatchEndpoint: "/apis/example.com/v1test1/namespace/default/watch/testnames",
+			expectedWatchEndpoint: "/apis/example.com/v1test1/namespaces/default/watch/testnames",
 		},
 		{
 			namespace:             "",
