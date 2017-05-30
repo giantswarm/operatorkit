@@ -59,7 +59,7 @@ type TPR struct {
 	resourceName string
 }
 
-// New creates new TPR.
+// New creates a new TPR.
 func New(config Config) (*TPR, error) {
 	if config.Clientset == nil {
 		return nil, microerror.MaskAnyf(invalidConfigError, "k8s clientset must be set")
@@ -132,7 +132,7 @@ func (t *TPR) WatchEndpoint(namespace string) string {
 }
 
 // CreateAndWait creates a TPR and waits till it is initialized in the cluster.
-// Retruns alreadyExistsError when resource already exists.
+// Retruns alreadyExistsError when the resource already exists.
 func (t *TPR) CreateAndWait() error {
 	initBackOff := backoff.NewExponentialBackOff()
 	initBackOff.MaxElapsedTime = tprInitMaxElapsedTime
@@ -140,8 +140,9 @@ func (t *TPR) CreateAndWait() error {
 }
 
 // CreateAndWaitBackOff creates a TPR and waits till it is initialized in the
-// cluster. It allows to pass custom initialization back off policy used to poll
-// for TPR readiness. Retruns alreadyExistsError when resource already exists.
+// cluster. It allows to pass a custom initialization back off policy used to
+// poll for TPR readiness. Retruns alreadyExistsError when the resource already
+// exists.
 func (t *TPR) CreateAndWaitBackOff(initBackOff backoff.BackOff) error {
 	err := t.create()
 	if err != nil {
@@ -168,7 +169,7 @@ func (t *TPR) create() error {
 	}
 
 	_, err := t.clientset.ExtensionsV1beta1().ThirdPartyResources().Create(tpr)
-	if err != nil && !errors.IsAlreadyExists(err) {
+	if err != nil && errors.IsAlreadyExists(err) {
 		return microerror.MaskAny(alreadyExistsError)
 	}
 	if err != nil {

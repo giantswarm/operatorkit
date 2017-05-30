@@ -18,7 +18,7 @@ func IsInvalidConfig(err error) bool {
 	return errgo.Cause(err) == invalidConfigError
 }
 
-var malformedNameError = errgo.New("unexpectedly short resource name")
+var malformedNameError = errgo.New("malformed name")
 
 // IsMalformedName asserts malformedNameError.
 func IsMalformedName(err error) bool {
