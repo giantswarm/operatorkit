@@ -4,6 +4,13 @@ import (
 	"github.com/juju/errgo"
 )
 
+var alreadyExistsError = errgo.New("already exists")
+
+// IsAlreadyExists asserts alreadyExistsError.
+func IsAlreadyExists(err error) bool {
+	return errgo.Cause(err) == alreadyExistsError
+}
+
 var invalidConfigError = errgo.New("invalid config")
 
 // IsInvalidConfig asserts invalidConfigError.
@@ -11,11 +18,11 @@ func IsInvalidConfig(err error) bool {
 	return errgo.Cause(err) == invalidConfigError
 }
 
-var unexpectedlyShortResourceNameError = errgo.New("unexpectedly short resource name")
+var malformedNameError = errgo.New("malformed name")
 
-// IsUnexpectedlyShortResourceName asserts unexpectedlyShortResourceNameError.
-func IsUnexpectedlyShortResourceName(err error) bool {
-	return errgo.Cause(err) == unexpectedlyShortResourceNameError
+// IsMalformedName asserts malformedNameError.
+func IsMalformedName(err error) bool {
+	return errgo.Cause(err) == malformedNameError
 }
 
 var tprInitTimeoutError = errgo.New("initialization timeout")

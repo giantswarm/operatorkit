@@ -26,11 +26,11 @@ func TestExtractKindAndGroup(t *testing.T) {
 		},
 		{
 			name:          "foo",
-			expectedError: unexpectedlyShortResourceNameError,
+			expectedError: malformedNameError,
 		},
 		{
 			name:          "foo.company",
-			expectedError: unexpectedlyShortResourceNameError,
+			expectedError: malformedNameError,
 		},
 	}
 
