@@ -19,6 +19,7 @@ const (
 	tprInitMaxElapsedTime = 2 * time.Minute
 )
 
+// Config is a TPR configuration.
 type Config struct {
 	// Dependencies.
 	Clientset kubernetes.Interface
@@ -58,6 +59,7 @@ type TPR struct {
 	resourceName string
 }
 
+// New creates new TPR.
 func New(config Config) (*TPR, error) {
 	if config.Clientset == nil {
 		return nil, microerror.MaskAnyf(invalidConfigError, "k8s clientset must be set")
@@ -118,9 +120,9 @@ func (t *TPR) Endpoint(namespace string) string {
 	return "/apis/" + t.group + "/" + t.version + "/" + nsResource
 }
 
-// Endpoint returns a TPR watch resource endpoint registered in the Kubernetes
-// API under a given namespace. The default namespace will be used when the
-// argument is an empty string.
+// WatchEndpoint returns a TPR watch resource endpoint registered in the
+// Kubernetes API under a given namespace. The default namespace will be used
+// when the argument is an empty string.
 func (t *TPR) WatchEndpoint(namespace string) string {
 	nsResource := "watch/" + t.resourceName
 	if len(namespace) != 0 {
@@ -130,6 +132,7 @@ func (t *TPR) WatchEndpoint(namespace string) string {
 }
 
 // CreateAndWait creates a TPR and waits till it is initialized in the cluster.
+// Retruns alreadyExistsError when resource already exists.
 func (t *TPR) CreateAndWait() error {
 	initBackOff := backoff.NewExponentialBackOff()
 	initBackOff.MaxElapsedTime = tprInitMaxElapsedTime
@@ -137,8 +140,8 @@ func (t *TPR) CreateAndWait() error {
 }
 
 // CreateAndWaitBackOff creates a TPR and waits till it is initialized in the
-// cluster. It allows to pass custom initialisation back off policy used to
-// poll for TPR readiness.
+// cluster. It allows to pass custom initialization back off policy used to poll
+// for TPR readiness. Retruns alreadyExistsError when resource already exists.
 func (t *TPR) CreateAndWaitBackOff(initBackOff backoff.BackOff) error {
 	err := t.create()
 	if err != nil {
@@ -166,6 +169,9 @@ func (t *TPR) create() error {
 
 	_, err := t.clientset.ExtensionsV1beta1().ThirdPartyResources().Create(tpr)
 	if err != nil && !errors.IsAlreadyExists(err) {
+		return microerror.MaskAny(alreadyExistsError)
+	}
+	if err != nil {
 		return microerror.MaskAnyf(err, "creating TPR %s", t.name)
 	}
 	return nil
