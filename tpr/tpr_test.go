@@ -23,13 +23,12 @@ func newClientset(nodes int) *fake.Clientset {
 func TestKindGroupAndAPIVersion(t *testing.T) {
 	clientset := newClientset(3)
 
-	config := Config{
-		Clientset: clientset,
+	config := DefaultConfig()
+	config.K8sClient = clientset
 
-		Name:        "test-name.example.com",
-		Version:     "v1test1",
-		Description: "Test Desc",
-	}
+	config.Name = "test-name.example.com"
+	config.Version = "v1test1"
+	config.Description = "Test Desc"
 
 	tpr, err := New(config)
 	assert.NoError(t, err, "New")
@@ -45,13 +44,12 @@ func TestKindGroupAndAPIVersion(t *testing.T) {
 func TestEndpoint(t *testing.T) {
 	clientset := newClientset(3)
 
-	config := Config{
-		Clientset: clientset,
+	config := DefaultConfig()
+	config.K8sClient = clientset
 
-		Name:        "test-name.example.com",
-		Version:     "v1test1",
-		Description: "Test Desc",
-	}
+	config.Name = "test-name.example.com"
+	config.Version = "v1test1"
+	config.Description = "Test Desc"
 
 	tpr, err := New(config)
 	assert.NoError(t, err, "New")
@@ -78,13 +76,12 @@ func TestEndpoint(t *testing.T) {
 func TestWatchEndpoint(t *testing.T) {
 	clientset := newClientset(3)
 
-	config := Config{
-		Clientset: clientset,
+	config := DefaultConfig()
+	config.K8sClient = clientset
 
-		Name:        "test-name.example.com",
-		Version:     "v1test1",
-		Description: "Test Desc",
-	}
+	config.Name = "test-name.example.com"
+	config.Version = "v1test1"
+	config.Description = "Test Desc"
 
 	tpr, err := New(config)
 	assert.NoError(t, err, "New")
@@ -111,13 +108,12 @@ func TestWatchEndpoint(t *testing.T) {
 func TestCreateTPR(t *testing.T) {
 	clientset := newClientset(3)
 
-	config := Config{
-		Clientset: clientset,
+	config := DefaultConfig()
+	config.K8sClient = clientset
 
-		Name:        "test-name.example.com",
-		Version:     "v1test1",
-		Description: "Test Desc",
-	}
+	config.Name = "test-name.example.com"
+	config.Version = "v1test1"
+	config.Description = "Test Desc"
 
 	tpr, err := New(config)
 	assert.NoError(t, err, "New")

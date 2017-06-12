@@ -1,14 +1,20 @@
 package tpr
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/cenkalti/backoff"
 	microerror "github.com/giantswarm/microkit/error"
+	micrologger "github.com/giantswarm/microkit/logger"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/errors"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	"k8s.io/client-go/pkg/runtime"
+	"k8s.io/client-go/pkg/watch"
+	"k8s.io/client-go/tools/cache"
 )
 
 const (
@@ -22,48 +28,64 @@ const (
 // Config is a TPR configuration.
 type Config struct {
 	// Dependencies.
-	Clientset kubernetes.Interface
+	K8sClient kubernetes.Interface
+	Logger    micrologger.Logger
 
 	// Settings.
 
+	// Description is free text description.
+	Description string
 	// Name takes the form <kind>.<group> (Note: The group is also called
 	// a domain). You are expected to provide a unique kind and group name
 	// in order to avoid conflicts with other ThirdPartyResource objects.
 	// Kind names will be converted to CamelCase when creating instances of
-	// the ThirdPartyResource.  Hyphens in the kind are assumed to be word
+	// the ThirdPartyResource. Hyphens in the kind are assumed to be word
 	// breaks. For instance the kind camel-case would be converted to
 	// CamelCase but camelcase would be converted to Camelcase.
-	Name string
-
+	Name         string
+	ResyncPeriod time.Duration
 	// Version is TPR version, e.g. v1.
 	Version string
-
-	// Description is free text description.
-	Description string
 }
 
-// TPR allows easy operations on ThirdPartyResources. See
-// https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-third-party-resource/
-// for details.
-type TPR struct {
-	clientset kubernetes.Interface
+// DefaultConfig provides a default configuration to create a new TPR service
+// by best effort.
+func DefaultConfig() Config {
+	var err error
 
-	name        string // see Config.Name
-	kind        string // see Config.Name
-	group       string // see Config.Name
-	version     string
-	apiVersion  string // apiVersion is group/version
-	description string
+	var newLogger micrologger.Logger
+	{
+		config := micrologger.DefaultConfig()
+		newLogger, err = micrologger.New(config)
+		if err != nil {
+			panic(err)
+		}
+	}
 
-	// API for this TPR kind name.
-	resourceName string
+	return Config{
+		// Dependencies.
+		K8sClient: nil,
+		Logger:    newLogger,
+
+		// Settings.
+		Description:  "",
+		Name:         "",
+		ResyncPeriod: ResyncPeriod,
+		Version:      "",
+	}
 }
 
 // New creates a new TPR.
 func New(config Config) (*TPR, error) {
-	if config.Clientset == nil {
-		return nil, microerror.MaskAnyf(invalidConfigError, "k8s clientset must be set")
+	// Dependencies.
+	if config.K8sClient == nil {
+		return nil, microerror.MaskAnyf(invalidConfigError, "config.K8sClient must not be empty")
 	}
+	if config.Logger == nil {
+		return nil, microerror.MaskAnyf(invalidConfigError, "config.Logger must not be empty")
+	}
+
+	// Settings.
 	if config.Name == "" {
 		return nil, microerror.MaskAnyf(invalidConfigError, "name must not be empty")
 	}
@@ -80,34 +102,70 @@ func New(config Config) (*TPR, error) {
 	}
 
 	tpr := &TPR{
-		clientset: config.Clientset,
+		// Dependencies.
+		k8sClient: config.K8sClient,
+		logger:    config.Logger,
 
+		// Internals.
+		resourceName: unsafeGuessKindToResource(kind),
+
+		// Settings.
 		name:        config.Name,
 		kind:        kind,
 		group:       group,
 		version:     config.Version,
 		apiVersion:  group + "/" + config.Version,
 		description: config.Description,
-
-		resourceName: unsafeGuessKindToResource(kind),
 	}
+
 	return tpr, nil
+}
+
+// TPR allows easy operations on ThirdPartyResources. See
+// https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-third-party-resource/
+// for details.
+type TPR struct {
+	// Dependencies.
+	k8sClient kubernetes.Interface
+	logger    micrologger.Logger
+
+	// Internals.
+
+	// apiVersion is group/version.
+	apiVersion   string
+	group        string // see Config.Name
+	kind         string // see Config.Name
+	resourceName string
+
+	// Settings.
+	description  string
+	resyncPeriod time.Duration
+	name         string // see Config.Name
+	version      string
 }
 
 // Kind returns a TPR kind extracted from Name. Useful when creating
 // ThirdPartyObjects. See Config.Name godoc for details.
-func (t *TPR) Kind() string { return t.kind }
+func (t *TPR) Kind() string {
+	return t.kind
+}
 
 // APIVersion returns a TPR APIVersion created from group and version. It takes
 // format <group>/<version>. Useful for creating ThirdPartyObjects. See
 // Config.Name and Config.Version for details.
-func (t *TPR) APIVersion() string { return t.apiVersion }
+func (t *TPR) APIVersion() string {
+	return t.apiVersion
+}
 
 // Name returns a TPR name provided with Config.Name.
-func (t *TPR) Name() string { return t.name }
+func (t *TPR) Name() string {
+	return t.name
+}
 
 // Group returns a TPR group extracted from Name. See Config.Name godoc for details.
-func (t *TPR) Group() string { return t.group }
+func (t *TPR) Group() string {
+	return t.group
+}
 
 // Endpoint returns a TPR resource endpoint registered in the Kubernetes API
 // under a given namespace. The default namespace will be used when the
@@ -155,6 +213,46 @@ func (t *TPR) CreateAndWaitBackOff(initBackOff backoff.BackOff) error {
 	return nil
 }
 
+func (t *TPR) NewInformer(resourceEventHandler cache.ResourceEventHandler, zeroObjectFactory ZeroObjectFactory) *cache.Controller {
+	listWatch := &cache.ListWatch{
+		ListFunc: func(options api.ListOptions) (runtime.Object, error) {
+			t.logger.Log("debug", "executing the reconciler's list function", "event", "list")
+
+			req := t.k8sClient.Core().RESTClient().Get().AbsPath(t.Endpoint(""))
+			b, err := req.DoRaw()
+			if err != nil {
+				return nil, microerror.MaskAny(err)
+			}
+
+			v := zeroObjectFactory.NewObjectList()
+			if err := json.Unmarshal(b, v); err != nil {
+				return nil, microerror.MaskAny(err)
+			}
+
+			return v, nil
+		},
+		WatchFunc: func(options api.ListOptions) (watch.Interface, error) {
+			t.logger.Log("debug", "executing the reconciler's watch function", "event", "watch")
+
+			req := t.k8sClient.CoreV1().RESTClient().Get().AbsPath(t.WatchEndpoint(""))
+			stream, err := req.Stream()
+			if err != nil {
+				return nil, microerror.MaskAny(err)
+			}
+
+			watcher := watch.NewStreamWatcher(&decoder{
+				stream: stream,
+				obj:    zeroObjectFactory,
+			})
+			return watcher, nil
+		},
+	}
+
+	_, informer := cache.NewInformer(listWatch, zeroObjectFactory.NewObject(), t.resyncPeriod, resourceEventHandler)
+
+	return informer
+}
+
 // create is extracted for testing because fake REST client does not work.
 // Therefore waitInit can not be tested.
 func (t *TPR) create() error {
@@ -168,7 +266,7 @@ func (t *TPR) create() error {
 		Description: t.description,
 	}
 
-	_, err := t.clientset.ExtensionsV1beta1().ThirdPartyResources().Create(tpr)
+	_, err := t.k8sClient.ExtensionsV1beta1().ThirdPartyResources().Create(tpr)
 	if err != nil && errors.IsAlreadyExists(err) {
 		return microerror.MaskAny(alreadyExistsError)
 	}
@@ -181,7 +279,7 @@ func (t *TPR) create() error {
 func (t *TPR) waitInit(retry backoff.BackOff) error {
 	endpoint := t.Endpoint("")
 	op := func() error {
-		_, err := t.clientset.CoreV1().RESTClient().Get().RequestURI(endpoint).DoRaw()
+		_, err := t.k8sClient.CoreV1().RESTClient().Get().RequestURI(endpoint).DoRaw()
 		return err
 	}
 
