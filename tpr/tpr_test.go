@@ -8,7 +8,6 @@ import (
 
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/pkg/api/v1"
-	"k8s.io/client-go/tools/cache"
 )
 
 func newClientset(nodes int) *fake.Clientset {
@@ -26,8 +25,6 @@ func TestKindGroupAndAPIVersion(t *testing.T) {
 
 	config := DefaultConfig()
 	config.K8sClient = clientset
-	config.ResourceEventHandler = &cache.ResourceEventHandlerFuncs{}
-	config.ZeroObjectFactory = &ZeroObjectFactoryFuncs{}
 
 	config.Name = "test-name.example.com"
 	config.Version = "v1test1"
@@ -49,8 +46,6 @@ func TestEndpoint(t *testing.T) {
 
 	config := DefaultConfig()
 	config.K8sClient = clientset
-	config.ResourceEventHandler = &cache.ResourceEventHandlerFuncs{}
-	config.ZeroObjectFactory = &ZeroObjectFactoryFuncs{}
 
 	config.Name = "test-name.example.com"
 	config.Version = "v1test1"
@@ -83,8 +78,6 @@ func TestWatchEndpoint(t *testing.T) {
 
 	config := DefaultConfig()
 	config.K8sClient = clientset
-	config.ResourceEventHandler = &cache.ResourceEventHandlerFuncs{}
-	config.ZeroObjectFactory = &ZeroObjectFactoryFuncs{}
 
 	config.Name = "test-name.example.com"
 	config.Version = "v1test1"
@@ -117,8 +110,6 @@ func TestCreateTPR(t *testing.T) {
 
 	config := DefaultConfig()
 	config.K8sClient = clientset
-	config.ResourceEventHandler = &cache.ResourceEventHandlerFuncs{}
-	config.ZeroObjectFactory = &ZeroObjectFactoryFuncs{}
 
 	config.Name = "test-name.example.com"
 	config.Version = "v1test1"

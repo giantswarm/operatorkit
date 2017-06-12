@@ -28,10 +28,8 @@ const (
 // Config is a TPR configuration.
 type Config struct {
 	// Dependencies.
-	K8sClient            kubernetes.Interface
-	Logger               micrologger.Logger
-	ResourceEventHandler cache.ResourceEventHandler
-	ZeroObjectFactory    ZeroObjectFactory
+	K8sClient kubernetes.Interface
+	Logger    micrologger.Logger
 
 	// Settings.
 
@@ -66,10 +64,8 @@ func DefaultConfig() Config {
 
 	return Config{
 		// Dependencies.
-		K8sClient:            nil,
-		Logger:               newLogger,
-		ResourceEventHandler: nil,
-		ZeroObjectFactory:    nil,
+		K8sClient: nil,
+		Logger:    newLogger,
 
 		// Settings.
 		Description:  "",
@@ -87,12 +83,6 @@ func New(config Config) (*TPR, error) {
 	}
 	if config.Logger == nil {
 		return nil, microerror.MaskAnyf(invalidConfigError, "config.Logger must not be empty")
-	}
-	if config.ResourceEventHandler == nil {
-		return nil, microerror.MaskAnyf(invalidConfigError, "config.ResourceEventHandler must not be empty")
-	}
-	if config.ZeroObjectFactory == nil {
-		return nil, microerror.MaskAnyf(invalidConfigError, "config.ZeroObjectFactory must not be empty")
 	}
 
 	// Settings.
@@ -113,10 +103,8 @@ func New(config Config) (*TPR, error) {
 
 	tpr := &TPR{
 		// Dependencies.
-		k8sClient:            config.K8sClient,
-		logger:               config.Logger,
-		resourceEventHandler: config.ResourceEventHandler,
-		zeroObjectFactory:    config.ZeroObjectFactory,
+		k8sClient: config.K8sClient,
+		logger:    config.Logger,
 
 		// Internals.
 		resourceName: unsafeGuessKindToResource(kind),
@@ -138,10 +126,8 @@ func New(config Config) (*TPR, error) {
 // for details.
 type TPR struct {
 	// Dependencies.
-	k8sClient            kubernetes.Interface
-	logger               micrologger.Logger
-	resourceEventHandler cache.ResourceEventHandler
-	zeroObjectFactory    ZeroObjectFactory
+	k8sClient kubernetes.Interface
+	logger    micrologger.Logger
 
 	// Internals.
 
@@ -227,7 +213,7 @@ func (t *TPR) CreateAndWaitBackOff(initBackOff backoff.BackOff) error {
 	return nil
 }
 
-func (t *TPR) NewInformer() *cache.Controller {
+func (t *TPR) NewInformer(zeroObjectFactory ZeroObjectFactory, resourceEventHandler cache.ResourceEventHandler) *cache.Controller {
 	listWatch := &cache.ListWatch{
 		ListFunc: func(options api.ListOptions) (runtime.Object, error) {
 			t.logger.Log("debug", "executing the reconciler's list function", "event", "list")
@@ -238,7 +224,7 @@ func (t *TPR) NewInformer() *cache.Controller {
 				return nil, microerror.MaskAny(err)
 			}
 
-			v := t.zeroObjectFactory.NewObjectList()
+			v := zeroObjectFactory.NewObjectList()
 			if err := json.Unmarshal(b, v); err != nil {
 				return nil, microerror.MaskAny(err)
 			}
@@ -256,13 +242,13 @@ func (t *TPR) NewInformer() *cache.Controller {
 
 			watcher := watch.NewStreamWatcher(&decoder{
 				stream: stream,
-				obj:    t.zeroObjectFactory,
+				obj:    zeroObjectFactory,
 			})
 			return watcher, nil
 		},
 	}
 
-	_, informer := cache.NewInformer(listWatch, t.zeroObjectFactory.NewObject(), t.resyncPeriod, t.resourceEventHandler)
+	_, informer := cache.NewInformer(listWatch, zeroObjectFactory.NewObject(), t.resyncPeriod, resourceEventHandler)
 
 	return informer
 }
