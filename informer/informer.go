@@ -21,7 +21,6 @@ type Config struct {
 	// Dependencies.
 	K8sClient            kubernetes.Interface
 	Logger               micrologger.Logger
-	Observer             Observer
 	ResourceEventHandler cache.ResourceEventHandler
 	TPR                  *tpr.TPR
 	ZeroObjectFactory    ZeroObjectFactory
@@ -37,7 +36,6 @@ func DefaultConfig() Config {
 		// Dependencies.
 		K8sClient:            nil,
 		Logger:               nil,
-		Observer:             nil,
 		ResourceEventHandler: nil,
 		TPR:                  nil,
 		ZeroObjectFactory:    nil,
@@ -66,17 +64,6 @@ func New(config Config) (*cache.Controller, error) {
 		return nil, microerror.MaskAnyf(invalidConfigError, "config.ZeroObjectFactory must not be empty")
 	}
 
-	if config.Observer == nil {
-		config.Observer = ObserverFuncs{
-			OnListFunc: func() {
-				config.Logger.Log("debug", "executing the reconciler's list function", "event", "list")
-			},
-			OnWatchFunc: func() {
-				config.Logger.Log("debug", "executing the reconciler's watch function", "event", "watch")
-			},
-		}
-	}
-
 	err := config.TPR.CreateAndWait()
 	if tpr.IsAlreadyExists(err) {
 		config.Logger.Log("debug", "third party resource already exists")
@@ -87,7 +74,7 @@ func New(config Config) (*cache.Controller, error) {
 
 	listWatch := &cache.ListWatch{
 		ListFunc: func(options api.ListOptions) (runtime.Object, error) {
-			config.Observer.OnList()
+			config.Logger.Log("debug", "executing the reconciler's list function", "event", "list")
 
 			req := config.K8sClient.Core().RESTClient().Get().AbsPath(config.TPR.Endpoint(""))
 			b, err := req.DoRaw()
@@ -103,7 +90,7 @@ func New(config Config) (*cache.Controller, error) {
 			return v, nil
 		},
 		WatchFunc: func(options api.ListOptions) (watch.Interface, error) {
-			config.Observer.OnWatch()
+			config.Logger.Log("debug", "executing the reconciler's watch function", "event", "watch")
 
 			req := config.K8sClient.CoreV1().RESTClient().Get().AbsPath(config.TPR.WatchEndpoint(""))
 			stream, err := req.Stream()
