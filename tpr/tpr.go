@@ -213,7 +213,7 @@ func (t *TPR) CreateAndWaitBackOff(initBackOff backoff.BackOff) error {
 	return nil
 }
 
-func (t *TPR) NewInformer(zeroObjectFactory ZeroObjectFactory, resourceEventHandler cache.ResourceEventHandler) *cache.Controller {
+func (t *TPR) NewInformer(resourceEventHandler cache.ResourceEventHandler, zeroObjectFactory ZeroObjectFactory) *cache.Controller {
 	listWatch := &cache.ListWatch{
 		ListFunc: func(options api.ListOptions) (runtime.Object, error) {
 			t.logger.Log("debug", "executing the reconciler's list function", "event", "list")
