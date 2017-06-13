@@ -34,6 +34,46 @@ type Config struct {
 	TLS       TLSClientConfig
 }
 
+// DefaultConfig provides a default configuration to create a new Kubernetes
+// Clientset by best effort.
+func DefaultConfig() Config {
+	var err error
+
+	var newLogger micrologger.Logger
+	{
+		config := micrologger.DefaultConfig()
+		newLogger, err = micrologger.New(config)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	return Config{
+		// Dependencies.
+		Logger: newLogger,
+
+		// Settings.
+		Address:   "http://127.0.0.1:8080",
+		InCluster: false,
+		TLS:       TLSClientConfig{},
+	}
+}
+
+// NewClient returns a Kubernetes Clientset with the provided configuration.
+func NewClient(config Config) (kubernetes.Interface, error) {
+	rawClientConfig, err := getRawClientConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := kubernetes.NewForConfig(rawClientConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
 func newRawClientConfig(config Config) *rest.Config {
 	tlsClientConfig := rest.TLSClientConfig{
 		CertFile: config.TLS.CrtFile,
@@ -77,19 +117,4 @@ func getRawClientConfig(config Config) (*rest.Config, error) {
 	}
 
 	return rawClientConfig, nil
-}
-
-// NewClient returns a Kubernetes Clientset with the provided configuration.
-func NewClient(config Config) (kubernetes.Interface, error) {
-	rawClientConfig, err := getRawClientConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
-	client, err := kubernetes.NewForConfig(rawClientConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	return client, nil
 }
