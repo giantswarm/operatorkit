@@ -2,30 +2,15 @@ package k8s
 
 import (
 	"fmt"
-	"os"
 	"testing"
-
-	"github.com/giantswarm/microkit/logger"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetRawClientConfig(t *testing.T) {
-	var err error
-	var newLogger logger.Logger
-
-	{
-		loggerConfig := logger.DefaultConfig()
-		loggerConfig.IOWriter = os.Stdout
-		newLogger, err = logger.New(loggerConfig)
-		if err != nil {
-			panic(err)
-		}
-	}
-
+	caFile := "/var/run/kubernetes/server-ca.crt"
 	crtFile := "/var/run/kubernetes/client-admin.crt"
 	keyFile := "/var/run/kubernetes/client-admin.key"
-	caFile := "/var/run/kubernetes/server-ca.crt"
 
 	tests := []struct {
 		name            string
@@ -58,18 +43,14 @@ func TestGetRawClientConfig(t *testing.T) {
 			expectedAddress: "invalid-host",
 		},
 	}
-	for _, tc := range tests {
-		config := Config{
-			Logger: newLogger,
 
-			Address:   tc.expectedAddress,
-			InCluster: tc.inCluster,
-			TLS: TLSClientConfig{
-				CAFile:  caFile,
-				CrtFile: crtFile,
-				KeyFile: keyFile,
-			},
-		}
+	for _, tc := range tests {
+		config := DefaultConfig()
+		config.Address = tc.expectedAddress
+		config.InCluster = tc.inCluster
+		config.TLS.CAFile = caFile
+		config.TLS.CrtFile = crtFile
+		config.TLS.KeyFile = keyFile
 
 		rawClientConfig, err := getRawClientConfig(config)
 		if tc.expectedError {
