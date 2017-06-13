@@ -9,8 +9,17 @@ import (
 )
 
 type decoder struct {
-	stream io.ReadCloser
-	obj    ZeroObjectFactory
+	stream  io.ReadCloser
+	obj     ZeroObjectFactory
+	jsonDec *json.Decoder
+}
+
+func newDecoder(stream io.ReadCloser, obj ZeroObjectFactory) *decoder {
+	return &decoder{
+		stream:  stream,
+		obj:     obj,
+		jsonDec: json.NewDecoder(stream),
+	}
 }
 
 func (d *decoder) Decode() (action watch.EventType, object runtime.Object, err error) {
@@ -19,9 +28,8 @@ func (d *decoder) Decode() (action watch.EventType, object runtime.Object, err e
 		Object runtime.Object
 	}
 
-	dec := json.NewDecoder(d.stream)
 	e.Object = d.obj.NewObject()
-	if err := dec.Decode(&e); err != nil {
+	if err := d.jsonDec.Decode(&e); err != nil {
 		return watch.Error, nil, err
 	}
 

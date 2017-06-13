@@ -240,10 +240,7 @@ func (t *TPR) NewInformer(resourceEventHandler cache.ResourceEventHandler, zeroO
 				return nil, microerror.MaskAny(err)
 			}
 
-			watcher := watch.NewStreamWatcher(&decoder{
-				stream: stream,
-				obj:    zeroObjectFactory,
-			})
+			watcher := watch.NewStreamWatcher(newDecoder(stream, zeroObjectFactory))
 			return watcher, nil
 		},
 	}
