@@ -41,16 +41,6 @@ func ProcessCreate(obj interface{}, operator Operator) error {
 		return microerror.MaskAny(err)
 	}
 
-	deleteState, err := operator.GetDeleteState(obj, currentState, desiredState)
-	if err != nil {
-		return microerror.MaskAny(err)
-	}
-
-	err = operator.ProcessDeleteState(obj, deleteState)
-	if err != nil {
-		return microerror.MaskAny(err)
-	}
-
 	return nil
 }
 
