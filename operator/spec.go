@@ -20,13 +20,6 @@ type Operator interface {
 	// and return information about Flannel bridges, how they should look like on
 	// a server host.
 	GetDesiredState(obj interface{}) (interface{}, error)
-	// GetEmptyState is only to return the specific zero value the operator
-	// expects when reconciling delete operations. So this returns the desired
-	// state for delete operations. On create and delete events the operator might
-	// need to reconcile resources by removing them. GetDeleteState will receive
-	// as desiredState. This is to align to the general concept of reconciliation
-	// regardless creation or deletion events.
-	GetEmptyState() interface{}
 	// GetCreateState receives the custom object observed during TPR watches. It
 	// also receives the current state as provided by GetCurrentState and the
 	// desired state as provided by GetDesiredState. GetCreateState analyses the

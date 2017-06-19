@@ -66,7 +66,10 @@ func ProcessDelete(obj interface{}, operator Operator) error {
 		return microerror.MaskAny(err)
 	}
 
-	desiredState := operator.GetEmptyState()
+	desiredState, err := operator.GetDesiredState(obj)
+	if err != nil {
+		return microerror.MaskAny(err)
+	}
 
 	deleteState, err := operator.GetDeleteState(obj, currentState, desiredState)
 	if err != nil {
