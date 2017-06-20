@@ -5,12 +5,12 @@ import (
 )
 
 // ProcessCreate is a drop-in for an informer's AddFunc. It receives the custom
-// object observed during TPR watches and anything that implements Operator.
+// object observed during TPR watches and anything that implements Resource.
 // ProcessCreate takes care about all necessary reconciliation logic for create
 // events.
 //
 //     func addFunc(obj interface{}) {
-//         err := ProcessCreate(obj, operator)
+//         err := ProcessCreate(obj, resources...)
 //         if err != nil {
 //             // error handling here
 //         }
@@ -20,25 +20,31 @@ import (
 //         AddFunc:    addFunc,
 //     }
 //
-func ProcessCreate(obj interface{}, operator Operator) error {
-	currentState, err := operator.GetCurrentState(obj)
-	if err != nil {
-		return microerror.MaskAny(err)
+func ProcessCreate(obj interface{}, resources ...Resource) error {
+	if len(resources) == 0 {
+		return microerror.MaskAnyf(executionFailedError, "resources must not be empty")
 	}
 
-	desiredState, err := operator.GetDesiredState(obj)
-	if err != nil {
-		return microerror.MaskAny(err)
-	}
+	for _, r := range resources {
+		currentState, err := r.GetCurrentState(obj)
+		if err != nil {
+			return microerror.MaskAny(err)
+		}
 
-	createState, err := operator.GetCreateState(obj, currentState, desiredState)
-	if err != nil {
-		return microerror.MaskAny(err)
-	}
+		desiredState, err := r.GetDesiredState(obj)
+		if err != nil {
+			return microerror.MaskAny(err)
+		}
 
-	err = operator.ProcessCreateState(obj, createState)
-	if err != nil {
-		return microerror.MaskAny(err)
+		createState, err := r.GetCreateState(obj, currentState, desiredState)
+		if err != nil {
+			return microerror.MaskAny(err)
+		}
+
+		err = r.ProcessCreateState(obj, createState)
+		if err != nil {
+			return microerror.MaskAny(err)
+		}
 	}
 
 	return nil
@@ -46,11 +52,11 @@ func ProcessCreate(obj interface{}, operator Operator) error {
 
 // ProcessDelete is a drop-in for an informer's DeleteFunc. It receives the
 // custom object observed during TPR watches and anything that implements
-// Operator. ProcessDelete takes care about all necessary reconciliation logic
+// Resource. ProcessDelete takes care about all necessary reconciliation logic
 // for delete events.
 //
 //     func deleteFunc(obj interface{}) {
-//         err := ProcessDelete(obj, operator)
+//         err := ProcessDelete(obj, resources...)
 //         if err != nil {
 //             // error handling here
 //         }
@@ -60,25 +66,31 @@ func ProcessCreate(obj interface{}, operator Operator) error {
 //         DeleteFunc:    deleteFunc,
 //     }
 //
-func ProcessDelete(obj interface{}, operator Operator) error {
-	currentState, err := operator.GetCurrentState(obj)
-	if err != nil {
-		return microerror.MaskAny(err)
+func ProcessDelete(obj interface{}, resources ...Resource) error {
+	if len(resources) == 0 {
+		return microerror.MaskAnyf(executionFailedError, "resources must not be empty")
 	}
 
-	desiredState, err := operator.GetDesiredState(obj)
-	if err != nil {
-		return microerror.MaskAny(err)
-	}
+	for _, r := range resources {
+		currentState, err := r.GetCurrentState(obj)
+		if err != nil {
+			return microerror.MaskAny(err)
+		}
 
-	deleteState, err := operator.GetDeleteState(obj, currentState, desiredState)
-	if err != nil {
-		return microerror.MaskAny(err)
-	}
+		desiredState, err := r.GetDesiredState(obj)
+		if err != nil {
+			return microerror.MaskAny(err)
+		}
 
-	err = operator.ProcessDeleteState(obj, deleteState)
-	if err != nil {
-		return microerror.MaskAny(err)
+		deleteState, err := r.GetDeleteState(obj, currentState, desiredState)
+		if err != nil {
+			return microerror.MaskAny(err)
+		}
+
+		err = r.ProcessDeleteState(obj, deleteState)
+		if err != nil {
+			return microerror.MaskAny(err)
+		}
 	}
 
 	return nil
