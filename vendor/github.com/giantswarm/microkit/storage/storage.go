@@ -3,6 +3,9 @@
 package storage
 
 import (
+	"crypto/tls"
+	"net"
+	"net/http"
 	"time"
 
 	"github.com/coreos/etcd/client"
@@ -11,6 +14,7 @@ import (
 	"github.com/giantswarm/microkit/storage/etcd"
 	"github.com/giantswarm/microkit/storage/etcdv2"
 	"github.com/giantswarm/microkit/storage/memory"
+	microtls "github.com/giantswarm/microkit/tls"
 )
 
 const (
@@ -27,6 +31,7 @@ type Config struct {
 	// Settings.
 	EtcdAddress string
 	EtcdPrefix  string
+	EtcdTLS     microtls.CertFiles
 	Kind        string
 }
 
@@ -37,6 +42,7 @@ func DefaultConfig() Config {
 		// Settings.
 		EtcdAddress: "",
 		EtcdPrefix:  "",
+		EtcdTLS:     microtls.CertFiles{},
 		Kind:        KindMemory,
 	}
 }
@@ -52,6 +58,14 @@ func New(config Config) (Service, error) {
 	}
 
 	var err error
+
+	var tlsConfig *tls.Config
+	{
+		tlsConfig, err = microtls.LoadTLSConfig(config.EtcdTLS)
+		if err != nil {
+			return nil, microerror.MaskAny(err)
+		}
+	}
 
 	var storageService Service
 	{
@@ -70,6 +84,7 @@ func New(config Config) (Service, error) {
 			etcdConfig := clientv3.Config{
 				Endpoints:   []string{config.EtcdAddress},
 				DialTimeout: 5 * time.Second,
+				TLS:         tlsConfig,
 			}
 			etcdClient, err := clientv3.New(etcdConfig)
 			if err != nil {
@@ -88,9 +103,19 @@ func New(config Config) (Service, error) {
 				return nil, microerror.MaskAnyf(invalidConfigError, "etcd address must not be empty")
 			}
 
+			transport := &http.Transport{
+				Proxy: http.ProxyFromEnvironment,
+				Dial: (&net.Dialer{
+					Timeout:   30 * time.Second,
+					KeepAlive: 30 * time.Second,
+				}).Dial,
+				TLSHandshakeTimeout: 10 * time.Second,
+				TLSClientConfig:     tlsConfig,
+			}
+
 			etcdConfig := client.Config{
 				Endpoints: []string{config.EtcdAddress},
-				Transport: client.DefaultTransport,
+				Transport: transport,
 			}
 			etcdClient, err := client.New(etcdConfig)
 			if err != nil {

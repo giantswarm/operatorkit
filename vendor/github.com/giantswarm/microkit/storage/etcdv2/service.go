@@ -90,7 +90,9 @@ func (s *Service) Delete(ctx context.Context, key string) error {
 		Recursive: true,
 	}
 	_, err := s.keyClient.Delete(ctx, s.key(key), options)
-	if err != nil {
+	if client.IsKeyNotFound(err) {
+		return microerror.MaskAnyf(notFoundError, "%s", err)
+	} else if err != nil {
 		return microerror.MaskAny(err)
 	}
 

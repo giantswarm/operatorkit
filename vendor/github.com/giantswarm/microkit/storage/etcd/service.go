@@ -86,9 +86,12 @@ func (s *Service) Create(ctx context.Context, key, value string) error {
 func (s *Service) Delete(ctx context.Context, key string) error {
 	key = s.key(key)
 
-	_, err := s.keyClient.Delete(ctx, key)
+	resp, err := s.keyClient.Delete(ctx, key)
 	if err != nil {
 		return microerror.MaskAny(err)
+	}
+	if resp.Deleted == 0 {
+		return microerror.MaskAny(notFoundError)
 	}
 
 	return nil

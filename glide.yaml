@@ -1,17 +1,15 @@
 package: github.com/giantswarm/operatorkit
 import:
+- package: github.com/cenkalti/backoff
+  version: v1.0.0
 - package: github.com/giantswarm/certificatetpr
 - package: github.com/giantswarm/microkit
   subpackages:
   - error
   - logger
+- package: github.com/juju/errgo
 - package: k8s.io/client-go
-  version: v2.0.0
-  subpackages:
-  - kubernetes
-  - rest
-- package: github.com/cenkalti/backoff
-  version: v1.0.0
+  version: v3.0.0-beta.0
 testImport:
 - package: github.com/stretchr/testify
   version: v1.1.4

@@ -7,11 +7,12 @@ import (
 	"github.com/giantswarm/certificatetpr"
 	microerror "github.com/giantswarm/microkit/error"
 	micrologger "github.com/giantswarm/microkit/logger"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apismetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api"
-	apierrs "k8s.io/client-go/pkg/api/errors"
 	"k8s.io/client-go/pkg/api/v1"
-	"k8s.io/client-go/pkg/watch"
 )
 
 const (
@@ -87,7 +88,7 @@ func (s *Service) SearchCerts(clusterID string) (certificatetpr.AssetsBundle, er
 func (s *Service) SearchCertsForComponent(clusterID, componentName string) (certificatetpr.AssetsBundle, error) {
 	// TODO we should also do a list. In case the secrets have already been
 	// created we might miss them with only watching.
-	watcher, err := s.k8sClient.Core().Secrets(api.NamespaceDefault).Watch(v1.ListOptions{
+	watcher, err := s.k8sClient.Core().Secrets(api.NamespaceDefault).Watch(apismetav1.ListOptions{
 		// Select only secrets that match the given component and the given cluster
 		// clusterID.
 		LabelSelector: fmt.Sprintf(
@@ -135,7 +136,7 @@ func (s *Service) SearchCertsForComponent(clusterID, componentName string) (cert
 				// Noop. Ignore deleted events. These are handled by the certificate
 				// operator.
 			case watch.Error:
-				return nil, microerror.MaskAnyf(secretsRetrievalFailedError, "there was an error in the watcher: %v", apierrs.FromObject(event.Object))
+				return nil, microerror.MaskAnyf(secretsRetrievalFailedError, "there was an error in the watcher: %v", apierrors.FromObject(event.Object))
 			}
 		case <-time.After(WatchTimeOut):
 			return nil, microerror.MaskAnyf(secretsRetrievalFailedError, "timed out waiting for secrets")
