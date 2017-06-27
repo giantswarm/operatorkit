@@ -5,9 +5,9 @@ import (
 )
 
 const (
-	// TransactionIDHeader is the canonical representation of the transaction ID
-	// HTTP header field.
-	TransactionIDHeader = "X-Transaction-ID"
+	// TransactionIDHeader is the canonical representation of the
+	// HTTP header field representing the transaction ID
+	TransactionIDHeader = "X-Idempotency-Key"
 )
 
 var (

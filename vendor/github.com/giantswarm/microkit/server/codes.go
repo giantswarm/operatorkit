@@ -28,6 +28,9 @@ var (
 	// CodeUnknownAttribute indicates the provided data structure contains
 	// unexpected fields.
 	CodeUnknownAttribute = "UNKNOWN_ATTRIBUTE"
+	// CodeInvalidInput indicates the user provided some input that does not validate
+	// (usually HTTP status 400).
+	CodeInvalidInput = "INVALID_INPUT"
 	// CodeInternalError represents an error we don't want to give more details
 	// about (usually HTTP status 500).
 	CodeInternalError = "INTERNAL_ERROR"

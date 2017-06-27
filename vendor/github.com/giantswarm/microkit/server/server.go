@@ -3,11 +3,8 @@
 package server
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -26,6 +23,7 @@ import (
 	microerror "github.com/giantswarm/microkit/error"
 	"github.com/giantswarm/microkit/logger"
 	micrologger "github.com/giantswarm/microkit/logger"
+	"github.com/giantswarm/microkit/tls"
 	"github.com/giantswarm/microkit/transaction"
 	microtransaction "github.com/giantswarm/microkit/transaction"
 	transactionid "github.com/giantswarm/microkit/transaction/context/id"
@@ -184,9 +182,11 @@ func New(config Config) (Server, error) {
 		handlerWrapper: config.HandlerWrapper,
 		requestFuncs:   config.RequestFuncs,
 		serviceName:    config.ServiceName,
-		tlsCAFile:      config.TLSCAFile,
-		tlsCrtFile:     config.TLSCrtFile,
-		tlsKeyFile:     config.TLSKeyFile,
+		tlsCertFiles: tls.CertFiles{
+			RootCAs: []string{config.TLSCAFile},
+			Cert:    config.TLSCrtFile,
+			Key:     config.TLSKeyFile,
+		},
 	}
 
 	return newServer, nil
@@ -212,9 +212,7 @@ type server struct {
 	handlerWrapper func(h http.Handler) http.Handler
 	requestFuncs   []kithttp.RequestFunc
 	serviceName    string
-	tlsCAFile      string
-	tlsCrtFile     string
-	tlsKeyFile     string
+	tlsCertFiles   tls.CertFiles
 }
 
 func (s *server) Boot() {
@@ -299,7 +297,7 @@ func (s *server) Boot() {
 
 		go func() {
 			if s.listenURL.Scheme == "https" {
-				tlsConfig, err := s.newTLSConfig()
+				tlsConfig, err := tls.LoadTLSConfig(s.tlsCertFiles)
 				if err != nil {
 					panic(err)
 				}
@@ -546,7 +544,7 @@ func (s *server) newNotFoundHandler() http.Handler {
 }
 
 // newRequestContext creates a new request context and enriches it with request
-// relevant information. E.g. here we put the HTTP X-Transaction-ID header into
+// relevant information. E.g. here we put the HTTP X-Idempotency-Key header into
 // the request context, if any. We also check if there is a transaction response
 // already tracked for the given transaction ID. This information is then stored
 // within the given request context as well. Note that we initialize the
@@ -590,42 +588,4 @@ func (s *server) newResponseWriter(w http.ResponseWriter) (ResponseWriter, error
 	}
 
 	return responseWriter, nil
-}
-
-func (s *server) newTLSConfig() (*tls.Config, error) {
-	var err error
-
-	var roots *x509.CertPool
-	if s.tlsCAFile != "" {
-		roots, err = x509.SystemCertPool()
-		if err != nil {
-			return nil, microerror.MaskAny(err)
-		}
-		b, err := ioutil.ReadFile(s.tlsCAFile)
-		if err != nil {
-			return nil, microerror.MaskAny(err)
-		}
-		ok := roots.AppendCertsFromPEM(b)
-		if !ok {
-			return nil, microerror.MaskAny(fmt.Errorf("could not load root CA: '%s'", s.tlsCAFile))
-		}
-		s.logger.Log("debug", fmt.Sprintf("found TLS root CA file '%s'", s.tlsCAFile))
-	}
-
-	var certs []tls.Certificate
-	if s.tlsCrtFile != "" && s.tlsKeyFile != "" {
-		c, err := tls.LoadX509KeyPair(s.tlsCrtFile, s.tlsKeyFile)
-		if err != nil {
-			return nil, microerror.MaskAny(err)
-		}
-		s.logger.Log("debug", fmt.Sprintf("found TLS public key file '%s' and private key file '%s'", s.tlsCrtFile, s.tlsKeyFile))
-		certs = append(certs, c)
-	}
-
-	tlsConfig := &tls.Config{
-		Certificates: certs,
-		RootCAs:      roots,
-	}
-
-	return tlsConfig, nil
 }

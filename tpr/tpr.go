@@ -7,13 +7,12 @@ import (
 	"github.com/cenkalti/backoff"
 	microerror "github.com/giantswarm/microkit/error"
 	micrologger "github.com/giantswarm/microkit/logger"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apismetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api"
-	"k8s.io/client-go/pkg/api/errors"
-	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
-	"k8s.io/client-go/pkg/runtime"
-	"k8s.io/client-go/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -213,9 +212,9 @@ func (t *TPR) CreateAndWaitBackOff(initBackOff backoff.BackOff) error {
 	return nil
 }
 
-func (t *TPR) NewInformer(resourceEventHandler cache.ResourceEventHandler, zeroObjectFactory ZeroObjectFactory) *cache.Controller {
+func (t *TPR) NewInformer(resourceEventHandler cache.ResourceEventHandler, zeroObjectFactory ZeroObjectFactory) cache.Controller {
 	listWatch := &cache.ListWatch{
-		ListFunc: func(options api.ListOptions) (runtime.Object, error) {
+		ListFunc: func(options apismetav1.ListOptions) (runtime.Object, error) {
 			t.logger.Log("debug", "executing the reconciler's list function", "event", "list")
 
 			req := t.k8sClient.Core().RESTClient().Get().AbsPath(t.Endpoint(""))
@@ -231,7 +230,7 @@ func (t *TPR) NewInformer(resourceEventHandler cache.ResourceEventHandler, zeroO
 
 			return v, nil
 		},
-		WatchFunc: func(options api.ListOptions) (watch.Interface, error) {
+		WatchFunc: func(options apismetav1.ListOptions) (watch.Interface, error) {
 			t.logger.Log("debug", "executing the reconciler's watch function", "event", "watch")
 
 			req := t.k8sClient.CoreV1().RESTClient().Get().AbsPath(t.WatchEndpoint(""))
@@ -254,7 +253,7 @@ func (t *TPR) NewInformer(resourceEventHandler cache.ResourceEventHandler, zeroO
 // Therefore waitInit can not be tested.
 func (t *TPR) create() error {
 	tpr := &v1beta1.ThirdPartyResource{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: apismetav1.ObjectMeta{
 			Name: t.name,
 		},
 		Versions: []v1beta1.APIVersion{
@@ -264,7 +263,7 @@ func (t *TPR) create() error {
 	}
 
 	_, err := t.k8sClient.ExtensionsV1beta1().ThirdPartyResources().Create(tpr)
-	if err != nil && errors.IsAlreadyExists(err) {
+	if err != nil && apierrors.IsAlreadyExists(err) {
 		return microerror.MaskAny(alreadyExistsError)
 	}
 	if err != nil {
@@ -282,7 +281,7 @@ func (t *TPR) waitInit(retry backoff.BackOff) error {
 
 	err := backoff.Retry(op, retry)
 
-	if errors.IsNotFound(err) {
+	if apierrors.IsNotFound(err) {
 		err = tprInitTimeoutError
 	}
 	return microerror.MaskAnyf(err, "requesting TPR %s", t.name)

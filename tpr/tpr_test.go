@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	apismetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/pkg/api/v1"
 )
@@ -118,13 +119,13 @@ func TestCreateTPR(t *testing.T) {
 	tpr, err := New(config)
 	assert.NoError(t, err, "New")
 
-	resp, err := clientset.ExtensionsV1beta1().ThirdPartyResources().List(v1.ListOptions{})
+	resp, err := clientset.ExtensionsV1beta1().ThirdPartyResources().List(apismetav1.ListOptions{})
 	assert.Equal(t, 0, len(resp.Items))
 
 	err = tpr.create()
 	assert.Nil(t, err)
 
-	resp, err = clientset.ExtensionsV1beta1().ThirdPartyResources().List(v1.ListOptions{})
+	resp, err = clientset.ExtensionsV1beta1().ThirdPartyResources().List(apismetav1.ListOptions{})
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(resp.Items))
 	assert.Equal(t, config.Name, resp.Items[0].Name)

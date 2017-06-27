@@ -1,7 +1,7 @@
 package tpr
 
 import (
-	"k8s.io/client-go/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // ZeroObjectFuncs provides zero values of an object and objects' list ready to
