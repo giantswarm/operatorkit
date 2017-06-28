@@ -109,12 +109,13 @@ func New(config Config) (*TPR, error) {
 		resourceName: unsafeGuessKindToResource(kind),
 
 		// Settings.
-		name:        config.Name,
-		kind:        kind,
-		group:       group,
-		version:     config.Version,
-		apiVersion:  group + "/" + config.Version,
-		description: config.Description,
+		name:         config.Name,
+		kind:         kind,
+		group:        group,
+		version:      config.Version,
+		apiVersion:   group + "/" + config.Version,
+		description:  config.Description,
+		resyncPeriod: config.ResyncPeriod,
 	}
 
 	return tpr, nil
