@@ -1,9 +1,9 @@
 package operator
 
-// Operator implements the building blocks of any operator business logic being
+// Resource implements the building blocks of any resource business logic being
 // reconciled when observing TPRs. This interface provides a guideline for an
 // easier way to follow the rather complex intentions of operators in general.
-type Operator interface {
+type Resource interface {
 	// GetCurrentState receives the custom object observed during TPR watches. Its
 	// purpose is to return the current state of the resources being managed by
 	// the operator. This can e.g. be some actual data within a configmap as
