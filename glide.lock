@@ -1,5 +1,5 @@
-hash: 7859bcf358f41eef7900b3cebd5465e8ef49c4c68bfed5cd97d19dbd83d109ba
-updated: 2017-06-27T14:49:34.740640368+02:00
+hash: 879dbf7c7fa57d78d13fdfa3e49400420a6d2e64cb0e07563bcf104b611415ef
+updated: 2017-07-06T16:37:10.53174159+02:00
 imports:
 - name: github.com/cenkalti/backoff
   version: 32cd0c5b3aef12c76ed64aaf678f6c79736be7dc
@@ -19,8 +19,6 @@ imports:
   - swagger
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
-- name: github.com/giantswarm/certificatetpr
-  version: 57a4fcbb8839e8da7940bf4e27e52396a4ead7c5
 - name: github.com/giantswarm/microkit
   version: 1ac51fb9905e0c7ab5a8d12fec127c6fbfd75aac
   subpackages:
