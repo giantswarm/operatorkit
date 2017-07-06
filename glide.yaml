@@ -2,7 +2,6 @@ package: github.com/giantswarm/operatorkit
 import:
 - package: github.com/cenkalti/backoff
   version: v1.0.0
-- package: github.com/giantswarm/certificatetpr
 - package: github.com/giantswarm/microkit
   subpackages:
   - error
