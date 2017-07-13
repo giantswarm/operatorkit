@@ -2,10 +2,9 @@
 package memory
 
 import (
+	"context"
 	"strings"
 	"sync"
-
-	"golang.org/x/net/context"
 
 	microerror "github.com/giantswarm/microkit/error"
 )

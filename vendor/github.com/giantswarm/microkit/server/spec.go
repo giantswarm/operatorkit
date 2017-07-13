@@ -58,11 +58,6 @@ type ResponseError interface {
 	// is not set using SetMessage it defaults to the error message of the
 	// underlying error.
 	Message() string
-	// IsEndpoint checks whether the underlying error originates from an endpoints
-	// business logic. This includes decoder and encoder errors. In case
-	// IsEndpoint returns false, something unexpected happened and the current
-	// error should probably be handled as internal server error.
-	IsEndpoint() bool
 	// SetCode tracks the given response code for the current response error. The
 	// given response code will be used for logging, instrumentation and response
 	// creation.

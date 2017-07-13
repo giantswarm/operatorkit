@@ -1,7 +1,7 @@
 package: github.com/giantswarm/microkit
 import:
 - package: github.com/go-kit/kit
-  version: ~0.3.0
+  version: 0.5.0
   subpackages:
   - endpoint
   - log
@@ -25,6 +25,8 @@ import:
 - package: github.com/go-stack/stack
   version: ~1.5.2
 - package: github.com/coreos/etcd
-  version: ~3.1.0-rc.1
+  version: 3.2.1
   subpackages:
   - client
+- package: golang.org/x/text
+  version: 4ee4af566555f5fbe026368b75596286a312663a

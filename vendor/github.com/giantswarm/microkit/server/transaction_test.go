@@ -1,12 +1,11 @@
 package server
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
-
-	"golang.org/x/net/context"
 )
 
 func Test_Transaction_IDFormat(t *testing.T) {

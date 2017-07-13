@@ -1,13 +1,12 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
@@ -33,18 +32,15 @@ func (stringService) Count(s string) int {
 }
 
 func main() {
-	ctx := context.Background()
 	svc := stringService{}
 
 	uppercaseHandler := httptransport.NewServer(
-		ctx,
 		makeUppercaseEndpoint(svc),
 		decodeUppercaseRequest,
 		encodeResponse,
 	)
 
 	countHandler := httptransport.NewServer(
-		ctx,
 		makeCountEndpoint(svc),
 		decodeCountRequest,
 		encodeResponse,

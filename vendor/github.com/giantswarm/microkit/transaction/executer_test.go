@@ -1,11 +1,10 @@
 package transaction
 
 import (
+	"context"
 	"reflect"
 	"strconv"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	transactionid "github.com/giantswarm/microkit/transaction/context/id"
 )
