@@ -1,10 +1,9 @@
 package transaction
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-
-	"golang.org/x/net/context"
 
 	microerror "github.com/giantswarm/microkit/error"
 	micrologger "github.com/giantswarm/microkit/logger"

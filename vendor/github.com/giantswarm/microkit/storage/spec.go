@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"golang.org/x/net/context"
+	"context"
 )
 
 // Service represents the abstraction for underlying storage backends. A storage

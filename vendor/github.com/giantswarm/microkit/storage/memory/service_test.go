@@ -1,9 +1,8 @@
 package memory
 
 import (
+	"context"
 	"testing"
-
-	"golang.org/x/net/context"
 )
 
 func Test_List(t *testing.T) {

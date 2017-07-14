@@ -2,11 +2,11 @@
 package etcdv2
 
 import (
+	"context"
 	"path/filepath"
 	"strings"
 
 	"github.com/coreos/etcd/client"
-	"golang.org/x/net/context"
 
 	microerror "github.com/giantswarm/microkit/error"
 )

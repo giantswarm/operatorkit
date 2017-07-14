@@ -3,9 +3,8 @@
 package etcd
 
 import (
+	"context"
 	"testing"
-
-	"golang.org/x/net/context"
 )
 
 func Test_CreateExistsSearch(t *testing.T) {

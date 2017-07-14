@@ -3,7 +3,7 @@
 package id
 
 import (
-	"golang.org/x/net/context"
+	"context"
 )
 
 // key is an unexported type for keys defined in this package. This prevents

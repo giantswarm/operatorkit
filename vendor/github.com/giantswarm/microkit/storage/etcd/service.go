@@ -2,10 +2,10 @@
 package etcd
 
 import (
+	"context"
 	"path/filepath"
 
 	"github.com/coreos/etcd/clientv3"
-	"golang.org/x/net/context"
 
 	microerror "github.com/giantswarm/microkit/error"
 )
