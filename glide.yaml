@@ -14,6 +14,9 @@ import:
 # apimachinery is pinned to the version client-go uses.
 - package: k8s.io/apimachinery
   version: 85ace5365f33b16fc735c866a12e3c765b9700f2
+# go-restful is pinned to the version client-go uses.
+- package: github.com/emicklei/go-restful
+  version: 09691a3b6378b740595c1002f40c34dd5f218a22
 testImport:
 - package: github.com/stretchr/testify
   version: v1.1.4

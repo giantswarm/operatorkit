@@ -1,5 +1,5 @@
-hash: 0a15a071a0511453b68cb4df3a981fcca375a5248e899aa555830cfa9a6abdcb
-updated: 2017-07-13T14:14:35.700607678+02:00
+hash: 7e78cafb8e1142406aa70bb4af310de4dc8a5a0dffc3a46b3d187ca3202b69fa
+updated: 2017-07-17T15:40:53.305474431+02:00
 imports:
 - name: github.com/cenkalti/backoff
   version: 32cd0c5b3aef12c76ed64aaf678f6c79736be7dc
