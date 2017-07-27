@@ -1,7 +1,7 @@
 package operator
 
 import (
-	microerror "github.com/giantswarm/microkit/error"
+	"github.com/giantswarm/microerror"
 )
 
 // ProcessCreate is a drop-in for an informer's AddFunc. It receives the custom
@@ -22,28 +22,28 @@ import (
 //
 func ProcessCreate(obj interface{}, resources ...Resource) error {
 	if len(resources) == 0 {
-		return microerror.MaskAnyf(executionFailedError, "resources must not be empty")
+		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}
 
 	for _, r := range resources {
 		currentState, err := r.GetCurrentState(obj)
 		if err != nil {
-			return microerror.MaskAny(err)
+			return microerror.Mask(err)
 		}
 
 		desiredState, err := r.GetDesiredState(obj)
 		if err != nil {
-			return microerror.MaskAny(err)
+			return microerror.Mask(err)
 		}
 
 		createState, err := r.GetCreateState(obj, currentState, desiredState)
 		if err != nil {
-			return microerror.MaskAny(err)
+			return microerror.Mask(err)
 		}
 
 		err = r.ProcessCreateState(obj, createState)
 		if err != nil {
-			return microerror.MaskAny(err)
+			return microerror.Mask(err)
 		}
 	}
 
@@ -68,28 +68,28 @@ func ProcessCreate(obj interface{}, resources ...Resource) error {
 //
 func ProcessDelete(obj interface{}, resources ...Resource) error {
 	if len(resources) == 0 {
-		return microerror.MaskAnyf(executionFailedError, "resources must not be empty")
+		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}
 
 	for _, r := range resources {
 		currentState, err := r.GetCurrentState(obj)
 		if err != nil {
-			return microerror.MaskAny(err)
+			return microerror.Mask(err)
 		}
 
 		desiredState, err := r.GetDesiredState(obj)
 		if err != nil {
-			return microerror.MaskAny(err)
+			return microerror.Mask(err)
 		}
 
 		deleteState, err := r.GetDeleteState(obj, currentState, desiredState)
 		if err != nil {
-			return microerror.MaskAny(err)
+			return microerror.Mask(err)
 		}
 
 		err = r.ProcessDeleteState(obj, deleteState)
 		if err != nil {
-			return microerror.MaskAny(err)
+			return microerror.Mask(err)
 		}
 	}
 

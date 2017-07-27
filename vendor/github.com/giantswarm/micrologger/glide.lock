@@ -1,0 +1,18 @@
+hash: b6a4c0274b1dc896befe1cc3a26685b5c9d9dbd6122b7a2e550824c1bbfe3355
+updated: 2017-07-27T16:09:34.394899183+02:00
+imports:
+- name: github.com/giantswarm/microerror
+  version: 7bf6a0a6d24b1e3a03af3ed3a8e3531d792ea3e3
+- name: github.com/go-kit/kit
+  version: f66b0e13579bfc5a48b9e2a94b1209c107ea1f41
+  subpackages:
+  - log
+- name: github.com/go-logfmt/logfmt
+  version: 390ab7935ee28ec6b286364bba9b4dd6410cb3d5
+- name: github.com/go-stack/stack
+  version: 100eb0c0a9c5b306ca2fb4f165df21d80ada4b82
+- name: github.com/juju/errgo
+  version: 08cceb5d0b5331634b9826762a8fd53b29b86ad8
+- name: github.com/kr/logfmt
+  version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
+testImports: []

@@ -8,7 +8,7 @@ import (
 )
 
 // NewRoundRobin returns a load balancer that returns services in sequence.
-func NewRoundRobin(s sd.Endpointer) Balancer {
+func NewRoundRobin(s sd.Subscriber) Balancer {
 	return &roundRobin{
 		s: s,
 		c: 0,
@@ -16,7 +16,7 @@ func NewRoundRobin(s sd.Endpointer) Balancer {
 }
 
 type roundRobin struct {
-	s sd.Endpointer
+	s sd.Subscriber
 	c uint64
 }
 

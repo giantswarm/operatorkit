@@ -1,22 +1,13 @@
 package: github.com/giantswarm/operatorkit
 import:
+- package: github.com/giantswarm/microerror
+  version: master
+- package: github.com/giantswarm/micrologger
+  version: master
 - package: github.com/cenkalti/backoff
   version: v1.0.0
-- package: github.com/giantswarm/microkit
-  version: master
-  subpackages:
-  - error
-  - logger
-- package: github.com/juju/errgo
-  version: master
 - package: k8s.io/client-go
   version: v3.0.0
-# apimachinery is pinned to the version client-go uses.
-- package: k8s.io/apimachinery
-  version: 85ace5365f33b16fc735c866a12e3c765b9700f2
-# go-restful is pinned to the version client-go uses.
-- package: github.com/emicklei/go-restful
-  version: 09691a3b6378b740595c1002f40c34dd5f218a22
 testImport:
 - package: github.com/stretchr/testify
   version: v1.1.4

@@ -1,0 +1,10 @@
+package: github.com/giantswarm/micrologger
+import:
+- package: github.com/giantswarm/microerror
+  version: master
+- package: github.com/go-kit/kit
+  version: 0.3.0
+  subpackages:
+  - log
+- package: github.com/go-stack/stack
+  version: 1.5.2

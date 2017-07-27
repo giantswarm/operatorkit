@@ -1,10 +1,11 @@
 package lb_test
 
 import (
-	"context"
 	"errors"
 	"testing"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/sd"
@@ -13,7 +14,7 @@ import (
 
 func TestRetryMaxTotalFail(t *testing.T) {
 	var (
-		endpoints = sd.FixedEndpointer{} // no endpoints
+		endpoints = sd.FixedSubscriber{} // no endpoints
 		rr        = lb.NewRoundRobin(endpoints)
 		retry     = lb.Retry(999, time.Second, rr) // lots of retries
 		ctx       = context.Background()
@@ -30,13 +31,13 @@ func TestRetryMaxPartialFail(t *testing.T) {
 			func(context.Context, interface{}) (interface{}, error) { return nil, errors.New("error two") },
 			func(context.Context, interface{}) (interface{}, error) { return struct{}{}, nil /* OK */ },
 		}
-		endpointer = sd.FixedEndpointer{
+		subscriber = sd.FixedSubscriber{
 			0: endpoints[0],
 			1: endpoints[1],
 			2: endpoints[2],
 		}
 		retries = len(endpoints) - 1 // not quite enough retries
-		rr      = lb.NewRoundRobin(endpointer)
+		rr      = lb.NewRoundRobin(subscriber)
 		ctx     = context.Background()
 	)
 	if _, err := lb.Retry(retries, time.Second, rr)(ctx, struct{}{}); err == nil {
@@ -51,13 +52,13 @@ func TestRetryMaxSuccess(t *testing.T) {
 			func(context.Context, interface{}) (interface{}, error) { return nil, errors.New("error two") },
 			func(context.Context, interface{}) (interface{}, error) { return struct{}{}, nil /* OK */ },
 		}
-		endpointer = sd.FixedEndpointer{
+		subscriber = sd.FixedSubscriber{
 			0: endpoints[0],
 			1: endpoints[1],
 			2: endpoints[2],
 		}
 		retries = len(endpoints) // exactly enough retries
-		rr      = lb.NewRoundRobin(endpointer)
+		rr      = lb.NewRoundRobin(subscriber)
 		ctx     = context.Background()
 	)
 	if _, err := lb.Retry(retries, time.Second, rr)(ctx, struct{}{}); err != nil {
@@ -70,7 +71,7 @@ func TestRetryTimeout(t *testing.T) {
 		step    = make(chan struct{})
 		e       = func(context.Context, interface{}) (interface{}, error) { <-step; return struct{}{}, nil }
 		timeout = time.Millisecond
-		retry   = lb.Retry(999, timeout, lb.NewRoundRobin(sd.FixedEndpointer{0: e}))
+		retry   = lb.Retry(999, timeout, lb.NewRoundRobin(sd.FixedSubscriber{0: e}))
 		errs    = make(chan error, 1)
 		invoke  = func() { _, err := retry(context.Background(), struct{}{}); errs <- err }
 	)
@@ -92,7 +93,7 @@ func TestAbortEarlyCustomMessage(t *testing.T) {
 	var (
 		myErr     = errors.New("aborting early")
 		cb        = func(int, error) (bool, error) { return false, myErr }
-		endpoints = sd.FixedEndpointer{} // no endpoints
+		endpoints = sd.FixedSubscriber{} // no endpoints
 		rr        = lb.NewRoundRobin(endpoints)
 		retry     = lb.RetryWithCallback(time.Second, rr, cb) // lots of retries
 		ctx       = context.Background()
@@ -115,7 +116,7 @@ func TestErrorPassedUnchangedToCallback(t *testing.T) {
 		endpoint = func(ctx context.Context, request interface{}) (interface{}, error) {
 			return nil, myErr
 		}
-		endpoints = sd.FixedEndpointer{endpoint} // no endpoints
+		endpoints = sd.FixedSubscriber{endpoint} // no endpoints
 		rr        = lb.NewRoundRobin(endpoints)
 		retry     = lb.RetryWithCallback(time.Second, rr, cb) // lots of retries
 		ctx       = context.Background()
@@ -128,10 +129,10 @@ func TestErrorPassedUnchangedToCallback(t *testing.T) {
 
 func TestHandleNilCallback(t *testing.T) {
 	var (
-		endpointer = sd.FixedEndpointer{
+		subscriber = sd.FixedSubscriber{
 			func(context.Context, interface{}) (interface{}, error) { return struct{}{}, nil /* OK */ },
 		}
-		rr  = lb.NewRoundRobin(endpointer)
+		rr  = lb.NewRoundRobin(subscriber)
 		ctx = context.Background()
 	)
 	retry := lb.RetryWithCallback(time.Second, rr, nil)

@@ -3,7 +3,7 @@ package tpr
 import (
 	"strings"
 
-	microerror "github.com/giantswarm/microkit/error"
+	"github.com/giantswarm/microerror"
 )
 
 /*
@@ -16,7 +16,7 @@ import (
 func extractKindAndGroup(name string) (kind, group string, err error) {
 	parts := strings.Split(name, ".")
 	if len(parts) < 3 {
-		return "", "", microerror.MaskAnyf(malformedNameError, "%s, expected at least <kind>.<domain>.<tld>", name)
+		return "", "", microerror.Maskf(malformedNameError, "%s, expected at least <kind>.<domain>.<tld>", name)
 	}
 
 	// kind

@@ -40,69 +40,68 @@ func New(consulAddr string, logger log.Logger) (profilesvc.Service, error) {
 
 	var (
 		sdclient  = consul.NewClient(apiclient)
-		instancer = consul.NewInstancer(sdclient, logger, consulService, consulTags, passingOnly)
 		endpoints profilesvc.Endpoints
 	)
 	{
 		factory := factoryFor(profilesvc.MakePostProfileEndpoint)
-		endpointer := sd.NewEndpointer(instancer, factory, logger)
-		balancer := lb.NewRoundRobin(endpointer)
+		subscriber := consul.NewSubscriber(sdclient, factory, logger, consulService, consulTags, passingOnly)
+		balancer := lb.NewRoundRobin(subscriber)
 		retry := lb.Retry(retryMax, retryTimeout, balancer)
 		endpoints.PostProfileEndpoint = retry
 	}
 	{
 		factory := factoryFor(profilesvc.MakeGetProfileEndpoint)
-		endpointer := sd.NewEndpointer(instancer, factory, logger)
-		balancer := lb.NewRoundRobin(endpointer)
+		subscriber := consul.NewSubscriber(sdclient, factory, logger, consulService, consulTags, passingOnly)
+		balancer := lb.NewRoundRobin(subscriber)
 		retry := lb.Retry(retryMax, retryTimeout, balancer)
 		endpoints.GetProfileEndpoint = retry
 	}
 	{
 		factory := factoryFor(profilesvc.MakePutProfileEndpoint)
-		endpointer := sd.NewEndpointer(instancer, factory, logger)
-		balancer := lb.NewRoundRobin(endpointer)
+		subscriber := consul.NewSubscriber(sdclient, factory, logger, consulService, consulTags, passingOnly)
+		balancer := lb.NewRoundRobin(subscriber)
 		retry := lb.Retry(retryMax, retryTimeout, balancer)
 		endpoints.PutProfileEndpoint = retry
 	}
 	{
 		factory := factoryFor(profilesvc.MakePatchProfileEndpoint)
-		endpointer := sd.NewEndpointer(instancer, factory, logger)
-		balancer := lb.NewRoundRobin(endpointer)
+		subscriber := consul.NewSubscriber(sdclient, factory, logger, consulService, consulTags, passingOnly)
+		balancer := lb.NewRoundRobin(subscriber)
 		retry := lb.Retry(retryMax, retryTimeout, balancer)
 		endpoints.PatchProfileEndpoint = retry
 	}
 	{
 		factory := factoryFor(profilesvc.MakeDeleteProfileEndpoint)
-		endpointer := sd.NewEndpointer(instancer, factory, logger)
-		balancer := lb.NewRoundRobin(endpointer)
+		subscriber := consul.NewSubscriber(sdclient, factory, logger, consulService, consulTags, passingOnly)
+		balancer := lb.NewRoundRobin(subscriber)
 		retry := lb.Retry(retryMax, retryTimeout, balancer)
 		endpoints.DeleteProfileEndpoint = retry
 	}
 	{
 		factory := factoryFor(profilesvc.MakeGetAddressesEndpoint)
-		endpointer := sd.NewEndpointer(instancer, factory, logger)
-		balancer := lb.NewRoundRobin(endpointer)
+		subscriber := consul.NewSubscriber(sdclient, factory, logger, consulService, consulTags, passingOnly)
+		balancer := lb.NewRoundRobin(subscriber)
 		retry := lb.Retry(retryMax, retryTimeout, balancer)
 		endpoints.GetAddressesEndpoint = retry
 	}
 	{
 		factory := factoryFor(profilesvc.MakeGetAddressEndpoint)
-		endpointer := sd.NewEndpointer(instancer, factory, logger)
-		balancer := lb.NewRoundRobin(endpointer)
+		subscriber := consul.NewSubscriber(sdclient, factory, logger, consulService, consulTags, passingOnly)
+		balancer := lb.NewRoundRobin(subscriber)
 		retry := lb.Retry(retryMax, retryTimeout, balancer)
 		endpoints.GetAddressEndpoint = retry
 	}
 	{
 		factory := factoryFor(profilesvc.MakePostAddressEndpoint)
-		endpointer := sd.NewEndpointer(instancer, factory, logger)
-		balancer := lb.NewRoundRobin(endpointer)
+		subscriber := consul.NewSubscriber(sdclient, factory, logger, consulService, consulTags, passingOnly)
+		balancer := lb.NewRoundRobin(subscriber)
 		retry := lb.Retry(retryMax, retryTimeout, balancer)
 		endpoints.PostAddressEndpoint = retry
 	}
 	{
 		factory := factoryFor(profilesvc.MakeDeleteAddressEndpoint)
-		endpointer := sd.NewEndpointer(instancer, factory, logger)
-		balancer := lb.NewRoundRobin(endpointer)
+		subscriber := consul.NewSubscriber(sdclient, factory, logger, consulService, consulTags, passingOnly)
+		balancer := lb.NewRoundRobin(subscriber)
 		retry := lb.Retry(retryMax, retryTimeout, balancer)
 		endpoints.DeleteAddressEndpoint = retry
 	}

@@ -1,12 +1,13 @@
 package lb
 
 import (
-	"context"
 	"reflect"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/sd"
@@ -22,8 +23,8 @@ func TestRoundRobin(t *testing.T) {
 		}
 	)
 
-	endpointer := sd.FixedEndpointer(endpoints)
-	balancer := NewRoundRobin(endpointer)
+	subscriber := sd.FixedSubscriber(endpoints)
+	balancer := NewRoundRobin(subscriber)
 
 	for i, want := range [][]int{
 		{1, 0, 0},
@@ -46,8 +47,8 @@ func TestRoundRobin(t *testing.T) {
 }
 
 func TestRoundRobinNoEndpoints(t *testing.T) {
-	endpointer := sd.FixedEndpointer{}
-	balancer := NewRoundRobin(endpointer)
+	subscriber := sd.FixedSubscriber{}
+	balancer := NewRoundRobin(subscriber)
 	_, err := balancer.Endpoint()
 	if want, have := ErrNoEndpoints, err; want != have {
 		t.Errorf("want %v, have %v", want, have)
@@ -55,7 +56,7 @@ func TestRoundRobinNoEndpoints(t *testing.T) {
 }
 
 func TestRoundRobinNoRace(t *testing.T) {
-	balancer := NewRoundRobin(sd.FixedEndpointer([]endpoint.Endpoint{
+	balancer := NewRoundRobin(sd.FixedSubscriber([]endpoint.Endpoint{
 		endpoint.Nop,
 		endpoint.Nop,
 		endpoint.Nop,

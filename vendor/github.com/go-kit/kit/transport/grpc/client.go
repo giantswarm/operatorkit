@@ -1,10 +1,11 @@
 package grpc
 
 import (
-	"context"
 	"fmt"
 	"reflect"
+	"strings"
 
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
@@ -20,8 +21,7 @@ type Client struct {
 	enc         EncodeRequestFunc
 	dec         DecodeResponseFunc
 	grpcReply   reflect.Type
-	before      []ClientRequestFunc
-	after       []ClientResponseFunc
+	before      []RequestFunc
 }
 
 // NewClient constructs a usable Client for a single remote endpoint.
@@ -36,6 +36,9 @@ func NewClient(
 	grpcReply interface{},
 	options ...ClientOption,
 ) *Client {
+	if strings.IndexByte(serviceName, '.') == -1 {
+		serviceName = "pb." + serviceName
+	}
 	c := &Client{
 		client: cc,
 		method: fmt.Sprintf("/%s/%s", serviceName, method),
@@ -50,8 +53,7 @@ func NewClient(
 				reflect.ValueOf(grpcReply),
 			).Interface(),
 		),
-		before: []ClientRequestFunc{},
-		after:  []ClientResponseFunc{},
+		before: []RequestFunc{},
 	}
 	for _, option := range options {
 		option(c)
@@ -64,15 +66,8 @@ type ClientOption func(*Client)
 
 // ClientBefore sets the RequestFuncs that are applied to the outgoing gRPC
 // request before it's invoked.
-func ClientBefore(before ...ClientRequestFunc) ClientOption {
-	return func(c *Client) { c.before = append(c.before, before...) }
-}
-
-// ClientAfter sets the ClientResponseFuncs that are applied to the incoming
-// gRPC response prior to it being decoded. This is useful for obtaining
-// response metadata and adding onto the context prior to decoding.
-func ClientAfter(after ...ClientResponseFunc) ClientOption {
-	return func(c *Client) { c.after = append(c.after, after...) }
+func ClientBefore(before ...RequestFunc) ClientOption {
+	return func(c *Client) { c.before = before }
 }
 
 // Endpoint returns a usable endpoint that will invoke the gRPC specified by the
@@ -84,7 +79,7 @@ func (c Client) Endpoint() endpoint.Endpoint {
 
 		req, err := c.enc(ctx, request)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Encode: %v", err)
 		}
 
 		md := &metadata.MD{}
@@ -93,22 +88,14 @@ func (c Client) Endpoint() endpoint.Endpoint {
 		}
 		ctx = metadata.NewContext(ctx, *md)
 
-		var header, trailer metadata.MD
 		grpcReply := reflect.New(c.grpcReply).Interface()
-		if err = grpc.Invoke(
-			ctx, c.method, req, grpcReply, c.client,
-			grpc.Header(&header), grpc.Trailer(&trailer),
-		); err != nil {
-			return nil, err
-		}
-
-		for _, f := range c.after {
-			ctx = f(ctx, header, trailer)
+		if err = grpc.Invoke(ctx, c.method, req, grpcReply, c.client); err != nil {
+			return nil, fmt.Errorf("Invoke: %v", err)
 		}
 
 		response, err := c.dec(ctx, grpcReply)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Decode: %v", err)
 		}
 		return response, nil
 	}

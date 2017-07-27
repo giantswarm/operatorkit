@@ -3,15 +3,15 @@
 package etcd
 
 import (
-	"context"
 	"io"
 	"os"
 	"testing"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/sd"
 )
 
 // Package sd/etcd provides a wrapper around the etcd key/value store. This
@@ -50,7 +50,7 @@ func TestIntegration(t *testing.T) {
 	registrar := NewRegistrar(client, Service{
 		Key:   key,
 		Value: value,
-	}, log.With(log.NewLogfmtLogger(os.Stderr), "component", "registrar"))
+	}, log.NewContext(log.NewLogfmtLogger(os.Stderr)).With("component", "registrar"))
 
 	// Register our instance.
 	registrar.Register()
@@ -68,28 +68,24 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("want %q, have %q", want, have)
 	}
 
-	instancer, err := NewInstancer(
+	subscriber, err := NewSubscriber(
 		client,
 		prefix,
-		log.With(log.NewLogfmtLogger(os.Stderr), "component", "instancer"),
+		func(string) (endpoint.Endpoint, io.Closer, error) { return endpoint.Nop, nil, nil },
+		log.NewContext(log.NewLogfmtLogger(os.Stderr)).With("component", "subscriber"),
 	)
 	if err != nil {
-		t.Fatalf("NewInstancer: %v", err)
+		t.Fatalf("NewSubscriber: %v", err)
 	}
-	endpointer := sd.NewEndpointer(
-		instancer,
-		func(string) (endpoint.Endpoint, io.Closer, error) { return endpoint.Nop, nil, nil },
-		log.With(log.NewLogfmtLogger(os.Stderr), "component", "instancer"),
-	)
-	t.Logf("Constructed Endpointer OK")
+	t.Logf("Constructed Subscriber OK")
 
 	if !within(time.Second, func() bool {
-		endpoints, err := endpointer.Endpoints()
+		endpoints, err := subscriber.Endpoints()
 		return err == nil && len(endpoints) == 1
 	}) {
-		t.Fatalf("Endpointer didn't see Register in time")
+		t.Fatalf("Subscriber didn't see Register in time")
 	}
-	t.Logf("Endpointer saw Register OK")
+	t.Logf("Subscriber saw Register OK")
 
 	// Deregister first instance of test data.
 	registrar.Deregister()
@@ -97,11 +93,11 @@ func TestIntegration(t *testing.T) {
 
 	// Check it was deregistered.
 	if !within(time.Second, func() bool {
-		endpoints, err := endpointer.Endpoints()
+		endpoints, err := subscriber.Endpoints()
 		t.Logf("Checking Deregister: len(endpoints) = %d, err = %v", len(endpoints), err)
 		return err == nil && len(endpoints) == 0
 	}) {
-		t.Fatalf("Endpointer didn't see Deregister in time")
+		t.Fatalf("Subscriber didn't see Deregister in time")
 	}
 
 	// Verify test data no longer exists in etcd.
