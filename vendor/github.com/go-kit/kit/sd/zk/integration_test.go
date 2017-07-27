@@ -4,7 +4,8 @@ package zk
 
 import (
 	"bytes"
-	"log"
+	"flag"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -17,11 +18,21 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	zkAddr := os.Getenv("ZK_ADDR")
-	if zkAddr == "" {
-		log.Fatal("ZK_ADDR is not set")
+	flag.Parse()
+
+	fmt.Println("Starting ZooKeeper server...")
+
+	ts, err := stdzk.StartTestCluster(1, nil, nil)
+	if err != nil {
+		fmt.Printf("ZooKeeper server error: %v\n", err)
+		os.Exit(1)
 	}
-	host = []string{zkAddr}
+
+	host = []string{fmt.Sprintf("localhost:%d", ts.Servers[0].Port)}
+	code := m.Run()
+
+	ts.Stop()
+	os.Exit(code)
 }
 
 func TestCreateParentNodesOnServer(t *testing.T) {
@@ -35,17 +46,17 @@ func TestCreateParentNodesOnServer(t *testing.T) {
 	}
 	defer c1.Stop()
 
-	instancer, err := NewInstancer(c1, path, logger)
+	s, err := NewSubscriber(c1, path, newFactory(""), logger)
 	if err != nil {
 		t.Fatalf("Unable to create Subscriber: %v", err)
 	}
-	defer instancer.Stop()
+	defer s.Stop()
 
-	state := instancer.state()
-	if state.Err != nil {
+	services, err := s.Endpoints()
+	if err != nil {
 		t.Fatal(err)
 	}
-	if want, have := 0, len(state.Instances); want != have {
+	if want, have := 0, len(services); want != have {
 		t.Errorf("want %d, have %d", want, have)
 	}
 
@@ -70,7 +81,7 @@ func TestCreateBadParentNodesOnServer(t *testing.T) {
 	c, _ := NewClient(host, logger)
 	defer c.Stop()
 
-	_, err := NewInstancer(c, "invalid/path", logger)
+	_, err := NewSubscriber(c, "invalid/path", newFactory(""), logger)
 
 	if want, have := stdzk.ErrInvalidPath, err; want != have {
 		t.Errorf("want %v, have %v", want, have)
@@ -82,7 +93,7 @@ func TestCredentials1(t *testing.T) {
 	c, _ := NewClient(host, logger, ACL(acl), Credentials("user", "secret"))
 	defer c.Stop()
 
-	_, err := NewInstancer(c, "/acl-issue-test", logger)
+	_, err := NewSubscriber(c, "/acl-issue-test", newFactory(""), logger)
 
 	if err != nil {
 		t.Fatal(err)
@@ -94,7 +105,7 @@ func TestCredentials2(t *testing.T) {
 	c, _ := NewClient(host, logger, ACL(acl))
 	defer c.Stop()
 
-	_, err := NewInstancer(c, "/acl-issue-test", logger)
+	_, err := NewSubscriber(c, "/acl-issue-test", newFactory(""), logger)
 
 	if err != stdzk.ErrNoAuth {
 		t.Errorf("want %v, have %v", stdzk.ErrNoAuth, err)
@@ -105,7 +116,7 @@ func TestConnection(t *testing.T) {
 	c, _ := NewClient(host, logger)
 	c.Stop()
 
-	_, err := NewInstancer(c, "/acl-issue-test", logger)
+	_, err := NewSubscriber(c, "/acl-issue-test", newFactory(""), logger)
 
 	if err != ErrClientClosed {
 		t.Errorf("want %v, have %v", ErrClientClosed, err)
@@ -123,7 +134,7 @@ func TestGetEntriesOnServer(t *testing.T) {
 	defer c1.Stop()
 
 	c2, err := NewClient(host, logger)
-	s, err := NewInstancer(c2, path, logger)
+	s, err := NewSubscriber(c2, path, newFactory(""), logger)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -148,11 +159,11 @@ func TestGetEntriesOnServer(t *testing.T) {
 
 	time.Sleep(50 * time.Millisecond)
 
-	state := s.state()
-	if state.Err != nil {
-		t.Fatal(state.Err)
+	services, err := s.Endpoints()
+	if err != nil {
+		t.Fatal(err)
 	}
-	if want, have := 2, len(state.Instances); want != have {
+	if want, have := 2, len(services); want != have {
 		t.Errorf("want %d, have %d", want, have)
 	}
 }

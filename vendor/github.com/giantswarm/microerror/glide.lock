@@ -1,0 +1,6 @@
+hash: 232e0ad76c2668b6277cf7571d7d7eed16e8a3a0b5f531dfefda5c3065d2c33b
+updated: 2017-06-28T18:13:03.069483126+02:00
+imports:
+- name: github.com/juju/errgo
+  version: 08cceb5d0b5331634b9826762a8fd53b29b86ad8
+testImports: []

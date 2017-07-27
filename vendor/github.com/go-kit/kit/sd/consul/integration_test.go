@@ -10,14 +10,15 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/sd"
 	stdconsul "github.com/hashicorp/consul/api"
 )
 
 func TestIntegration(t *testing.T) {
-	consulAddr := os.Getenv("CONSUL_ADDR")
+	// Connect to Consul.
+	// docker run -p 8500:8500 progrium/consul -server -bootstrap
+	consulAddr := os.Getenv("CONSUL_ADDRESS")
 	if consulAddr == "" {
-		t.Fatal("CONSUL_ADDR is not set")
+		t.Fatal("CONSUL_ADDRESS is not set")
 	}
 	stdClient, err := stdconsul.NewClient(&stdconsul.Config{
 		Address: consulAddr,
@@ -39,28 +40,24 @@ func TestIntegration(t *testing.T) {
 		// skipping check(s)
 	}
 
-	// Build an Instancer on r.Name + r.Tags.
+	// Build a subscriber on r.Name + r.Tags.
 	factory := func(instance string) (endpoint.Endpoint, io.Closer, error) {
 		t.Logf("factory invoked for %q", instance)
 		return endpoint.Nop, nil, nil
 	}
-	instancer := NewInstancer(
+	subscriber := NewSubscriber(
 		client,
-		log.With(logger, "component", "instancer"),
+		factory,
+		log.NewContext(logger).With("component", "subscriber"),
 		r.Name,
 		r.Tags,
 		true,
-	)
-	endpointer := sd.NewEndpointer(
-		instancer,
-		factory,
-		log.With(logger, "component", "endpointer"),
 	)
 
 	time.Sleep(time.Second)
 
 	// Before we publish, we should have no endpoints.
-	endpoints, err := endpointer.Endpoints()
+	endpoints, err := subscriber.Endpoints()
 	if err != nil {
 		t.Error(err)
 	}
@@ -69,14 +66,14 @@ func TestIntegration(t *testing.T) {
 	}
 
 	// Build a registrar for r.
-	registrar := NewRegistrar(client, r, log.With(logger, "component", "registrar"))
+	registrar := NewRegistrar(client, r, log.NewContext(logger).With("component", "registrar"))
 	registrar.Register()
 	defer registrar.Deregister()
 
 	time.Sleep(time.Second)
 
 	// Now we should have one active endpoints.
-	endpoints, err = endpointer.Endpoints()
+	endpoints, err = subscriber.Endpoints()
 	if err != nil {
 		t.Error(err)
 	}

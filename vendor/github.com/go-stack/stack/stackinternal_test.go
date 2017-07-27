@@ -5,6 +5,14 @@ import (
 	"testing"
 )
 
+func TestFindSigpanic(t *testing.T) {
+	t.Parallel()
+	sp := findSigpanic()
+	if got, want := sp.Name(), "runtime.sigpanic"; got != want {
+		t.Errorf("got == %v, want == %v", got, want)
+	}
+}
+
 func TestCaller(t *testing.T) {
 	t.Parallel()
 
@@ -47,7 +55,7 @@ func TestTrace(t *testing.T) {
 
 	cs := fh.labyrinth()
 
-	lines := []int{43, 33, 48}
+	lines := []int{51, 41, 56}
 
 	for i, line := range lines {
 		if got, want := cs[i].line(), line; got != want {

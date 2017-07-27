@@ -3,8 +3,9 @@ package k8s
 import (
 	"net/url"
 
-	microerror "github.com/giantswarm/microkit/error"
-	micrologger "github.com/giantswarm/microkit/logger"
+	"github.com/giantswarm/microerror"
+	"github.com/giantswarm/micrologger"
+
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )

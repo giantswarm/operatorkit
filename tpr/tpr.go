@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff"
-	microerror "github.com/giantswarm/microkit/error"
-	micrologger "github.com/giantswarm/microkit/logger"
+	"github.com/giantswarm/microerror"
+	"github.com/giantswarm/micrologger"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apismetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -78,26 +78,26 @@ func DefaultConfig() Config {
 func New(config Config) (*TPR, error) {
 	// Dependencies.
 	if config.K8sClient == nil {
-		return nil, microerror.MaskAnyf(invalidConfigError, "config.K8sClient must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "config.K8sClient must not be empty")
 	}
 	if config.Logger == nil {
-		return nil, microerror.MaskAnyf(invalidConfigError, "config.Logger must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
 	}
 
 	// Settings.
 	if config.Name == "" {
-		return nil, microerror.MaskAnyf(invalidConfigError, "name must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "name must not be empty")
 	}
 	if config.Version == "" {
-		return nil, microerror.MaskAnyf(invalidConfigError, "version must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "version must not be empty")
 	}
 	if config.Description == "" {
-		return nil, microerror.MaskAnyf(invalidConfigError, "description must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "description must not be empty")
 	}
 
 	kind, group, err := extractKindAndGroup(config.Name)
 	if err != nil {
-		return nil, microerror.MaskAny(err)
+		return nil, microerror.Mask(err)
 	}
 
 	tpr := &TPR{
@@ -204,11 +204,11 @@ func (t *TPR) CreateAndWait() error {
 func (t *TPR) CreateAndWaitBackOff(initBackOff backoff.BackOff) error {
 	err := t.create()
 	if err != nil {
-		return microerror.MaskAnyf(err, "creating TPR %s", t.name)
+		return microerror.Maskf(err, "creating TPR %s", t.name)
 	}
 	err = t.waitInit(initBackOff)
 	if err != nil {
-		return microerror.MaskAnyf(err, "waiting for TPR %s initialization", t.name)
+		return microerror.Maskf(err, "waiting for TPR %s initialization", t.name)
 	}
 	return nil
 }
@@ -221,12 +221,12 @@ func (t *TPR) NewInformer(resourceEventHandler cache.ResourceEventHandler, zeroO
 			req := t.k8sClient.Core().RESTClient().Get().AbsPath(t.Endpoint(""))
 			b, err := req.DoRaw()
 			if err != nil {
-				return nil, microerror.MaskAny(err)
+				return nil, microerror.Mask(err)
 			}
 
 			v := zeroObjectFactory.NewObjectList()
 			if err := json.Unmarshal(b, v); err != nil {
-				return nil, microerror.MaskAny(err)
+				return nil, microerror.Mask(err)
 			}
 
 			return v, nil
@@ -237,7 +237,7 @@ func (t *TPR) NewInformer(resourceEventHandler cache.ResourceEventHandler, zeroO
 			req := t.k8sClient.CoreV1().RESTClient().Get().AbsPath(t.WatchEndpoint(""))
 			stream, err := req.Stream()
 			if err != nil {
-				return nil, microerror.MaskAny(err)
+				return nil, microerror.Mask(err)
 			}
 
 			watcher := watch.NewStreamWatcher(newDecoder(stream, zeroObjectFactory))
@@ -265,10 +265,10 @@ func (t *TPR) create() error {
 
 	_, err := t.k8sClient.ExtensionsV1beta1().ThirdPartyResources().Create(tpr)
 	if err != nil && apierrors.IsAlreadyExists(err) {
-		return microerror.MaskAny(alreadyExistsError)
+		return microerror.Mask(alreadyExistsError)
 	}
 	if err != nil {
-		return microerror.MaskAnyf(err, "creating TPR %s", t.name)
+		return microerror.Maskf(err, "creating TPR %s", t.name)
 	}
 	return nil
 }
@@ -285,5 +285,5 @@ func (t *TPR) waitInit(retry backoff.BackOff) error {
 	if apierrors.IsNotFound(err) {
 		err = tprInitTimeoutError
 	}
-	return microerror.MaskAnyf(err, "requesting TPR %s", t.name)
+	return microerror.Maskf(err, "requesting TPR %s", t.name)
 }

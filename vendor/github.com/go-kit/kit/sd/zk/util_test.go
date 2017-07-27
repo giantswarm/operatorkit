@@ -1,7 +1,6 @@
 package zk
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -9,6 +8,7 @@ import (
 	"time"
 
 	"github.com/samuel/go-zookeeper/zk"
+	"golang.org/x/net/context"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/log"
@@ -114,7 +114,7 @@ func newFactory(fakeError string) sd.Factory {
 	}
 }
 
-func asyncTest(timeout time.Duration, want int, s sd.Endpointer) (err error) {
+func asyncTest(timeout time.Duration, want int, s *Subscriber) (err error) {
 	var endpoints []endpoint.Endpoint
 	have := -1 // want can never be <0
 	t := time.After(timeout)
