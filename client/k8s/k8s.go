@@ -99,11 +99,11 @@ func getRawClientConfig(config Config) (*rest.Config, error) {
 		config.Logger.Log("debug", "creating in-cluster config")
 		rawClientConfig, err = rest.InClusterConfig()
 		if err != nil {
-			return nil, microerror.MaskAny(err)
+			return nil, microerror.Mask(err)
 		}
 	} else {
 		if config.Address == "" {
-			return nil, microerror.MaskAnyf(invalidConfigError, "kubernetes address must not be empty")
+			return nil, microerror.Maskf(invalidConfigError, "kubernetes address must not be empty")
 		}
 
 		config.Logger.Log("debug", "creating out-cluster config")
@@ -111,7 +111,7 @@ func getRawClientConfig(config Config) (*rest.Config, error) {
 		// Kubernetes listen URL.
 		_, err := url.Parse(config.Address)
 		if err != nil {
-			return nil, microerror.MaskAny(err)
+			return nil, microerror.Mask(err)
 		}
 
 		rawClientConfig = newRawClientConfig(config)

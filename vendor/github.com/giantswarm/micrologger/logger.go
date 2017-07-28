@@ -10,7 +10,7 @@ import (
 	kitlog "github.com/go-kit/kit/log"
 	"github.com/go-stack/stack"
 
-	microerror "github.com/giantswarm/microerror"
+	"github.com/giantswarm/microerror"
 )
 
 // Config represents the configuration used to create a new logger.
@@ -48,7 +48,8 @@ func New(config Config) (Logger, error) {
 	}
 
 	kitLogger := kitlog.NewJSONLogger(kitlog.NewSyncWriter(config.IOWriter))
-	kitLogger = kitlog.NewContext(kitLogger).With(
+	kitLogger = kitlog.With(
+		kitLogger,
 		"caller", config.Caller,
 		"time", config.TimestampFormatter,
 	)
