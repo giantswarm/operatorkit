@@ -7,113 +7,27 @@ import (
 	"github.com/cenk/backoff"
 )
 
-type testResource struct {
-	Error       error
-	ErrorCount  int
-	ErrorMethod string
-	Order       []string
-
-	errorCount int
-}
-
-func (r *testResource) GetCurrentState(obj interface{}) (interface{}, error) {
-	m := "GetCurrentState"
-	r.Order = append(r.Order, m)
-
-	if r.returnErrorFor(m) {
-		return nil, r.Error
-	}
-
-	return nil, nil
-}
-
-func (r *testResource) GetDesiredState(obj interface{}) (interface{}, error) {
-	m := "GetDesiredState"
-	r.Order = append(r.Order, m)
-
-	if r.returnErrorFor(m) {
-		return nil, r.Error
-	}
-
-	return nil, nil
-}
-
-func (r *testResource) GetCreateState(obj, currentState, desiredState interface{}) (interface{}, error) {
-	m := "GetCreateState"
-	r.Order = append(r.Order, m)
-
-	if r.returnErrorFor(m) {
-		return nil, r.Error
-	}
-
-	return nil, nil
-}
-
-func (r *testResource) GetDeleteState(obj, currentState, desiredState interface{}) (interface{}, error) {
-	m := "GetDeleteState"
-	r.Order = append(r.Order, m)
-
-	if r.returnErrorFor(m) {
-		return nil, r.Error
-	}
-
-	return nil, nil
-}
-
-func (r *testResource) ProcessCreateState(obj, createState interface{}) error {
-	m := "ProcessCreateState"
-	r.Order = append(r.Order, m)
-
-	if r.returnErrorFor(m) {
-		return r.Error
-	}
-
-	return nil
-}
-
-func (r *testResource) ProcessDeleteState(obj, deleteState interface{}) error {
-	m := "ProcessDeleteState"
-	r.Order = append(r.Order, m)
-
-	if r.returnErrorFor(m) {
-		return r.Error
-	}
-
-	return nil
-}
-
-func (r *testResource) returnErrorFor(errorMethod string) bool {
-	ok := r.Error != nil && r.ErrorCount > r.errorCount && r.ErrorMethod == errorMethod
-
-	if ok {
-		r.errorCount++
-		return true
-	}
-
-	return false
-}
-
-// Test_Operator_ProcessCreate_NoResource ensures there is an error thrown when
+// Test_Framework_ProcessCreate_NoResource ensures there is an error thrown when
 // executing ProcessCreate without having any resources provided.
-func Test_Operator_ProcessCreate_NoResource(t *testing.T) {
+func Test_Framework_ProcessCreate_NoResource(t *testing.T) {
 	err := testMustNewFramework(t).ProcessCreate(nil, nil)
 	if !IsExecutionFailed(err) {
 		t.Fatal("expected", true, "got", false)
 	}
 }
 
-// Test_Operator_ProcessDelete_NoResource ensures there is an error thrown when
+// Test_Framework_ProcessDelete_NoResource ensures there is an error thrown when
 // executing ProcessDelete without having any resources provided.
-func Test_Operator_ProcessDelete_NoResource(t *testing.T) {
+func Test_Framework_ProcessDelete_NoResource(t *testing.T) {
 	err := testMustNewFramework(t).ProcessDelete(nil, nil)
 	if !IsExecutionFailed(err) {
 		t.Fatal("expected", true, "got", false)
 	}
 }
 
-// Test_Operator_ProcessCreate_ResourceOrder ensures the resource's methods are
+// Test_Framework_ProcessCreate_ResourceOrder ensures the resource's methods are
 // executed as expected when creating resources.
-func Test_Operator_ProcessCreate_ResourceOrder(t *testing.T) {
+func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 	tr := &testResource{}
 	rs := []Resource{
 		tr,
@@ -135,9 +49,9 @@ func Test_Operator_ProcessCreate_ResourceOrder(t *testing.T) {
 	}
 }
 
-// Test_Operator_ProcessCreate_ResourceOrder_Retry ensures the resource's
+// Test_Framework_ProcessCreate_ResourceOrder_Retry ensures the resource's
 // methods are executed as expected when retrying the creation process.
-func Test_Operator_ProcessCreate_ResourceOrder_Retry(t *testing.T) {
+func Test_Framework_ProcessCreate_ResourceOrder_Retry(t *testing.T) {
 	testCases := []struct {
 		ErrorCount          int
 		ErrorMethod         string
@@ -204,10 +118,10 @@ func Test_Operator_ProcessCreate_ResourceOrder_Retry(t *testing.T) {
 	}
 }
 
-// Test_Operator_ProcessCreate_ResourceOrder_RetryResource ensures the
+// Test_Framework_ProcessCreate_ResourceOrder_RetryResource ensures the
 // resource's methods are executed as expected when creating resources using the
 // wrapping retry resource.
-func Test_Operator_ProcessCreate_ResourceOrder_RetryResource(t *testing.T) {
+func Test_Framework_ProcessCreate_ResourceOrder_RetryResource(t *testing.T) {
 	tr := &testResource{}
 	rs := []Resource{
 		tr,
@@ -232,9 +146,9 @@ func Test_Operator_ProcessCreate_ResourceOrder_RetryResource(t *testing.T) {
 	}
 }
 
-// Test_Operator_ProcessDelete_ResourceOrder ensures the resource's methods are
+// Test_Framework_ProcessDelete_ResourceOrder ensures the resource's methods are
 // executed as expected when deleting resources.
-func Test_Operator_ProcessDelete_ResourceOrder(t *testing.T) {
+func Test_Framework_ProcessDelete_ResourceOrder(t *testing.T) {
 	tr := &testResource{}
 	rs := []Resource{
 		tr,
@@ -361,4 +275,90 @@ func testMustNewFramework(t *testing.T) *Framework {
 	}
 
 	return newFramework
+}
+
+type testResource struct {
+	Error       error
+	ErrorCount  int
+	ErrorMethod string
+	Order       []string
+
+	errorCount int
+}
+
+func (r *testResource) GetCurrentState(obj interface{}) (interface{}, error) {
+	m := "GetCurrentState"
+	r.Order = append(r.Order, m)
+
+	if r.returnErrorFor(m) {
+		return nil, r.Error
+	}
+
+	return nil, nil
+}
+
+func (r *testResource) GetDesiredState(obj interface{}) (interface{}, error) {
+	m := "GetDesiredState"
+	r.Order = append(r.Order, m)
+
+	if r.returnErrorFor(m) {
+		return nil, r.Error
+	}
+
+	return nil, nil
+}
+
+func (r *testResource) GetCreateState(obj, currentState, desiredState interface{}) (interface{}, error) {
+	m := "GetCreateState"
+	r.Order = append(r.Order, m)
+
+	if r.returnErrorFor(m) {
+		return nil, r.Error
+	}
+
+	return nil, nil
+}
+
+func (r *testResource) GetDeleteState(obj, currentState, desiredState interface{}) (interface{}, error) {
+	m := "GetDeleteState"
+	r.Order = append(r.Order, m)
+
+	if r.returnErrorFor(m) {
+		return nil, r.Error
+	}
+
+	return nil, nil
+}
+
+func (r *testResource) ProcessCreateState(obj, createState interface{}) error {
+	m := "ProcessCreateState"
+	r.Order = append(r.Order, m)
+
+	if r.returnErrorFor(m) {
+		return r.Error
+	}
+
+	return nil
+}
+
+func (r *testResource) ProcessDeleteState(obj, deleteState interface{}) error {
+	m := "ProcessDeleteState"
+	r.Order = append(r.Order, m)
+
+	if r.returnErrorFor(m) {
+		return r.Error
+	}
+
+	return nil
+}
+
+func (r *testResource) returnErrorFor(errorMethod string) bool {
+	ok := r.Error != nil && r.ErrorCount > r.errorCount && r.ErrorMethod == errorMethod
+
+	if ok {
+		r.errorCount++
+		return true
+	}
+
+	return false
 }
