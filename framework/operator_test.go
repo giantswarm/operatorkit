@@ -42,7 +42,7 @@ func (r *testResource) ProcessDeleteState(obj, deleteState interface{}) error {
 // Test_Operator_ProcessCreate_NoResource ensures there is an error thrown when
 // executing ProcessCreate without having any resources provided.
 func Test_Operator_ProcessCreate_NoResource(t *testing.T) {
-	err := ProcessCreate(nil)
+	err := testMustNewFramework(t).ProcessCreate(nil)
 	if !IsExecutionFailed(err) {
 		t.Fatal("expected", true, "got", false)
 	}
@@ -51,7 +51,7 @@ func Test_Operator_ProcessCreate_NoResource(t *testing.T) {
 // Test_Operator_ProcessDelete_NoResource ensures there is an error thrown when
 // executing ProcessDelete without having any resources provided.
 func Test_Operator_ProcessDelete_NoResource(t *testing.T) {
-	err := ProcessDelete(nil)
+	err := testMustNewFramework(t).ProcessDelete(nil)
 	if !IsExecutionFailed(err) {
 		t.Fatal("expected", true, "got", false)
 	}
@@ -62,7 +62,7 @@ func Test_Operator_ProcessDelete_NoResource(t *testing.T) {
 func Test_Operator_ProcessCreate_ResourceOrder(t *testing.T) {
 	r := &testResource{}
 
-	err := ProcessCreate(nil, r)
+	err := testMustNewFramework(t).ProcessCreate(nil, r)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -83,7 +83,7 @@ func Test_Operator_ProcessCreate_ResourceOrder(t *testing.T) {
 func Test_Operator_ProcessDelete_ResourceOrder(t *testing.T) {
 	r := &testResource{}
 
-	err := ProcessDelete(nil, r)
+	err := testMustNewFramework(t).ProcessDelete(nil, r)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -97,4 +97,14 @@ func Test_Operator_ProcessDelete_ResourceOrder(t *testing.T) {
 	if !reflect.DeepEqual(e, r.Order) {
 		t.Fatal("expected", e, "got", r.Order)
 	}
+}
+
+func testMustNewFramework(t *testing.T) *Framework {
+	frameworkConfig := DefaultConfig()
+	newFramework, err := New(frameworkConfig)
+	if err != nil {
+		t.Fatal("expected", nil, "got", err)
+	}
+
+	return newFramework
 }
