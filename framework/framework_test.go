@@ -39,27 +39,27 @@ func (r *testResource) ProcessDeleteState(obj, deleteState interface{}) error {
 	return nil
 }
 
-// Test_Operator_ProcessCreate_NoResource ensures there is an error thrown when
+// Test_Framework_ProcessCreate_NoResource ensures there is an error thrown when
 // executing ProcessCreate without having any resources provided.
-func Test_Operator_ProcessCreate_NoResource(t *testing.T) {
+func Test_Framework_ProcessCreate_NoResource(t *testing.T) {
 	err := testMustNewFramework(t).ProcessCreate(nil)
 	if !IsExecutionFailed(err) {
 		t.Fatal("expected", true, "got", false)
 	}
 }
 
-// Test_Operator_ProcessDelete_NoResource ensures there is an error thrown when
+// Test_Framework_ProcessDelete_NoResource ensures there is an error thrown when
 // executing ProcessDelete without having any resources provided.
-func Test_Operator_ProcessDelete_NoResource(t *testing.T) {
+func Test_Framework_ProcessDelete_NoResource(t *testing.T) {
 	err := testMustNewFramework(t).ProcessDelete(nil)
 	if !IsExecutionFailed(err) {
 		t.Fatal("expected", true, "got", false)
 	}
 }
 
-// Test_Operator_ProcessCreate_ResourceOrder ensures the resource's methods are
+// Test_Framework_ProcessCreate_ResourceOrder ensures the resource's methods are
 // executed as expected when creating resources.
-func Test_Operator_ProcessCreate_ResourceOrder(t *testing.T) {
+func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 	r := &testResource{}
 
 	err := testMustNewFramework(t).ProcessCreate(nil, r)
@@ -78,9 +78,9 @@ func Test_Operator_ProcessCreate_ResourceOrder(t *testing.T) {
 	}
 }
 
-// Test_Operator_ProcessDelete_ResourceOrder ensures the resource's methods are
+// Test_Framework_ProcessDelete_ResourceOrder ensures the resource's methods are
 // executed as expected when deleting resources.
-func Test_Operator_ProcessDelete_ResourceOrder(t *testing.T) {
+func Test_Framework_ProcessDelete_ResourceOrder(t *testing.T) {
 	r := &testResource{}
 
 	err := testMustNewFramework(t).ProcessDelete(nil, r)
