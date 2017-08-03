@@ -1,4 +1,4 @@
-package operator
+package framework
 
 import (
 	"github.com/giantswarm/microerror"
