@@ -1,4 +1,4 @@
-package operator
+package framework
 
 // Resource implements the building blocks of any resource business logic being
 // reconciled when observing TPRs. This interface provides a guideline for an
