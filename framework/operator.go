@@ -2,7 +2,54 @@ package framework
 
 import (
 	"github.com/giantswarm/microerror"
+	"github.com/giantswarm/micrologger"
 )
+
+// Config represents the configuration used to create a new operator framework.
+type Config struct {
+	// Dependencies.
+	Logger micrologger.Logger
+}
+
+// DefaultConfig provides a default configuration to create a new operator
+// framework by best effort.
+func DefaultConfig() Config {
+	var err error
+
+	var newLogger micrologger.Logger
+	{
+		config := micrologger.DefaultConfig()
+		newLogger, err = micrologger.New(config)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	return Config{
+		// Dependencies.
+		Logger: newLogger,
+	}
+}
+
+// New creates a new configured operator framework.
+func New(config Config) (*Framework, error) {
+	// Dependencies.
+	if config.Logger == nil {
+		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
+	}
+
+	newFramework := &Framework{
+		// Dependencies.
+		logger: config.Logger,
+	}
+
+	return newFramework, nil
+}
+
+type Framework struct {
+	// Dependencies.
+	logger micrologger.Logger
+}
 
 // ProcessCreate is a drop-in for an informer's AddFunc. It receives the custom
 // object observed during TPR watches and anything that implements Resource.
@@ -20,7 +67,7 @@ import (
 //         AddFunc:    addFunc,
 //     }
 //
-func ProcessCreate(obj interface{}, resources ...Resource) error {
+func (f *Framework) ProcessCreate(obj interface{}, resources ...Resource) error {
 	if len(resources) == 0 {
 		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}
@@ -66,7 +113,7 @@ func ProcessCreate(obj interface{}, resources ...Resource) error {
 //         DeleteFunc:    deleteFunc,
 //     }
 //
-func ProcessDelete(obj interface{}, resources ...Resource) error {
+func (f *Framework) ProcessDelete(obj interface{}, resources ...Resource) error {
 	if len(resources) == 0 {
 		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}
