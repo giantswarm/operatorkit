@@ -1,9 +1,6 @@
 package framework
 
 import (
-	"fmt"
-	"time"
-
 	"github.com/cenk/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
@@ -102,23 +99,28 @@ func (f *Framework) ProcessCreate(obj interface{}, resources []Resource) error {
 }
 
 // ProcessCreateWithBackoff is the same as ProcessCreate but takes an additional
-// backoff implementation to retry the creation on error. Errors are logged
-// eventually in case an appropriate logger is configured.
-func (f *Framework) ProcessCreateWithBackoff(obj interface{}, resources []Resource, b backoff.BackOff) error {
-	o := func() error {
-		err := f.ProcessCreate(obj, resources)
+// backoff factory returning new backoff implementations to retry the creation
+// on resource errors. Retries are implemented using a retry resource that wraps
+// each given resource. Errors are logged eventually in case an appropriate
+// logger is configured in the operator framework.
+func (f *Framework) ProcessCreateWithBackoff(obj interface{}, resources []Resource, backoffFactory func() backoff.BackOff) error {
+	var retryResources []Resource
+
+	for _, r := range resources {
+		resourceConfig := DefaultRetryResourceConfig()
+		resourceConfig.BackOff = backoffFactory()
+		resourceConfig.Logger = f.logger
+		resourceConfig.Resource = r
+
+		retryResource, err := NewRetryResource(resourceConfig)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
-		return nil
+		retryResources = append(retryResources, retryResource)
 	}
 
-	n := func(err error, dur time.Duration) {
-		f.logger.Log("debug", fmt.Sprintf("retrying creation due to error (%s)", err.Error()))
-	}
-
-	err := backoff.RetryNotify(o, b, n)
+	err := f.ProcessCreate(obj, retryResources)
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -173,23 +175,28 @@ func (f *Framework) ProcessDelete(obj interface{}, resources []Resource) error {
 }
 
 // ProcessDeleteWithBackoff is the same as ProcessDelete but takes an additional
-// backoff implementation to retry the deletion on error. Errors are logged
-// eventually in case an appropriate logger is configured.
-func (f *Framework) ProcessDeleteWithBackoff(obj interface{}, resources []Resource, b backoff.BackOff) error {
-	o := func() error {
-		err := f.ProcessDelete(obj, resources)
+// backoff factory returning new backoff implementations to retry the deletion
+// on resource errors. Retries are implemented using a retry resource that wraps
+// each given resource. Errors are logged eventually in case an appropriate
+// logger is configured in the operator framework.
+func (f *Framework) ProcessDeleteWithBackoff(obj interface{}, resources []Resource, backoffFactory func() backoff.BackOff) error {
+	var retryResources []Resource
+
+	for _, r := range resources {
+		resourceConfig := DefaultRetryResourceConfig()
+		resourceConfig.BackOff = backoffFactory()
+		resourceConfig.Logger = f.logger
+		resourceConfig.Resource = r
+
+		retryResource, err := NewRetryResource(resourceConfig)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
-		return nil
+		retryResources = append(retryResources, retryResource)
 	}
 
-	n := func(err error, dur time.Duration) {
-		f.logger.Log("debug", fmt.Sprintf("retrying deletion due to error (%s)", err.Error()))
-	}
-
-	err := backoff.RetryNotify(o, b, n)
+	err := f.ProcessDelete(obj, retryResources)
 	if err != nil {
 		return microerror.Mask(err)
 	}
