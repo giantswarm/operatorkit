@@ -305,6 +305,14 @@ func (r *testResource) ProcessCreateState(obj, createState interface{}) error {
 	return nil
 }
 
+func (r *testResource) Name() string {
+	return "testResource"
+}
+
+func (r *testResource) Origin() framework.Resource {
+	return r
+}
+
 func (r *testResource) ProcessDeleteState(obj, deleteState interface{}) error {
 	m := "ProcessDeleteState"
 	r.Order = append(r.Order, m)

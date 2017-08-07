@@ -134,6 +134,14 @@ func (r *testResource) GetDeleteState(obj, currentState, desiredState interface{
 	return nil, nil
 }
 
+func (r *testResource) Name() string {
+	return "testResource"
+}
+
+func (r *testResource) Origin() Resource {
+	return r
+}
+
 func (r *testResource) ProcessCreateState(obj, createState interface{}) error {
 	m := "ProcessCreateState"
 	r.Order = append(r.Order, m)

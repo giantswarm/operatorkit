@@ -32,6 +32,16 @@ type Resource interface {
 	// current and desired state and returns the state intended to be deleted by
 	// ProcessDeleteState.
 	GetDeleteState(obj, currentState, desiredState interface{}) (interface{}, error)
+	// Name returns the resource's name used for identification.
+	Name() string
+	// Origin returns the underlying resource which is wrapped by the calling
+	// resource. Origin must always return a non nil resource. Otherwise proper
+	// resource chaining and execution cannot be guaranteed. In case a resource
+	// does not wrap any other resource, Origin must return  the resource that
+	// does not wrap any resource. The returned resource is then the origin of the
+	// chain. In combination with Name, Origin can be used for proper
+	// identification.
+	Origin() Resource
 	// ProcessCreateState receives the custom object observed during TPR watches.
 	// It also receives the state intended to be created as provided by
 	// GetCreateState. ProcessCreateState only has to create resources based on
