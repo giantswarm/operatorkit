@@ -1,4 +1,4 @@
-package retry
+package retryresource
 
 import (
 	"fmt"
@@ -7,21 +7,21 @@ import (
 	"github.com/cenk/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-	"github.com/giantswarm/operatorkit/framework/spec"
+
+	"github.com/giantswarm/operatorkit/framework"
 )
 
-// ResourceConfig represents the configuration used to create a new retry
-// resource.
-type ResourceConfig struct {
+// Config represents the configuration used to create a new retry resource.
+type Config struct {
 	// Dependencies.
 	BackOff  backoff.BackOff
 	Logger   micrologger.Logger
-	Resource spec.Resource
+	Resource framework.Resource
 }
 
-// DefaultResourceConfig provides a default configuration to create a new retry
-// resource by best effort.
-func DefaultResourceConfig() ResourceConfig {
+// DefaultConfig provides a default configuration to create a new retry resource
+// by best effort.
+func DefaultConfig() Config {
 	var err error
 
 	var newLogger micrologger.Logger
@@ -33,7 +33,7 @@ func DefaultResourceConfig() ResourceConfig {
 		}
 	}
 
-	return ResourceConfig{
+	return Config{
 		// Dependencies.
 		BackOff:  backoff.NewExponentialBackOff(),
 		Logger:   newLogger,
@@ -41,8 +41,8 @@ func DefaultResourceConfig() ResourceConfig {
 	}
 }
 
-// NewResource creates a new configured retry resource.
-func NewResource(config ResourceConfig) (*Resource, error) {
+// New creates a new configured retry resource.
+func New(config Config) (*Resource, error) {
 	// Dependencies.
 	if config.BackOff == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.BackOff must not be empty")
@@ -68,7 +68,7 @@ type Resource struct {
 	// Dependencies.
 	backOff  backoff.BackOff
 	logger   micrologger.Logger
-	resource spec.Resource
+	resource framework.Resource
 }
 
 func (r *Resource) GetCurrentState(obj interface{}) (interface{}, error) {

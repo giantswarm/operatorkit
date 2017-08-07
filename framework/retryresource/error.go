@@ -1,4 +1,4 @@
-package retry
+package retryresource
 
 import (
 	"github.com/juju/errgo"

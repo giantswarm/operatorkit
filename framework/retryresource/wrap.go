@@ -1,17 +1,17 @@
-package retry
+package retryresource
 
 import (
 	"github.com/cenk/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-	"github.com/giantswarm/operatorkit/framework/spec"
+
+	"github.com/giantswarm/operatorkit/framework"
 )
 
 // WrapConfig is the configuration used to wrap resources with retry resources.
 type WrapConfig struct {
 	BackOffFactory func() backoff.BackOff
 	Logger         micrologger.Logger
-	Resources      []spec.Resource
 }
 
 // DefaultWrapConfig provides a default configuration to wrap resource with
@@ -32,32 +32,28 @@ func DefaultWrapConfig() WrapConfig {
 		// Dependencies.
 		BackOffFactory: func() backoff.BackOff { return &backoff.ZeroBackOff{} },
 		Logger:         newLogger,
-		Resources:      nil,
 	}
 }
 
 // Wrap wraps each given resource with a retry resource and returns the list of
 // wrapped resources.
-func Wrap(config WrapConfig) ([]spec.Resource, error) {
+func Wrap(resources []framework.Resource, config WrapConfig) ([]framework.Resource, error) {
 	if config.BackOffFactory == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.BackOffFactory must not be empty")
 	}
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
 	}
-	if len(config.Resources) == 0 {
-		return nil, microerror.Maskf(invalidConfigError, "config.Resources must not be empty")
-	}
 
-	var wrapped []spec.Resource
+	var wrapped []framework.Resource
 
-	for _, r := range config.Resources {
-		resourceConfig := DefaultResourceConfig()
+	for _, r := range resources {
+		resourceConfig := DefaultConfig()
 		resourceConfig.BackOff = config.BackOffFactory()
 		resourceConfig.Logger = config.Logger
 		resourceConfig.Resource = r
 
-		retryResource, err := NewResource(resourceConfig)
+		retryResource, err := New(resourceConfig)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}

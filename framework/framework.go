@@ -3,7 +3,6 @@ package framework
 import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-	"github.com/giantswarm/operatorkit/framework/spec"
 )
 
 // Config represents the configuration used to create a new operator framework.
@@ -68,7 +67,7 @@ type Framework struct {
 //         AddFunc:    addFunc,
 //     }
 //
-func (f *Framework) ProcessCreate(obj interface{}, resources []spec.Resource) error {
+func (f *Framework) ProcessCreate(obj interface{}, resources []Resource) error {
 	if len(resources) == 0 {
 		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}
@@ -114,7 +113,7 @@ func (f *Framework) ProcessCreate(obj interface{}, resources []spec.Resource) er
 //         DeleteFunc:    deleteFunc,
 //     }
 //
-func (f *Framework) ProcessDelete(obj interface{}, resources []spec.Resource) error {
+func (f *Framework) ProcessDelete(obj interface{}, resources []Resource) error {
 	if len(resources) == 0 {
 		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}

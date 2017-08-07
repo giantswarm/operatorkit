@@ -3,10 +3,6 @@ package framework
 import (
 	"reflect"
 	"testing"
-
-	"github.com/cenk/backoff"
-	"github.com/giantswarm/operatorkit/framework/resource/retry"
-	"github.com/giantswarm/operatorkit/framework/spec"
 )
 
 // Test_Framework_ProcessCreate_NoResource ensures there is an error thrown when
@@ -31,7 +27,7 @@ func Test_Framework_ProcessDelete_NoResource(t *testing.T) {
 // executed as expected when creating resources.
 func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 	tr := &testResource{}
-	rs := []spec.Resource{
+	rs := []Resource{
 		tr,
 	}
 
@@ -51,241 +47,15 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 	}
 }
 
-// Test_Framework_ProcessCreate_ResourceOrder_Retry ensures the resource's
-// methods are executed as expected when retrying the creation process.
-func Test_Framework_ProcessCreate_ResourceOrder_Retry(t *testing.T) {
-	testCases := []struct {
-		ErrorCount          int
-		ErrorMethod         string
-		ExpectedMethodOrder []string
-	}{
-		{
-			ErrorCount:  1,
-			ErrorMethod: "GetCurrentState",
-			ExpectedMethodOrder: []string{
-				"GetCurrentState",
-				"GetCurrentState",
-				"GetDesiredState",
-				"GetCreateState",
-				"ProcessCreateState",
-			},
-		},
-		{
-			ErrorCount:  2,
-			ErrorMethod: "GetCurrentState",
-			ExpectedMethodOrder: []string{
-				"GetCurrentState",
-				"GetCurrentState",
-				"GetCurrentState",
-				"GetDesiredState",
-				"GetCreateState",
-				"ProcessCreateState",
-			},
-		},
-		{
-			ErrorCount:  2,
-			ErrorMethod: "ProcessCreateState",
-			ExpectedMethodOrder: []string{
-				"GetCurrentState",
-				"GetDesiredState",
-				"GetCreateState",
-				"ProcessCreateState",
-				"ProcessCreateState",
-				"ProcessCreateState",
-			},
-		},
-	}
-
-	for i, tc := range testCases {
-		tr := &testResource{
-			Error:       executionFailedError,
-			ErrorCount:  tc.ErrorCount,
-			ErrorMethod: tc.ErrorMethod,
-		}
-		rs := []spec.Resource{
-			tr,
-		}
-		bf := func() backoff.BackOff {
-			return &backoff.ZeroBackOff{}
-		}
-
-		config := retry.DefaultWrapConfig()
-		config.BackOffFactory = bf
-		config.Resources = rs
-		wrapped, err := retry.Wrap(config)
-		if err != nil {
-			t.Fatal("test", i+1, "expected", nil, "got", err)
-		}
-
-		err = testMustNewFramework(t).ProcessCreate(nil, wrapped)
-		if err != nil {
-			t.Fatal("test", i+1, "expected", nil, "got", err)
-		}
-
-		if !reflect.DeepEqual(tc.ExpectedMethodOrder, tr.Order) {
-			t.Fatal("test", i+1, "expected", tc.ExpectedMethodOrder, "got", tr.Order)
-		}
-	}
-}
-
-// Test_Framework_ProcessCreate_ResourceOrder_RetryResource ensures the
-// resource's methods are executed as expected when creating resources using the
-// wrapping retry resource.
-func Test_Framework_ProcessCreate_ResourceOrder_RetryResource(t *testing.T) {
-	tr := &testResource{}
-	rs := []spec.Resource{
-		tr,
-	}
-	bf := func() backoff.BackOff {
-		return &backoff.ZeroBackOff{}
-	}
-
-	config := retry.DefaultWrapConfig()
-	config.BackOffFactory = bf
-	config.Resources = rs
-	wrapped, err := retry.Wrap(config)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
-
-	err = testMustNewFramework(t).ProcessCreate(nil, wrapped)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
-
-	e := []string{
-		"GetCurrentState",
-		"GetDesiredState",
-		"GetCreateState",
-		"ProcessCreateState",
-	}
-	if !reflect.DeepEqual(e, tr.Order) {
-		t.Fatal("expected", e, "got", tr.Order)
-	}
-}
-
 // Test_Framework_ProcessDelete_ResourceOrder ensures the resource's methods are
 // executed as expected when deleting resources.
 func Test_Framework_ProcessDelete_ResourceOrder(t *testing.T) {
 	tr := &testResource{}
-	rs := []spec.Resource{
+	rs := []Resource{
 		tr,
 	}
 
 	err := testMustNewFramework(t).ProcessDelete(nil, rs)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
-
-	e := []string{
-		"GetCurrentState",
-		"GetDesiredState",
-		"GetDeleteState",
-		"ProcessDeleteState",
-	}
-	if !reflect.DeepEqual(e, tr.Order) {
-		t.Fatal("expected", e, "got", tr.Order)
-	}
-}
-
-// Test_Operator_ProcessDelete_ResourceOrder_Retry ensures the resource's
-// methods are executed as expected when retrying the deletion process.
-func Test_Operator_ProcessDelete_ResourceOrder_Retry(t *testing.T) {
-	testCases := []struct {
-		ErrorCount          int
-		ErrorMethod         string
-		ExpectedMethodOrder []string
-	}{
-		{
-			ErrorCount:  1,
-			ErrorMethod: "GetCurrentState",
-			ExpectedMethodOrder: []string{
-				"GetCurrentState",
-				"GetCurrentState",
-				"GetDesiredState",
-				"GetDeleteState",
-				"ProcessDeleteState",
-			},
-		},
-		{
-			ErrorCount:  2,
-			ErrorMethod: "GetCurrentState",
-			ExpectedMethodOrder: []string{
-				"GetCurrentState",
-				"GetCurrentState",
-				"GetCurrentState",
-				"GetDesiredState",
-				"GetDeleteState",
-				"ProcessDeleteState",
-			},
-		},
-		{
-			ErrorCount:  2,
-			ErrorMethod: "ProcessDeleteState",
-			ExpectedMethodOrder: []string{
-				"GetCurrentState",
-				"GetDesiredState",
-				"GetDeleteState",
-				"ProcessDeleteState",
-				"ProcessDeleteState",
-				"ProcessDeleteState",
-			},
-		},
-	}
-
-	for i, tc := range testCases {
-		tr := &testResource{
-			Error:       executionFailedError,
-			ErrorCount:  tc.ErrorCount,
-			ErrorMethod: tc.ErrorMethod,
-		}
-		rs := []spec.Resource{
-			tr,
-		}
-		bf := func() backoff.BackOff {
-			return &backoff.ZeroBackOff{}
-		}
-
-		config := retry.DefaultWrapConfig()
-		config.BackOffFactory = bf
-		config.Resources = rs
-		wrapped, err := retry.Wrap(config)
-		if err != nil {
-			t.Fatal("test", i+1, "expected", nil, "got", err)
-		}
-
-		err = testMustNewFramework(t).ProcessDelete(nil, wrapped)
-		if err != nil {
-			t.Fatal("test", i+1, "expected", nil, "got", err)
-		}
-
-		if !reflect.DeepEqual(tc.ExpectedMethodOrder, tr.Order) {
-			t.Fatal("test", i+1, "expected", tc.ExpectedMethodOrder, "got", tr.Order)
-		}
-	}
-}
-
-// Test_Operator_ProcessDelete_ResourceOrder_RetryResource ensures the
-// resource's methods are executed as expected when deleting resources using the
-// wrapping retry resource.
-func Test_Operator_ProcessDelete_ResourceOrder_RetryResource(t *testing.T) {
-	tr := &testResource{}
-	rs := []spec.Resource{
-		tr,
-	}
-	bf := func() backoff.BackOff {
-		return &backoff.ZeroBackOff{}
-	}
-
-	config := retry.DefaultWrapConfig()
-	config.BackOffFactory = bf
-	config.Resources = rs
-	wrapped, err := retry.Wrap(config)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
-
-	err = testMustNewFramework(t).ProcessDelete(nil, wrapped)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
