@@ -1,7 +1,6 @@
 package framework
 
 import (
-	"github.com/cenk/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 )
@@ -98,36 +97,6 @@ func (f *Framework) ProcessCreate(obj interface{}, resources []Resource) error {
 	return nil
 }
 
-// ProcessCreateWithBackoff is the same as ProcessCreate but takes an additional
-// backoff factory returning new backoff implementations to retry the creation
-// on resource errors. Retries are implemented using a retry resource that wraps
-// each given resource. Errors are logged eventually in case an appropriate
-// logger is configured in the operator framework.
-func (f *Framework) ProcessCreateWithBackoff(obj interface{}, resources []Resource, backoffFactory func() backoff.BackOff) error {
-	var retryResources []Resource
-
-	for _, r := range resources {
-		resourceConfig := DefaultRetryResourceConfig()
-		resourceConfig.BackOff = backoffFactory()
-		resourceConfig.Logger = f.logger
-		resourceConfig.Resource = r
-
-		retryResource, err := NewRetryResource(resourceConfig)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-
-		retryResources = append(retryResources, retryResource)
-	}
-
-	err := f.ProcessCreate(obj, retryResources)
-	if err != nil {
-		return microerror.Mask(err)
-	}
-
-	return nil
-}
-
 // ProcessDelete is a drop-in for an informer's DeleteFunc. It receives the
 // custom object observed during TPR watches and anything that implements
 // Resource. ProcessDelete takes care about all necessary reconciliation logic
@@ -169,36 +138,6 @@ func (f *Framework) ProcessDelete(obj interface{}, resources []Resource) error {
 		if err != nil {
 			return microerror.Mask(err)
 		}
-	}
-
-	return nil
-}
-
-// ProcessDeleteWithBackoff is the same as ProcessDelete but takes an additional
-// backoff factory returning new backoff implementations to retry the deletion
-// on resource errors. Retries are implemented using a retry resource that wraps
-// each given resource. Errors are logged eventually in case an appropriate
-// logger is configured in the operator framework.
-func (f *Framework) ProcessDeleteWithBackoff(obj interface{}, resources []Resource, backoffFactory func() backoff.BackOff) error {
-	var retryResources []Resource
-
-	for _, r := range resources {
-		resourceConfig := DefaultRetryResourceConfig()
-		resourceConfig.BackOff = backoffFactory()
-		resourceConfig.Logger = f.logger
-		resourceConfig.Resource = r
-
-		retryResource, err := NewRetryResource(resourceConfig)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-
-		retryResources = append(retryResources, retryResource)
-	}
-
-	err := f.ProcessDelete(obj, retryResources)
-	if err != nil {
-		return microerror.Mask(err)
 	}
 
 	return nil
