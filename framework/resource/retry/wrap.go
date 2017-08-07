@@ -36,7 +36,7 @@ func DefaultWrapConfig() WrapConfig {
 	}
 }
 
-// Wrap wrapps each given resource with a retry resource and returns the list of
+// Wrap wraps each given resource with a retry resource and returns the list of
 // wrapped resources.
 func Wrap(config WrapConfig) ([]spec.Resource, error) {
 	if config.BackOffFactory == nil {
