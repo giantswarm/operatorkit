@@ -78,7 +78,7 @@ func New(config Config) (*Resource, error) {
 				Namespace: config.Namespace,
 				Subsystem: config.Subsystem,
 				Name:      "operatorkit_framework_operation_total",
-				Help:      "Amount of total processed operations.",
+				Help:      "Number of processed reconciliation operations.",
 			},
 			[]string{"operation"},
 		)
