@@ -9,7 +9,7 @@ import (
 	"github.com/giantswarm/operatorkit/framework"
 )
 
-var (
+const (
 	// Name is the identifier of the resource.
 	Name = "metrics"
 )
