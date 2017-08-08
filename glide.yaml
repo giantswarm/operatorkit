@@ -8,6 +8,8 @@ import:
   version: v1.0.0
 - package: k8s.io/client-go
   version: v3.0.0
+- package: github.com/prometheus/client_golang
+  version: ^0.8.0
 testImport:
 - package: github.com/stretchr/testify
   version: v1.1.4

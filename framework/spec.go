@@ -32,6 +32,8 @@ type Resource interface {
 	// current and desired state and returns the state intended to be deleted by
 	// ProcessDeleteState.
 	GetDeleteState(obj, currentState, desiredState interface{}) (interface{}, error)
+	// Name returns the resource's name used for identification.
+	Name() string
 	// ProcessCreateState receives the custom object observed during TPR watches.
 	// It also receives the state intended to be created as provided by
 	// GetCreateState. ProcessCreateState only has to create resources based on
@@ -44,4 +46,12 @@ type Resource interface {
 	// its provided input. All other reconciliation logic and state transformation
 	// is already done at this point of the reconciliation loop.
 	ProcessDeleteState(obj, deleteState interface{}) error
+	// Underlying returns the underlying resource which is wrapped by the calling
+	// resource. Underlying must always return a non nil resource. Otherwise
+	// proper resource chaining and execution cannot be guaranteed. In case a
+	// resource does not wrap any other resource, Underlying must return the
+	// resource that does not wrap any resource. The returned resource is then the
+	// origin, the underlying resource of the chain. In combination with Name,
+	// Underlying can be used for proper identification.
+	Underlying() Resource
 }

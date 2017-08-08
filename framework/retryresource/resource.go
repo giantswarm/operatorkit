@@ -11,6 +11,11 @@ import (
 	"github.com/giantswarm/operatorkit/framework"
 )
 
+var (
+	// Name is the identifier of the resource.
+	Name = "retry"
+)
+
 // Config represents the configuration used to create a new retry resource.
 type Config struct {
 	// Dependencies.
@@ -85,7 +90,7 @@ func (r *Resource) GetCurrentState(obj interface{}) (interface{}, error) {
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.Log("warning", fmt.Sprintf("retrying 'GetCurrentState' due to error (%s)", err.Error()))
+		r.logger.Log("warning", fmt.Sprintf("retrying 'GetCurrentState' of resource '%s' due to error (%s)", r.Underlying().Name(), err.Error()))
 	}
 
 	err = backoff.RetryNotify(o, r.backOff, n)
@@ -110,7 +115,7 @@ func (r *Resource) GetDesiredState(obj interface{}) (interface{}, error) {
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.Log("warning", fmt.Sprintf("retrying 'GetDesiredState' due to error (%s)", err.Error()))
+		r.logger.Log("warning", fmt.Sprintf("retrying 'GetDesiredState' of resource '%s' due to error (%s)", r.Underlying().Name(), err.Error()))
 	}
 
 	err = backoff.RetryNotify(o, r.backOff, n)
@@ -135,7 +140,7 @@ func (r *Resource) GetCreateState(obj, currentState, desiredState interface{}) (
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.Log("warning", fmt.Sprintf("retrying 'GetCreateState' due to error (%s)", err.Error()))
+		r.logger.Log("warning", fmt.Sprintf("retrying 'GetCreateState' of resource '%s' due to error (%s)", r.Underlying().Name(), err.Error()))
 	}
 
 	err = backoff.RetryNotify(o, r.backOff, n)
@@ -160,7 +165,7 @@ func (r *Resource) GetDeleteState(obj, currentState, desiredState interface{}) (
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.Log("warning", fmt.Sprintf("retrying 'GetDeleteState' due to error (%s)", err.Error()))
+		r.logger.Log("warning", fmt.Sprintf("retrying 'GetDeleteState' of resource '%s' due to error (%s)", r.Underlying().Name(), err.Error()))
 	}
 
 	err = backoff.RetryNotify(o, r.backOff, n)
@@ -169,6 +174,10 @@ func (r *Resource) GetDeleteState(obj, currentState, desiredState interface{}) (
 	}
 
 	return v, nil
+}
+
+func (r *Resource) Name() string {
+	return Name
 }
 
 func (r *Resource) ProcessCreateState(obj, createState interface{}) error {
@@ -182,7 +191,7 @@ func (r *Resource) ProcessCreateState(obj, createState interface{}) error {
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.Log("warning", fmt.Sprintf("retrying 'ProcessCreateState' due to error (%s)", err.Error()))
+		r.logger.Log("warning", fmt.Sprintf("retrying 'ProcessCreateState' of resource '%s' due to error (%s)", r.Underlying().Name(), err.Error()))
 	}
 
 	err := backoff.RetryNotify(o, r.backOff, n)
@@ -204,7 +213,7 @@ func (r *Resource) ProcessDeleteState(obj, deleteState interface{}) error {
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.Log("warning", fmt.Sprintf("retrying 'ProcessDeleteState' due to error (%s)", err.Error()))
+		r.logger.Log("warning", fmt.Sprintf("retrying 'ProcessDeleteState' of resource '%s' due to error (%s)", r.Underlying().Name(), err.Error()))
 	}
 
 	err := backoff.RetryNotify(o, r.backOff, n)
@@ -213,4 +222,8 @@ func (r *Resource) ProcessDeleteState(obj, deleteState interface{}) error {
 	}
 
 	return nil
+}
+
+func (r *Resource) Underlying() framework.Resource {
+	return r.resource.Underlying()
 }
