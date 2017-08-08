@@ -51,7 +51,7 @@ type Resource interface {
 	// proper resource chaining and execution cannot be guaranteed. In case a
 	// resource does not wrap any other resource, Underlying must return the
 	// resource that does not wrap any resource. The returned resource is then the
-	// origin of the chain. In combination with Name, Underlying can be used for
-	// proper identification.
+	// origin, the underlying resource of the chain. In combination with Name,
+	// Underlying can be used for proper identification.
 	Underlying() Resource
 }
