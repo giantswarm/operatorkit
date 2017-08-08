@@ -66,8 +66,8 @@ func New(config Config) (*Resource, error) {
 	{
 		operationDuration = prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
-				Namespace: config.Namespace,
-				Subsystem: config.Subsystem,
+				Namespace: toCamelCase(config.Namespace),
+				Subsystem: toCamelCase(config.Subsystem),
 				Name:      "operatorkit_framework_operation_duration_milliseconds",
 				Help:      "Time taken to process a single reconciliation operation.",
 			},
@@ -75,8 +75,8 @@ func New(config Config) (*Resource, error) {
 		)
 		operationTotal = prometheus.NewCounterVec(
 			prometheus.CounterOpts{
-				Namespace: config.Namespace,
-				Subsystem: config.Subsystem,
+				Namespace: toCamelCase(config.Namespace),
+				Subsystem: toCamelCase(config.Subsystem),
 				Name:      "operatorkit_framework_operation_total",
 				Help:      "Number of processed reconciliation operations.",
 			},
