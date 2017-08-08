@@ -156,10 +156,6 @@ func (r *Resource) Name() string {
 	return Name
 }
 
-func (r *Resource) Origin() framework.Resource {
-	return r.resource.Origin()
-}
-
 func (r *Resource) ProcessCreateState(obj, createState interface{}) error {
 	defer r.updateMetrics("ProcessCreateState", time.Now())
 
@@ -180,6 +176,10 @@ func (r *Resource) ProcessDeleteState(obj, deleteState interface{}) error {
 	}
 
 	return nil
+}
+
+func (r *Resource) Underlying() framework.Resource {
+	return r.resource.Underlying()
 }
 
 func (r *Resource) updateMetrics(operation string, startTime time.Time) {

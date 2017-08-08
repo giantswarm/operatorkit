@@ -309,10 +309,6 @@ func (r *testResource) Name() string {
 	return "testResource"
 }
 
-func (r *testResource) Origin() framework.Resource {
-	return r
-}
-
 func (r *testResource) ProcessDeleteState(obj, deleteState interface{}) error {
 	m := "ProcessDeleteState"
 	r.Order = append(r.Order, m)
@@ -322,6 +318,10 @@ func (r *testResource) ProcessDeleteState(obj, deleteState interface{}) error {
 	}
 
 	return nil
+}
+
+func (r *testResource) Underlying() framework.Resource {
+	return r
 }
 
 func (r *testResource) returnErrorFor(errorMethod string) bool {

@@ -37,7 +37,7 @@ func Wrap(resources []framework.Resource, config WrapConfig) ([]framework.Resour
 		resourceConfig := DefaultConfig()
 		resourceConfig.Namespace = config.Namespace
 		resourceConfig.Resource = r
-		resourceConfig.Subsystem = r.Origin().Name()
+		resourceConfig.Subsystem = r.Underlying().Name()
 
 		prometheusResource, err := New(resourceConfig)
 		if err != nil {

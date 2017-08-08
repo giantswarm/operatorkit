@@ -117,10 +117,6 @@ func (r *testResource) Name() string {
 	return "testResource"
 }
 
-func (r *testResource) Origin() framework.Resource {
-	return r
-}
-
 func (r *testResource) ProcessCreateState(obj, createState interface{}) error {
 	m := "ProcessCreateState"
 	r.Order = append(r.Order, m)
@@ -133,4 +129,8 @@ func (r *testResource) ProcessDeleteState(obj, deleteState interface{}) error {
 	r.Order = append(r.Order, m)
 
 	return nil
+}
+
+func (r *testResource) Underlying() framework.Resource {
+	return r
 }

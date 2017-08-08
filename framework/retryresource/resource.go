@@ -90,7 +90,7 @@ func (r *Resource) GetCurrentState(obj interface{}) (interface{}, error) {
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.Log("warning", fmt.Sprintf("retrying 'GetCurrentState' of resource '%s' due to error (%s)", r.Origin().Name(), err.Error()))
+		r.logger.Log("warning", fmt.Sprintf("retrying 'GetCurrentState' of resource '%s' due to error (%s)", r.Underlying().Name(), err.Error()))
 	}
 
 	err = backoff.RetryNotify(o, r.backOff, n)
@@ -115,7 +115,7 @@ func (r *Resource) GetDesiredState(obj interface{}) (interface{}, error) {
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.Log("warning", fmt.Sprintf("retrying 'GetDesiredState' of resource '%s' due to error (%s)", r.Origin().Name(), err.Error()))
+		r.logger.Log("warning", fmt.Sprintf("retrying 'GetDesiredState' of resource '%s' due to error (%s)", r.Underlying().Name(), err.Error()))
 	}
 
 	err = backoff.RetryNotify(o, r.backOff, n)
@@ -140,7 +140,7 @@ func (r *Resource) GetCreateState(obj, currentState, desiredState interface{}) (
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.Log("warning", fmt.Sprintf("retrying 'GetCreateState' of resource '%s' due to error (%s)", r.Origin().Name(), err.Error()))
+		r.logger.Log("warning", fmt.Sprintf("retrying 'GetCreateState' of resource '%s' due to error (%s)", r.Underlying().Name(), err.Error()))
 	}
 
 	err = backoff.RetryNotify(o, r.backOff, n)
@@ -165,7 +165,7 @@ func (r *Resource) GetDeleteState(obj, currentState, desiredState interface{}) (
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.Log("warning", fmt.Sprintf("retrying 'GetDeleteState' of resource '%s' due to error (%s)", r.Origin().Name(), err.Error()))
+		r.logger.Log("warning", fmt.Sprintf("retrying 'GetDeleteState' of resource '%s' due to error (%s)", r.Underlying().Name(), err.Error()))
 	}
 
 	err = backoff.RetryNotify(o, r.backOff, n)
@@ -180,10 +180,6 @@ func (r *Resource) Name() string {
 	return Name
 }
 
-func (r *Resource) Origin() framework.Resource {
-	return r.resource.Origin()
-}
-
 func (r *Resource) ProcessCreateState(obj, createState interface{}) error {
 	o := func() error {
 		err := r.resource.ProcessCreateState(obj, createState)
@@ -195,7 +191,7 @@ func (r *Resource) ProcessCreateState(obj, createState interface{}) error {
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.Log("warning", fmt.Sprintf("retrying 'ProcessCreateState' of resource '%s' due to error (%s)", r.Origin().Name(), err.Error()))
+		r.logger.Log("warning", fmt.Sprintf("retrying 'ProcessCreateState' of resource '%s' due to error (%s)", r.Underlying().Name(), err.Error()))
 	}
 
 	err := backoff.RetryNotify(o, r.backOff, n)
@@ -217,7 +213,7 @@ func (r *Resource) ProcessDeleteState(obj, deleteState interface{}) error {
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.Log("warning", fmt.Sprintf("retrying 'ProcessDeleteState' of resource '%s' due to error (%s)", r.Origin().Name(), err.Error()))
+		r.logger.Log("warning", fmt.Sprintf("retrying 'ProcessDeleteState' of resource '%s' due to error (%s)", r.Underlying().Name(), err.Error()))
 	}
 
 	err := backoff.RetryNotify(o, r.backOff, n)
@@ -226,4 +222,8 @@ func (r *Resource) ProcessDeleteState(obj, deleteState interface{}) error {
 	}
 
 	return nil
+}
+
+func (r *Resource) Underlying() framework.Resource {
+	return r.resource.Underlying()
 }
