@@ -30,7 +30,7 @@ func TestStack(t *testing.T) {
 	}{
 		{
 			desc:  "Mask depth=1 constructor=New",
-			depth: 1,
+			depth: 0,
 			newError: func() error {
 				err := New("test")
 				return err
@@ -38,7 +38,7 @@ func TestStack(t *testing.T) {
 		},
 		{
 			desc:  "Mask depth=2 constructor=New",
-			depth: 2,
+			depth: 1,
 			newError: func() error {
 				err := New("test")
 				err = Mask(err)
@@ -47,7 +47,7 @@ func TestStack(t *testing.T) {
 		},
 		{
 			desc:  "Mask/Maskf depth=3 constructor=Newf",
-			depth: 3,
+			depth: 2,
 			newError: func() error {
 				err := Newf("%s", "test")
 				err = Mask(err)
