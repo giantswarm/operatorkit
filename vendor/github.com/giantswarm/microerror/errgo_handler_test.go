@@ -38,7 +38,7 @@ func TestErrgoHandler_Stack(t *testing.T) {
 	}{
 		{
 			desc:  "Mask depth=1 constructor=handler.New",
-			depth: 1,
+			depth: 0,
 			newError: func() error {
 				h := NewErrgoHandler(DefaultErrgoHandlerConfig())
 
@@ -48,7 +48,7 @@ func TestErrgoHandler_Stack(t *testing.T) {
 		},
 		{
 			desc:  "Mask depth=2 constructor=handler.New",
-			depth: 2,
+			depth: 1,
 			newError: func() error {
 				h := NewErrgoHandler(DefaultErrgoHandlerConfig())
 
@@ -59,7 +59,7 @@ func TestErrgoHandler_Stack(t *testing.T) {
 		},
 		{
 			desc:  "Mask/Maskf depth=3 constructor=handler.Newf",
-			depth: 3,
+			depth: 2,
 			newError: func() error {
 				h := NewErrgoHandler(DefaultErrgoHandlerConfig())
 

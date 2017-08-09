@@ -1,6 +1,9 @@
 package microerror
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/juju/errgo"
 )
 
@@ -31,15 +34,11 @@ func NewErrgoHandler(config ErrgoHandlerConfig) *ErrgoHandler {
 }
 
 func (h *ErrgoHandler) New(s string) error {
-	err := errgo.New(s).(*errgo.Err)
-	err.SetLocation(h.callDepth)
-	return err
+	return errors.New(s)
 }
 
 func (h *ErrgoHandler) Newf(f string, v ...interface{}) error {
-	err := errgo.Newf(f, v...).(*errgo.Err)
-	err.SetLocation(h.callDepth)
-	return err
+	return fmt.Errorf(f, v...)
 }
 
 func (h *ErrgoHandler) Cause(err error) error {

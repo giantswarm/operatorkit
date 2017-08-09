@@ -4,7 +4,7 @@ package micrologger
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
+	"os"
 	"time"
 
 	kitlog "github.com/go-kit/kit/log"
@@ -30,7 +30,7 @@ func DefaultConfig() Config {
 		Caller: func() interface{} {
 			return fmt.Sprintf("%+v", stack.Caller(4))
 		},
-		IOWriter: ioutil.Discard,
+		IOWriter: os.Stdout,
 		TimestampFormatter: func() interface{} {
 			return time.Now().UTC().Format("06-01-02 15:04:05.000")
 		},
@@ -63,6 +63,12 @@ func New(config Config) (Logger, error) {
 
 type logger struct {
 	Logger kitlog.Logger
+}
+
+func (l *logger) With(keyvals ...interface{}) Logger {
+	return &logger{
+		Logger: kitlog.With(l.Logger, keyvals...),
+	}
 }
 
 func (l *logger) Log(keyvals ...interface{}) error {
