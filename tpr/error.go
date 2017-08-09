@@ -1,33 +1,33 @@
 package tpr
 
 import (
-	"github.com/juju/errgo"
+	"github.com/giantswarm/microerror"
 )
 
-var alreadyExistsError = errgo.New("already exists")
+var alreadyExistsError = microerror.New("already exists")
 
 // IsAlreadyExists asserts alreadyExistsError.
 func IsAlreadyExists(err error) bool {
-	return errgo.Cause(err) == alreadyExistsError
+	return microerror.Cause(err) == alreadyExistsError
 }
 
-var invalidConfigError = errgo.New("invalid config")
+var invalidConfigError = microerror.New("invalid config")
 
 // IsInvalidConfig asserts invalidConfigError.
 func IsInvalidConfig(err error) bool {
-	return errgo.Cause(err) == invalidConfigError
+	return microerror.Cause(err) == invalidConfigError
 }
 
-var malformedNameError = errgo.New("malformed name")
+var malformedNameError = microerror.New("malformed name")
 
 // IsMalformedName asserts malformedNameError.
 func IsMalformedName(err error) bool {
-	return errgo.Cause(err) == malformedNameError
+	return microerror.Cause(err) == malformedNameError
 }
 
-var tprInitTimeoutError = errgo.New("initialization timeout")
+var tprInitTimeoutError = microerror.New("initialization timeout")
 
 // IsTPRInitTimeout asserts tprInitTimeoutError.
 func IsTPRInitTimeout(err error) bool {
-	return errgo.Cause(err) == tprInitTimeoutError
+	return microerror.Cause(err) == tprInitTimeoutError
 }
