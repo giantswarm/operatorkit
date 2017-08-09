@@ -3,7 +3,7 @@ package tpr
 import (
 	"testing"
 
-	"github.com/juju/errgo"
+	"github.com/giantswarm/microerror"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,7 +36,7 @@ func TestExtractKindAndGroup(t *testing.T) {
 
 	for i, tc := range tests {
 		kind, group, err := extractKindAndGroup(tc.name)
-		assert.Equal(t, tc.expectedError, errgo.Cause(err), "#%d", i)
+		assert.Equal(t, tc.expectedError, microerror.Cause(err), "#%d", i)
 		assert.Equal(t, tc.expectedKind, kind, "#%d", i)
 		assert.Equal(t, tc.expectedGroup, group, "#%d", i)
 	}
