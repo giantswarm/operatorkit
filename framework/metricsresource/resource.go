@@ -152,6 +152,17 @@ func (r *Resource) GetDeleteState(obj, currentState, desiredState interface{}) (
 	return v, nil
 }
 
+func (r *Resource) GetUpdateState(obj, currentState, desiredState interface{}) (interface{}, interface{}, interface{}, error) {
+	defer r.updateMetrics("GetUpdateState", time.Now())
+
+	createState, deleteState, updateState, err := r.resource.GetUpdateState(obj, currentState, desiredState)
+	if err != nil {
+		return nil, nil, nil, microerror.Mask(err)
+	}
+
+	return createState, deleteState, updateState, nil
+}
+
 func (r *Resource) Name() string {
 	return Name
 }
@@ -171,6 +182,17 @@ func (r *Resource) ProcessDeleteState(obj, deleteState interface{}) error {
 	defer r.updateMetrics("ProcessDeleteState", time.Now())
 
 	err := r.resource.ProcessDeleteState(obj, deleteState)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	return nil
+}
+
+func (r *Resource) ProcessUpdateState(obj, updateState interface{}) error {
+	defer r.updateMetrics("ProcessUpdateState", time.Now())
+
+	err := r.resource.ProcessUpdateState(obj, updateState)
 	if err != nil {
 		return microerror.Mask(err)
 	}
