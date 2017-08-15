@@ -234,7 +234,7 @@ func Test_RetryResource_ProcessDelete_ResourceOrder(t *testing.T) {
 }
 
 // Test_RetryResource_ProcessUpdate_ResourceOrder_RetryOnError ensures the
-// resource's methods are executed as expected when retrying the deletion
+// resource's methods are executed as expected when retrying the update
 // process.
 func Test_RetryResource_ProcessUpdate_ResourceOrder_RetryOnError(t *testing.T) {
 	testCases := []struct {
@@ -317,7 +317,7 @@ func Test_RetryResource_ProcessUpdate_ResourceOrder_RetryOnError(t *testing.T) {
 }
 
 // Test_RetryResource_ProcessUpdate_ResourceOrder ensures the resource's methods
-// are executed as expected when deleting resources using the wrapping retry
+// are executed as expected when updating resources using the wrapping retry
 // resource.
 func Test_RetryResource_ProcessUpdate_ResourceOrder(t *testing.T) {
 	tr := &testResource{}
