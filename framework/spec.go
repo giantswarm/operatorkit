@@ -56,7 +56,7 @@ type Resource interface {
 	//
 	// NOTE simple resources not concerned with being updated do not have to
 	// implement anything but just fulfil the resource interface. More complex
-	// resources, e.g. these managing multiple entities of themselves at once may
+	// resources, e.g. those managing multiple entities of themselves at once may
 	// require a more complex update mechanism. Then multiple entities might be
 	// added, removed and modified over the course of the resource's lifecycle.
 	// This transformation has to be reflected by different states which are
