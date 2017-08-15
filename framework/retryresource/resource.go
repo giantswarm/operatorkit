@@ -178,6 +178,34 @@ func (r *Resource) GetDeleteState(obj, currentState, desiredState interface{}) (
 	return v, nil
 }
 
+func (r *Resource) GetUpdateState(obj, currentState, desiredState interface{}) (interface{}, interface{}, interface{}, error) {
+	var err error
+
+	var createState interface{}
+	var deleteState interface{}
+	var updateState interface{}
+
+	o := func() error {
+		createState, deleteState, updateState, err = r.resource.GetUpdateState(obj, currentState, desiredState)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
+		return nil
+	}
+
+	n := func(err error, dur time.Duration) {
+		r.logger.Log("warning", fmt.Sprintf("retrying 'GetUpdateState' due to error (%s)", err.Error()))
+	}
+
+	err = backoff.RetryNotify(o, r.backOff, n)
+	if err != nil {
+		return nil, nil, nil, microerror.Mask(err)
+	}
+
+	return createState, deleteState, updateState, nil
+}
+
 func (r *Resource) Name() string {
 	return Name
 }
@@ -216,6 +244,28 @@ func (r *Resource) ProcessDeleteState(obj, deleteState interface{}) error {
 
 	n := func(err error, dur time.Duration) {
 		r.logger.Log("warning", fmt.Sprintf("retrying 'ProcessDeleteState' due to error (%s)", err.Error()))
+	}
+
+	err := backoff.RetryNotify(o, r.backOff, n)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	return nil
+}
+
+func (r *Resource) ProcessUpdateState(obj, updateState interface{}) error {
+	o := func() error {
+		err := r.resource.ProcessUpdateState(obj, updateState)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
+		return nil
+	}
+
+	n := func(err error, dur time.Duration) {
+		r.logger.Log("warning", fmt.Sprintf("retrying 'ProcessUpdateState' due to error (%s)", err.Error()))
 	}
 
 	err := backoff.RetryNotify(o, r.backOff, n)
