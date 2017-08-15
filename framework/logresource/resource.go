@@ -110,6 +110,19 @@ func (r *Resource) GetDeleteState(obj, cur, des interface{}) (interface{}, error
 	return v, nil
 }
 
+func (r *Resource) GetUpdateState(obj, cur, des interface{}) (interface{}, interface{}, interface{}, error) {
+	r.logger.Log("debug", PreOperationMessage, "operation", "GetUpdateState")
+
+	createState, deleteState, updateState, err := r.resource.GetUpdateState(obj, cur, des)
+	if err != nil {
+		return nil, nil, nil, microerror.Mask(err)
+	}
+
+	r.logger.Log("debug", PostOperationMessage, "operation", "GetUpdateState")
+
+	return createState, deleteState, updateState, nil
+}
+
 func (r *Resource) Name() string {
 	return Name
 }
@@ -136,6 +149,19 @@ func (r *Resource) ProcessDeleteState(obj, del interface{}) error {
 	}
 
 	r.logger.Log("debug", PostOperationMessage, "operation", "ProcessDeleteState")
+
+	return nil
+}
+
+func (r *Resource) ProcessUpdateState(obj, upd interface{}) error {
+	r.logger.Log("debug", PreOperationMessage, "operation", "ProcessUpdateState")
+
+	err := r.resource.ProcessUpdateState(obj, upd)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	r.logger.Log("debug", PostOperationMessage, "operation", "ProcessUpdateState")
 
 	return nil
 }
