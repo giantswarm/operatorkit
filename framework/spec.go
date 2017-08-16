@@ -15,7 +15,7 @@ type Resource interface {
 	// called on create and delete events the provided custom object will be the
 	// custom object currently known to the informer. On update events the
 	// informer knows about the old and the new custom object. GetCurrentState
-	// then receives the old custom object to be able to consume the current state
+	// then receives the new custom object to be able to consume the current state
 	// of a system.
 	GetCurrentState(obj interface{}) (interface{}, error)
 	// GetDesiredState receives the custom object observed during TPR watches. Its

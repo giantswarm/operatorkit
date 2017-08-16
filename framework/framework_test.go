@@ -26,7 +26,7 @@ func Test_Framework_ProcessDelete_NoResource(t *testing.T) {
 // Test_Framework_ProcessUpdate_NoResource ensures there is an error thrown when
 // executing ProcessUpdate without having any resources provided.
 func Test_Framework_ProcessUpdate_NoResource(t *testing.T) {
-	err := testMustNewFramework(t).ProcessUpdate(nil, nil, nil)
+	err := testMustNewFramework(t).ProcessUpdate(nil, nil)
 	if !IsExecutionFailed(err) {
 		t.Fatal("expected", true, "got", false)
 	}
@@ -88,7 +88,7 @@ func Test_Framework_ProcessUpdate_ResourceOrder(t *testing.T) {
 		tr,
 	}
 
-	err := testMustNewFramework(t).ProcessUpdate(nil, nil, rs)
+	err := testMustNewFramework(t).ProcessUpdate(nil, rs)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}

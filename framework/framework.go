@@ -143,14 +143,14 @@ func (f *Framework) ProcessDelete(obj interface{}, resources []Resource) error {
 	return nil
 }
 
-// ProcessUpdate is a drop-in for an informer's UpdateFunc. It receives the
+// ProcessUpdate is a drop-in for an informer's UpdateFunc. It receives the new
 // custom object observed during TPR watches and anything that implements
 // Resource. ProcessUpdate takes care about all necessary reconciliation logic
 // for update events. For complex resources this means state has to be created,
 // deleted and updated eventually, in this order.
 //
-//     func updateFunc(oldObj, newObj interface{}) {
-//         err := f.ProcessUpdate(oldObj, newObj, resources)
+//     func updateFunc(newObj interface{}) {
+//         err := f.ProcessUpdate(newObj, resources)
 //         if err != nil {
 //             // error handling here
 //         }
@@ -160,13 +160,13 @@ func (f *Framework) ProcessDelete(obj interface{}, resources []Resource) error {
 //         UpdateFunc:    updateFunc,
 //     }
 //
-func (f *Framework) ProcessUpdate(oldObj, newObj interface{}, resources []Resource) error {
+func (f *Framework) ProcessUpdate(newObj interface{}, resources []Resource) error {
 	if len(resources) == 0 {
 		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}
 
 	for _, r := range resources {
-		currentState, err := r.GetCurrentState(oldObj)
+		currentState, err := r.GetCurrentState(newObj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
