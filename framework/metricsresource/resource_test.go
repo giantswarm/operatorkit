@@ -87,7 +87,7 @@ func Test_MetricsResource_ProcessUpdate_ResourceOrder(t *testing.T) {
 		t.Fatal("expected", nil, "got", err)
 	}
 
-	err = testMustNewFramework(t).ProcessUpdate(nil, nil, wrapped)
+	err = testMustNewFramework(t).ProcessUpdate(nil, wrapped)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
