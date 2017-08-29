@@ -149,7 +149,7 @@ func (f *Framework) ProcessDelete(obj interface{}, resources []Resource) error {
 // for update events. For complex resources this means state has to be created,
 // deleted and updated eventually, in this order.
 //
-//     func updateFunc(newObj interface{}) {
+//     func updateFunc(oldObj, newObj interface{}) {
 //         err := f.ProcessUpdate(newObj, resources)
 //         if err != nil {
 //             // error handling here
