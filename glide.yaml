@@ -5,7 +5,7 @@ import:
 - package: github.com/giantswarm/micrologger
   version: master
 - package: github.com/cenkalti/backoff
-  version: v1.0.0
+  version: v1.1.0
 - package: k8s.io/client-go
   version: v3.0.0
 - package: github.com/prometheus/client_golang
