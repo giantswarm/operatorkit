@@ -10,6 +10,10 @@ import:
   version: v3.0.0
 - package: github.com/prometheus/client_golang
   version: ^0.8.0
+- package: github.com/aws/aws-sdk-go
+  version: master
+  subpackages:
+  - service/iam
 testImport:
 - package: github.com/stretchr/testify
   version: v1.1.4
