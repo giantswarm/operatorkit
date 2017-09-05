@@ -54,8 +54,8 @@ func DefaultConfig() Config {
 		Logger: newLogger,
 
 		// Settings.
-		Address:   "http://127.0.0.1:8080",
-		InCluster: false,
+		Address:   "",
+		InCluster: true,
 		TLS:       TLSClientConfig{},
 	}
 }
