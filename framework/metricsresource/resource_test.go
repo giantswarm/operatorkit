@@ -23,7 +23,7 @@ func Test_MetricsResource_ProcessCreate_ResourceOrder(t *testing.T) {
 		t.Fatal("expected", nil, "got", err)
 	}
 
-	err = testMustNewFramework(t).ProcessCreate(nil, wrapped)
+	err = framework.ProcessCreate(nil, wrapped)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -55,7 +55,7 @@ func Test_MetricsResource_ProcessDelete_ResourceOrder(t *testing.T) {
 		t.Fatal("expected", nil, "got", err)
 	}
 
-	err = testMustNewFramework(t).ProcessDelete(nil, wrapped)
+	err = framework.ProcessDelete(nil, wrapped)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -87,7 +87,7 @@ func Test_MetricsResource_ProcessUpdate_ResourceOrder(t *testing.T) {
 		t.Fatal("expected", nil, "got", err)
 	}
 
-	err = testMustNewFramework(t).ProcessUpdate(nil, wrapped)
+	err = framework.ProcessUpdate(nil, wrapped)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -103,16 +103,6 @@ func Test_MetricsResource_ProcessUpdate_ResourceOrder(t *testing.T) {
 	if !reflect.DeepEqual(e, tr.Order) {
 		t.Fatal("expected", e, "got", tr.Order)
 	}
-}
-
-func testMustNewFramework(t *testing.T) *framework.Framework {
-	frameworkConfig := framework.DefaultConfig()
-	newFramework, err := framework.New(frameworkConfig)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
-
-	return newFramework
 }
 
 type testResource struct {

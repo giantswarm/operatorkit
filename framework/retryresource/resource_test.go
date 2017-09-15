@@ -75,7 +75,7 @@ func Test_RetryResource_ProcessCreate_ResourceOrder_RetryOnError(t *testing.T) {
 			t.Fatal("test", i+1, "expected", nil, "got", err)
 		}
 
-		err = testMustNewFramework(t).ProcessCreate(nil, wrapped)
+		err = framework.ProcessCreate(nil, wrapped)
 		if err != nil {
 			t.Fatal("test", i+1, "expected", nil, "got", err)
 		}
@@ -105,7 +105,7 @@ func Test_RetryResource_ProcessCreate_ResourceOrder(t *testing.T) {
 		t.Fatal("expected", nil, "got", err)
 	}
 
-	err = testMustNewFramework(t).ProcessCreate(nil, wrapped)
+	err = framework.ProcessCreate(nil, wrapped)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -187,7 +187,7 @@ func Test_RetryResource_ProcessDelete_ResourceOrder_RetryOnError(t *testing.T) {
 			t.Fatal("test", i+1, "expected", nil, "got", err)
 		}
 
-		err = testMustNewFramework(t).ProcessDelete(nil, wrapped)
+		err = framework.ProcessDelete(nil, wrapped)
 		if err != nil {
 			t.Fatal("test", i+1, "expected", nil, "got", err)
 		}
@@ -217,7 +217,7 @@ func Test_RetryResource_ProcessDelete_ResourceOrder(t *testing.T) {
 		t.Fatal("expected", nil, "got", err)
 	}
 
-	err = testMustNewFramework(t).ProcessDelete(nil, wrapped)
+	err = framework.ProcessDelete(nil, wrapped)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -305,7 +305,7 @@ func Test_RetryResource_ProcessUpdate_ResourceOrder_RetryOnError(t *testing.T) {
 			t.Fatal("test", i+1, "expected", nil, "got", err)
 		}
 
-		err = testMustNewFramework(t).ProcessUpdate(nil, wrapped)
+		err = framework.ProcessUpdate(nil, wrapped)
 		if err != nil {
 			t.Fatal("test", i+1, "expected", nil, "got", err)
 		}
@@ -335,7 +335,7 @@ func Test_RetryResource_ProcessUpdate_ResourceOrder(t *testing.T) {
 		t.Fatal("expected", nil, "got", err)
 	}
 
-	err = testMustNewFramework(t).ProcessUpdate(nil, wrapped)
+	err = framework.ProcessUpdate(nil, wrapped)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -351,16 +351,6 @@ func Test_RetryResource_ProcessUpdate_ResourceOrder(t *testing.T) {
 	if !reflect.DeepEqual(e, tr.Order) {
 		t.Fatal("expected", e, "got", tr.Order)
 	}
-}
-
-func testMustNewFramework(t *testing.T) *framework.Framework {
-	frameworkConfig := framework.DefaultConfig()
-	newFramework, err := framework.New(frameworkConfig)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
-
-	return newFramework
 }
 
 type testResource struct {
