@@ -1,6 +1,7 @@
 package metricsresource
 
 import (
+	"context"
 	"time"
 
 	"github.com/giantswarm/microerror"
@@ -108,10 +109,10 @@ type Resource struct {
 	operationTotal    *prometheus.CounterVec
 }
 
-func (r *Resource) GetCurrentState(obj interface{}) (interface{}, error) {
+func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
 	defer r.updateMetrics("GetCurrentState", time.Now())
 
-	v, err := r.resource.GetCurrentState(obj)
+	v, err := r.resource.GetCurrentState(ctx, obj)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
@@ -119,10 +120,10 @@ func (r *Resource) GetCurrentState(obj interface{}) (interface{}, error) {
 	return v, nil
 }
 
-func (r *Resource) GetDesiredState(obj interface{}) (interface{}, error) {
+func (r *Resource) GetDesiredState(ctx context.Context, obj interface{}) (interface{}, error) {
 	defer r.updateMetrics("GetDesiredState", time.Now())
 
-	v, err := r.resource.GetDesiredState(obj)
+	v, err := r.resource.GetDesiredState(ctx, obj)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
@@ -130,10 +131,10 @@ func (r *Resource) GetDesiredState(obj interface{}) (interface{}, error) {
 	return v, nil
 }
 
-func (r *Resource) GetCreateState(obj, currentState, desiredState interface{}) (interface{}, error) {
+func (r *Resource) GetCreateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
 	defer r.updateMetrics("GetCreateState", time.Now())
 
-	v, err := r.resource.GetCreateState(obj, currentState, desiredState)
+	v, err := r.resource.GetCreateState(ctx, obj, currentState, desiredState)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
@@ -141,10 +142,10 @@ func (r *Resource) GetCreateState(obj, currentState, desiredState interface{}) (
 	return v, nil
 }
 
-func (r *Resource) GetDeleteState(obj, currentState, desiredState interface{}) (interface{}, error) {
+func (r *Resource) GetDeleteState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
 	defer r.updateMetrics("GetDeleteState", time.Now())
 
-	v, err := r.resource.GetDeleteState(obj, currentState, desiredState)
+	v, err := r.resource.GetDeleteState(ctx, obj, currentState, desiredState)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
@@ -152,10 +153,10 @@ func (r *Resource) GetDeleteState(obj, currentState, desiredState interface{}) (
 	return v, nil
 }
 
-func (r *Resource) GetUpdateState(obj, currentState, desiredState interface{}) (interface{}, interface{}, interface{}, error) {
+func (r *Resource) GetUpdateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, interface{}, interface{}, error) {
 	defer r.updateMetrics("GetUpdateState", time.Now())
 
-	createState, deleteState, updateState, err := r.resource.GetUpdateState(obj, currentState, desiredState)
+	createState, deleteState, updateState, err := r.resource.GetUpdateState(ctx, obj, currentState, desiredState)
 	if err != nil {
 		return nil, nil, nil, microerror.Mask(err)
 	}
@@ -167,10 +168,10 @@ func (r *Resource) Name() string {
 	return Name
 }
 
-func (r *Resource) ProcessCreateState(obj, createState interface{}) error {
+func (r *Resource) ProcessCreateState(ctx context.Context, obj, createState interface{}) error {
 	defer r.updateMetrics("ProcessCreateState", time.Now())
 
-	err := r.resource.ProcessCreateState(obj, createState)
+	err := r.resource.ProcessCreateState(ctx, obj, createState)
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -178,10 +179,10 @@ func (r *Resource) ProcessCreateState(obj, createState interface{}) error {
 	return nil
 }
 
-func (r *Resource) ProcessDeleteState(obj, deleteState interface{}) error {
+func (r *Resource) ProcessDeleteState(ctx context.Context, obj, deleteState interface{}) error {
 	defer r.updateMetrics("ProcessDeleteState", time.Now())
 
-	err := r.resource.ProcessDeleteState(obj, deleteState)
+	err := r.resource.ProcessDeleteState(ctx, obj, deleteState)
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -189,10 +190,10 @@ func (r *Resource) ProcessDeleteState(obj, deleteState interface{}) error {
 	return nil
 }
 
-func (r *Resource) ProcessUpdateState(obj, updateState interface{}) error {
+func (r *Resource) ProcessUpdateState(ctx context.Context, obj, updateState interface{}) error {
 	defer r.updateMetrics("ProcessUpdateState", time.Now())
 
-	err := r.resource.ProcessUpdateState(obj, updateState)
+	err := r.resource.ProcessUpdateState(ctx, obj, updateState)
 	if err != nil {
 		return microerror.Mask(err)
 	}

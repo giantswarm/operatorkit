@@ -1,6 +1,7 @@
 package framework
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -70,9 +71,11 @@ func (f *Framework) AddFunc(obj interface{}) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
+	ctx := context.Background()
+
 	f.logger.Log("debug", "executing the operator's create function")
 
-	err := ProcessCreate(obj, f.resources)
+	err := ProcessCreate(ctx, obj, f.resources)
 	if err != nil {
 		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "create")
 		return
@@ -82,7 +85,7 @@ func (f *Framework) AddFunc(obj interface{}) {
 
 	f.logger.Log("debug", "executing the operator's update function")
 
-	err = ProcessUpdate(obj, f.resources)
+	err = ProcessUpdate(ctx, obj, f.resources)
 	if err != nil {
 		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "update")
 		return
@@ -101,9 +104,11 @@ func (f *Framework) DeleteFunc(obj interface{}) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
+	ctx := context.Background()
+
 	f.logger.Log("debug", "executing the operator's delete function")
 
-	err := ProcessDelete(obj, f.resources)
+	err := ProcessDelete(ctx, obj, f.resources)
 	if err != nil {
 		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "delete")
 		return
@@ -147,28 +152,28 @@ func (f *Framework) UpdateFunc(oldObj, newObj interface{}) {
 //         AddFunc:    addFunc,
 //     }
 //
-func ProcessCreate(obj interface{}, resources []Resource) error {
+func ProcessCreate(ctx context.Context, obj interface{}, resources []Resource) error {
 	if len(resources) == 0 {
 		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}
 
 	for _, r := range resources {
-		currentState, err := r.GetCurrentState(obj)
+		currentState, err := r.GetCurrentState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
-		desiredState, err := r.GetDesiredState(obj)
+		desiredState, err := r.GetDesiredState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
-		createState, err := r.GetCreateState(obj, currentState, desiredState)
+		createState, err := r.GetCreateState(ctx, obj, currentState, desiredState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
-		err = r.ProcessCreateState(obj, createState)
+		err = r.ProcessCreateState(ctx, obj, createState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -193,28 +198,28 @@ func ProcessCreate(obj interface{}, resources []Resource) error {
 //         DeleteFunc:    deleteFunc,
 //     }
 //
-func ProcessDelete(obj interface{}, resources []Resource) error {
+func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) error {
 	if len(resources) == 0 {
 		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}
 
 	for _, r := range resources {
-		currentState, err := r.GetCurrentState(obj)
+		currentState, err := r.GetCurrentState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
-		desiredState, err := r.GetDesiredState(obj)
+		desiredState, err := r.GetDesiredState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
-		deleteState, err := r.GetDeleteState(obj, currentState, desiredState)
+		deleteState, err := r.GetDeleteState(ctx, obj, currentState, desiredState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
-		err = r.ProcessDeleteState(obj, deleteState)
+		err = r.ProcessDeleteState(ctx, obj, deleteState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -240,38 +245,38 @@ func ProcessDelete(obj interface{}, resources []Resource) error {
 //         UpdateFunc:    updateFunc,
 //     }
 //
-func ProcessUpdate(obj interface{}, resources []Resource) error {
+func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) error {
 	if len(resources) == 0 {
 		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}
 
 	for _, r := range resources {
-		currentState, err := r.GetCurrentState(obj)
+		currentState, err := r.GetCurrentState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
-		desiredState, err := r.GetDesiredState(obj)
+		desiredState, err := r.GetDesiredState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
-		createState, deleteState, updateState, err := r.GetUpdateState(obj, currentState, desiredState)
+		createState, deleteState, updateState, err := r.GetUpdateState(ctx, obj, currentState, desiredState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
-		err = r.ProcessCreateState(obj, createState)
+		err = r.ProcessCreateState(ctx, obj, createState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
-		err = r.ProcessDeleteState(obj, deleteState)
+		err = r.ProcessDeleteState(ctx, obj, deleteState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
-		err = r.ProcessUpdateState(obj, updateState)
+		err = r.ProcessUpdateState(ctx, obj, updateState)
 		if err != nil {
 			return microerror.Mask(err)
 		}

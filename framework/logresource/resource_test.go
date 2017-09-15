@@ -3,6 +3,7 @@ package logresource
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"reflect"
 	"testing"
@@ -37,7 +38,7 @@ func Test_LogResource_ProcessCreate_ResourceOrder(t *testing.T) {
 			t.Fatal("expected", nil, "got", err)
 		}
 
-		err = framework.ProcessCreate(nil, wrapped)
+		err = framework.ProcessCreate(context.TODO(), nil, wrapped)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}
@@ -116,7 +117,7 @@ func Test_LogResource_ProcessDelete_ResourceOrder(t *testing.T) {
 			t.Fatal("expected", nil, "got", err)
 		}
 
-		err = framework.ProcessDelete(nil, wrapped)
+		err = framework.ProcessDelete(context.TODO(), nil, wrapped)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}
@@ -195,7 +196,7 @@ func Test_LogResource_ProcessUpdate_ResourceOrder(t *testing.T) {
 			t.Fatal("expected", nil, "got", err)
 		}
 
-		err = framework.ProcessUpdate(nil, wrapped)
+		err = framework.ProcessUpdate(context.TODO(), nil, wrapped)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}
@@ -258,35 +259,35 @@ type testResource struct {
 	Order []string
 }
 
-func (r *testResource) GetCurrentState(obj interface{}) (interface{}, error) {
+func (r *testResource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
 	m := "GetCurrentState"
 	r.Order = append(r.Order, m)
 
 	return nil, nil
 }
 
-func (r *testResource) GetDesiredState(obj interface{}) (interface{}, error) {
+func (r *testResource) GetDesiredState(ctx context.Context, obj interface{}) (interface{}, error) {
 	m := "GetDesiredState"
 	r.Order = append(r.Order, m)
 
 	return nil, nil
 }
 
-func (r *testResource) GetCreateState(obj, cur, des interface{}) (interface{}, error) {
+func (r *testResource) GetCreateState(ctx context.Context, obj, cur, des interface{}) (interface{}, error) {
 	m := "GetCreateState"
 	r.Order = append(r.Order, m)
 
 	return nil, nil
 }
 
-func (r *testResource) GetDeleteState(obj, cur, des interface{}) (interface{}, error) {
+func (r *testResource) GetDeleteState(ctx context.Context, obj, cur, des interface{}) (interface{}, error) {
 	m := "GetDeleteState"
 	r.Order = append(r.Order, m)
 
 	return nil, nil
 }
 
-func (r *testResource) GetUpdateState(obj, currentState, desiredState interface{}) (interface{}, interface{}, interface{}, error) {
+func (r *testResource) GetUpdateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, interface{}, interface{}, error) {
 	m := "GetUpdateState"
 	r.Order = append(r.Order, m)
 
@@ -297,21 +298,21 @@ func (r *testResource) Name() string {
 	return "testResource"
 }
 
-func (r *testResource) ProcessCreateState(obj, cre interface{}) error {
+func (r *testResource) ProcessCreateState(ctx context.Context, obj, cre interface{}) error {
 	m := "ProcessCreateState"
 	r.Order = append(r.Order, m)
 
 	return nil
 }
 
-func (r *testResource) ProcessDeleteState(obj, del interface{}) error {
+func (r *testResource) ProcessDeleteState(ctx context.Context, obj, del interface{}) error {
 	m := "ProcessDeleteState"
 	r.Order = append(r.Order, m)
 
 	return nil
 }
 
-func (r *testResource) ProcessUpdateState(obj, updateState interface{}) error {
+func (r *testResource) ProcessUpdateState(ctx context.Context, obj, updateState interface{}) error {
 	m := "ProcessUpdateState"
 	r.Order = append(r.Order, m)
 

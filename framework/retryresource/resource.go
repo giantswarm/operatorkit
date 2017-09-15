@@ -1,6 +1,7 @@
 package retryresource
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -78,12 +79,12 @@ type Resource struct {
 	resource framework.Resource
 }
 
-func (r *Resource) GetCurrentState(obj interface{}) (interface{}, error) {
+func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
 	var err error
 
 	var v interface{}
 	o := func() error {
-		v, err = r.resource.GetCurrentState(obj)
+		v, err = r.resource.GetCurrentState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -103,12 +104,12 @@ func (r *Resource) GetCurrentState(obj interface{}) (interface{}, error) {
 	return v, nil
 }
 
-func (r *Resource) GetDesiredState(obj interface{}) (interface{}, error) {
+func (r *Resource) GetDesiredState(ctx context.Context, obj interface{}) (interface{}, error) {
 	var err error
 
 	var v interface{}
 	o := func() error {
-		v, err = r.resource.GetDesiredState(obj)
+		v, err = r.resource.GetDesiredState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -128,12 +129,12 @@ func (r *Resource) GetDesiredState(obj interface{}) (interface{}, error) {
 	return v, nil
 }
 
-func (r *Resource) GetCreateState(obj, currentState, desiredState interface{}) (interface{}, error) {
+func (r *Resource) GetCreateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
 	var err error
 
 	var v interface{}
 	o := func() error {
-		v, err = r.resource.GetCreateState(obj, currentState, desiredState)
+		v, err = r.resource.GetCreateState(ctx, obj, currentState, desiredState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -153,12 +154,12 @@ func (r *Resource) GetCreateState(obj, currentState, desiredState interface{}) (
 	return v, nil
 }
 
-func (r *Resource) GetDeleteState(obj, currentState, desiredState interface{}) (interface{}, error) {
+func (r *Resource) GetDeleteState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
 	var err error
 
 	var v interface{}
 	o := func() error {
-		v, err = r.resource.GetDeleteState(obj, currentState, desiredState)
+		v, err = r.resource.GetDeleteState(ctx, obj, currentState, desiredState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -178,7 +179,7 @@ func (r *Resource) GetDeleteState(obj, currentState, desiredState interface{}) (
 	return v, nil
 }
 
-func (r *Resource) GetUpdateState(obj, currentState, desiredState interface{}) (interface{}, interface{}, interface{}, error) {
+func (r *Resource) GetUpdateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, interface{}, interface{}, error) {
 	var err error
 
 	var createState interface{}
@@ -186,7 +187,7 @@ func (r *Resource) GetUpdateState(obj, currentState, desiredState interface{}) (
 	var updateState interface{}
 
 	o := func() error {
-		createState, deleteState, updateState, err = r.resource.GetUpdateState(obj, currentState, desiredState)
+		createState, deleteState, updateState, err = r.resource.GetUpdateState(ctx, obj, currentState, desiredState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -210,9 +211,9 @@ func (r *Resource) Name() string {
 	return Name
 }
 
-func (r *Resource) ProcessCreateState(obj, createState interface{}) error {
+func (r *Resource) ProcessCreateState(ctx context.Context, obj, createState interface{}) error {
 	o := func() error {
-		err := r.resource.ProcessCreateState(obj, createState)
+		err := r.resource.ProcessCreateState(ctx, obj, createState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -232,9 +233,9 @@ func (r *Resource) ProcessCreateState(obj, createState interface{}) error {
 	return nil
 }
 
-func (r *Resource) ProcessDeleteState(obj, deleteState interface{}) error {
+func (r *Resource) ProcessDeleteState(ctx context.Context, obj, deleteState interface{}) error {
 	o := func() error {
-		err := r.resource.ProcessDeleteState(obj, deleteState)
+		err := r.resource.ProcessDeleteState(ctx, obj, deleteState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -254,9 +255,9 @@ func (r *Resource) ProcessDeleteState(obj, deleteState interface{}) error {
 	return nil
 }
 
-func (r *Resource) ProcessUpdateState(obj, updateState interface{}) error {
+func (r *Resource) ProcessUpdateState(ctx context.Context, obj, updateState interface{}) error {
 	o := func() error {
-		err := r.resource.ProcessUpdateState(obj, updateState)
+		err := r.resource.ProcessUpdateState(ctx, obj, updateState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
