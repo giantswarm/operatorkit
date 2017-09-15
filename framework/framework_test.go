@@ -4,6 +4,8 @@ import (
 	"context"
 	"reflect"
 	"testing"
+
+	"github.com/giantswarm/operatorkit/framework/cancelercontext"
 )
 
 // Test_Framework_ProcessCreate_NoResource ensures there is an error thrown when
@@ -36,24 +38,40 @@ func Test_Framework_ProcessUpdate_NoResource(t *testing.T) {
 // Test_Framework_ProcessCreate_ResourceOrder ensures the resource's methods are
 // executed as expected when creating resources.
 func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
-	tr := &testResource{}
-	rs := []Resource{
-		tr,
+	testCases := []struct {
+		Resource      Resource
+		ExpectedOrder []string
+		ErrorMatcher  func(err error) bool
+	}{
+		{
+			Resource: &testResource{},
+			ExpectedOrder: []string{
+				"GetCurrentState",
+				"GetDesiredState",
+				"GetCreateState",
+				"ProcessCreateState",
+			},
+			ErrorMatcher: nil,
+		},
 	}
 
-	err := ProcessCreate(context.TODO(), nil, rs)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
+	for i, tc := range testCases {
+		rs := []Resource{
+			tc.Resource,
+		}
 
-	e := []string{
-		"GetCurrentState",
-		"GetDesiredState",
-		"GetCreateState",
-		"ProcessCreateState",
-	}
-	if !reflect.DeepEqual(e, tr.Order) {
-		t.Fatal("expected", e, "got", tr.Order)
+		err := ProcessCreate(context.TODO(), nil, rs)
+		if err != nil {
+			if tc.ErrorMatcher == nil {
+				t.Fatal("expected", "error", "got", err)
+			} else {
+				t.Fatal("expected", nil, "got", err)
+			}
+		}
+
+		if !reflect.DeepEqual(tc.ExpectedOrder, tc.Resource.Order) {
+			t.Fatal("expected", tc.ExpectedOrder, "got", tc.Resource.Order)
+		}
 	}
 }
 
@@ -108,10 +126,11 @@ func Test_Framework_ProcessUpdate_ResourceOrder(t *testing.T) {
 }
 
 type testResource struct {
-	Error       error
-	ErrorCount  int
-	ErrorMethod string
-	Order       []string
+	CancelingStep string
+	Error         error
+	ErrorCount    int
+	ErrorMethod   string
+	Order         []string
 
 	errorCount int
 }
@@ -119,6 +138,14 @@ type testResource struct {
 func (r *testResource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
 	m := "GetCurrentState"
 	r.Order = append(r.Order, m)
+
+	if r.CancelingStep == m {
+		canceler, exists := cancelercontext.FromContext(ctx)
+		if exists {
+			canceler <- struct{}{}
+			return nil, nil
+		}
+	}
 
 	if r.returnErrorFor(m) {
 		return nil, r.Error
@@ -131,6 +158,14 @@ func (r *testResource) GetDesiredState(ctx context.Context, obj interface{}) (in
 	m := "GetDesiredState"
 	r.Order = append(r.Order, m)
 
+	if r.CancelingStep == m {
+		canceler, exists := cancelercontext.FromContext(ctx)
+		if exists {
+			canceler <- struct{}{}
+			return nil, nil
+		}
+	}
+
 	if r.returnErrorFor(m) {
 		return nil, r.Error
 	}
@@ -141,6 +176,14 @@ func (r *testResource) GetDesiredState(ctx context.Context, obj interface{}) (in
 func (r *testResource) GetCreateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
 	m := "GetCreateState"
 	r.Order = append(r.Order, m)
+
+	if r.CancelingStep == m {
+		canceler, exists := cancelercontext.FromContext(ctx)
+		if exists {
+			canceler <- struct{}{}
+			return nil, nil
+		}
+	}
 
 	if r.returnErrorFor(m) {
 		return nil, r.Error
@@ -153,6 +196,14 @@ func (r *testResource) GetDeleteState(ctx context.Context, obj, currentState, de
 	m := "GetDeleteState"
 	r.Order = append(r.Order, m)
 
+	if r.CancelingStep == m {
+		canceler, exists := cancelercontext.FromContext(ctx)
+		if exists {
+			canceler <- struct{}{}
+			return nil, nil
+		}
+	}
+
 	if r.returnErrorFor(m) {
 		return nil, r.Error
 	}
@@ -163,6 +214,14 @@ func (r *testResource) GetDeleteState(ctx context.Context, obj, currentState, de
 func (r *testResource) GetUpdateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, interface{}, interface{}, error) {
 	m := "GetUpdateState"
 	r.Order = append(r.Order, m)
+
+	if r.CancelingStep == m {
+		canceler, exists := cancelercontext.FromContext(ctx)
+		if exists {
+			canceler <- struct{}{}
+			return nil, nil, nil, nil
+		}
+	}
 
 	if r.returnErrorFor(m) {
 		return nil, nil, nil, r.Error
@@ -179,6 +238,14 @@ func (r *testResource) ProcessCreateState(ctx context.Context, obj, createState 
 	m := "ProcessCreateState"
 	r.Order = append(r.Order, m)
 
+	if r.CancelingStep == m {
+		canceler, exists := cancelercontext.FromContext(ctx)
+		if exists {
+			canceler <- struct{}{}
+			return nil
+		}
+	}
+
 	if r.returnErrorFor(m) {
 		return r.Error
 	}
@@ -190,6 +257,14 @@ func (r *testResource) ProcessDeleteState(ctx context.Context, obj, deleteState 
 	m := "ProcessDeleteState"
 	r.Order = append(r.Order, m)
 
+	if r.CancelingStep == m {
+		canceler, exists := cancelercontext.FromContext(ctx)
+		if exists {
+			canceler <- struct{}{}
+			return nil
+		}
+	}
+
 	if r.returnErrorFor(m) {
 		return r.Error
 	}
@@ -200,6 +275,14 @@ func (r *testResource) ProcessDeleteState(ctx context.Context, obj, deleteState 
 func (r *testResource) ProcessUpdateState(ctx context.Context, obj, updateState interface{}) error {
 	m := "ProcessUpdateState"
 	r.Order = append(r.Order, m)
+
+	if r.CancelingStep == m {
+		canceler, exists := cancelercontext.FromContext(ctx)
+		if exists {
+			canceler <- struct{}{}
+			return nil
+		}
+	}
 
 	if r.returnErrorFor(m) {
 		return r.Error

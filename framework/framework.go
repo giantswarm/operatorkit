@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"sync"
 
-	"k8s.io/client-go/tools/cache"
-
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
+	"k8s.io/client-go/tools/cache"
+
+	"github.com/giantswarm/operatorkit/framework/cancelercontext"
 )
 
 // Config represents the configuration used to create a new operator framework.
@@ -72,6 +73,7 @@ func (f *Framework) AddFunc(obj interface{}) {
 	defer f.mutex.Unlock()
 
 	ctx := context.Background()
+	ctx = cancelercontext.NewContext(ctx, make(chan struct{}, 1))
 
 	f.logger.Log("debug", "executing the operator's create function")
 
@@ -105,6 +107,7 @@ func (f *Framework) DeleteFunc(obj interface{}) {
 	defer f.mutex.Unlock()
 
 	ctx := context.Background()
+	ctx = cancelercontext.NewContext(ctx, make(chan struct{}, 1))
 
 	f.logger.Log("debug", "executing the operator's delete function")
 
@@ -158,6 +161,16 @@ func ProcessCreate(ctx context.Context, obj interface{}, resources []Resource) e
 	}
 
 	for _, r := range resources {
+		canceler, cancelerExists := cancelercontext.FromContext(ctx)
+		if cancelerExists {
+			select {
+			case <-canceler:
+				return nil
+			default:
+				// fall thorugh
+			}
+		}
+
 		currentState, err := r.GetCurrentState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
@@ -204,6 +217,16 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 	}
 
 	for _, r := range resources {
+		canceler, cancelerExists := cancelercontext.FromContext(ctx)
+		if cancelerExists {
+			select {
+			case <-canceler:
+				return nil
+			default:
+				// fall thorugh
+			}
+		}
+
 		currentState, err := r.GetCurrentState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
@@ -251,6 +274,16 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 	}
 
 	for _, r := range resources {
+		canceler, cancelerExists := cancelercontext.FromContext(ctx)
+		if cancelerExists {
+			select {
+			case <-canceler:
+				return nil
+			default:
+				// fall thorugh
+			}
+		}
+
 		currentState, err := r.GetCurrentState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
