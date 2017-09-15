@@ -64,7 +64,7 @@ func New(config Config) (*Framework, error) {
 func (f *Framework) AddFunc(obj interface{}) {
 	// We lock the AddFunc/DeleteFunc to make sure only one AddFunc/DeleteFunc is
 	// executed at a time. AddFunc/DeleteFunc is not thread safe. This is
-	// important because the source of truth for the kvm-operator are Kubernetes
+	// important because the source of truth for an operator are the reconciled
 	// resources. In case we would run the operator logic in parallel, we would
 	// run into race conditions.
 	f.mutex.Lock()
@@ -95,7 +95,7 @@ func (f *Framework) AddFunc(obj interface{}) {
 func (f *Framework) DeleteFunc(obj interface{}) {
 	// We lock the AddFunc/DeleteFunc to make sure only one AddFunc/DeleteFunc is
 	// executed at a time. AddFunc/DeleteFunc is not thread safe. This is
-	// important because the source of truth for the kvm-operator are Kubernetes
+	// important because the source of truth for an operator are the reconciled
 	// resources. In case we would run the operator logic in parallel, we would
 	// run into race conditions.
 	f.mutex.Lock()
