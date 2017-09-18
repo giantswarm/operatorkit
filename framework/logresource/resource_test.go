@@ -80,7 +80,7 @@ func Test_LogResource_ProcessCreate_ResourceOrder(t *testing.T) {
 				t.Fatal("expected", nil, "got", err)
 			}
 
-			val, ok := got["operation"]
+			val, ok := got["function"]
 			if !ok {
 				t.Fatal("expected", true, "got", false)
 			}
@@ -159,7 +159,7 @@ func Test_LogResource_ProcessDelete_ResourceOrder(t *testing.T) {
 				t.Fatal("expected", nil, "got", err)
 			}
 
-			val, ok := got["operation"]
+			val, ok := got["function"]
 			if !ok {
 				t.Fatal("expected", true, "got", false)
 			}
@@ -244,7 +244,7 @@ func Test_LogResource_ProcessUpdate_ResourceOrder(t *testing.T) {
 				t.Fatal("expected", nil, "got", err)
 			}
 
-			val, ok := got["operation"]
+			val, ok := got["function"]
 			if !ok {
 				t.Fatal("expected", true, "got", false)
 			}
