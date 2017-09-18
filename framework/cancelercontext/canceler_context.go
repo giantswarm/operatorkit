@@ -26,3 +26,22 @@ func FromContext(ctx context.Context) (chan struct{}, bool) {
 	v, ok := ctx.Value(cancelKey).(chan struct{})
 	return v, ok
 }
+
+// IsCanceled checks whether the given context obtains information about the
+// canceler as defined in this package, if any canceler is present.
+//
+// NOTE that the canceler, if any found, must be buffered. Otherwise it will
+// block until a signal is received.
+func IsCanceled(ctx context.Context) bool {
+	canceler, cancelerExists := FromContext(ctx)
+	if cancelerExists {
+		select {
+		case <-canceler:
+			return true
+		default:
+			// fall thorugh
+		}
+	}
+
+	return false
+}
