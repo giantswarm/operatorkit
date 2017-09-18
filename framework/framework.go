@@ -161,31 +161,33 @@ func ProcessCreate(ctx context.Context, obj interface{}, resources []Resource) e
 	}
 
 	for _, r := range resources {
-		canceler, cancelerExists := cancelercontext.FromContext(ctx)
-		if cancelerExists {
-			select {
-			case <-canceler:
-				return nil
-			default:
-				// fall thorugh
-			}
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
 		}
-
 		currentState, err := r.GetCurrentState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
+		}
 		desiredState, err := r.GetDesiredState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
+		}
 		createState, err := r.GetCreateState(ctx, obj, currentState, desiredState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
+		}
 		err = r.ProcessCreateState(ctx, obj, createState)
 		if err != nil {
 			return microerror.Mask(err)
@@ -217,31 +219,33 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 	}
 
 	for _, r := range resources {
-		canceler, cancelerExists := cancelercontext.FromContext(ctx)
-		if cancelerExists {
-			select {
-			case <-canceler:
-				return nil
-			default:
-				// fall thorugh
-			}
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
 		}
-
 		currentState, err := r.GetCurrentState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
+		}
 		desiredState, err := r.GetDesiredState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
+		}
 		deleteState, err := r.GetDeleteState(ctx, obj, currentState, desiredState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
+		}
 		err = r.ProcessDeleteState(ctx, obj, deleteState)
 		if err != nil {
 			return microerror.Mask(err)
@@ -274,41 +278,49 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 	}
 
 	for _, r := range resources {
-		canceler, cancelerExists := cancelercontext.FromContext(ctx)
-		if cancelerExists {
-			select {
-			case <-canceler:
-				return nil
-			default:
-				// fall thorugh
-			}
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
 		}
-
 		currentState, err := r.GetCurrentState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
+		}
 		desiredState, err := r.GetDesiredState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
+		}
 		createState, deleteState, updateState, err := r.GetUpdateState(ctx, obj, currentState, desiredState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
+		}
 		err = r.ProcessCreateState(ctx, obj, createState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
+		}
 		err = r.ProcessDeleteState(ctx, obj, deleteState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
+		}
 		err = r.ProcessUpdateState(ctx, obj, updateState)
 		if err != nil {
 			return microerror.Mask(err)
