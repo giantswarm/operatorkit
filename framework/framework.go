@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"sync"
 
-	"k8s.io/client-go/tools/cache"
-
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
+	"k8s.io/client-go/tools/cache"
+
+	"github.com/giantswarm/operatorkit/framework/cancelercontext"
 )
 
 // Config represents the configuration used to create a new operator framework.
@@ -72,6 +73,7 @@ func (f *Framework) AddFunc(obj interface{}) {
 	defer f.mutex.Unlock()
 
 	ctx := context.Background()
+	ctx = cancelercontext.NewContext(ctx, make(chan struct{}, 1))
 
 	f.logger.Log("debug", "executing the operator's create function")
 
@@ -105,6 +107,7 @@ func (f *Framework) DeleteFunc(obj interface{}) {
 	defer f.mutex.Unlock()
 
 	ctx := context.Background()
+	ctx = cancelercontext.NewContext(ctx, make(chan struct{}, 1))
 
 	f.logger.Log("debug", "executing the operator's delete function")
 
@@ -158,21 +161,33 @@ func ProcessCreate(ctx context.Context, obj interface{}, resources []Resource) e
 	}
 
 	for _, r := range resources {
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
+		}
 		currentState, err := r.GetCurrentState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
+		}
 		desiredState, err := r.GetDesiredState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
+		}
 		createState, err := r.GetCreateState(ctx, obj, currentState, desiredState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
+		}
 		err = r.ProcessCreateState(ctx, obj, createState)
 		if err != nil {
 			return microerror.Mask(err)
@@ -204,21 +219,33 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 	}
 
 	for _, r := range resources {
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
+		}
 		currentState, err := r.GetCurrentState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
+		}
 		desiredState, err := r.GetDesiredState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
+		}
 		deleteState, err := r.GetDeleteState(ctx, obj, currentState, desiredState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
+		}
 		err = r.ProcessDeleteState(ctx, obj, deleteState)
 		if err != nil {
 			return microerror.Mask(err)
@@ -251,31 +278,49 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 	}
 
 	for _, r := range resources {
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
+		}
 		currentState, err := r.GetCurrentState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
+		}
 		desiredState, err := r.GetDesiredState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
+		}
 		createState, deleteState, updateState, err := r.GetUpdateState(ctx, obj, currentState, desiredState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
+		}
 		err = r.ProcessCreateState(ctx, obj, createState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
+		}
 		err = r.ProcessDeleteState(ctx, obj, deleteState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
+		if cancelercontext.IsCanceled(ctx) {
+			return nil
+		}
 		err = r.ProcessUpdateState(ctx, obj, updateState)
 		if err != nil {
 			return microerror.Mask(err)
