@@ -506,7 +506,7 @@ func (r *testResource) GetCurrentState(ctx context.Context, obj interface{}) (in
 	if r.CancelingStep == m {
 		canceler, exists := cancelercontext.FromContext(ctx)
 		if exists {
-			canceler <- struct{}{}
+			close(canceler)
 			return nil, nil
 		}
 	}
@@ -525,7 +525,7 @@ func (r *testResource) GetDesiredState(ctx context.Context, obj interface{}) (in
 	if r.CancelingStep == m {
 		canceler, exists := cancelercontext.FromContext(ctx)
 		if exists {
-			canceler <- struct{}{}
+			close(canceler)
 			return nil, nil
 		}
 	}
@@ -544,7 +544,7 @@ func (r *testResource) GetCreateState(ctx context.Context, obj, currentState, de
 	if r.CancelingStep == m {
 		canceler, exists := cancelercontext.FromContext(ctx)
 		if exists {
-			canceler <- struct{}{}
+			close(canceler)
 			return nil, nil
 		}
 	}
@@ -563,7 +563,7 @@ func (r *testResource) GetDeleteState(ctx context.Context, obj, currentState, de
 	if r.CancelingStep == m {
 		canceler, exists := cancelercontext.FromContext(ctx)
 		if exists {
-			canceler <- struct{}{}
+			close(canceler)
 			return nil, nil
 		}
 	}
@@ -582,7 +582,7 @@ func (r *testResource) GetUpdateState(ctx context.Context, obj, currentState, de
 	if r.CancelingStep == m {
 		canceler, exists := cancelercontext.FromContext(ctx)
 		if exists {
-			canceler <- struct{}{}
+			close(canceler)
 			return nil, nil, nil, nil
 		}
 	}
@@ -605,7 +605,7 @@ func (r *testResource) ProcessCreateState(ctx context.Context, obj, createState 
 	if r.CancelingStep == m {
 		canceler, exists := cancelercontext.FromContext(ctx)
 		if exists {
-			canceler <- struct{}{}
+			close(canceler)
 			return nil
 		}
 	}
@@ -624,7 +624,7 @@ func (r *testResource) ProcessDeleteState(ctx context.Context, obj, deleteState 
 	if r.CancelingStep == m {
 		canceler, exists := cancelercontext.FromContext(ctx)
 		if exists {
-			canceler <- struct{}{}
+			close(canceler)
 			return nil
 		}
 	}
@@ -643,7 +643,7 @@ func (r *testResource) ProcessUpdateState(ctx context.Context, obj, updateState 
 	if r.CancelingStep == m {
 		canceler, exists := cancelercontext.FromContext(ctx)
 		if exists {
-			canceler <- struct{}{}
+			close(canceler)
 			return nil
 		}
 	}
