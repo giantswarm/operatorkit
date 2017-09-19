@@ -24,20 +24,20 @@ func NewContext(ctx context.Context, v chan struct{}) context.Context {
 	return context.WithValue(ctx, updateNecessaryKey, v)
 }
 
-// FromContext returns the update necessary, if any.
+// FromContext returns the update necessary channel, if any.
 func FromContext(ctx context.Context) (chan struct{}, bool) {
 	v, ok := ctx.Value(updateNecessaryKey).(chan struct{})
 	return v, ok
 }
 
 // IsUpdateNecessary checks whether the given context obtains information about
-// the update necessary as defined in this package, if any update necessary is
-// present.
+// the update necessary channel as defined in this package, if any update
+// necessary channel is present.
 //
 // NOTE that the update necessary channel, if any found, is only used to be closed
 // to signal updates are necessary. It is not guaranteed that the channel is
 // buffered or read from. Clients must not write to it. Otherwise the update
-// necessary channel will block eventually. It is save to signal updates are
+// necessary channel will block eventually. It is safe to signal updates are
 // necessary via SetUpdateNecessary.
 func IsUpdateNecessary(ctx context.Context) bool {
 	updateNecessary, updateNecessaryExists := FromContext(ctx)
@@ -53,7 +53,7 @@ func IsUpdateNecessary(ctx context.Context) bool {
 	return false
 }
 
-// SetUpdateNecessary is a save way to signal updates are necessary.
+// SetUpdateNecessary is a safe way to signal updates are necessary.
 func SetUpdateNecessary(ctx context.Context) {
 	updateNecessary, updateNecessaryExists := FromContext(ctx)
 	if updateNecessaryExists && !IsUpdateNecessary(ctx) {

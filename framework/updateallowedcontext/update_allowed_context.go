@@ -24,20 +24,20 @@ func NewContext(ctx context.Context, v chan struct{}) context.Context {
 	return context.WithValue(ctx, updateAllowedKey, v)
 }
 
-// FromContext returns the update allowed, if any.
+// FromContext returns the update allowed channel, if any.
 func FromContext(ctx context.Context) (chan struct{}, bool) {
 	v, ok := ctx.Value(updateAllowedKey).(chan struct{})
 	return v, ok
 }
 
 // IsUpdateAllowed checks whether the given context obtains information about
-// the update allowed as defined in this package, if any update allowed is
-// present.
+// the update allowed channel as defined in this package, if any update allowed
+// channel is present.
 //
 // NOTE that the update allowed channel, if any found, is only used to be closed
 // to signal updates are allowed. It is not guaranteed that the channel is
 // buffered or read from. Clients must not write to it. Otherwise the update
-// allowed channel will block eventually. It is save to signal updates are
+// allowed channel will block eventually. It is safe to signal updates are
 // allowed via SetUpdateAllowed.
 func IsUpdateAllowed(ctx context.Context) bool {
 	updateAllowed, updateAllowedExists := FromContext(ctx)
@@ -53,7 +53,7 @@ func IsUpdateAllowed(ctx context.Context) bool {
 	return false
 }
 
-// SetUpdateAllowed is a save way to signal updates are allowed.
+// SetUpdateAllowed is a safe way to signal updates are allowed.
 func SetUpdateAllowed(ctx context.Context) {
 	updateAllowed, updateAllowedExists := FromContext(ctx)
 	if updateAllowedExists && !IsUpdateAllowed(ctx) {
