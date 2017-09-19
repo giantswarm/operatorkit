@@ -9,19 +9,23 @@ import (
 // collisions with keys defined in other packages.
 type key string
 
-// cancelKey is the key for cancel values in context.Context. Clients use
+// cancelerKey is the key for canceler values in context.Context. Clients use
 // cancelercontext.NewContext and cancelercontext.FromContext instead of using this
 // key directly.
-var cancelKey key = "canceler"
+var cancelerKey key = "canceler"
 
 // NewContext returns a new context.Context that carries value v.
 func NewContext(ctx context.Context, v chan struct{}) context.Context {
-	return context.WithValue(ctx, cancelKey, v)
+	if v == nil {
+		return ctx
+	}
+
+	return context.WithValue(ctx, cancelerKey, v)
 }
 
 // FromContext returns the canceler, if any.
 func FromContext(ctx context.Context) (chan struct{}, bool) {
-	v, ok := ctx.Value(cancelKey).(chan struct{})
+	v, ok := ctx.Value(cancelerKey).(chan struct{})
 	return v, ok
 }
 
@@ -29,9 +33,9 @@ func FromContext(ctx context.Context) (chan struct{}, bool) {
 // canceler as defined in this package, if any canceler is present.
 //
 // NOTE that the canceler, if any found, is only used to be closed to signal
-// cancelatin. It is not guaranteed that the channel is buffered or read from.
-// Clients must not write to it. Otherwise the cancler will block eventually.
-// received.
+// cancelation. It is not guaranteed that the channel is buffered or read from.
+// Clients must not write to it. Otherwise the canceler will block eventually.
+// It is save to signal cancelation via SetCanceled.
 func IsCanceled(ctx context.Context) bool {
 	canceler, cancelerExists := FromContext(ctx)
 	if cancelerExists {
@@ -44,4 +48,12 @@ func IsCanceled(ctx context.Context) bool {
 	}
 
 	return false
+}
+
+// SetCanceled is a save way to signal cancelation.
+func SetCanceled(ctx context.Context) {
+	canceler, cancelerExists := FromContext(ctx)
+	if cancelerExists && !IsCanceled(ctx) {
+		close(canceler)
+	}
 }
