@@ -1,5 +1,4 @@
-// Package cancelercontext stores and accesses the HTTP Authorization precondition
-// context.Context.
+// Package cancelercontext stores and accesses the canceler in context.Context.
 package cancelercontext
 
 import (
@@ -20,8 +19,7 @@ func NewContext(ctx context.Context, v chan struct{}) context.Context {
 	return context.WithValue(ctx, cancelKey, v)
 }
 
-// FromContext returns the HTTP Authorization preconditionx, if
-// any.
+// FromContext returns the canceler, if any.
 func FromContext(ctx context.Context) (chan struct{}, bool) {
 	v, ok := ctx.Value(cancelKey).(chan struct{})
 	return v, ok
