@@ -1,11 +1,11 @@
-package cancelercontext
+package canceledcontext
 
 import (
 	"context"
 	"testing"
 )
 
-func Test_Framework_CancelerContext(t *testing.T) {
+func Test_Framework_CanceledContext(t *testing.T) {
 	testCases := []struct {
 		Ctx                context.Context
 		ExpectedIsCanceled bool
