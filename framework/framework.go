@@ -73,7 +73,7 @@ func (f *Framework) AddFunc(obj interface{}) {
 	defer f.mutex.Unlock()
 
 	ctx := context.Background()
-	ctx = cancelercontext.NewContext(ctx, make(chan struct{}, 1))
+	ctx = cancelercontext.NewContext(ctx, make(chan struct{}))
 
 	f.logger.Log("action", "start", "component", "operatorkit", "function", "ProcessCreate")
 
@@ -107,7 +107,7 @@ func (f *Framework) DeleteFunc(obj interface{}) {
 	defer f.mutex.Unlock()
 
 	ctx := context.Background()
-	ctx = cancelercontext.NewContext(ctx, make(chan struct{}, 1))
+	ctx = cancelercontext.NewContext(ctx, make(chan struct{}))
 
 	f.logger.Log("action", "start", "component", "operatorkit", "function", "ProcessDelete")
 
