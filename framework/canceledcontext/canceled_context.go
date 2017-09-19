@@ -24,20 +24,20 @@ func NewContext(ctx context.Context, v chan struct{}) context.Context {
 	return context.WithValue(ctx, canceledKey, v)
 }
 
-// FromContext returns the canceled, if any.
+// FromContext returns the canceled channel, if any.
 func FromContext(ctx context.Context) (chan struct{}, bool) {
 	v, ok := ctx.Value(canceledKey).(chan struct{})
 	return v, ok
 }
 
-// IsCanceled checks whether the given context obtains information about
-// the canceled as defined in this package, if any canceled is
+// IsCanceled checks whether the given context obtains information about the
+// canceled channel as defined in this package, if any canceled channel is
 // present.
 //
 // NOTE that the canceled channel, if any found, is only used to be closed to
 // signal cancelation. It is not guaranteed that the channel is buffered or read
 // from. Clients must not write to it. Otherwise the canceled channel will block
-// eventually. It is save to signal cancelation via SetCanceled.
+// eventually. It is safe to signal cancelation via SetCanceled.
 func IsCanceled(ctx context.Context) bool {
 	canceled, canceledExists := FromContext(ctx)
 	if canceledExists {
@@ -52,7 +52,7 @@ func IsCanceled(ctx context.Context) bool {
 	return false
 }
 
-// SetCanceled is a save way to signal cancelation.
+// SetCanceled is a safe way to signal cancelation.
 func SetCanceled(ctx context.Context) {
 	canceled, canceledExists := FromContext(ctx)
 	if canceledExists && !IsCanceled(ctx) {
