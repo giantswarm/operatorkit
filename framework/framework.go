@@ -15,8 +15,9 @@ import (
 // Config represents the configuration used to create a new operator framework.
 type Config struct {
 	// Dependencies.
-	Logger    micrologger.Logger
-	Resources []Resource
+	Initializer func(ctx context.Context, obj interface{}) (context.Context, error)
+	Logger      micrologger.Logger
+	Resources   []Resource
 }
 
 // DefaultConfig provides a default configuration to create a new operator
@@ -24,15 +25,17 @@ type Config struct {
 func DefaultConfig() Config {
 	return Config{
 		// Dependencies.
-		Logger:    nil,
-		Resources: nil,
+		Initializer: nil,
+		Logger:      nil,
+		Resources:   nil,
 	}
 }
 
 type Framework struct {
 	// Dependencies.
-	logger    micrologger.Logger
-	resources []Resource
+	initializer func(ctx context.Context, obj interface{}) (context.Context, error)
+	logger      micrologger.Logger
+	resources   []Resource
 
 	// Internals.
 	mutex sync.Mutex
@@ -50,8 +53,9 @@ func New(config Config) (*Framework, error) {
 
 	newFramework := &Framework{
 		// Dependencies.
-		logger:    config.Logger,
-		resources: config.Resources,
+		initializer: config.Initializer,
+		logger:      config.Logger,
+		resources:   config.Resources,
 
 		// Internals.
 		mutex: sync.Mutex{},
@@ -74,6 +78,15 @@ func (f *Framework) AddFunc(obj interface{}) {
 
 	ctx := context.Background()
 	ctx = canceledcontext.NewContext(ctx, make(chan struct{}))
+
+	if f.initializer != nil {
+		var err error
+		ctx, err = f.initializer(ctx, obj)
+		if err != nil {
+			f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "create")
+			return
+		}
+	}
 
 	f.logger.Log("action", "start", "component", "operatorkit", "function", "ProcessCreate")
 
@@ -108,6 +121,15 @@ func (f *Framework) DeleteFunc(obj interface{}) {
 
 	ctx := context.Background()
 	ctx = canceledcontext.NewContext(ctx, make(chan struct{}))
+
+	if f.initializer != nil {
+		var err error
+		ctx, err = f.initializer(ctx, obj)
+		if err != nil {
+			f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "delete")
+			return
+		}
+	}
 
 	f.logger.Log("action", "start", "component", "operatorkit", "function", "ProcessDelete")
 
