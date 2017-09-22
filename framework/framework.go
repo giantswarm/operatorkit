@@ -15,8 +15,16 @@ import (
 // Config represents the configuration used to create a new operator framework.
 type Config struct {
 	// Dependencies.
-	Logger    micrologger.Logger
-	Resources []Resource
+
+	// InitCtxFunc is to prepare the given context for a single reconciliation
+	// loop. Operators can implement common context packages to enable
+	// communication between resources. These context packages can be set up
+	// within the context initializer function. InitCtxFunc receives the custom
+	// object being reconciled as second argument. Information provided by the
+	// custom object can be used to initialize the context.
+	InitCtxFunc func(ctx context.Context, obj interface{}) (context.Context, error)
+	Logger      micrologger.Logger
+	Resources   []Resource
 }
 
 // DefaultConfig provides a default configuration to create a new operator
@@ -24,15 +32,17 @@ type Config struct {
 func DefaultConfig() Config {
 	return Config{
 		// Dependencies.
-		Logger:    nil,
-		Resources: nil,
+		InitCtxFunc: nil,
+		Logger:      nil,
+		Resources:   nil,
 	}
 }
 
 type Framework struct {
 	// Dependencies.
-	logger    micrologger.Logger
-	resources []Resource
+	initializer func(ctx context.Context, obj interface{}) (context.Context, error)
+	logger      micrologger.Logger
+	resources   []Resource
 
 	// Internals.
 	mutex sync.Mutex
@@ -50,8 +60,9 @@ func New(config Config) (*Framework, error) {
 
 	newFramework := &Framework{
 		// Dependencies.
-		logger:    config.Logger,
-		resources: config.Resources,
+		initializer: config.InitCtxFunc,
+		logger:      config.Logger,
+		resources:   config.Resources,
 
 		// Internals.
 		mutex: sync.Mutex{},
@@ -74,6 +85,15 @@ func (f *Framework) AddFunc(obj interface{}) {
 
 	ctx := context.Background()
 	ctx = canceledcontext.NewContext(ctx, make(chan struct{}))
+
+	if f.initializer != nil {
+		var err error
+		ctx, err = f.initializer(ctx, obj)
+		if err != nil {
+			f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "create")
+			return
+		}
+	}
 
 	f.logger.Log("action", "start", "component", "operatorkit", "function", "ProcessCreate")
 
@@ -108,6 +128,15 @@ func (f *Framework) DeleteFunc(obj interface{}) {
 
 	ctx := context.Background()
 	ctx = canceledcontext.NewContext(ctx, make(chan struct{}))
+
+	if f.initializer != nil {
+		var err error
+		ctx, err = f.initializer(ctx, obj)
+		if err != nil {
+			f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "delete")
+			return
+		}
+	}
 
 	f.logger.Log("action", "start", "component", "operatorkit", "function", "ProcessDelete")
 
