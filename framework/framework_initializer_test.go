@@ -8,23 +8,23 @@ import (
 	"github.com/giantswarm/micrologger/microloggertest"
 )
 
-func Test_Framework_Initializer_AddFunc(t *testing.T) {
+func Test_Framework_InitCtxFunc_AddFunc(t *testing.T) {
 	testCases := []struct {
 		CustomObject  interface{}
-		Initializer   func(ctx context.Context, obj interface{}) (context.Context, error)
+		InitCtxFunc   func(ctx context.Context, obj interface{}) (context.Context, error)
 		ExpectedOrder []string
 	}{
 		{
 			CustomObject: nil,
-			Initializer: func(ctx context.Context, obj interface{}) (context.Context, error) {
+			InitCtxFunc: func(ctx context.Context, obj interface{}) (context.Context, error) {
 				return ctx, nil
 			},
 			ExpectedOrder: nil,
 		},
 		{
 			CustomObject: nil,
-			Initializer: func(ctx context.Context, obj interface{}) (context.Context, error) {
-				ctx = testInitializerNewContext(ctx, "foo")
+			InitCtxFunc: func(ctx context.Context, obj interface{}) (context.Context, error) {
+				ctx = testInitCtxFuncNewContext(ctx, "foo")
 				return ctx, nil
 			},
 			ExpectedOrder: []string{
@@ -43,13 +43,13 @@ func Test_Framework_Initializer_AddFunc(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		r := &testInitilizerResource{}
+		r := &testInitCtxFuncResource{}
 
 		var f *Framework
 		{
 			c := DefaultConfig()
 
-			c.Initializer = tc.Initializer
+			c.InitCtxFunc = tc.InitCtxFunc
 			c.Logger = microloggertest.New()
 			c.Resources = []Resource{
 				r,
@@ -70,23 +70,23 @@ func Test_Framework_Initializer_AddFunc(t *testing.T) {
 	}
 }
 
-func Test_Framework_Initializer_DeleteFunc(t *testing.T) {
+func Test_Framework_InitCtxFunc_DeleteFunc(t *testing.T) {
 	testCases := []struct {
 		CustomObject  interface{}
-		Initializer   func(ctx context.Context, obj interface{}) (context.Context, error)
+		InitCtxFunc   func(ctx context.Context, obj interface{}) (context.Context, error)
 		ExpectedOrder []string
 	}{
 		{
 			CustomObject: nil,
-			Initializer: func(ctx context.Context, obj interface{}) (context.Context, error) {
+			InitCtxFunc: func(ctx context.Context, obj interface{}) (context.Context, error) {
 				return ctx, nil
 			},
 			ExpectedOrder: nil,
 		},
 		{
 			CustomObject: nil,
-			Initializer: func(ctx context.Context, obj interface{}) (context.Context, error) {
-				ctx = testInitializerNewContext(ctx, "foo")
+			InitCtxFunc: func(ctx context.Context, obj interface{}) (context.Context, error) {
+				ctx = testInitCtxFuncNewContext(ctx, "foo")
 				return ctx, nil
 			},
 			ExpectedOrder: []string{
@@ -99,13 +99,13 @@ func Test_Framework_Initializer_DeleteFunc(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		r := &testInitilizerResource{}
+		r := &testInitCtxFuncResource{}
 
 		var f *Framework
 		{
 			c := DefaultConfig()
 
-			c.Initializer = tc.Initializer
+			c.InitCtxFunc = tc.InitCtxFunc
 			c.Logger = microloggertest.New()
 			c.Resources = []Resource{
 				r,
@@ -126,23 +126,23 @@ func Test_Framework_Initializer_DeleteFunc(t *testing.T) {
 	}
 }
 
-func Test_Framework_Initializer_UpdateFunc(t *testing.T) {
+func Test_Framework_InitCtxFunc_UpdateFunc(t *testing.T) {
 	testCases := []struct {
 		CustomObject  interface{}
-		Initializer   func(ctx context.Context, obj interface{}) (context.Context, error)
+		InitCtxFunc   func(ctx context.Context, obj interface{}) (context.Context, error)
 		ExpectedOrder []string
 	}{
 		{
 			CustomObject: nil,
-			Initializer: func(ctx context.Context, obj interface{}) (context.Context, error) {
+			InitCtxFunc: func(ctx context.Context, obj interface{}) (context.Context, error) {
 				return ctx, nil
 			},
 			ExpectedOrder: nil,
 		},
 		{
 			CustomObject: nil,
-			Initializer: func(ctx context.Context, obj interface{}) (context.Context, error) {
-				ctx = testInitializerNewContext(ctx, "foo")
+			InitCtxFunc: func(ctx context.Context, obj interface{}) (context.Context, error) {
+				ctx = testInitCtxFuncNewContext(ctx, "foo")
 				return ctx, nil
 			},
 			ExpectedOrder: []string{
@@ -161,13 +161,13 @@ func Test_Framework_Initializer_UpdateFunc(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		r := &testInitilizerResource{}
+		r := &testInitCtxFuncResource{}
 
 		var f *Framework
 		{
 			c := DefaultConfig()
 
-			c.Initializer = tc.Initializer
+			c.InitCtxFunc = tc.InitCtxFunc
 			c.Logger = microloggertest.New()
 			c.Resources = []Resource{
 				r,
@@ -188,12 +188,12 @@ func Test_Framework_Initializer_UpdateFunc(t *testing.T) {
 	}
 }
 
-type testInitilizerResource struct {
+type testInitCtxFuncResource struct {
 	Order []string
 }
 
-func (r *testInitilizerResource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
-	_, ok := testInitializerFromContext(ctx)
+func (r *testInitCtxFuncResource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
+	_, ok := testInitCtxFuncFromContext(ctx)
 	if ok {
 		m := "GetCurrentState"
 		r.Order = append(r.Order, m)
@@ -202,8 +202,8 @@ func (r *testInitilizerResource) GetCurrentState(ctx context.Context, obj interf
 	return nil, nil
 }
 
-func (r *testInitilizerResource) GetDesiredState(ctx context.Context, obj interface{}) (interface{}, error) {
-	_, ok := testInitializerFromContext(ctx)
+func (r *testInitCtxFuncResource) GetDesiredState(ctx context.Context, obj interface{}) (interface{}, error) {
+	_, ok := testInitCtxFuncFromContext(ctx)
 	if ok {
 		m := "GetDesiredState"
 		r.Order = append(r.Order, m)
@@ -212,8 +212,8 @@ func (r *testInitilizerResource) GetDesiredState(ctx context.Context, obj interf
 	return nil, nil
 }
 
-func (r *testInitilizerResource) GetCreateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
-	_, ok := testInitializerFromContext(ctx)
+func (r *testInitCtxFuncResource) GetCreateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
+	_, ok := testInitCtxFuncFromContext(ctx)
 	if ok {
 		m := "GetCreateState"
 		r.Order = append(r.Order, m)
@@ -222,8 +222,8 @@ func (r *testInitilizerResource) GetCreateState(ctx context.Context, obj, curren
 	return nil, nil
 }
 
-func (r *testInitilizerResource) GetDeleteState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
-	_, ok := testInitializerFromContext(ctx)
+func (r *testInitCtxFuncResource) GetDeleteState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
+	_, ok := testInitCtxFuncFromContext(ctx)
 	if ok {
 		m := "GetDeleteState"
 		r.Order = append(r.Order, m)
@@ -232,8 +232,8 @@ func (r *testInitilizerResource) GetDeleteState(ctx context.Context, obj, curren
 	return nil, nil
 }
 
-func (r *testInitilizerResource) GetUpdateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, interface{}, interface{}, error) {
-	_, ok := testInitializerFromContext(ctx)
+func (r *testInitCtxFuncResource) GetUpdateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, interface{}, interface{}, error) {
+	_, ok := testInitCtxFuncFromContext(ctx)
 	if ok {
 		m := "GetUpdateState"
 		r.Order = append(r.Order, m)
@@ -242,12 +242,12 @@ func (r *testInitilizerResource) GetUpdateState(ctx context.Context, obj, curren
 	return nil, nil, nil, nil
 }
 
-func (r *testInitilizerResource) Name() string {
-	return "testInitilizerResource"
+func (r *testInitCtxFuncResource) Name() string {
+	return "testInitCtxFuncResource"
 }
 
-func (r *testInitilizerResource) ProcessCreateState(ctx context.Context, obj, createState interface{}) error {
-	_, ok := testInitializerFromContext(ctx)
+func (r *testInitCtxFuncResource) ProcessCreateState(ctx context.Context, obj, createState interface{}) error {
+	_, ok := testInitCtxFuncFromContext(ctx)
 	if ok {
 		m := "ProcessCreateState"
 		r.Order = append(r.Order, m)
@@ -256,8 +256,8 @@ func (r *testInitilizerResource) ProcessCreateState(ctx context.Context, obj, cr
 	return nil
 }
 
-func (r *testInitilizerResource) ProcessDeleteState(ctx context.Context, obj, deleteState interface{}) error {
-	_, ok := testInitializerFromContext(ctx)
+func (r *testInitCtxFuncResource) ProcessDeleteState(ctx context.Context, obj, deleteState interface{}) error {
+	_, ok := testInitCtxFuncFromContext(ctx)
 	if ok {
 		m := "ProcessDeleteState"
 		r.Order = append(r.Order, m)
@@ -266,8 +266,8 @@ func (r *testInitilizerResource) ProcessDeleteState(ctx context.Context, obj, de
 	return nil
 }
 
-func (r *testInitilizerResource) ProcessUpdateState(ctx context.Context, obj, updateState interface{}) error {
-	_, ok := testInitializerFromContext(ctx)
+func (r *testInitCtxFuncResource) ProcessUpdateState(ctx context.Context, obj, updateState interface{}) error {
+	_, ok := testInitCtxFuncFromContext(ctx)
 	if ok {
 		m := "ProcessUpdateState"
 		r.Order = append(r.Order, m)
@@ -276,19 +276,19 @@ func (r *testInitilizerResource) ProcessUpdateState(ctx context.Context, obj, up
 	return nil
 }
 
-func (r *testInitilizerResource) Underlying() Resource {
+func (r *testInitCtxFuncResource) Underlying() Resource {
 	return r
 }
 
 type key string
 
-var testInitializerKey key = "testinitiaqlizer"
+var testInitCtxFuncKey key = "testinitiaqlizer"
 
-func testInitializerNewContext(ctx context.Context, v interface{}) context.Context {
-	return context.WithValue(ctx, testInitializerKey, v)
+func testInitCtxFuncNewContext(ctx context.Context, v interface{}) context.Context {
+	return context.WithValue(ctx, testInitCtxFuncKey, v)
 }
 
-func testInitializerFromContext(ctx context.Context) (interface{}, bool) {
-	v, ok := ctx.Value(testInitializerKey).(interface{})
+func testInitCtxFuncFromContext(ctx context.Context) (interface{}, bool) {
+	v, ok := ctx.Value(testInitCtxFuncKey).(interface{})
 	return v, ok
 }

@@ -16,13 +16,13 @@ import (
 type Config struct {
 	// Dependencies.
 
-	// Initializer is to prepare the given context for a single reconciliation
+	// InitCtxFunc is to prepare the given context for a single reconciliation
 	// loop. Operators can implement common context packages to enable
 	// communication between resources. These context packages can be set up
-	// within the initializer. The initializer receives the custom object being
-	// reconciled. Information provided by the custom object can be used to
-	// initialize the context.
-	Initializer func(ctx context.Context, obj interface{}) (context.Context, error)
+	// within the context initializer function. InitCtxFunc receives the custom
+	// object being reconciled as second argument. Information provided by the
+	// custom object can be used to initialize the context.
+	InitCtxFunc func(ctx context.Context, obj interface{}) (context.Context, error)
 	Logger      micrologger.Logger
 	Resources   []Resource
 }
@@ -32,7 +32,7 @@ type Config struct {
 func DefaultConfig() Config {
 	return Config{
 		// Dependencies.
-		Initializer: nil,
+		InitCtxFunc: nil,
 		Logger:      nil,
 		Resources:   nil,
 	}
@@ -60,7 +60,7 @@ func New(config Config) (*Framework, error) {
 
 	newFramework := &Framework{
 		// Dependencies.
-		initializer: config.Initializer,
+		initializer: config.InitCtxFunc,
 		logger:      config.Logger,
 		resources:   config.Resources,
 
