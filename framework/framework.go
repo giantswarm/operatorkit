@@ -15,6 +15,13 @@ import (
 // Config represents the configuration used to create a new operator framework.
 type Config struct {
 	// Dependencies.
+
+	// Initializer is to prepare the given context for a single reconciliation
+	// loop. Operators can implement common context packages to enable
+	// communication between resources. These context packages can be set up
+	// within the initializer. The initializer receives the custom object being
+	// reconciled. Information provided by the custom object can be used to
+	// initialize the context.
 	Initializer func(ctx context.Context, obj interface{}) (context.Context, error)
 	Logger      micrologger.Logger
 	Resources   []Resource
