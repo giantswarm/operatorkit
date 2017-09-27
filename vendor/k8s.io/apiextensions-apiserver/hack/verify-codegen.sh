@@ -18,12 +18,13 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-SCRIPT_ROOT=$(dirname "${BASH_SOURCE}")/..
-SCRIPT_BASE=${SCRIPT_ROOT}/../..
+KUBE_ROOT=$(dirname "${BASH_SOURCE}")/../../../../..
+APIFEDERATOR_ROOT=$(dirname "${BASH_SOURCE}")/..
+source "${KUBE_ROOT}/hack/lib/init.sh"
 
-DIFFROOT="${SCRIPT_ROOT}/pkg"
-TMP_DIFFROOT="${SCRIPT_ROOT}/_tmp/pkg"
-_tmp="${SCRIPT_ROOT}/_tmp"
+DIFFROOT="${APIFEDERATOR_ROOT}/pkg"
+TMP_DIFFROOT="${APIFEDERATOR_ROOT}/_tmp/pkg"
+_tmp="${APIFEDERATOR_ROOT}/_tmp"
 
 cleanup() {
   rm -rf "${_tmp}"
@@ -35,7 +36,7 @@ cleanup
 mkdir -p "${TMP_DIFFROOT}"
 cp -a "${DIFFROOT}"/* "${TMP_DIFFROOT}"
 
-"${SCRIPT_ROOT}/hack/update-codegen.sh"
+"${APIFEDERATOR_ROOT}/hack/update-codegen.sh"
 echo "diffing ${DIFFROOT} against freshly generated codegen"
 ret=0
 diff -Naupr "${DIFFROOT}" "${TMP_DIFFROOT}" || ret=$?

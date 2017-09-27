@@ -78,23 +78,10 @@ func init() {
 	Scheme.AddUnversionedTypes(unversionedVersion, unversionedTypes...)
 }
 
-type ExtraConfig struct {
-	CRDRESTOptionsGetter genericregistry.RESTOptionsGetter
-}
-
 type Config struct {
-	GenericConfig *genericapiserver.RecommendedConfig
-	ExtraConfig   ExtraConfig
-}
+	GenericConfig *genericapiserver.Config
 
-type completedConfig struct {
-	GenericConfig genericapiserver.CompletedConfig
-	ExtraConfig   *ExtraConfig
-}
-
-type CompletedConfig struct {
-	// Embed a private pointer that cannot be instantiated outside of this package.
-	*completedConfig
+	CRDRESTOptionsGetter genericregistry.RESTOptionsGetter
 }
 
 type CustomResourceDefinitions struct {
@@ -104,25 +91,31 @@ type CustomResourceDefinitions struct {
 	Informers internalinformers.SharedInformerFactory
 }
 
-// Complete fills in any fields not set that are required to have valid data. It's mutating the receiver.
-func (cfg *Config) Complete() CompletedConfig {
-	c := completedConfig{
-		cfg.GenericConfig.Complete(),
-		&cfg.ExtraConfig,
-	}
+type completedConfig struct {
+	*Config
+}
 
+// Complete fills in any fields not set that are required to have valid data. It's mutating the receiver.
+func (c *Config) Complete() completedConfig {
 	c.GenericConfig.EnableDiscovery = false
+	c.GenericConfig.Complete()
+
 	c.GenericConfig.Version = &version.Info{
 		Major: "0",
 		Minor: "1",
 	}
 
-	return CompletedConfig{&c}
+	return completedConfig{c}
+}
+
+// SkipComplete provides a way to construct a server instance without config completion.
+func (c *Config) SkipComplete() completedConfig {
+	return completedConfig{c}
 }
 
 // New returns a new instance of CustomResourceDefinitions from the given config.
 func (c completedConfig) New(delegationTarget genericapiserver.DelegationTarget) (*CustomResourceDefinitions, error) {
-	genericServer, err := c.GenericConfig.New("apiextensions-apiserver", delegationTarget)
+	genericServer, err := c.Config.GenericConfig.SkipComplete().New("apiextensions-apiserver", delegationTarget) // completion is done in Complete, no need for a second time
 	if err != nil {
 		return nil, err
 	}
@@ -178,26 +171,25 @@ func (c completedConfig) New(delegationTarget genericapiserver.DelegationTarget)
 		groupDiscoveryHandler,
 		s.GenericAPIServer.RequestContextMapper(),
 		s.Informers.Apiextensions().InternalVersion().CustomResourceDefinitions().Lister(),
-		s.Informers.Apiextensions().InternalVersion().CustomResourceDefinitions(),
 		delegateHandler,
-		c.ExtraConfig.CRDRESTOptionsGetter,
+		c.CRDRESTOptionsGetter,
 		c.GenericConfig.AdmissionControl,
 	)
 	s.GenericAPIServer.Handler.NonGoRestfulMux.Handle("/apis", crdHandler)
 	s.GenericAPIServer.Handler.NonGoRestfulMux.HandlePrefix("/apis/", crdHandler)
 
-	// this only happens when KUBE_API_VERSIONS is set.  We must return without adding controllers or poststarthooks which would affect healthz
+	crdController := NewDiscoveryController(s.Informers.Apiextensions().InternalVersion().CustomResourceDefinitions(), versionDiscoveryHandler, groupDiscoveryHandler, c.GenericConfig.RequestContextMapper)
+	namingController := status.NewNamingConditionController(s.Informers.Apiextensions().InternalVersion().CustomResourceDefinitions(), crdClient)
+	finalizingController := finalizer.NewCRDFinalizer(
+		s.Informers.Apiextensions().InternalVersion().CustomResourceDefinitions(),
+		crdClient,
+		crdHandler,
+	)
+
+	// this only happens when KUBE_API_VERSIONS is set.  We must return without adding poststarthooks which would affect healthz
 	if crdClient == nil {
 		return s, nil
 	}
-
-	crdController := NewDiscoveryController(s.Informers.Apiextensions().InternalVersion().CustomResourceDefinitions(), versionDiscoveryHandler, groupDiscoveryHandler, c.GenericConfig.RequestContextMapper)
-	namingController := status.NewNamingConditionController(s.Informers.Apiextensions().InternalVersion().CustomResourceDefinitions(), crdClient.Apiextensions())
-	finalizingController := finalizer.NewCRDFinalizer(
-		s.Informers.Apiextensions().InternalVersion().CustomResourceDefinitions(),
-		crdClient.Apiextensions(),
-		crdHandler,
-	)
 
 	s.GenericAPIServer.AddPostStartHook("start-apiextensions-informers", func(context genericapiserver.PostStartHookContext) error {
 		s.Informers.Start(context.StopCh)

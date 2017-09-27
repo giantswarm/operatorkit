@@ -32,6 +32,7 @@ func Install(groupFactoryRegistry announced.APIGroupFactoryRegistry, registry *r
 			GroupName:                  apiextensions.GroupName,
 			RootScopedKinds:            sets.NewString("CustomResourceDefinition"),
 			VersionPreferenceOrder:     []string{v1beta1.SchemeGroupVersion.Version},
+			ImportPrefix:               "k8s.io/apiextensions-apiserver/pkg/apis/apiextension",
 			AddInternalObjectsToScheme: apiextensions.AddToScheme,
 		},
 		announced.VersionToSchemeFunc{

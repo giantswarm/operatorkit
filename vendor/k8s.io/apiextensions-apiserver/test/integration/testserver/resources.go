@@ -33,14 +33,9 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
-const (
-	noxuInstanceNum int64 = 9223372036854775807
-)
-
 //NewRandomNameCustomResourceDefinition generates a CRD with random name to avoid name conflict in e2e tests
 func NewRandomNameCustomResourceDefinition(scope apiextensionsv1beta1.ResourceScope) *apiextensionsv1beta1.CustomResourceDefinition {
-	// ensure the singular doesn't end in an s for now
-	gName := names.SimpleNameGenerator.GenerateName("foo") + "a"
+	gName := names.SimpleNameGenerator.GenerateName("foo")
 	return &apiextensionsv1beta1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{Name: gName + "s.mygroup.example.com"},
 		Spec: apiextensionsv1beta1.CustomResourceDefinitionSpec{
@@ -88,7 +83,7 @@ func NewNoxuInstance(namespace, name string) *unstructured.Unstructured {
 				"key": "value",
 			},
 			"num": map[string]interface{}{
-				"num1": noxuInstanceNum,
+				"num1": 9223372036854775807,
 				"num2": 1000000,
 			},
 		},
@@ -146,7 +141,7 @@ func NewCurletInstance(namespace, name string) *unstructured.Unstructured {
 	}
 }
 
-func CreateNewCustomResourceDefinition(crd *apiextensionsv1beta1.CustomResourceDefinition, apiExtensionsClient clientset.Interface, clientPool dynamic.ClientPool) (dynamic.Interface, error) {
+func CreateNewCustomResourceDefinition(crd *apiextensionsv1beta1.CustomResourceDefinition, apiExtensionsClient clientset.Interface, clientPool dynamic.ClientPool) (*dynamic.Client, error) {
 	_, err := apiExtensionsClient.Apiextensions().CustomResourceDefinitions().Create(crd)
 	if err != nil {
 		return nil, err
@@ -199,7 +194,7 @@ func CreateNewCustomResourceDefinition(crd *apiextensionsv1beta1.CustomResourceD
 	return dynamicClient, nil
 }
 
-func checkForWatchCachePrimed(crd *apiextensionsv1beta1.CustomResourceDefinition, dynamicClient dynamic.Interface) error {
+func checkForWatchCachePrimed(crd *apiextensionsv1beta1.CustomResourceDefinition, dynamicClient *dynamic.Client) error {
 	ns := ""
 	if crd.Spec.Scope != apiextensionsv1beta1.ClusterScoped {
 		ns = "aval"
@@ -217,7 +212,7 @@ func checkForWatchCachePrimed(crd *apiextensionsv1beta1.CustomResourceDefinition
 		return err
 	}
 
-	instanceName := "setup-instance"
+	instanceName := "foo"
 	instance := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": crd.Spec.Group + "/" + crd.Spec.Version,
@@ -226,11 +221,6 @@ func checkForWatchCachePrimed(crd *apiextensionsv1beta1.CustomResourceDefinition
 				"namespace": ns,
 				"name":      instanceName,
 			},
-			"alpha":   "foo_123",
-			"beta":    10,
-			"gamma":   "bar",
-			"delta":   "hello",
-			"epsilon": "foobar",
 		},
 	}
 	if _, err := resourceClient.Create(instance); err != nil {

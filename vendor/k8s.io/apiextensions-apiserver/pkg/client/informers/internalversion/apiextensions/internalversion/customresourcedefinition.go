@@ -41,11 +41,8 @@ type customResourceDefinitionInformer struct {
 	factory internalinterfaces.SharedInformerFactory
 }
 
-// NewCustomResourceDefinitionInformer constructs a new informer for CustomResourceDefinition type.
-// Always prefer using an informer factory to get a shared informer instead of getting an independent
-// one. This reduces memory footprint and number of connections to the server.
-func NewCustomResourceDefinitionInformer(client internalclientset.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return cache.NewSharedIndexInformer(
+func newCustomResourceDefinitionInformer(client internalclientset.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	sharedIndexInformer := cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				return client.Apiextensions().CustomResourceDefinitions().List(options)
@@ -56,16 +53,14 @@ func NewCustomResourceDefinitionInformer(client internalclientset.Interface, res
 		},
 		&apiextensions.CustomResourceDefinition{},
 		resyncPeriod,
-		indexers,
+		cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc},
 	)
-}
 
-func defaultCustomResourceDefinitionInformer(client internalclientset.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewCustomResourceDefinitionInformer(client, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
+	return sharedIndexInformer
 }
 
 func (f *customResourceDefinitionInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&apiextensions.CustomResourceDefinition{}, defaultCustomResourceDefinitionInformer)
+	return f.factory.InformerFor(&apiextensions.CustomResourceDefinition{}, newCustomResourceDefinitionInformer)
 }
 
 func (f *customResourceDefinitionInformer) Lister() internalversion.CustomResourceDefinitionLister {

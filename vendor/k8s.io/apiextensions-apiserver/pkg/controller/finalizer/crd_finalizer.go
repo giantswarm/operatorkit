@@ -26,6 +26,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/conversion"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -40,6 +41,8 @@ import (
 	informers "k8s.io/apiextensions-apiserver/pkg/client/informers/internalversion/apiextensions/internalversion"
 	listers "k8s.io/apiextensions-apiserver/pkg/client/listers/apiextensions/internalversion"
 )
+
+var cloner = conversion.NewCloner()
 
 // CRDFinalizer is a controller that finalizes the CRD by deleting all the CRs associated with it.
 type CRDFinalizer struct {
@@ -106,7 +109,10 @@ func (c *CRDFinalizer) sync(key string) error {
 		return nil
 	}
 
-	crd := cachedCRD.DeepCopy()
+	crd := &apiextensions.CustomResourceDefinition{}
+	if err := apiextensions.DeepCopy_apiextensions_CustomResourceDefinition(cachedCRD, crd, cloner); err != nil {
+		return err
+	}
 
 	// update the status condition.  This cleanup could take a while.
 	apiextensions.SetCRDCondition(crd, apiextensions.CustomResourceDefinitionCondition{
@@ -314,8 +320,18 @@ func (c *CRDFinalizer) updateCustomResourceDefinition(oldObj, newObj interface{}
 	// is likely to be the originator, so requeuing would hot-loop us.  Failures are requeued by the workqueue directly.
 	// This is a low traffic and scale resource, so the copy is terrible.  It's not good, so better ideas
 	// are welcome.
-	oldCopy := oldCRD.DeepCopy()
-	newCopy := newCRD.DeepCopy()
+	oldCopy := &apiextensions.CustomResourceDefinition{}
+	if err := apiextensions.DeepCopy_apiextensions_CustomResourceDefinition(oldCRD, oldCopy, cloner); err != nil {
+		utilruntime.HandleError(err)
+		c.enqueue(newCRD)
+		return
+	}
+	newCopy := &apiextensions.CustomResourceDefinition{}
+	if err := apiextensions.DeepCopy_apiextensions_CustomResourceDefinition(newCRD, newCopy, cloner); err != nil {
+		utilruntime.HandleError(err)
+		c.enqueue(newCRD)
+		return
+	}
 	oldCopy.ResourceVersion = ""
 	newCopy.ResourceVersion = ""
 	apiextensions.RemoveCRDCondition(oldCopy, apiextensions.Terminating)
