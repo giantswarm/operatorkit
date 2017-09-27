@@ -6,6 +6,7 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
 )
 
@@ -30,8 +31,10 @@ type Config struct {
 
 	// Settings
 	Address   string
+	Group     string
 	InCluster bool
 	TLS       TLSClientConfig
+	Version   string
 }
 
 // DefaultConfig provides a default configuration to create a new Kubernetes
@@ -43,8 +46,10 @@ func DefaultConfig() Config {
 
 		// Settings.
 		Address:   "",
+		Group:     "",
 		InCluster: true,
 		TLS:       TLSClientConfig{},
+		Version:   "",
 	}
 }
 
@@ -56,8 +61,14 @@ func New(config Config) (apiextensionsclient.Interface, error) {
 	}
 
 	// Settings.
-	if !config.InCluster && config.Address == "" {
+	if config.Address == "" && !config.InCluster {
 		return nil, microerror.Maskf(invalidConfigError, "config.Address must not be empty when not creating in-cluster client")
+	}
+	if config.Group == "" {
+		return nil, microerror.Maskf(invalidConfigError, "config.Group must not be empty")
+	}
+	if config.Version == "" {
+		return nil, microerror.Maskf(invalidConfigError, "config.Version must not be empty")
 	}
 
 	var err error
@@ -80,9 +91,13 @@ func New(config Config) (apiextensionsclient.Interface, error) {
 		}
 
 		restConfig = &rest.Config{
-			Host:  config.Address,
-			QPS:   MaxQPS,
 			Burst: MaxBurst,
+			GroupVersion: schema.GroupVersion{
+				Group:   config.Group,
+				Version: config.Version,
+			},
+			Host: config.Address,
+			QPS:  MaxQPS,
 			TLSClientConfig: rest.TLSClientConfig{
 				CertFile: config.TLS.CrtFile,
 				KeyFile:  config.TLS.KeyFile,
