@@ -92,9 +92,11 @@ func New(config Config) (apiextensionsclient.Interface, error) {
 
 		restConfig = &rest.Config{
 			Burst: MaxBurst,
-			GroupVersion: schema.GroupVersion{
-				Group:   config.Group,
-				Version: config.Version,
+			ContentConfig: rest.ContentConfig{
+				GroupVersion: &schema.GroupVersion{
+					Group:   config.Group,
+					Version: config.Version,
+				},
 			},
 			Host: config.Address,
 			QPS:  MaxQPS,
