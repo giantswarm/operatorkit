@@ -1,6 +1,8 @@
 package crd
 
 import (
+	"path/filepath"
+
 	"github.com/giantswarm/microerror"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -94,6 +96,10 @@ func (c *CRD) Kind() string {
 	return c.kind
 }
 
+func (c *CRD) ListEndpoint() string {
+	return filepath.Join("apis", c.Group(), c.Version(), c.Plural())
+}
+
 func (c *CRD) Name() string {
 	return c.name
 }
@@ -140,6 +146,10 @@ func (c *CRD) Plural() string {
 	return c.plural
 }
 
+func (c *CRD) ResourceEndpoint(name string) string {
+	return filepath.Join("apis", c.Group(), c.Version(), c.Plural(), name)
+}
+
 func (c *CRD) Singular() string {
 	return c.singular
 }
@@ -150,4 +160,8 @@ func (c *CRD) Scope() apiextensionsv1beta1.ResourceScope {
 
 func (c *CRD) Version() string {
 	return c.version
+}
+
+func (c *CRD) WatchEndpoint() string {
+	return filepath.Join("apis", c.Group(), c.Version(), "watch", c.Plural())
 }

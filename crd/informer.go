@@ -6,7 +6,6 @@ import (
 
 	"github.com/cenk/backoff"
 	"github.com/giantswarm/microerror"
-	apiv1 "k8s.io/api/core/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -128,8 +127,7 @@ func (i *Informer) CreateCRD(CRD *CRD) error {
 func (i *Informer) NewController(CRD *CRD, resourceEventHandler cache.ResourceEventHandler, zeroObjectFactory ZeroObjectFactory) cache.Controller {
 	listWatch := &cache.ListWatch{
 		ListFunc: func(options apismetav1.ListOptions) (runtime.Object, error) {
-			request := i.crdClient.ApiextensionsV1beta1().RESTClient().Get()
-			b, err := request.Namespace(apiv1.NamespaceAll).Resource(CRD.Plural()).DoRaw()
+			b, err := i.crdClient.ApiextensionsV1beta1().RESTClient().Get().AbsPath(CRD.ListEndpoint()).DoRaw()
 			if err != nil {
 				return nil, microerror.Mask(err)
 			}
@@ -142,8 +140,7 @@ func (i *Informer) NewController(CRD *CRD, resourceEventHandler cache.ResourceEv
 			return v, nil
 		},
 		WatchFunc: func(options apismetav1.ListOptions) (watch.Interface, error) {
-			request := i.crdClient.ApiextensionsV1beta1().RESTClient().Get()
-			stream, err := request.Namespace(apiv1.NamespaceAll).Resource(CRD.Plural()).Stream()
+			stream, err := i.crdClient.ApiextensionsV1beta1().RESTClient().Get().AbsPath(CRD.WatchEndpoint()).Stream()
 			if err != nil {
 				return nil, microerror.Mask(err)
 			}
