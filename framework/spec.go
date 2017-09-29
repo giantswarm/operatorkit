@@ -51,11 +51,9 @@ type Resource interface {
 	// GetUpdateState receives the new custom object observed during TPR watches.
 	// It also receives the current state as provided by GetCurrentState and the
 	// desired state as provided by GetDesiredState. GetUpdateState analyses the
-	// current and desired state and returns the states intended to be created,
-	// deleted and updated. The returned create state will be given to
-	// ProcessCreateState. The returned delete state will be given to
-	// ProcessDeleteState. The returned update state will be given to
-	// ProcessUpdateState.
+	// current and desired state and returns the states intended to be deleted and
+	// updated. The returned delete state will be given to ProcessDeleteState. The
+	// returned update state will be given to ProcessUpdateState.
 	//
 	// NOTE simple resources not concerned with being updated do not have to
 	// implement anything but just fulfil the resource interface. More complex
@@ -65,7 +63,7 @@ type Resource interface {
 	// This transformation has to be reflected by different states which are
 	// returned by GetUpdateState. The first value being returned is the create
 	// state, the second the delete state and the third the update state.
-	GetUpdateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, interface{}, interface{}, error)
+	GetUpdateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, interface{}, error)
 	// Name returns the resource's name used for identification.
 	Name() string
 	// ProcessCreateState receives the new custom object observed during TPR

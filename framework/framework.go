@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
+	"github.com/cenk/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-	"k8s.io/client-go/tools/cache"
+	"k8s.io/apimachinery/pkg/watch"
 
 	"github.com/giantswarm/operatorkit/framework/canceledcontext"
 )
@@ -16,6 +18,9 @@ import (
 type Config struct {
 	// Dependencies.
 
+	// BackOff is used to retry on errors when processing events. See
+	// ProcessEvents.
+	BackOff backoff.BackOff
 	// InitCtxFunc is to prepare the given context for a single reconciliation
 	// loop. Operators can implement common context packages to enable
 	// communication between resources. These context packages can be set up
@@ -32,6 +37,7 @@ type Config struct {
 func DefaultConfig() Config {
 	return Config{
 		// Dependencies.
+		BackOff:     nil,
 		InitCtxFunc: nil,
 		Logger:      nil,
 		Resources:   nil,
@@ -40,6 +46,7 @@ func DefaultConfig() Config {
 
 type Framework struct {
 	// Dependencies.
+	backOff     backoff.BackOff
 	initializer func(ctx context.Context, obj interface{}) (context.Context, error)
 	logger      micrologger.Logger
 	resources   []Resource
@@ -51,6 +58,9 @@ type Framework struct {
 // New creates a new configured operator framework.
 func New(config Config) (*Framework, error) {
 	// Dependencies.
+	if config.BackOff == nil {
+		return nil, microerror.Maskf(invalidConfigError, "config.BackOff must not be empty")
+	}
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
 	}
@@ -60,6 +70,7 @@ func New(config Config) (*Framework, error) {
 
 	newFramework := &Framework{
 		// Dependencies.
+		backOff:     config.BackOff,
 		initializer: config.InitCtxFunc,
 		logger:      config.Logger,
 		resources:   config.Resources,
@@ -71,58 +82,13 @@ func New(config Config) (*Framework, error) {
 	return newFramework, nil
 }
 
-// AddFunc executes the framework's ProcessCreate and ProcessUpdate functions,
-// in this order. This guarantees resource creation is always done before
-// resource updates.
-func (f *Framework) AddFunc(obj interface{}) {
-	// We lock the AddFunc/DeleteFunc to make sure only one AddFunc/DeleteFunc is
-	// executed at a time. AddFunc/DeleteFunc is not thread safe. This is
-	// important because the source of truth for an operator are the reconciled
-	// resources. In case we would run the operator logic in parallel, we would
-	// run into race conditions.
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	ctx := context.Background()
-	ctx = canceledcontext.NewContext(ctx, make(chan struct{}))
-
-	if f.initializer != nil {
-		var err error
-		ctx, err = f.initializer(ctx, obj)
-		if err != nil {
-			f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "create")
-			return
-		}
-	}
-
-	f.logger.Log("action", "start", "component", "operatorkit", "function", "ProcessCreate")
-
-	err := ProcessCreate(ctx, obj, f.resources)
-	if err != nil {
-		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "create")
-		return
-	}
-
-	f.logger.Log("action", "end", "component", "operatorkit", "function", "ProcessCreate")
-
-	f.logger.Log("action", "start", "component", "operatorkit", "function", "ProcessUpdate")
-
-	err = ProcessUpdate(ctx, obj, f.resources)
-	if err != nil {
-		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "update")
-		return
-	}
-
-	f.logger.Log("action", "end", "component", "operatorkit", "function", "ProcessUpdate")
-}
-
 // DeleteFunc executes the framework's ProcessDelete function.
 func (f *Framework) DeleteFunc(obj interface{}) {
-	// We lock the AddFunc/DeleteFunc to make sure only one AddFunc/DeleteFunc is
-	// executed at a time. AddFunc/DeleteFunc is not thread safe. This is
-	// important because the source of truth for an operator are the reconciled
-	// resources. In case we would run the operator logic in parallel, we would
-	// run into race conditions.
+	// We lock the UpdateFunc/DeleteFunc to make sure only one
+	// UpdateFunc/DeleteFunc is executed at a time. UpdateFunc/DeleteFunc is not
+	// thread safe. This is important because the source of truth for an operator
+	// are the reconciled resources. In case we would run the operator logic in
+	// parallel, we would run into race conditions.
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -147,83 +113,6 @@ func (f *Framework) DeleteFunc(obj interface{}) {
 	}
 
 	f.logger.Log("action", "end", "component", "operatorkit", "function", "ProcessDelete")
-}
-
-// NewCacheResourceEventHandler returns the framework's event handler for the
-// k8s client's cache informer implementation. The event handler has functions
-// registered for the k8s client's add, delete and update events.
-func (f *Framework) NewCacheResourceEventHandler() *cache.ResourceEventHandlerFuncs {
-	newHandler := &cache.ResourceEventHandlerFuncs{
-		AddFunc:    f.AddFunc,
-		DeleteFunc: f.DeleteFunc,
-		UpdateFunc: f.UpdateFunc,
-	}
-
-	return newHandler
-}
-
-// UpdateFunc only redirects to AddFunc and only dispatches the new custom
-// object received.
-func (f *Framework) UpdateFunc(oldObj, newObj interface{}) {
-	f.AddFunc(newObj)
-}
-
-// ProcessCreate is a drop-in for an informer's AddFunc. It receives the custom
-// object observed during TPR watches and anything that implements Resource.
-// ProcessCreate takes care about all necessary reconciliation logic for create
-// events.
-//
-//     func addFunc(obj interface{}) {
-//         err := f.ProcessCreate(obj, resources)
-//         if err != nil {
-//             // error handling here
-//         }
-//     }
-//
-//     newResourceEventHandler := &cache.ResourceEventHandlerFuncs{
-//         AddFunc:    addFunc,
-//     }
-//
-func ProcessCreate(ctx context.Context, obj interface{}, resources []Resource) error {
-	if len(resources) == 0 {
-		return microerror.Maskf(executionFailedError, "resources must not be empty")
-	}
-
-	for _, r := range resources {
-		if canceledcontext.IsCanceled(ctx) {
-			return nil
-		}
-		currentState, err := r.GetCurrentState(ctx, obj)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-
-		if canceledcontext.IsCanceled(ctx) {
-			return nil
-		}
-		desiredState, err := r.GetDesiredState(ctx, obj)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-
-		if canceledcontext.IsCanceled(ctx) {
-			return nil
-		}
-		createState, err := r.GetCreateState(ctx, obj, currentState, desiredState)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-
-		if canceledcontext.IsCanceled(ctx) {
-			return nil
-		}
-		err = r.ProcessCreateState(ctx, obj, createState)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-	}
-
-	return nil
 }
 
 // ProcessDelete is a drop-in for an informer's DeleteFunc. It receives the
@@ -284,6 +173,36 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 	return nil
 }
 
+// ProcessEvents takes the event channels created by the operatorkit informer
+// and executes the framework's event functions accordingly.
+func (f *Framework) ProcessEvents(ctx context.Context, deleteChan chan watch.Event, updateChan chan watch.Event, errChan chan error) {
+	operation := func() error {
+		for {
+			select {
+			case e := <-deleteChan:
+				f.DeleteFunc(e.Object)
+			case e := <-updateChan:
+				f.UpdateFunc(e.Object)
+			case err := <-errChan:
+				return microerror.Mask(err)
+			case <-ctx.Done():
+				return nil
+			}
+		}
+
+		return nil
+	}
+
+	notifier := func(err error, d time.Duration) {
+		f.logger.Log("error", fmt.Sprintf("%#v", err))
+	}
+
+	err := backoff.RetryNotify(operation, f.backOff, notifier)
+	if err != nil {
+		f.logger.Log("error", fmt.Sprintf("%#v", err))
+	}
+}
+
 // ProcessUpdate is a drop-in for an informer's UpdateFunc. It receives the new
 // custom object observed during TPR watches and anything that implements
 // Resource. ProcessUpdate takes care about all necessary reconciliation logic
@@ -326,7 +245,15 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 		if canceledcontext.IsCanceled(ctx) {
 			return nil
 		}
-		createState, deleteState, updateState, err := r.GetUpdateState(ctx, obj, currentState, desiredState)
+		createState, err := r.GetCreateState(ctx, obj, currentState, desiredState)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
+		if canceledcontext.IsCanceled(ctx) {
+			return nil
+		}
+		deleteState, updateState, err := r.GetUpdateState(ctx, obj, currentState, desiredState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -357,4 +284,37 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 	}
 
 	return nil
+}
+
+// UpdateFunc executes the framework's ProcessUpdate function.
+func (f *Framework) UpdateFunc(obj interface{}) {
+	// We lock the UpdateFunc/DeleteFunc to make sure only one
+	// UpdateFunc/DeleteFunc is executed at a time. UpdateFunc/DeleteFunc is not
+	// thread safe. This is important because the source of truth for an operator
+	// are the reconciled resources. In case we would run the operator logic in
+	// parallel, we would run into race conditions.
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	ctx := context.Background()
+	ctx = canceledcontext.NewContext(ctx, make(chan struct{}))
+
+	if f.initializer != nil {
+		var err error
+		ctx, err = f.initializer(ctx, obj)
+		if err != nil {
+			f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "update")
+			return
+		}
+	}
+
+	f.logger.Log("action", "start", "component", "operatorkit", "function", "ProcessUpdate")
+
+	err := ProcessUpdate(ctx, obj, f.resources)
+	if err != nil {
+		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "update")
+		return
+	}
+
+	f.logger.Log("action", "end", "component", "operatorkit", "function", "ProcessUpdate")
 }

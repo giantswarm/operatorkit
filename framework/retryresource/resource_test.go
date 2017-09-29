@@ -10,118 +10,6 @@ import (
 	"github.com/giantswarm/operatorkit/framework"
 )
 
-// Test_RetryResource_ProcessCreate_ResourceOrder_RetryOnError ensures the
-// resource's methods are executed as expected when retrying the creation
-// process.
-func Test_RetryResource_ProcessCreate_ResourceOrder_RetryOnError(t *testing.T) {
-	testCases := []struct {
-		ErrorCount          int
-		ErrorMethod         string
-		ExpectedMethodOrder []string
-	}{
-		{
-			ErrorCount:  1,
-			ErrorMethod: "GetCurrentState",
-			ExpectedMethodOrder: []string{
-				"GetCurrentState",
-				"GetCurrentState",
-				"GetDesiredState",
-				"GetCreateState",
-				"ProcessCreateState",
-			},
-		},
-		{
-			ErrorCount:  2,
-			ErrorMethod: "GetCurrentState",
-			ExpectedMethodOrder: []string{
-				"GetCurrentState",
-				"GetCurrentState",
-				"GetCurrentState",
-				"GetDesiredState",
-				"GetCreateState",
-				"ProcessCreateState",
-			},
-		},
-		{
-			ErrorCount:  2,
-			ErrorMethod: "ProcessCreateState",
-			ExpectedMethodOrder: []string{
-				"GetCurrentState",
-				"GetDesiredState",
-				"GetCreateState",
-				"ProcessCreateState",
-				"ProcessCreateState",
-				"ProcessCreateState",
-			},
-		},
-	}
-
-	for i, tc := range testCases {
-		tr := &testResource{
-			Error:       fmt.Errorf("test error"),
-			ErrorCount:  tc.ErrorCount,
-			ErrorMethod: tc.ErrorMethod,
-		}
-		rs := []framework.Resource{
-			tr,
-		}
-		bf := func() backoff.BackOff {
-			return &backoff.ZeroBackOff{}
-		}
-
-		config := DefaultWrapConfig()
-		config.BackOffFactory = bf
-		wrapped, err := Wrap(rs, config)
-		if err != nil {
-			t.Fatal("test", i+1, "expected", nil, "got", err)
-		}
-
-		err = framework.ProcessCreate(context.TODO(), nil, wrapped)
-		if err != nil {
-			t.Fatal("test", i+1, "expected", nil, "got", err)
-		}
-
-		if !reflect.DeepEqual(tc.ExpectedMethodOrder, tr.Order) {
-			t.Fatal("test", i+1, "expected", tc.ExpectedMethodOrder, "got", tr.Order)
-		}
-	}
-}
-
-// Test_RetryResource_ProcessCreate_ResourceOrder ensures the resource's methods
-// are executed as expected when creating resources using the wrapping retry
-// resource.
-func Test_RetryResource_ProcessCreate_ResourceOrder(t *testing.T) {
-	tr := &testResource{}
-	rs := []framework.Resource{
-		tr,
-	}
-	bf := func() backoff.BackOff {
-		return &backoff.ZeroBackOff{}
-	}
-
-	config := DefaultWrapConfig()
-	config.BackOffFactory = bf
-	wrapped, err := Wrap(rs, config)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
-
-	err = framework.ProcessCreate(context.TODO(), nil, wrapped)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
-
-	e := []string{
-		"GetCurrentState",
-		"GetDesiredState",
-		"GetCreateState",
-		"ProcessCreateState",
-	}
-	if !reflect.DeepEqual(e, tr.Order) {
-		t.Fatal("expected", e, "got", tr.Order)
-	}
-}
-
 // Test_RetryResource_ProcessDelete_ResourceOrder_RetryOnError ensures the
 // resource's methods are executed as expected when retrying the deletion
 // process.
@@ -250,6 +138,7 @@ func Test_RetryResource_ProcessUpdate_ResourceOrder_RetryOnError(t *testing.T) {
 				"GetCurrentState",
 				"GetCurrentState",
 				"GetDesiredState",
+				"GetCreateState",
 				"GetUpdateState",
 				"ProcessCreateState",
 				"ProcessDeleteState",
@@ -264,6 +153,7 @@ func Test_RetryResource_ProcessUpdate_ResourceOrder_RetryOnError(t *testing.T) {
 				"GetCurrentState",
 				"GetCurrentState",
 				"GetDesiredState",
+				"GetCreateState",
 				"GetUpdateState",
 				"ProcessCreateState",
 				"ProcessDeleteState",
@@ -276,6 +166,7 @@ func Test_RetryResource_ProcessUpdate_ResourceOrder_RetryOnError(t *testing.T) {
 			ExpectedMethodOrder: []string{
 				"GetCurrentState",
 				"GetDesiredState",
+				"GetCreateState",
 				"GetUpdateState",
 				"ProcessCreateState",
 				"ProcessDeleteState",
@@ -344,6 +235,7 @@ func Test_RetryResource_ProcessUpdate_ResourceOrder(t *testing.T) {
 	e := []string{
 		"GetCurrentState",
 		"GetDesiredState",
+		"GetCreateState",
 		"GetUpdateState",
 		"ProcessCreateState",
 		"ProcessDeleteState",
@@ -407,15 +299,15 @@ func (r *testResource) GetDeleteState(ctx context.Context, obj, currentState, de
 	return nil, nil
 }
 
-func (r *testResource) GetUpdateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, interface{}, interface{}, error) {
+func (r *testResource) GetUpdateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, interface{}, error) {
 	m := "GetUpdateState"
 	r.Order = append(r.Order, m)
 
 	if r.returnErrorFor(m) {
-		return nil, nil, nil, r.Error
+		return nil, nil, r.Error
 	}
 
-	return nil, nil, nil, nil
+	return nil, nil, nil
 }
 
 func (r *testResource) Name() string {

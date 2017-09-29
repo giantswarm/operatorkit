@@ -5,70 +5,9 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/cenk/backoff"
 	"github.com/giantswarm/micrologger/microloggertest"
 )
-
-func Test_Framework_InitCtxFunc_AddFunc(t *testing.T) {
-	testCases := []struct {
-		CustomObject  interface{}
-		InitCtxFunc   func(ctx context.Context, obj interface{}) (context.Context, error)
-		ExpectedOrder []string
-	}{
-		{
-			CustomObject: nil,
-			InitCtxFunc: func(ctx context.Context, obj interface{}) (context.Context, error) {
-				return ctx, nil
-			},
-			ExpectedOrder: nil,
-		},
-		{
-			CustomObject: nil,
-			InitCtxFunc: func(ctx context.Context, obj interface{}) (context.Context, error) {
-				ctx = testInitCtxFuncNewContext(ctx, "foo")
-				return ctx, nil
-			},
-			ExpectedOrder: []string{
-				"GetCurrentState",
-				"GetDesiredState",
-				"GetCreateState",
-				"ProcessCreateState",
-				"GetCurrentState",
-				"GetDesiredState",
-				"GetUpdateState",
-				"ProcessCreateState",
-				"ProcessDeleteState",
-				"ProcessUpdateState",
-			},
-		},
-	}
-
-	for i, tc := range testCases {
-		r := &testInitCtxFuncResource{}
-
-		var f *Framework
-		{
-			c := DefaultConfig()
-
-			c.InitCtxFunc = tc.InitCtxFunc
-			c.Logger = microloggertest.New()
-			c.Resources = []Resource{
-				r,
-			}
-
-			var err error
-			f, err = New(c)
-			if err != nil {
-				t.Fatal("expected", nil, "got", err)
-			}
-		}
-
-		f.AddFunc(tc.CustomObject)
-
-		if !reflect.DeepEqual(tc.ExpectedOrder, r.Order) {
-			t.Fatal("test", i+1, "expected", tc.ExpectedOrder, "got", r.Order)
-		}
-	}
-}
 
 func Test_Framework_InitCtxFunc_DeleteFunc(t *testing.T) {
 	testCases := []struct {
@@ -105,6 +44,7 @@ func Test_Framework_InitCtxFunc_DeleteFunc(t *testing.T) {
 		{
 			c := DefaultConfig()
 
+			c.BackOff = &backoff.StopBackOff{}
 			c.InitCtxFunc = tc.InitCtxFunc
 			c.Logger = microloggertest.New()
 			c.Resources = []Resource{
@@ -149,9 +89,6 @@ func Test_Framework_InitCtxFunc_UpdateFunc(t *testing.T) {
 				"GetCurrentState",
 				"GetDesiredState",
 				"GetCreateState",
-				"ProcessCreateState",
-				"GetCurrentState",
-				"GetDesiredState",
 				"GetUpdateState",
 				"ProcessCreateState",
 				"ProcessDeleteState",
@@ -167,6 +104,7 @@ func Test_Framework_InitCtxFunc_UpdateFunc(t *testing.T) {
 		{
 			c := DefaultConfig()
 
+			c.BackOff = &backoff.StopBackOff{}
 			c.InitCtxFunc = tc.InitCtxFunc
 			c.Logger = microloggertest.New()
 			c.Resources = []Resource{
@@ -180,7 +118,7 @@ func Test_Framework_InitCtxFunc_UpdateFunc(t *testing.T) {
 			}
 		}
 
-		f.UpdateFunc(nil, tc.CustomObject)
+		f.UpdateFunc(tc.CustomObject)
 
 		if !reflect.DeepEqual(tc.ExpectedOrder, r.Order) {
 			t.Fatal("test", i+1, "expected", tc.ExpectedOrder, "got", r.Order)
@@ -232,14 +170,14 @@ func (r *testInitCtxFuncResource) GetDeleteState(ctx context.Context, obj, curre
 	return nil, nil
 }
 
-func (r *testInitCtxFuncResource) GetUpdateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, interface{}, interface{}, error) {
+func (r *testInitCtxFuncResource) GetUpdateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, interface{}, error) {
 	_, ok := testInitCtxFuncFromContext(ctx)
 	if ok {
 		m := "GetUpdateState"
 		r.Order = append(r.Order, m)
 	}
 
-	return nil, nil, nil, nil
+	return nil, nil, nil
 }
 
 func (r *testInitCtxFuncResource) Name() string {

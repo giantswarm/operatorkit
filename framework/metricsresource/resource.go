@@ -153,15 +153,15 @@ func (r *Resource) GetDeleteState(ctx context.Context, obj, currentState, desire
 	return v, nil
 }
 
-func (r *Resource) GetUpdateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, interface{}, interface{}, error) {
+func (r *Resource) GetUpdateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, interface{}, error) {
 	defer r.updateMetrics("GetUpdateState", time.Now())
 
-	createState, deleteState, updateState, err := r.resource.GetUpdateState(ctx, obj, currentState, desiredState)
+	deleteState, updateState, err := r.resource.GetUpdateState(ctx, obj, currentState, desiredState)
 	if err != nil {
-		return nil, nil, nil, microerror.Mask(err)
+		return nil, nil, microerror.Mask(err)
 	}
 
-	return createState, deleteState, updateState, nil
+	return deleteState, updateState, nil
 }
 
 func (r *Resource) Name() string {
