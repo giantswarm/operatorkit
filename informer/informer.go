@@ -2,6 +2,7 @@ package informer
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/cenk/backoff"
@@ -75,18 +76,23 @@ func New(config Config) (*Informer, error) {
 	return newInformer, nil
 }
 
-// Watch is a straight forward watch implementation. It only watches objects
-// using a stream decoder and closes the watch. Afer the resync period it
-// creates a new stream decoder and watches the API again. This mechanism does
-// not recognize delete events of objects that do not use finalizers.
+// Watch only watches objects using a stream decoder. Afer the resync period the
+// active watch is closed and a new stream decoder watches the API again. This
+// mechanism has potential to not recognize delete events of objects that do not
+// use finalizers. This should be safe though when using Watch in combination
+// with the operatorkit reconciler framework since it uses finalizers for all
+// event objects.
 func (i *Informer) Watch(ctx context.Context, p WatchEndpointProvider, f ZeroObjectFactory) (chan watch.Event, chan watch.Event, chan error) {
-	done := make(chan struct{})
+	done := make(chan struct{}, 1)
 
 	deleteChan := make(chan watch.Event, 1)
 	updateChan := make(chan watch.Event, 1)
-	errChan := make(chan error)
+	errChan := make(chan error, 1)
 
-	fetchEvents := func() {
+	// Having a separate method for creating the watcher and using it to fetch
+	// events is more convenient when controling the loop and select flows because
+	// we can just return and do not need to use ugly labels.
+	fetchEvents := func(canceler chan struct{}) {
 		stream, err := i.restClient.Get().AbsPath(p.WatchEndpoint()).Stream()
 		if err != nil {
 			errChan <- microerror.Mask(err)
@@ -98,6 +104,10 @@ func (i *Informer) Watch(ctx context.Context, p WatchEndpointProvider, f ZeroObj
 
 		for {
 			select {
+			case <-done:
+				return
+			case <-canceler:
+				return
 			case event, ok := <-watcher.ResultChan():
 				if ok {
 					switch event.Type {
@@ -111,25 +121,23 @@ func (i *Informer) Watch(ctx context.Context, p WatchEndpointProvider, f ZeroObj
 						errChan <- microerror.Maskf(invalidEventError, "%#v", event)
 					}
 				} else {
+					fmt.Printf("no event found\n")
 					return
 				}
-			case <-time.After(time.Second):
-				return
-			case <-done:
-				return
 			}
 		}
 	}
 
 	go func() {
-		go fetchEvents()
-
 		for {
 			select {
-			case <-time.After(i.resyncPeriod):
-				go fetchEvents()
 			case <-done:
 				return
+			default:
+				canceler := make(chan struct{})
+				go fetchEvents(canceler)
+				<-time.After(i.resyncPeriod)
+				close(canceler)
 			}
 		}
 	}()
