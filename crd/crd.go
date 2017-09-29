@@ -110,9 +110,9 @@ func (c *CRD) Name() string {
 //     apiVersion: apiextensions.k8s.io/v1beta1
 //     kind: CustomResourceDefinition
 //     metadata:
-//       name: test.giantswarm.io
+//       name: tests.example.com
 //     spec:
-//       group: giantswarm.io
+//       group: example.com
 //       version: v1
 //       scope: Cluster
 //       names:

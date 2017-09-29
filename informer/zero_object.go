@@ -1,4 +1,4 @@
-package crd
+package informer
 
 import (
 	"k8s.io/apimachinery/pkg/runtime"

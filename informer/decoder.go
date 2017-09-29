@@ -1,4 +1,4 @@
-package crd
+package informer
 
 import (
 	"encoding/json"
