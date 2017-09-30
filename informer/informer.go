@@ -2,13 +2,14 @@ package informer
 
 import (
 	"context"
-	"fmt"
+	"sync"
 	"time"
 
 	"github.com/cenk/backoff"
 	"github.com/giantswarm/microerror"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/cache"
 )
 
 const (
@@ -45,6 +46,9 @@ type Informer struct {
 	backOff    backoff.BackOff
 	restClient rest.Interface
 
+	// Internals.
+	cache *sync.Map
+
 	// Settings.
 	resyncPeriod time.Duration
 }
@@ -69,6 +73,9 @@ func New(config Config) (*Informer, error) {
 		backOff:    config.BackOff,
 		restClient: config.RestClient,
 
+		// Internals.
+		cache: &sync.Map{},
+
 		// Settings.
 		resyncPeriod: config.ResyncPeriod,
 	}
@@ -82,51 +89,36 @@ func New(config Config) (*Informer, error) {
 // use finalizers. This should be safe though when using Watch in combination
 // with the operatorkit reconciler framework since it uses finalizers for all
 // event objects.
-func (i *Informer) Watch(ctx context.Context, p WatchEndpointProvider, f ZeroObjectFactory) (chan watch.Event, chan watch.Event, chan error) {
+func (i *Informer) Watch(ctx context.Context, endpoint string, factory ZeroObjectFactory) (chan watch.Event, chan watch.Event, chan watch.Event, chan error) {
 	done := make(chan struct{}, 1)
+	eventChan := make(chan watch.Event, 1)
 
+	createChan := make(chan watch.Event, 1)
 	deleteChan := make(chan watch.Event, 1)
 	updateChan := make(chan watch.Event, 1)
 	errChan := make(chan error, 1)
 
-	// Having a separate method for creating the watcher and using it to fetch
-	// events is more convenient when controling the loop and select flows because
-	// we can just return and do not need to use ugly labels.
-	fetchEvents := func(canceler chan struct{}) {
-		stream, err := i.restClient.Get().AbsPath(p.WatchEndpoint()).Stream()
-		if err != nil {
-			errChan <- microerror.Mask(err)
-			return
-		}
-		watcher := watch.NewStreamWatcher(newDecoder(stream, f))
-
-		defer watcher.Stop()
-
+	go func() {
 		for {
 			select {
 			case <-done:
-				return
-			case <-canceler:
-				return
-			case event, ok := <-watcher.ResultChan():
-				if ok {
-					switch event.Type {
-					case watch.Added, watch.Modified:
-						updateChan <- event
-					case watch.Deleted:
-						deleteChan <- event
-					case watch.Error:
-						errChan <- microerror.Maskf(invalidEventError, "%#v", event)
-					default:
-						errChan <- microerror.Maskf(invalidEventError, "%#v", event)
+			case event := <-eventChan:
+				switch event.Type {
+				case watch.Added:
+					err := i.cacheOrReleaseEvent(event, updateChan)
+					if err != nil {
+						errChan <- microerror.Mask(err)
 					}
-				} else {
-					fmt.Printf("no event found\n")
-					return
+				case watch.Deleted:
+					deleteChan <- event
+				case watch.Modified:
+					updateChan <- event
+				default:
+					errChan <- microerror.Maskf(invalidEventError, "%#v", event)
 				}
 			}
 		}
-	}
+	}()
 
 	go func() {
 		for {
@@ -134,10 +126,25 @@ func (i *Informer) Watch(ctx context.Context, p WatchEndpointProvider, f ZeroObj
 			case <-done:
 				return
 			default:
-				canceler := make(chan struct{})
-				go fetchEvents(canceler)
+				ctx, cancelFunc := context.WithCancel(ctx)
+				go func() {
+					for {
+						select {
+						case <-ctx.Done():
+							return
+						default:
+							err := i.streamEvents(ctx, endpoint, factory, eventChan)
+							if err != nil {
+								errChan <- microerror.Mask(err)
+							}
+						}
+					}
+				}()
+
 				<-time.After(i.resyncPeriod)
-				close(canceler)
+
+				i.releaseCachedEvents(ctx, updateChan)
+				cancelFunc()
 			}
 		}
 	}()
@@ -146,11 +153,66 @@ func (i *Informer) Watch(ctx context.Context, p WatchEndpointProvider, f ZeroObj
 		<-ctx.Done()
 
 		close(done)
+		close(eventChan)
 
+		close(createChan)
 		close(deleteChan)
 		close(updateChan)
 		close(errChan)
 	}()
 
-	return deleteChan, updateChan, errChan
+	return createChan, deleteChan, updateChan, errChan
+}
+
+func (i *Informer) cacheOrReleaseEvent(event watch.Event, updateChan chan watch.Event) error {
+	k, err := cache.MetaNamespaceKeyFunc(event)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	_, ok := i.cache.Load(k)
+	if !ok {
+		updateChan <- event
+	}
+
+	i.cache.Store(k, event)
+
+	return nil
+}
+
+func (i *Informer) releaseCachedEvents(ctx context.Context, updateChan chan watch.Event) {
+	i.cache.Range(func(k, v interface{}) bool {
+		select {
+		case <-ctx.Done():
+			return false
+		default:
+			updateChan <- v.(watch.Event)
+		}
+		return true
+	})
+}
+
+func (i *Informer) streamEvents(ctx context.Context, endpoint string, factory ZeroObjectFactory, eventChan chan watch.Event) error {
+	stream, err := i.restClient.Get().AbsPath(endpoint).Stream()
+	if err != nil {
+		return microerror.Mask(err)
+	}
+	watcher := watch.NewStreamWatcher(newDecoder(stream, factory))
+
+	defer watcher.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case event, ok := <-watcher.ResultChan():
+			if ok {
+				eventChan <- event
+			} else {
+				return nil
+			}
+		}
+	}
+
+	return nil
 }
