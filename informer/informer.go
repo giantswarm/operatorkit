@@ -105,12 +105,15 @@ func (i *Informer) Watch(ctx context.Context, endpoint string, factory ZeroObjec
 			case event := <-eventChan:
 				switch event.Type {
 				case watch.Added:
-					err := i.cacheOrReleaseEvent(event, updateChan)
+					err := i.cacheOrReleaseEvent(event, createChan)
 					if err != nil {
 						errChan <- microerror.Mask(err)
 					}
 				case watch.Deleted:
-					deleteChan <- event
+					err := i.uncacheAndReleaseEvent(event, deleteChan)
+					if err != nil {
+						errChan <- microerror.Mask(err)
+					}
 				case watch.Modified:
 					updateChan <- event
 				default:
@@ -164,18 +167,31 @@ func (i *Informer) Watch(ctx context.Context, endpoint string, factory ZeroObjec
 	return createChan, deleteChan, updateChan, errChan
 }
 
-func (i *Informer) cacheOrReleaseEvent(event watch.Event, updateChan chan watch.Event) error {
-	k, err := cache.MetaNamespaceKeyFunc(event)
+func (i *Informer) cacheOrReleaseEvent(event watch.Event, createChan chan watch.Event) error {
+	k, err := cache.MetaNamespaceKeyFunc(event.Object)
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
 	_, ok := i.cache.Load(k)
 	if !ok {
-		updateChan <- event
+		createChan <- event
 	}
 
 	i.cache.Store(k, event)
+
+	return nil
+}
+
+func (i *Informer) uncacheAndReleaseEvent(event watch.Event, deleteChan chan watch.Event) error {
+	deleteChan <- event
+
+	k, err := cache.MetaNamespaceKeyFunc(event.Object)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	i.cache.Delete(k)
 
 	return nil
 }
