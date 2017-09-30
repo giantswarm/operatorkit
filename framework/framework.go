@@ -303,7 +303,7 @@ func (f *Framework) ProcessEvents(ctx context.Context, deleteChan chan watch.Eve
 			case e := <-deleteChan:
 				f.DeleteFunc(e.Object)
 			case e := <-updateChan:
-				f.UpdateFunc(e.Object)
+				f.UpdateFunc(nil, e.Object)
 			case err := <-errChan:
 				return microerror.Mask(err)
 			case <-ctx.Done():
