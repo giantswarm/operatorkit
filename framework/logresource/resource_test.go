@@ -12,85 +12,6 @@ import (
 	"github.com/giantswarm/operatorkit/framework"
 )
 
-// Test_LogResource_ProcessCreate_ResourceOrder ensures the resource's
-// methods are executed as expected when creating resources using the wrapping
-// prometheus resource.
-func Test_LogResource_ProcessCreate_ResourceOrder(t *testing.T) {
-	// Setup and execute the test functionality.
-	tr := &testResource{}
-	out := new(bytes.Buffer)
-	{
-		rs := []framework.Resource{
-			tr,
-		}
-
-		loggerConfig := micrologger.DefaultConfig()
-		loggerConfig.IOWriter = out
-		logger, err := micrologger.New(loggerConfig)
-		if err != nil {
-			t.Fatalf("setting up logger: %#v", err)
-		}
-
-		config := DefaultWrapConfig()
-		config.Logger = logger
-		wrapped, err := Wrap(rs, config)
-		if err != nil {
-			t.Fatal("expected", nil, "got", err)
-		}
-
-		err = framework.ProcessCreate(context.TODO(), nil, wrapped)
-		if err != nil {
-			t.Fatal("expected", nil, "got", err)
-		}
-	}
-
-	// Ensure the operations are properly executed in order.
-	{
-		e := []string{
-			"GetCurrentState",
-			"GetDesiredState",
-			"GetCreateState",
-			"ProcessCreateState",
-		}
-		if !reflect.DeepEqual(e, tr.Order) {
-			t.Fatal("expected", e, "got", tr.Order)
-		}
-	}
-
-	// Ensure the operation names are properly logged in order.
-	{
-		fields := []string{
-			"GetCurrentState",
-			"GetCurrentState",
-			"GetDesiredState",
-			"GetDesiredState",
-			"GetCreateState",
-			"GetCreateState",
-			"ProcessCreateState",
-			"ProcessCreateState",
-		}
-		scanner := bufio.NewScanner(out)
-		for _, f := range fields {
-			scanner.Scan()
-			b := scanner.Bytes()
-
-			var got map[string]string
-			err := json.Unmarshal(b, &got)
-			if err != nil {
-				t.Fatal("expected", nil, "got", err)
-			}
-
-			val, ok := got["function"]
-			if !ok {
-				t.Fatal("expected", true, "got", false)
-			}
-			if val != f {
-				t.Fatal("expected", f, "got", val)
-			}
-		}
-	}
-}
-
 // Test_LogResource_ProcessDelete_ResourceOrder ensures the resource's
 // methods are executed as expected when deleting resources using the wrapping
 // prometheus resource.
@@ -207,6 +128,7 @@ func Test_LogResource_ProcessUpdate_ResourceOrder(t *testing.T) {
 		e := []string{
 			"GetCurrentState",
 			"GetDesiredState",
+			"GetCreateState",
 			"GetUpdateState",
 			"ProcessCreateState",
 			"ProcessDeleteState",
@@ -224,6 +146,8 @@ func Test_LogResource_ProcessUpdate_ResourceOrder(t *testing.T) {
 			"GetCurrentState",
 			"GetDesiredState",
 			"GetDesiredState",
+			"GetCreateState",
+			"GetCreateState",
 			"GetUpdateState",
 			"GetUpdateState",
 			"ProcessCreateState",
@@ -287,11 +211,11 @@ func (r *testResource) GetDeleteState(ctx context.Context, obj, cur, des interfa
 	return nil, nil
 }
 
-func (r *testResource) GetUpdateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, interface{}, interface{}, error) {
+func (r *testResource) GetUpdateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, interface{}, error) {
 	m := "GetUpdateState"
 	r.Order = append(r.Order, m)
 
-	return nil, nil, nil, nil
+	return nil, nil, nil
 }
 
 func (r *testResource) Name() string {

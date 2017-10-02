@@ -8,38 +8,6 @@ import (
 	"github.com/giantswarm/operatorkit/framework"
 )
 
-// Test_MetricsResource_ProcessCreate_ResourceOrder ensures the resource's
-// methods are executed as expected when creating resources using the wrapping
-// prometheus resource.
-func Test_MetricsResource_ProcessCreate_ResourceOrder(t *testing.T) {
-	tr := &testResource{}
-	rs := []framework.Resource{
-		tr,
-	}
-
-	config := DefaultWrapConfig()
-	config.Namespace = t.Name()
-	wrapped, err := Wrap(rs, config)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
-
-	err = framework.ProcessCreate(context.TODO(), nil, wrapped)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
-
-	e := []string{
-		"GetCurrentState",
-		"GetDesiredState",
-		"GetCreateState",
-		"ProcessCreateState",
-	}
-	if !reflect.DeepEqual(e, tr.Order) {
-		t.Fatal("expected", e, "got", tr.Order)
-	}
-}
-
 // Test_MetricsResource_ProcessDelete_ResourceOrder ensures the resource's
 // methods are executed as expected when deleting resources using the wrapping
 // prometheus resource.
@@ -96,6 +64,7 @@ func Test_MetricsResource_ProcessUpdate_ResourceOrder(t *testing.T) {
 	e := []string{
 		"GetCurrentState",
 		"GetDesiredState",
+		"GetCreateState",
 		"GetUpdateState",
 		"ProcessCreateState",
 		"ProcessDeleteState",
@@ -138,11 +107,11 @@ func (r *testResource) GetDeleteState(ctx context.Context, obj, currentState, de
 	return nil, nil
 }
 
-func (r *testResource) GetUpdateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, interface{}, interface{}, error) {
+func (r *testResource) GetUpdateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, interface{}, error) {
 	m := "GetUpdateState"
 	r.Order = append(r.Order, m)
 
-	return nil, nil, nil, nil
+	return nil, nil, nil
 }
 
 func (r *testResource) Name() string {

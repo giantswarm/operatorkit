@@ -86,10 +86,10 @@ func (r *Resource) GetDesiredState(ctx context.Context, obj interface{}) (interf
 	return v, nil
 }
 
-func (r *Resource) GetCreateState(ctx context.Context, obj, cur, des interface{}) (interface{}, error) {
+func (r *Resource) GetCreateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
 	r.logger.Log("action", "start", "component", "operatorkit", "function", "GetCreateState")
 
-	v, err := r.resource.GetCreateState(ctx, obj, cur, des)
+	v, err := r.resource.GetCreateState(ctx, obj, currentState, desiredState)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
@@ -99,10 +99,10 @@ func (r *Resource) GetCreateState(ctx context.Context, obj, cur, des interface{}
 	return v, nil
 }
 
-func (r *Resource) GetDeleteState(ctx context.Context, obj, cur, des interface{}) (interface{}, error) {
+func (r *Resource) GetDeleteState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
 	r.logger.Log("action", "start", "component", "operatorkit", "function", "GetDeleteState")
 
-	v, err := r.resource.GetDeleteState(ctx, obj, cur, des)
+	v, err := r.resource.GetDeleteState(ctx, obj, currentState, desiredState)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
@@ -112,17 +112,17 @@ func (r *Resource) GetDeleteState(ctx context.Context, obj, cur, des interface{}
 	return v, nil
 }
 
-func (r *Resource) GetUpdateState(ctx context.Context, obj, cur, des interface{}) (interface{}, interface{}, interface{}, error) {
+func (r *Resource) GetUpdateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, interface{}, error) {
 	r.logger.Log("action", "start", "component", "operatorkit", "function", "GetUpdateState")
 
-	createState, deleteState, updateState, err := r.resource.GetUpdateState(ctx, obj, cur, des)
+	deleteState, updateState, err := r.resource.GetUpdateState(ctx, obj, currentState, desiredState)
 	if err != nil {
-		return nil, nil, nil, microerror.Mask(err)
+		return nil, nil, microerror.Mask(err)
 	}
 
 	r.logger.Log("action", "end", "component", "operatorkit", "function", "GetUpdateState")
 
-	return createState, deleteState, updateState, nil
+	return deleteState, updateState, nil
 }
 
 func (r *Resource) Name() string {

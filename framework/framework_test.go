@@ -8,9 +8,9 @@ import (
 	"github.com/giantswarm/operatorkit/framework/canceledcontext"
 )
 
-// Test_Framework_ProcessCreate_ResourceOrder ensures the resource's methods are
-// executed as expected when creating resources.
-func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
+// Test_Framework_ResourceOrder ensures the resource's methods are executed as
+// expected when creating resources.
+func Test_Framework_ResourceOrder(t *testing.T) {
 	testCases := []struct {
 		ProcessMethod  func(ctx context.Context, obj interface{}, rs []Resource) error
 		Ctx            context.Context
@@ -18,153 +18,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 		ExpectedOrders [][]string
 		ErrorMatcher   func(err error) bool
 	}{
-		// Test 1 ensures ProcessCreate returns an error in case no resources are
-		// provided.
-		{
-			ProcessMethod:  ProcessCreate,
-			Ctx:            context.TODO(),
-			Resources:      nil,
-			ExpectedOrders: nil,
-			ErrorMatcher:   IsExecutionFailed,
-		},
-
-		// Test 2 ensures ProcessCreate executes the steps of a single resource in
-		// the expected order.
-		{
-			ProcessMethod: ProcessCreate,
-			Ctx:           context.TODO(),
-			Resources: []Resource{
-				&testResource{},
-			},
-			ExpectedOrders: [][]string{
-				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"GetCreateState",
-					"ProcessCreateState",
-				},
-			},
-			ErrorMatcher: nil,
-		},
-
-		// Test 3 ensures ProcessCreate executes the steps of multile resources in
-		// the expected order.
-		{
-			ProcessMethod: ProcessCreate,
-			Ctx:           context.TODO(),
-			Resources: []Resource{
-				&testResource{},
-				&testResource{},
-			},
-			ExpectedOrders: [][]string{
-				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"GetCreateState",
-					"ProcessCreateState",
-				},
-				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"GetCreateState",
-					"ProcessCreateState",
-				},
-			},
-			ErrorMatcher: nil,
-		},
-
-		// Test 4 ensures ProcessCreate executes the steps of a single resource in
-		// the expected order until it gets canceled.
-		{
-			ProcessMethod: ProcessCreate,
-			Ctx:           canceledcontext.NewContext(context.Background(), make(chan struct{})),
-			Resources: []Resource{
-				&testResource{
-					CancelingStep: "GetCurrentState",
-				},
-			},
-			ExpectedOrders: [][]string{
-				{
-					"GetCurrentState",
-				},
-			},
-			ErrorMatcher: nil,
-		},
-
-		// Test 5 ensures ProcessCreate executes the steps of a single resource in
-		// the expected order even if the resource is canceled while the given
-		// context does not contain a canceler.
-		{
-			ProcessMethod: ProcessCreate,
-			Ctx:           context.TODO(),
-			Resources: []Resource{
-				&testResource{
-					CancelingStep: "GetCurrentState",
-				},
-			},
-			ExpectedOrders: [][]string{
-				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"GetCreateState",
-					"ProcessCreateState",
-				},
-			},
-			ErrorMatcher: nil,
-		},
-
-		// Test 6 ensures ProcessCreate executes the steps of the first resource in
-		// the expected order in case multile resources are given, until the first
-		// resource gets canceled.
-		{
-			ProcessMethod: ProcessCreate,
-			Ctx:           canceledcontext.NewContext(context.Background(), make(chan struct{})),
-			Resources: []Resource{
-				&testResource{
-					CancelingStep: "GetCreateState",
-				},
-				&testResource{},
-			},
-			ExpectedOrders: [][]string{
-				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"GetCreateState",
-				},
-				nil,
-			},
-			ErrorMatcher: nil,
-		},
-
-		// Test 7 ensures ProcessCreate executes the steps of the first and second resource in
-		// the expected order in case multile resources are given, until the second
-		// resource gets canceled.
-		{
-			ProcessMethod: ProcessCreate,
-			Ctx:           canceledcontext.NewContext(context.Background(), make(chan struct{})),
-			Resources: []Resource{
-				&testResource{},
-				&testResource{
-					CancelingStep: "GetCreateState",
-				},
-			},
-			ExpectedOrders: [][]string{
-				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"GetCreateState",
-					"ProcessCreateState",
-				},
-				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"GetCreateState",
-				},
-			},
-			ErrorMatcher: nil,
-		},
-
-		// Test 8 ensures ProcessDelete returns an error in case no resources are
+		// Test 1 ensures ProcessDelete returns an error in case no resources are
 		// provided.
 		{
 			ProcessMethod:  ProcessDelete,
@@ -174,7 +28,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			ErrorMatcher:   IsExecutionFailed,
 		},
 
-		// Test 9 ensures ProcessDelete executes the steps of a single resource in
+		// Test 2 ensures ProcessDelete executes the steps of a single resource in
 		// the expected order.
 		{
 			ProcessMethod: ProcessDelete,
@@ -193,7 +47,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			ErrorMatcher: nil,
 		},
 
-		// Test 10 ensures ProcessDelete executes the steps of multile resources in
+		// Test 3 ensures ProcessDelete executes the steps of multile resources in
 		// the expected order.
 		{
 			ProcessMethod: ProcessDelete,
@@ -219,7 +73,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			ErrorMatcher: nil,
 		},
 
-		// Test 11 ensures ProcessDelete executes the steps of a single resource in
+		// Test 4 ensures ProcessDelete executes the steps of a single resource in
 		// the expected order until it gets canceled.
 		{
 			ProcessMethod: ProcessDelete,
@@ -237,7 +91,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			ErrorMatcher: nil,
 		},
 
-		// Test 12 ensures ProcessDelete executes the steps of a single resource in
+		// Test 5 ensures ProcessDelete executes the steps of a single resource in
 		// the expected order even if the resource is canceled while the given
 		// context does not contain a canceler.
 		{
@@ -259,7 +113,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			ErrorMatcher: nil,
 		},
 
-		// Test 13 ensures ProcessDelete executes the steps of the first resource in
+		// Test 6 ensures ProcessDelete executes the steps of the first resource in
 		// the expected order in case multile resources are given, until the first
 		// resource gets canceled.
 		{
@@ -282,7 +136,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			ErrorMatcher: nil,
 		},
 
-		// Test 14 ensures ProcessDelete executes the steps of the first and second resource in
+		// Test 7 ensures ProcessDelete executes the steps of the first and second resource in
 		// the expected order in case multile resources are given, until the second
 		// resource gets canceled.
 		{
@@ -310,7 +164,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			ErrorMatcher: nil,
 		},
 
-		// Test 15 ensures ProcessUpdate returns an error in case no resources are
+		// Test 8 ensures ProcessUpdate returns an error in case no resources are
 		// provided.
 		{
 			ProcessMethod:  ProcessUpdate,
@@ -320,7 +174,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			ErrorMatcher:   IsExecutionFailed,
 		},
 
-		// Test 16 ensures ProcessUpdate executes the steps of a single resource in
+		// Test 9 ensures ProcessUpdate executes the steps of a single resource in
 		// the expected order.
 		{
 			ProcessMethod: ProcessUpdate,
@@ -332,6 +186,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 				{
 					"GetCurrentState",
 					"GetDesiredState",
+					"GetCreateState",
 					"GetUpdateState",
 					"ProcessCreateState",
 					"ProcessDeleteState",
@@ -341,7 +196,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			ErrorMatcher: nil,
 		},
 
-		// Test 17 ensures ProcessUpdate executes the steps of multile resources in
+		// Test 10 ensures ProcessUpdate executes the steps of multile resources in
 		// the expected order.
 		{
 			ProcessMethod: ProcessUpdate,
@@ -354,6 +209,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 				{
 					"GetCurrentState",
 					"GetDesiredState",
+					"GetCreateState",
 					"GetUpdateState",
 					"ProcessCreateState",
 					"ProcessDeleteState",
@@ -362,6 +218,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 				{
 					"GetCurrentState",
 					"GetDesiredState",
+					"GetCreateState",
 					"GetUpdateState",
 					"ProcessCreateState",
 					"ProcessDeleteState",
@@ -371,7 +228,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			ErrorMatcher: nil,
 		},
 
-		// Test 18 ensures ProcessUpdate executes the steps of a single resource in
+		// Test 11 ensures ProcessUpdate executes the steps of a single resource in
 		// the expected order until it gets canceled.
 		{
 			ProcessMethod: ProcessUpdate,
@@ -389,7 +246,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			ErrorMatcher: nil,
 		},
 
-		// Test 19 ensures ProcessUpdate executes the steps of a single resource in
+		// Test 12 ensures ProcessUpdate executes the steps of a single resource in
 		// the expected order even if the resource is canceled while the given
 		// context does not contain a canceler.
 		{
@@ -404,6 +261,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 				{
 					"GetCurrentState",
 					"GetDesiredState",
+					"GetCreateState",
 					"GetUpdateState",
 					"ProcessCreateState",
 					"ProcessDeleteState",
@@ -413,7 +271,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			ErrorMatcher: nil,
 		},
 
-		// Test 20 ensures ProcessUpdate executes the steps of the first resource in
+		// Test 13 ensures ProcessUpdate executes the steps of the first resource in
 		// the expected order in case multile resources are given, until the first
 		// resource gets canceled.
 		{
@@ -429,6 +287,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 				{
 					"GetCurrentState",
 					"GetDesiredState",
+					"GetCreateState",
 					"GetUpdateState",
 				},
 				nil,
@@ -436,7 +295,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			ErrorMatcher: nil,
 		},
 
-		// Test 21 ensures ProcessUpdate executes the steps of the first and second resource in
+		// Test 14 ensures ProcessUpdate executes the steps of the first and second resource in
 		// the expected order in case multile resources are given, until the second
 		// resource gets canceled.
 		{
@@ -452,6 +311,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 				{
 					"GetCurrentState",
 					"GetDesiredState",
+					"GetCreateState",
 					"GetUpdateState",
 					"ProcessCreateState",
 					"ProcessDeleteState",
@@ -460,6 +320,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 				{
 					"GetCurrentState",
 					"GetDesiredState",
+					"GetCreateState",
 					"GetUpdateState",
 				},
 			},
@@ -571,22 +432,22 @@ func (r *testResource) GetDeleteState(ctx context.Context, obj, currentState, de
 	return nil, nil
 }
 
-func (r *testResource) GetUpdateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, interface{}, interface{}, error) {
+func (r *testResource) GetUpdateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, interface{}, error) {
 	m := "GetUpdateState"
 	r.Order = append(r.Order, m)
 
 	if r.CancelingStep == m {
 		canceledcontext.SetCanceled(ctx)
 		if canceledcontext.IsCanceled(ctx) {
-			return nil, nil, nil, nil
+			return nil, nil, nil
 		}
 	}
 
 	if r.returnErrorFor(m) {
-		return nil, nil, nil, r.Error
+		return nil, nil, r.Error
 	}
 
-	return nil, nil, nil, nil
+	return nil, nil, nil
 }
 
 func (r *testResource) Name() string {
