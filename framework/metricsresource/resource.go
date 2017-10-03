@@ -62,9 +62,19 @@ func New(config Config) (*Resource, error) {
 		return nil, microerror.Maskf(invalidConfigError, "config.Subsystem must not be empty")
 	}
 
+	var errorTotal *prometheus.CounterVec
 	var operationDuration *prometheus.GaugeVec
 	var operationTotal *prometheus.CounterVec
 	{
+		errorTotal = prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Namespace: toCamelCase(config.Namespace),
+				Subsystem: toCamelCase(config.Subsystem),
+				Name:      "operatorkit_framework_error_total",
+				Help:      "Number of operation errors.",
+			},
+			[]string{"operation"},
+		)
 		operationDuration = prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace: toCamelCase(config.Namespace),
@@ -84,6 +94,7 @@ func New(config Config) (*Resource, error) {
 			[]string{"operation"},
 		)
 
+		prometheus.MustRegister(errorTotal)
 		prometheus.MustRegister(operationDuration)
 		prometheus.MustRegister(operationTotal)
 	}
@@ -93,6 +104,7 @@ func New(config Config) (*Resource, error) {
 		resource: config.Resource,
 
 		// Internals.
+		errorTotal:        errorTotal,
 		operationDuration: operationDuration,
 		operationTotal:    operationTotal,
 	}
@@ -105,15 +117,19 @@ type Resource struct {
 	resource framework.Resource
 
 	// Internals.
+	errorTotal        *prometheus.CounterVec
 	operationDuration *prometheus.GaugeVec
 	operationTotal    *prometheus.CounterVec
 }
 
 func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
-	defer r.updateMetrics("GetCurrentState", time.Now())
+	o := "GetCurrentState"
+
+	defer r.updateMetrics(o, time.Now())
 
 	v, err := r.resource.GetCurrentState(ctx, obj)
 	if err != nil {
+		r.updateErrorMetrics(o)
 		return nil, microerror.Mask(err)
 	}
 
@@ -121,10 +137,13 @@ func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interf
 }
 
 func (r *Resource) GetDesiredState(ctx context.Context, obj interface{}) (interface{}, error) {
-	defer r.updateMetrics("GetDesiredState", time.Now())
+	o := "GetDesiredState"
+
+	defer r.updateMetrics(o, time.Now())
 
 	v, err := r.resource.GetDesiredState(ctx, obj)
 	if err != nil {
+		r.updateErrorMetrics(o)
 		return nil, microerror.Mask(err)
 	}
 
@@ -132,10 +151,13 @@ func (r *Resource) GetDesiredState(ctx context.Context, obj interface{}) (interf
 }
 
 func (r *Resource) GetCreateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
-	defer r.updateMetrics("GetCreateState", time.Now())
+	o := "GetCreateState"
+
+	defer r.updateMetrics(o, time.Now())
 
 	v, err := r.resource.GetCreateState(ctx, obj, currentState, desiredState)
 	if err != nil {
+		r.updateErrorMetrics(o)
 		return nil, microerror.Mask(err)
 	}
 
@@ -143,10 +165,13 @@ func (r *Resource) GetCreateState(ctx context.Context, obj, currentState, desire
 }
 
 func (r *Resource) GetDeleteState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
-	defer r.updateMetrics("GetDeleteState", time.Now())
+	o := "GetDeleteState"
+
+	defer r.updateMetrics(o, time.Now())
 
 	v, err := r.resource.GetDeleteState(ctx, obj, currentState, desiredState)
 	if err != nil {
+		r.updateErrorMetrics(o)
 		return nil, microerror.Mask(err)
 	}
 
@@ -154,10 +179,13 @@ func (r *Resource) GetDeleteState(ctx context.Context, obj, currentState, desire
 }
 
 func (r *Resource) GetUpdateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, interface{}, interface{}, error) {
-	defer r.updateMetrics("GetUpdateState", time.Now())
+	o := "GetUpdateState"
+
+	defer r.updateMetrics(o, time.Now())
 
 	createState, deleteState, updateState, err := r.resource.GetUpdateState(ctx, obj, currentState, desiredState)
 	if err != nil {
+		r.updateErrorMetrics(o)
 		return nil, nil, nil, microerror.Mask(err)
 	}
 
@@ -169,10 +197,13 @@ func (r *Resource) Name() string {
 }
 
 func (r *Resource) ProcessCreateState(ctx context.Context, obj, createState interface{}) error {
-	defer r.updateMetrics("ProcessCreateState", time.Now())
+	o := "ProcessCreateState"
+
+	defer r.updateMetrics(o, time.Now())
 
 	err := r.resource.ProcessCreateState(ctx, obj, createState)
 	if err != nil {
+		r.updateErrorMetrics(o)
 		return microerror.Mask(err)
 	}
 
@@ -180,10 +211,13 @@ func (r *Resource) ProcessCreateState(ctx context.Context, obj, createState inte
 }
 
 func (r *Resource) ProcessDeleteState(ctx context.Context, obj, deleteState interface{}) error {
-	defer r.updateMetrics("ProcessDeleteState", time.Now())
+	o := "ProcessDeleteState"
+
+	defer r.updateMetrics(o, time.Now())
 
 	err := r.resource.ProcessDeleteState(ctx, obj, deleteState)
 	if err != nil {
+		r.updateErrorMetrics(o)
 		return microerror.Mask(err)
 	}
 
@@ -191,10 +225,13 @@ func (r *Resource) ProcessDeleteState(ctx context.Context, obj, deleteState inte
 }
 
 func (r *Resource) ProcessUpdateState(ctx context.Context, obj, updateState interface{}) error {
-	defer r.updateMetrics("ProcessUpdateState", time.Now())
+	o := "ProcessUpdateState"
+
+	defer r.updateMetrics(o, time.Now())
 
 	err := r.resource.ProcessUpdateState(ctx, obj, updateState)
 	if err != nil {
+		r.updateErrorMetrics(o)
 		return microerror.Mask(err)
 	}
 
@@ -203,6 +240,10 @@ func (r *Resource) ProcessUpdateState(ctx context.Context, obj, updateState inte
 
 func (r *Resource) Underlying() framework.Resource {
 	return r.resource.Underlying()
+}
+
+func (r *Resource) updateErrorMetrics(operation string) {
+	r.errorTotal.WithLabelValues(operation).Inc()
 }
 
 func (r *Resource) updateMetrics(operation string, startTime time.Time) {
