@@ -8,6 +8,8 @@ import:
   version: v1.1.0
 - package: k8s.io/client-go
   version: v4.0.0
+- package: k8s.io/apimachinery
+  version: release-1.7
 - package: k8s.io/apiextensions-apiserver
   version: release-1.7
 - package: github.com/prometheus/client_golang
