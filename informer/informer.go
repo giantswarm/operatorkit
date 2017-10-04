@@ -148,17 +148,17 @@ func (i *Informer) Watch(ctx context.Context, endpoint string, factory ZeroObjec
 			case event := <-eventChan:
 				switch event.Type {
 				case watch.Added:
-					err := i.cacheAndReleaseIfNotExists(event, updateChan)
+					err := i.cacheAndSendIfNotExists(event, updateChan)
 					if err != nil {
 						errChan <- microerror.Mask(err)
 					}
 				case watch.Deleted:
-					err := i.uncacheAndRelease(event, deleteChan)
+					err := i.uncacheAndSend(event, deleteChan)
 					if err != nil {
 						errChan <- microerror.Mask(err)
 					}
 				case watch.Modified:
-					err := i.cacheAndRelease(event, updateChan)
+					err := i.cacheAndSend(event, updateChan)
 					if err != nil {
 						errChan <- microerror.Mask(err)
 					}
@@ -179,7 +179,7 @@ func (i *Informer) Watch(ctx context.Context, endpoint string, factory ZeroObjec
 				errChan <- microerror.Mask(err)
 			}
 			close(i.initializer)
-			i.releaseCachedEvents(ctx, updateChan)
+			i.sendCachedEvents(ctx, updateChan)
 		}
 
 		for {
@@ -204,7 +204,7 @@ func (i *Informer) Watch(ctx context.Context, endpoint string, factory ZeroObjec
 
 				<-time.After(i.resyncPeriod)
 
-				i.releaseCachedEvents(ctx, updateChan)
+				i.sendCachedEvents(ctx, updateChan)
 				cancelFunc()
 			}
 		}
@@ -224,9 +224,9 @@ func (i *Informer) Watch(ctx context.Context, endpoint string, factory ZeroObjec
 	return deleteChan, updateChan, errChan
 }
 
-// cacheAndRelease sends the provided event object to the provided update
-// channel and caches the provided event object.
-func (i *Informer) cacheAndRelease(event watch.Event, updateChan chan watch.Event) error {
+// cacheAndSend sends the provided event object to the provided update channel
+// and caches the provided event object.
+func (i *Informer) cacheAndSend(event watch.Event, updateChan chan watch.Event) error {
 	updateChan <- event
 
 	k, err := cache.MetaNamespaceKeyFunc(event.Object)
@@ -239,8 +239,8 @@ func (i *Informer) cacheAndRelease(event watch.Event, updateChan chan watch.Even
 	return nil
 }
 
-// cacheAndReleaseIfNotExists handles watch.ADDED events. These events can
-// happen because of different reasons.
+// cacheAndSendIfNotExists handles watch.ADDED events. These events can happen
+// because of different reasons.
 //
 //     - The watcher may receives a new event object because a new object was
 //       created in the API.
@@ -250,9 +250,9 @@ func (i *Informer) cacheAndRelease(event watch.Event, updateChan chan watch.Even
 // In case the provided event object does not exist in the informer cache, this
 // means we send it to the provided update channel because it should be
 // reconciled. The reconciliation has to make sure the event object is created
-// and/or updated accordingly. In any case cacheAndReleaseIfNotExists adds the
+// and/or updated accordingly. In any case cacheAndSendIfNotExists adds the
 // provided event object to the informer cache.
-func (i *Informer) cacheAndReleaseIfNotExists(event watch.Event, updateChan chan watch.Event) error {
+func (i *Informer) cacheAndSendIfNotExists(event watch.Event, updateChan chan watch.Event) error {
 	k, err := cache.MetaNamespaceKeyFunc(event.Object)
 	if err != nil {
 		return microerror.Mask(err)
@@ -310,11 +310,11 @@ func (i *Informer) isCachedFilled() bool {
 	return false
 }
 
-// releaseCachedEvents sends all cached event objects to the provided update
+// sendCachedEvents sends all cached event objects to the provided update
 // channel. The release process may be rate limitted by the rate wait
 // configuration of the informer. Then the release sleeps for the configured
 // duration before releasing the next event object.
-func (i *Informer) releaseCachedEvents(ctx context.Context, updateChan chan watch.Event) {
+func (i *Informer) sendCachedEvents(ctx context.Context, updateChan chan watch.Event) {
 	// useRateWait is used to not apply the configured rate wait on the very first
 	// event object. This is done to not wait any additional time before releasing
 	// the first event object after the configured resync period.
@@ -367,9 +367,9 @@ func (i *Informer) streamEvents(ctx context.Context, endpoint string, factory Ze
 	return nil
 }
 
-// uncacheAndRelease sends the received event to the provided delete channel and
+// uncacheAndSend sends the received event to the provided delete channel and
 // removes the event object from the internal informer cache.
-func (i *Informer) uncacheAndRelease(event watch.Event, deleteChan chan watch.Event) error {
+func (i *Informer) uncacheAndSend(event watch.Event, deleteChan chan watch.Event) error {
 	deleteChan <- event
 
 	k, err := cache.MetaNamespaceKeyFunc(event.Object)
