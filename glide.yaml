@@ -13,7 +13,7 @@ import:
 - package: k8s.io/apiextensions-apiserver
   version: release-1.7
 - package: github.com/prometheus/client_golang
-  version: ^0.8.0
+  version: v0.9.0-pre1
 testImport:
 - package: github.com/stretchr/testify
   version: v1.1.4
