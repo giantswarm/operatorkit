@@ -19,11 +19,13 @@ package informer
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/cenk/backoff"
 	"github.com/giantswarm/microerror"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
@@ -148,17 +150,20 @@ func (i *Informer) Watch(ctx context.Context, endpoint string, factory ZeroObjec
 			case event := <-eventChan:
 				switch event.Type {
 				case watch.Added:
+					fmt.Printf("add event received\n")
 					err := i.cacheAndSendIfNotExists(event, updateChan)
 					if err != nil {
 						errChan <- microerror.Mask(err)
 					}
 				case watch.Deleted:
+					fmt.Printf("delete event received\n")
 					err := i.uncacheAndSend(event, deleteChan)
 					if err != nil {
 						errChan <- microerror.Mask(err)
 					}
 				case watch.Modified:
-					err := i.cacheAndSend(event, updateChan)
+					fmt.Printf("update event received\n")
+					err := i.cacheAndSend(event, deleteChan, updateChan)
 					if err != nil {
 						errChan <- microerror.Mask(err)
 					}
@@ -179,7 +184,7 @@ func (i *Informer) Watch(ctx context.Context, endpoint string, factory ZeroObjec
 				errChan <- microerror.Mask(err)
 			}
 			close(i.initializer)
-			i.sendCachedEvents(ctx, updateChan)
+			i.sendCachedEvents(ctx, deleteChan, updateChan, errChan)
 		}
 
 		for {
@@ -204,7 +209,7 @@ func (i *Informer) Watch(ctx context.Context, endpoint string, factory ZeroObjec
 
 				<-time.After(i.resyncPeriod)
 
-				i.sendCachedEvents(ctx, updateChan)
+				i.sendCachedEvents(ctx, deleteChan, updateChan, errChan)
 				cancelFunc()
 			}
 		}
@@ -226,15 +231,23 @@ func (i *Informer) Watch(ctx context.Context, endpoint string, factory ZeroObjec
 
 // cacheAndSend sends the provided event object to the provided update channel
 // and caches the provided event object.
-func (i *Informer) cacheAndSend(event watch.Event, updateChan chan watch.Event) error {
-	updateChan <- event
-
+func (i *Informer) cacheAndSend(event watch.Event, deleteChan, updateChan chan watch.Event) error {
 	k, err := cache.MetaNamespaceKeyFunc(event.Object)
 	if err != nil {
 		return microerror.Mask(err)
 	}
-
 	i.cache.Store(k, event)
+
+	m, err := meta.Accessor(event.Object)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+	t := m.GetDeletionTimestamp()
+	if t == nil {
+		updateChan <- event
+	} else {
+		deleteChan <- event
+	}
 
 	return nil
 }
@@ -314,13 +327,15 @@ func (i *Informer) isCachedFilled() bool {
 // channel. The release process may be rate limitted by the rate wait
 // configuration of the informer. Then the release sleeps for the configured
 // duration before releasing the next event object.
-func (i *Informer) sendCachedEvents(ctx context.Context, updateChan chan watch.Event) {
+func (i *Informer) sendCachedEvents(ctx context.Context, deleteChan, updateChan chan watch.Event, errChan chan error) {
 	// useRateWait is used to not apply the configured rate wait on the very first
 	// event object. This is done to not wait any additional time before releasing
 	// the first event object after the configured resync period.
 	var useRateWait bool
 
 	i.cache.Range(func(k, v interface{}) bool {
+		e := v.(watch.Event)
+
 		if useRateWait && i.rateWait != 0 {
 			<-time.After(i.rateWait)
 		}
@@ -330,7 +345,17 @@ func (i *Informer) sendCachedEvents(ctx context.Context, updateChan chan watch.E
 		case <-ctx.Done():
 			return false
 		default:
-			updateChan <- v.(watch.Event)
+			m, err := meta.Accessor(e.Object)
+			if err != nil {
+				errChan <- microerror.Mask(err)
+			} else {
+				t := m.GetDeletionTimestamp()
+				if t == nil {
+					updateChan <- e
+				} else {
+					deleteChan <- e
+				}
+			}
 		}
 
 		return true
