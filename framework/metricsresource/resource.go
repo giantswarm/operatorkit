@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/giantswarm/microerror"
-	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/giantswarm/operatorkit/framework"
 )
@@ -22,16 +21,10 @@ type Config struct {
 
 	// Settings.
 
-	// Namespace is the Prometheus namespace used to create new vectors. The user
-	// has to provide unique namespaces and subsystems. If these settings are not
-	// properly configured and reused the registration of the Prometheus vectors
-	// fails with a panic.
-	Namespace string
-	// Subsystem is the Prometheus subsystem used to create new vectors. The user
-	// has to provide unique namespaces and subsystems. If these settings are not
-	// properly configured and reused the registration of the Prometheus vectors
-	// fails with a panic.
-	Subsystem string
+	// Name is name of the service using the reconciler framework. This may be the
+	// name of the executing operator or controller. The service name will be used
+	// to label metrics.
+	Name string
 }
 
 // DefaultConfig provides a default configuration to create a new metrics
@@ -42,9 +35,16 @@ func DefaultConfig() Config {
 		Resource: nil,
 
 		// Settings.
-		Namespace: "",
-		Subsystem: "",
+		Name: "",
 	}
+}
+
+type Resource struct {
+	// Dependencies.
+	resource framework.Resource
+
+	// Settings.
+	name string
 }
 
 // New creates a new configured metrics resource.
@@ -55,71 +55,19 @@ func New(config Config) (*Resource, error) {
 	}
 
 	// Settings.
-	if config.Namespace == "" {
-		return nil, microerror.Maskf(invalidConfigError, "config.Namespace must not be empty")
-	}
-	if config.Subsystem == "" {
-		return nil, microerror.Maskf(invalidConfigError, "config.Subsystem must not be empty")
-	}
-
-	var errorTotal *prometheus.CounterVec
-	var operationDuration *prometheus.GaugeVec
-	var operationTotal *prometheus.CounterVec
-	{
-		errorTotal = prometheus.NewCounterVec(
-			prometheus.CounterOpts{
-				Namespace: toCamelCase(config.Namespace),
-				Subsystem: toCamelCase(config.Subsystem),
-				Name:      "operatorkit_framework_error_total",
-				Help:      "Number of operation errors.",
-			},
-			[]string{"operation"},
-		)
-		operationDuration = prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
-				Namespace: toCamelCase(config.Namespace),
-				Subsystem: toCamelCase(config.Subsystem),
-				Name:      "operatorkit_framework_operation_duration_milliseconds",
-				Help:      "Time taken to process a single reconciliation operation.",
-			},
-			[]string{"operation"},
-		)
-		operationTotal = prometheus.NewCounterVec(
-			prometheus.CounterOpts{
-				Namespace: toCamelCase(config.Namespace),
-				Subsystem: toCamelCase(config.Subsystem),
-				Name:      "operatorkit_framework_operation_total",
-				Help:      "Number of processed reconciliation operations.",
-			},
-			[]string{"operation"},
-		)
-
-		prometheus.MustRegister(errorTotal)
-		prometheus.MustRegister(operationDuration)
-		prometheus.MustRegister(operationTotal)
+	if config.Name == "" {
+		return nil, microerror.Maskf(invalidConfigError, "config.Name must not be empty")
 	}
 
 	newResource := &Resource{
 		// Dependencies.
 		resource: config.Resource,
 
-		// Internals.
-		errorTotal:        errorTotal,
-		operationDuration: operationDuration,
-		operationTotal:    operationTotal,
+		// Settings.
+		name: toCamelCase(config.Name),
 	}
 
 	return newResource, nil
-}
-
-type Resource struct {
-	// Dependencies.
-	resource framework.Resource
-
-	// Internals.
-	errorTotal        *prometheus.CounterVec
-	operationDuration *prometheus.GaugeVec
-	operationTotal    *prometheus.CounterVec
 }
 
 func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
@@ -243,10 +191,10 @@ func (r *Resource) Underlying() framework.Resource {
 }
 
 func (r *Resource) updateErrorMetrics(operation string) {
-	r.errorTotal.WithLabelValues(operation).Inc()
+	errorTotal.WithLabelValues(r.name, r.resource.Underlying().Name(), operation).Inc()
 }
 
 func (r *Resource) updateMetrics(operation string, startTime time.Time) {
-	r.operationDuration.WithLabelValues(operation).Set(float64(time.Since(startTime) / time.Millisecond))
-	r.operationTotal.WithLabelValues(operation).Inc()
+	operationDuration.WithLabelValues(r.name, r.resource.Underlying().Name(), operation).Set(float64(time.Since(startTime) / time.Millisecond))
+	operationTotal.WithLabelValues(r.name, r.resource.Underlying().Name(), operation).Inc()
 }
