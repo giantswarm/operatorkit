@@ -10,13 +10,7 @@ import (
 // resources.
 type WrapConfig struct {
 	// Settings.
-
-	// Namespace is the namespace configured for the wrapping Prometheus resource.
-	// See Config for more information.
-	//
-	// NOTE that Subsystem for the wrapping Prometheus resource is configured
-	// automatically with the wrapped resource name When calling Wrap.
-	Namespace string
+	Name string
 }
 
 // DefaultWrapConfig provides a default configuration to wrap resource with
@@ -24,7 +18,7 @@ type WrapConfig struct {
 func DefaultWrapConfig() WrapConfig {
 	return WrapConfig{
 		// Settings.
-		Namespace: "",
+		Name: "",
 	}
 }
 
@@ -35,9 +29,10 @@ func Wrap(resources []framework.Resource, config WrapConfig) ([]framework.Resour
 
 	for _, r := range resources {
 		resourceConfig := DefaultConfig()
-		resourceConfig.Namespace = config.Namespace
+
 		resourceConfig.Resource = r
-		resourceConfig.Subsystem = r.Underlying().Name()
+
+		resourceConfig.Name = config.Name
 
 		prometheusResource, err := New(resourceConfig)
 		if err != nil {

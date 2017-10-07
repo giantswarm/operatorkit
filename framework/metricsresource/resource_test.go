@@ -18,7 +18,7 @@ func Test_MetricsResource_ProcessCreate_ResourceOrder(t *testing.T) {
 	}
 
 	config := DefaultWrapConfig()
-	config.Namespace = t.Name()
+	config.Name = t.Name()
 	wrapped, err := Wrap(rs, config)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
@@ -50,7 +50,7 @@ func Test_MetricsResource_ProcessDelete_ResourceOrder(t *testing.T) {
 	}
 
 	config := DefaultWrapConfig()
-	config.Namespace = t.Name()
+	config.Name = t.Name()
 	wrapped, err := Wrap(rs, config)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
@@ -82,7 +82,7 @@ func Test_MetricsResource_ProcessUpdate_ResourceOrder(t *testing.T) {
 	}
 
 	config := DefaultWrapConfig()
-	config.Namespace = t.Name()
+	config.Name = t.Name()
 	wrapped, err := Wrap(rs, config)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
