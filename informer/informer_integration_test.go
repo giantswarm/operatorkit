@@ -5,7 +5,7 @@ package informer
 /*
 	Usage:
 
-		go test -tags=integration ./... [FLAGS]
+		go test -tags=integration ./informer [FLAGS]
 
 	Flags:
 
@@ -32,7 +32,10 @@ import (
 
 	"github.com/cenk/backoff"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/watch"
 
 	"github.com/giantswarm/micrologger/microloggertest"
 	"github.com/giantswarm/operatorkit/client/crdclient"
@@ -122,33 +125,70 @@ func init() {
 		}
 		newWatcherFactory = NewWatcherFactory(newCRDClient.Discovery().RESTClient(), newCRD.WatchEndpoint(), zeroObjectFactory)
 	}
+}
 
-	{
-		c := DefaultConfig()
+func testNewInformer(t *testing.T, rateWait, resyncPeriod time.Duration) *Informer {
+	c := DefaultConfig()
 
-		c.BackOff = backoff.NewExponentialBackOff()
-		c.WatcherFactory = newWatcherFactory
+	c.BackOff = backoff.NewExponentialBackOff()
+	c.WatcherFactory = newWatcherFactory
 
-		c.RateWait = time.Second * 2
-		c.ResyncPeriod = time.Second * 10
+	c.RateWait = rateWait
+	c.ResyncPeriod = resyncPeriod
 
-		newInformer, err = New(c)
-		if err != nil {
-			panic(fmt.Sprintf("%#v", err))
-		}
+	newInformer, err := New(c)
+	if err != nil {
+		t.Fatalf("expected %#v got %#v", nil, err)
+	}
+
+	return newInformer
+}
+
+func testAssertCROWithID(t *testing.T, e watch.Event, ID string) {
+	m, err := meta.Accessor(e.Object)
+	if err != nil {
+		t.Fatalf("expected %#v got %#v", nil, err)
+	}
+
+	name := m.GetName()
+	if name != ID {
+		t.Fatalf("expected %#v got %#v", ID, name)
 	}
 }
 
-func setup(t *testing.T) {
+func testCreateCRO(t *testing.T, ID string) {
+	p := newCRD.CreateEndpoint()
+	b := fakecrd.NewCRO(ID)
+
+	err := newCRDClient.Discovery().RESTClient().Post().AbsPath(p).Body(b).Do().Error()
+	if err != nil {
+		t.Fatalf("expected %#v got %#v", nil, err)
+	}
+}
+
+func testDeleteCRO(t *testing.T, ID string) {
+	p := newCRD.ResourceEndpoint(ID)
+
+	err := newCRDClient.Discovery().RESTClient().Delete().AbsPath(p).Do().Error()
+	if err != nil {
+		t.Fatalf("expected %#v got %#v", nil, err)
+	}
+}
+
+func testSetup(t *testing.T) {
+	testTeardown(t)
+
 	err := crd.Ensure(context.TODO(), newCRD, newCRDClient, backoff.NewExponentialBackOff())
 	if err != nil {
 		t.Fatalf("expected %#v got %#v", nil, err)
 	}
 }
 
-func teardown(t *testing.T) {
+func testTeardown(t *testing.T) {
 	err := newCRDClient.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(newCRD.Name(), nil)
-	if err != nil {
+	if errors.IsNotFound(err) {
+		// fall though
+	} else if err != nil {
 		t.Fatalf("expected %#v got %#v", nil, err)
 	}
 }

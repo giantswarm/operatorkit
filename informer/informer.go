@@ -5,7 +5,7 @@
 //     - The informer is able to watch all kinds of objects as soon as a proper
 //       watch endpoint and a factory implementing ZeroObjectFactory is given.
 //     - Events for objects that are created, deleted or updated are dispatched
-//       immeditiatelly.
+//       immediately.
 //     - Events for objects that are created or updated are dispatched via the
 //       same channel. The informer cannot distinguish between a created or
 //       updated event object.
@@ -145,7 +145,12 @@ func (i *Informer) Watch(ctx context.Context) (chan watch.Event, chan watch.Even
 		for {
 			select {
 			case <-done:
-			case event := <-eventChan:
+				return
+			case event, ok := <-eventChan:
+				if !ok {
+					return
+				}
+
 				switch event.Type {
 				case watch.Added:
 					err := i.cacheAndSendIfNotExists(event, updateChan)

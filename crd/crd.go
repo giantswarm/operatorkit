@@ -88,6 +88,10 @@ func New(config Config) (*CRD, error) {
 	return newCRD, nil
 }
 
+func (c *CRD) CreateEndpoint() string {
+	return filepath.Join("apis", c.Group(), c.Version(), c.Plural())
+}
+
 func (c *CRD) Group() string {
 	return c.group
 }
