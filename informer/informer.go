@@ -5,7 +5,7 @@
 //     - The informer is able to watch all kinds of objects as soon as a proper
 //       watch endpoint and a factory implementing ZeroObjectFactory is given.
 //     - Events for objects that are created, deleted or updated are dispatched
-//       immeditiatelly.
+//       immediately.
 //     - Events for objects that are created or updated are dispatched via the
 //       same channel. The informer cannot distinguish between a created or
 //       updated event object.
@@ -24,8 +24,8 @@ import (
 
 	"github.com/cenk/backoff"
 	"github.com/giantswarm/microerror"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -41,8 +41,8 @@ const (
 // Config represents the configuration used to create a new Informer.
 type Config struct {
 	// Dependencies.
-	BackOff    backoff.BackOff
-	RestClient rest.Interface
+	BackOff        backoff.BackOff
+	WatcherFactory WatcherFactory
 
 	// Settings.
 
@@ -60,8 +60,8 @@ type Config struct {
 func DefaultConfig() Config {
 	return Config{
 		// Dependencies.
-		BackOff:    nil,
-		RestClient: nil,
+		BackOff:        nil,
+		WatcherFactory: nil,
 
 		// Settings.
 		RateWait:     DefaultRateWait,
@@ -73,8 +73,8 @@ func DefaultConfig() Config {
 // in a deterministic way.
 type Informer struct {
 	// Dependencies.
-	backOff    backoff.BackOff
-	restClient rest.Interface
+	backOff        backoff.BackOff
+	watcherFactory WatcherFactory
 
 	// Internals.
 	cache       *sync.Map
@@ -91,8 +91,8 @@ func New(config Config) (*Informer, error) {
 	if config.BackOff == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.BackOff must not be empty")
 	}
-	if config.RestClient == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.RestClient must not be empty")
+	if config.WatcherFactory == nil {
+		return nil, microerror.Maskf(invalidConfigError, "config.WatcherFactory must not be empty")
 	}
 
 	// Settings.
@@ -102,8 +102,8 @@ func New(config Config) (*Informer, error) {
 
 	newInformer := &Informer{
 		// Settings.
-		backOff:    config.BackOff,
-		restClient: config.RestClient,
+		backOff:        config.BackOff,
+		watcherFactory: config.WatcherFactory,
 
 		// Internals.
 		cache:       &sync.Map{},
@@ -133,7 +133,7 @@ func New(config Config) (*Informer, error) {
 //
 // That the resync period configured for the informer will trigger periodic
 // updates of event objects via the update channel.
-func (i *Informer) Watch(ctx context.Context, endpoint string, factory ZeroObjectFactory) (chan watch.Event, chan watch.Event, chan error) {
+func (i *Informer) Watch(ctx context.Context) (chan watch.Event, chan watch.Event, chan error) {
 	done := make(chan struct{}, 1)
 	eventChan := make(chan watch.Event, 1)
 
@@ -145,7 +145,12 @@ func (i *Informer) Watch(ctx context.Context, endpoint string, factory ZeroObjec
 		for {
 			select {
 			case <-done:
-			case event := <-eventChan:
+				return
+			case event, ok := <-eventChan:
+				if !ok {
+					return
+				}
+
 				switch event.Type {
 				case watch.Added:
 					err := i.cacheAndSendIfNotExists(event, updateChan)
@@ -158,7 +163,7 @@ func (i *Informer) Watch(ctx context.Context, endpoint string, factory ZeroObjec
 						errChan <- microerror.Mask(err)
 					}
 				case watch.Modified:
-					err := i.cacheAndSend(event, updateChan)
+					err := i.cacheAndSend(event, deleteChan, updateChan)
 					if err != nil {
 						errChan <- microerror.Mask(err)
 					}
@@ -174,12 +179,12 @@ func (i *Informer) Watch(ctx context.Context, endpoint string, factory ZeroObjec
 		// the very first time after the program started. This is a special case and
 		// guarantees any configured rate limitting is properly done.
 		{
-			err := i.fillCache(ctx, endpoint, factory, eventChan)
+			err := i.fillCache(ctx, eventChan)
 			if err != nil {
 				errChan <- microerror.Mask(err)
 			}
 			close(i.initializer)
-			i.sendCachedEvents(ctx, updateChan)
+			i.sendCachedEvents(ctx, deleteChan, updateChan, errChan)
 		}
 
 		for {
@@ -194,7 +199,7 @@ func (i *Informer) Watch(ctx context.Context, endpoint string, factory ZeroObjec
 						case <-ctx.Done():
 							return
 						default:
-							err := i.streamEvents(ctx, endpoint, factory, eventChan)
+							err := i.streamEvents(ctx, eventChan)
 							if err != nil {
 								errChan <- microerror.Mask(err)
 							}
@@ -204,7 +209,7 @@ func (i *Informer) Watch(ctx context.Context, endpoint string, factory ZeroObjec
 
 				<-time.After(i.resyncPeriod)
 
-				i.sendCachedEvents(ctx, updateChan)
+				i.sendCachedEvents(ctx, deleteChan, updateChan, errChan)
 				cancelFunc()
 			}
 		}
@@ -224,17 +229,28 @@ func (i *Informer) Watch(ctx context.Context, endpoint string, factory ZeroObjec
 	return deleteChan, updateChan, errChan
 }
 
-// cacheAndSend sends the provided event object to the provided update channel
-// and caches the provided event object.
-func (i *Informer) cacheAndSend(event watch.Event, updateChan chan watch.Event) error {
-	updateChan <- event
-
+// cacheAndSend stores the provided event object in the informer cache and
+// dispatches it based on its properties. cacheAndSend sends the provided event
+// object to the provided update channel in case the event object has no
+// deletion timestamp. In case the deletion timestamp of the provided event
+// object is non-nil, it is send to the provided delete channel.
+func (i *Informer) cacheAndSend(event watch.Event, deleteChan, updateChan chan watch.Event) error {
 	k, err := cache.MetaNamespaceKeyFunc(event.Object)
 	if err != nil {
 		return microerror.Mask(err)
 	}
-
 	i.cache.Store(k, event)
+
+	m, err := meta.Accessor(event.Object)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+	t := m.GetDeletionTimestamp()
+	if t == nil {
+		updateChan <- event
+	} else {
+		deleteChan <- event
+	}
 
 	return nil
 }
@@ -271,12 +287,11 @@ func (i *Informer) cacheAndSendIfNotExists(event watch.Event, updateChan chan wa
 // fillCache is similar to streamEvents but is only used during informer cache
 // initialization. As soon as the watcher does not receive any event objects
 // anymore, the cache is filled and the usual event watching process can begin.
-func (i *Informer) fillCache(ctx context.Context, endpoint string, factory ZeroObjectFactory, eventChan chan watch.Event) error {
-	stream, err := i.restClient.Get().AbsPath(endpoint).Stream()
+func (i *Informer) fillCache(ctx context.Context, eventChan chan watch.Event) error {
+	watcher, err := i.watcherFactory()
 	if err != nil {
 		return microerror.Mask(err)
 	}
-	watcher := watch.NewStreamWatcher(newDecoder(stream, factory))
 
 	defer watcher.Stop()
 
@@ -310,17 +325,22 @@ func (i *Informer) isCachedFilled() bool {
 	return false
 }
 
-// sendCachedEvents sends all cached event objects to the provided update
-// channel. The release process may be rate limitted by the rate wait
-// configuration of the informer. Then the release sleeps for the configured
-// duration before releasing the next event object.
-func (i *Informer) sendCachedEvents(ctx context.Context, updateChan chan watch.Event) {
+// sendCachedEvents sends all cached event objects to the provided delete or
+// update channel. sendCachedEvents sends the provided event object to the
+// provided update channel in case the event object has no deletion timestamp.
+// In case the deletion timestamp of the provided event object is non-nil, it is
+// send to the provided delete channel. The release process may be rate limitted
+// by the rate wait configuration of the informer. Then the release sleeps for
+// the configured duration before releasing the next event object.
+func (i *Informer) sendCachedEvents(ctx context.Context, deleteChan, updateChan chan watch.Event, errChan chan error) {
 	// useRateWait is used to not apply the configured rate wait on the very first
 	// event object. This is done to not wait any additional time before releasing
 	// the first event object after the configured resync period.
 	var useRateWait bool
 
 	i.cache.Range(func(k, v interface{}) bool {
+		e := v.(watch.Event)
+
 		if useRateWait && i.rateWait != 0 {
 			<-time.After(i.rateWait)
 		}
@@ -330,7 +350,17 @@ func (i *Informer) sendCachedEvents(ctx context.Context, updateChan chan watch.E
 		case <-ctx.Done():
 			return false
 		default:
-			updateChan <- v.(watch.Event)
+			m, err := meta.Accessor(e.Object)
+			if err != nil {
+				errChan <- microerror.Mask(err)
+			} else {
+				t := m.GetDeletionTimestamp()
+				if t == nil {
+					updateChan <- e
+				} else {
+					deleteChan <- e
+				}
+			}
 		}
 
 		return true
@@ -342,12 +372,11 @@ func (i *Informer) sendCachedEvents(ctx context.Context, updateChan chan watch.E
 // to connection issues. As soon as the watcher gets closed or the watch gets
 // canceled via the done channel of the provided context, streamEvents returns
 // and stops blocking.
-func (i *Informer) streamEvents(ctx context.Context, endpoint string, factory ZeroObjectFactory, eventChan chan watch.Event) error {
-	stream, err := i.restClient.Get().AbsPath(endpoint).Stream()
+func (i *Informer) streamEvents(ctx context.Context, eventChan chan watch.Event) error {
+	watcher, err := i.watcherFactory()
 	if err != nil {
 		return microerror.Mask(err)
 	}
-	watcher := watch.NewStreamWatcher(newDecoder(stream, factory))
 
 	defer watcher.Stop()
 

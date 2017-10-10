@@ -8,6 +8,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// K8sAPIBase is the base of the Kubernetes API root when defining an absolute
+	// path for a rest client request.
+	K8sAPIBase = "apis"
+)
+
 // Config represents the configuration used to create a new CRD.
 type Config struct {
 	// Settings.
@@ -88,6 +94,10 @@ func New(config Config) (*CRD, error) {
 	return newCRD, nil
 }
 
+func (c *CRD) CreateEndpoint() string {
+	return filepath.Join(K8sAPIBase, c.Group(), c.Version(), c.Plural())
+}
+
 func (c *CRD) Group() string {
 	return c.group
 }
@@ -97,7 +107,7 @@ func (c *CRD) Kind() string {
 }
 
 func (c *CRD) ListEndpoint() string {
-	return filepath.Join("apis", c.Group(), c.Version(), c.Plural())
+	return filepath.Join(K8sAPIBase, c.Group(), c.Version(), c.Plural())
 }
 
 func (c *CRD) Name() string {
@@ -147,7 +157,7 @@ func (c *CRD) Plural() string {
 }
 
 func (c *CRD) ResourceEndpoint(name string) string {
-	return filepath.Join("apis", c.Group(), c.Version(), c.Plural(), name)
+	return filepath.Join(K8sAPIBase, c.Group(), c.Version(), c.Plural(), name)
 }
 
 func (c *CRD) Singular() string {
@@ -163,5 +173,5 @@ func (c *CRD) Version() string {
 }
 
 func (c *CRD) WatchEndpoint() string {
-	return filepath.Join("apis", c.Group(), c.Version(), "watch", c.Plural())
+	return filepath.Join(K8sAPIBase, c.Group(), c.Version(), "watch", c.Plural())
 }
