@@ -229,8 +229,11 @@ func (i *Informer) Watch(ctx context.Context) (chan watch.Event, chan watch.Even
 	return deleteChan, updateChan, errChan
 }
 
-// cacheAndSend sends the provided event object to the provided update channel
-// and caches the provided event object.
+// cacheAndSend stores the provided event object in the informer cache and
+// dispatches it based on its properties. cacheAndSend sends the provided event
+// object to the provided update channel in case the event object has no
+// deletion timestamp. In case the deletion timestamp of the provided event
+// object is non-nil, it is send to the provided delete channel.
 func (i *Informer) cacheAndSend(event watch.Event, deleteChan, updateChan chan watch.Event) error {
 	k, err := cache.MetaNamespaceKeyFunc(event.Object)
 	if err != nil {
@@ -322,10 +325,13 @@ func (i *Informer) isCachedFilled() bool {
 	return false
 }
 
-// sendCachedEvents sends all cached event objects to the provided update
-// channel. The release process may be rate limitted by the rate wait
-// configuration of the informer. Then the release sleeps for the configured
-// duration before releasing the next event object.
+// sendCachedEvents sends all cached event objects to the provided delete or
+// update channel. sendCachedEvents sends the provided event object to the
+// provided update channel in case the event object has no deletion timestamp.
+// In case the deletion timestamp of the provided event object is non-nil, it is
+// send to the provided delete channel. The release process may be rate limitted
+// by the rate wait configuration of the informer. Then the release sleeps for
+// the configured duration before releasing the next event object.
 func (i *Informer) sendCachedEvents(ctx context.Context, deleteChan, updateChan chan watch.Event, errChan chan error) {
 	// useRateWait is used to not apply the configured rate wait on the very first
 	// event object. This is done to not wait any additional time before releasing
