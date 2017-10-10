@@ -144,16 +144,20 @@ func testNewInformer(t *testing.T, rateWait, resyncPeriod time.Duration) *Inform
 	return newInformer
 }
 
-func testAssertCROWithID(t *testing.T, e watch.Event, ID string) {
+func testAssertCROWithID(t *testing.T, e watch.Event, IDs ...string) {
 	m, err := meta.Accessor(e.Object)
 	if err != nil {
 		t.Fatalf("expected %#v got %#v", nil, err)
 	}
 
 	name := m.GetName()
-	if name != ID {
-		t.Fatalf("expected %#v got %#v", ID, name)
+	for _, ID := range IDs {
+		if name == ID {
+			return
+		}
 	}
+
+	t.Fatalf("expected one of %#v got %#v", IDs, name)
 }
 
 func testCreateCRO(t *testing.T, ID string) {

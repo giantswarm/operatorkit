@@ -15,13 +15,16 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 	testSetup(t)
 	defer testTeardown(t)
 
+	objectIDOne := "al7qy"
+	objectIDTwo := "al8qy"
+
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	newInformer := testNewInformer(t, time.Second*2, time.Second*10)
 
 	// We create a custom object before starting the informer watch. This causes
 	// the informer to fill the cache and to initially sent cached events to the
 	// delete and update channels provided by the watch.
-	testCreateCRO(t, "al7qy")
+	testCreateCRO(t, objectIDOne)
 
 	// When there is a runtime object in the API we start the watch.
 	deleteChan, updateChan, errChan := newInformer.Watch(ctx)
@@ -34,7 +37,7 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 		for {
 			select {
 			case <-time.After(25 * time.Second):
-				t.Fatalf("expected %#v got %#v", "proper test execution", "timeout")
+				t.Fatalf("expected proper test execution got timeout")
 			case err := <-errChan:
 				if err != nil {
 					t.Fatalf("expected %#v got %#v", nil, err)
@@ -51,23 +54,23 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 	{
 		select {
 		case <-deleteChan:
-			t.Fatalf("expected %#v got %#v", "update event", "delete event")
+			t.Fatalf("expected update event got delete event")
 		case e := <-updateChan:
-			testAssertCROWithID(t, e, "al7qy")
+			testAssertCROWithID(t, e, objectIDOne)
 		}
 	}
 
 	// We create another runtime object. This should be received immediately.
 	{
-		testCreateCRO(t, "al8qy")
+		testCreateCRO(t, objectIDTwo)
 
 		start := time.Now()
 
 		select {
 		case <-deleteChan:
-			t.Fatalf("expected %#v got %#v", "update event", "delete event")
+			t.Fatalf("expected update event got delete event")
 		case e := <-updateChan:
-			testAssertCROWithID(t, e, "al8qy")
+			testAssertCROWithID(t, e, objectIDTwo)
 		}
 
 		d := time.Now().Sub(start)
@@ -85,9 +88,9 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 
 		select {
 		case <-deleteChan:
-			t.Fatalf("expected %#v got %#v", "update event", "delete event")
+			t.Fatalf("expected update event got delete event")
 		case e := <-updateChan:
-			testAssertCROWithID(t, e, "al7qy")
+			testAssertCROWithID(t, e, objectIDOne, objectIDTwo)
 		}
 
 		d := time.Now().Sub(start)
@@ -105,9 +108,9 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 
 		select {
 		case <-deleteChan:
-			t.Fatalf("expected %#v got %#v", "update event", "delete event")
+			t.Fatalf("expected update event got delete event")
 		case e := <-updateChan:
-			testAssertCROWithID(t, e, "al8qy")
+			testAssertCROWithID(t, e, objectIDOne, objectIDTwo)
 		}
 
 		d := time.Now().Sub(start)
@@ -119,15 +122,15 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 	// Now we delete a runtime object. This event is expected to be received
 	// immediately.
 	{
-		testDeleteCRO(t, "al7qy")
+		testDeleteCRO(t, objectIDOne)
 
 		start := time.Now()
 
 		select {
 		case e := <-deleteChan:
-			testAssertCROWithID(t, e, "al7qy")
+			testAssertCROWithID(t, e, objectIDOne)
 		case <-updateChan:
-			t.Fatalf("expected %#v got %#v", "delete event", "update event")
+			t.Fatalf("expected delete event got update event")
 		}
 
 		d := time.Now().Sub(start)
@@ -143,9 +146,9 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 
 		select {
 		case <-deleteChan:
-			t.Fatalf("expected %#v got %#v", "update event", "delete event")
+			t.Fatalf("expected update event got delete event")
 		case e := <-updateChan:
-			testAssertCROWithID(t, e, "al8qy")
+			testAssertCROWithID(t, e, objectIDTwo)
 		}
 
 		d := time.Now().Sub(start)
