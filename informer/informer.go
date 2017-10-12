@@ -41,6 +41,7 @@ const (
 // Config represents the configuration used to create a new Informer.
 type Config struct {
 	// Dependencies.
+
 	BackOff        backoff.BackOff
 	WatcherFactory WatcherFactory
 
