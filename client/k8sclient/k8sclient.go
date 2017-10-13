@@ -62,10 +62,49 @@ func DefaultConfig() Config {
 
 // New returns a Kubernetes Clientset with the provided configuration.
 func New(config Config) (kubernetes.Interface, error) {
-	restConfig, err := toClientGoRESTConfig(config)
-	if err != nil {
-		return nil, err
+	// Dependencies.
+	if config.Logger == nil {
+		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
 	}
+
+	// Settings.
+	if config.Address == "" && !config.InCluster {
+		return nil, microerror.Maskf(invalidConfigError, "config.Address must not be empty when not creating in-cluster client")
+	}
+
+	if config.Address != "" {
+		_, err := url.Parse(config.Address)
+		if err != nil {
+			return nil, microerror.Maskf(invalidConfigError,
+				"config.Address=%s must be a valid URL: %s", config.Address, err)
+		}
+	}
+
+	var err error
+
+	var restConfig *rest.Config
+	if config.InCluster {
+		config.Logger.Log("debug", "creating in-cluster config")
+
+		restConfig, err = rest.InClusterConfig()
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+	} else {
+		config.Logger.Log("debug", "creating out-cluster config")
+
+		restConfig = &rest.Config{
+			Host: config.Address,
+			TLSClientConfig: rest.TLSClientConfig{
+				CertFile: config.TLS.CrtFile,
+				KeyFile:  config.TLS.KeyFile,
+				CAFile:   config.TLS.CAFile,
+			},
+		}
+	}
+
+	restConfig.Burst = MaxBurst
+	restConfig.QPS = MaxQPS
 
 	client, err := kubernetes.NewForConfig(restConfig)
 	if err != nil {
@@ -73,41 +112,4 @@ func New(config Config) (kubernetes.Interface, error) {
 	}
 
 	return client, nil
-}
-
-func toClientGoRESTConfig(config Config) (*rest.Config, error) {
-	if config.InCluster {
-		config.Logger.Log("debug", "creating in-cluster config")
-		c, err := rest.InClusterConfig()
-		if err != nil {
-			return nil, microerror.Mask(err)
-		}
-		return c, nil
-	}
-
-	if config.Address == "" {
-		return nil, microerror.Maskf(invalidConfigError, "config.Address must not be empty")
-	}
-	_, err := url.Parse(config.Address)
-	if err != nil {
-		return nil, microerror.Maskf(invalidConfigError,
-			"config.Address=%s must be a valid URL: %s", config.Address, err)
-	}
-
-	config.Logger.Log("debug", "creating out-cluster config")
-
-	tlsClientConfig := rest.TLSClientConfig{
-		CertFile: config.TLS.CrtFile,
-		KeyFile:  config.TLS.KeyFile,
-		CAFile:   config.TLS.CAFile,
-	}
-
-	c := &rest.Config{
-		Host:            config.Address,
-		QPS:             MaxQPS,
-		Burst:           MaxBurst,
-		TLSClientConfig: tlsClientConfig,
-	}
-
-	return c, nil
 }

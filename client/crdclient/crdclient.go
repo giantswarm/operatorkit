@@ -60,6 +60,14 @@ func New(config Config) (apiextensionsclient.Interface, error) {
 		return nil, microerror.Maskf(invalidConfigError, "config.Address must not be empty when not creating in-cluster client")
 	}
 
+	if config.Address != "" {
+		_, err := url.Parse(config.Address)
+		if err != nil {
+			return nil, microerror.Maskf(invalidConfigError,
+				"config.Address=%s must be a valid URL: %s", config.Address, err)
+		}
+	}
+
 	var err error
 
 	var restConfig *rest.Config
@@ -72,12 +80,6 @@ func New(config Config) (apiextensionsclient.Interface, error) {
 		}
 	} else {
 		config.Logger.Log("debug", "creating out-cluster config")
-
-		// Kubernetes listen URL.
-		_, err := url.Parse(config.Address)
-		if err != nil {
-			return nil, microerror.Mask(err)
-		}
 
 		restConfig = &rest.Config{
 			Host: config.Address,
