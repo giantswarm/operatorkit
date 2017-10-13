@@ -60,8 +60,8 @@ func DefaultConfig() Config {
 	}
 }
 
-// NewClient returns a Kubernetes Clientset with the provided configuration.
-func NewClient(config Config) (kubernetes.Interface, error) {
+// New returns a Kubernetes Clientset with the provided configuration.
+func New(config Config) (kubernetes.Interface, error) {
 	rawClientConfig, err := getRawClientConfig(config)
 	if err != nil {
 		return nil, err
