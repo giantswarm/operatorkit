@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 
-	"github.com/giantswarm/operatorkit/framework/canceledcontext"
+	"github.com/giantswarm/operatorkit/context/canceledcontext"
 )
 
 // Config represents the configuration used to create a new operator framework.
