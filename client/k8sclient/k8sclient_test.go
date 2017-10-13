@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetRawClientConfig(t *testing.T) {
+func TestToClientGoRESTConfig(t *testing.T) {
 	caFile := "/var/run/kubernetes/server-ca.crt"
 	crtFile := "/var/run/kubernetes/client-admin.crt"
 	keyFile := "/var/run/kubernetes/client-admin.key"
@@ -52,7 +52,7 @@ func TestGetRawClientConfig(t *testing.T) {
 		config.TLS.CrtFile = crtFile
 		config.TLS.KeyFile = keyFile
 
-		rawClientConfig, err := getRawClientConfig(config)
+		rawClientConfig, err := toClientGoRESTConfig(config)
 		if tc.expectedError {
 			assert.Error(t, err, fmt.Sprintf("[%s] An error was expected", tc.name))
 			continue

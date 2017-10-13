@@ -62,12 +62,12 @@ func DefaultConfig() Config {
 
 // New returns a Kubernetes Clientset with the provided configuration.
 func New(config Config) (kubernetes.Interface, error) {
-	rawClientConfig, err := getRawClientConfig(config)
+	restConfig, err := toClientGoRESTConfig(config)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := kubernetes.NewForConfig(rawClientConfig)
+	client, err := kubernetes.NewForConfig(restConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -75,47 +75,39 @@ func New(config Config) (kubernetes.Interface, error) {
 	return client, nil
 }
 
-func newRawClientConfig(config Config) *rest.Config {
+func toClientGoRESTConfig(config Config) (*rest.Config, error) {
+	if config.InCluster {
+		config.Logger.Log("debug", "creating in-cluster config")
+		c, err := rest.InClusterConfig()
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+		return c, nil
+	}
+
+	if config.Address == "" {
+		return nil, microerror.Maskf(invalidConfigError, "config.Address must not be empty")
+	}
+	_, err := url.Parse(config.Address)
+	if err != nil {
+		return nil, microerror.Maskf(invalidConfigError,
+			"config.Address=%s must be a valid URL: %s", config.Address, err)
+	}
+
+	config.Logger.Log("debug", "creating out-cluster config")
+
 	tlsClientConfig := rest.TLSClientConfig{
 		CertFile: config.TLS.CrtFile,
 		KeyFile:  config.TLS.KeyFile,
 		CAFile:   config.TLS.CAFile,
 	}
-	rawClientConfig := &rest.Config{
+
+	c := &rest.Config{
 		Host:            config.Address,
 		QPS:             MaxQPS,
 		Burst:           MaxBurst,
 		TLSClientConfig: tlsClientConfig,
 	}
 
-	return rawClientConfig
-}
-
-func getRawClientConfig(config Config) (*rest.Config, error) {
-	var rawClientConfig *rest.Config
-	var err error
-
-	if config.InCluster {
-		config.Logger.Log("debug", "creating in-cluster config")
-		rawClientConfig, err = rest.InClusterConfig()
-		if err != nil {
-			return nil, microerror.Mask(err)
-		}
-	} else {
-		if config.Address == "" {
-			return nil, microerror.Maskf(invalidConfigError, "kubernetes address must not be empty")
-		}
-
-		config.Logger.Log("debug", "creating out-cluster config")
-
-		// Kubernetes listen URL.
-		_, err := url.Parse(config.Address)
-		if err != nil {
-			return nil, microerror.Mask(err)
-		}
-
-		rawClientConfig = newRawClientConfig(config)
-	}
-
-	return rawClientConfig, nil
+	return c, nil
 }
