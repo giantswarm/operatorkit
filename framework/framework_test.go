@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/giantswarm/operatorkit/context/canceledcontext"
+	"github.com/giantswarm/operatorkit/framework/context/canceledcontext"
 )
 
 // Test_Framework_ProcessCreate_ResourceOrder ensures the resource's methods are
