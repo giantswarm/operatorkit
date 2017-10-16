@@ -310,8 +310,6 @@ func (f *Framework) ProcessEvents(ctx context.Context, deleteChan chan watch.Eve
 				return nil
 			}
 		}
-
-		return nil
 	}
 
 	notifier := func(err error, d time.Duration) {
