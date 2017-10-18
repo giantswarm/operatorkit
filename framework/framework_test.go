@@ -40,8 +40,10 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 				{
 					"GetCurrentState",
 					"GetDesiredState",
-					"GetCreateState",
-					"ProcessCreateState",
+					"NewUpdatePatch",
+					"Create",
+					"Delete",
+					"Update",
 				},
 			},
 			ErrorMatcher: nil,
@@ -60,14 +62,18 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 				{
 					"GetCurrentState",
 					"GetDesiredState",
-					"GetCreateState",
-					"ProcessCreateState",
+					"NewUpdatePatch",
+					"Create",
+					"Delete",
+					"Update",
 				},
 				{
 					"GetCurrentState",
 					"GetDesiredState",
-					"GetCreateState",
-					"ProcessCreateState",
+					"NewUpdatePatch",
+					"Create",
+					"Delete",
+					"Update",
 				},
 			},
 			ErrorMatcher: nil,
@@ -106,8 +112,10 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 				{
 					"GetCurrentState",
 					"GetDesiredState",
-					"GetCreateState",
-					"ProcessCreateState",
+					"NewUpdatePatch",
+					"Create",
+					"Delete",
+					"Update",
 				},
 			},
 			ErrorMatcher: nil,
@@ -121,7 +129,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			Ctx:           canceledcontext.NewContext(context.Background(), make(chan struct{})),
 			Resources: []Resource{
 				&testResource{
-					CancelingStep: "GetCreateState",
+					CancelingStep: "NewUpdatePatch",
 				},
 				&testResource{},
 			},
@@ -129,7 +137,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 				{
 					"GetCurrentState",
 					"GetDesiredState",
-					"GetCreateState",
+					"NewUpdatePatch",
 				},
 				nil,
 			},
@@ -145,20 +153,22 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			Resources: []Resource{
 				&testResource{},
 				&testResource{
-					CancelingStep: "GetCreateState",
+					CancelingStep: "NewUpdatePatch",
 				},
 			},
 			ExpectedOrders: [][]string{
 				{
 					"GetCurrentState",
 					"GetDesiredState",
-					"GetCreateState",
-					"ProcessCreateState",
+					"NewUpdatePatch",
+					"Create",
+					"Delete",
+					"Update",
 				},
 				{
 					"GetCurrentState",
 					"GetDesiredState",
-					"GetCreateState",
+					"NewUpdatePatch",
 				},
 			},
 			ErrorMatcher: nil,
@@ -185,9 +195,10 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			ExpectedOrders: [][]string{
 				{
 					"GetCurrentState",
-					"GetDesiredState",
-					"GetDeleteState",
-					"ProcessDeleteState",
+					"NewDeletePatch",
+					"Create",
+					"Delete",
+					"Update",
 				},
 			},
 			ErrorMatcher: nil,
@@ -205,15 +216,17 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			ExpectedOrders: [][]string{
 				{
 					"GetCurrentState",
-					"GetDesiredState",
-					"GetDeleteState",
-					"ProcessDeleteState",
+					"NewDeletePatch",
+					"Create",
+					"Delete",
+					"Update",
 				},
 				{
 					"GetCurrentState",
-					"GetDesiredState",
-					"GetDeleteState",
-					"ProcessDeleteState",
+					"NewDeletePatch",
+					"Create",
+					"Delete",
+					"Update",
 				},
 			},
 			ErrorMatcher: nil,
@@ -251,9 +264,10 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			ExpectedOrders: [][]string{
 				{
 					"GetCurrentState",
-					"GetDesiredState",
-					"GetDeleteState",
-					"ProcessDeleteState",
+					"NewDeletePatch",
+					"Create",
+					"Delete",
+					"Update",
 				},
 			},
 			ErrorMatcher: nil,
@@ -267,15 +281,14 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			Ctx:           canceledcontext.NewContext(context.Background(), make(chan struct{})),
 			Resources: []Resource{
 				&testResource{
-					CancelingStep: "GetDeleteState",
+					CancelingStep: "NewDeletePatch",
 				},
 				&testResource{},
 			},
 			ExpectedOrders: [][]string{
 				{
 					"GetCurrentState",
-					"GetDesiredState",
-					"GetDeleteState",
+					"NewDeletePatch",
 				},
 				nil,
 			},
@@ -291,20 +304,20 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			Resources: []Resource{
 				&testResource{},
 				&testResource{
-					CancelingStep: "GetDeleteState",
+					CancelingStep: "NewDeletePatch",
 				},
 			},
 			ExpectedOrders: [][]string{
 				{
 					"GetCurrentState",
-					"GetDesiredState",
-					"GetDeleteState",
-					"ProcessDeleteState",
+					"NewDeletePatch",
+					"Create",
+					"Delete",
+					"Update",
 				},
 				{
 					"GetCurrentState",
-					"GetDesiredState",
-					"GetDeleteState",
+					"NewDeletePatch",
 				},
 			},
 			ErrorMatcher: nil,
@@ -332,10 +345,10 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 				{
 					"GetCurrentState",
 					"GetDesiredState",
-					"GetUpdateState",
-					"ProcessCreateState",
-					"ProcessDeleteState",
-					"ProcessUpdateState",
+					"NewUpdatePatch",
+					"Create",
+					"Delete",
+					"Update",
 				},
 			},
 			ErrorMatcher: nil,
@@ -354,18 +367,18 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 				{
 					"GetCurrentState",
 					"GetDesiredState",
-					"GetUpdateState",
-					"ProcessCreateState",
-					"ProcessDeleteState",
-					"ProcessUpdateState",
+					"NewUpdatePatch",
+					"Create",
+					"Delete",
+					"Update",
 				},
 				{
 					"GetCurrentState",
 					"GetDesiredState",
-					"GetUpdateState",
-					"ProcessCreateState",
-					"ProcessDeleteState",
-					"ProcessUpdateState",
+					"NewUpdatePatch",
+					"Create",
+					"Delete",
+					"Update",
 				},
 			},
 			ErrorMatcher: nil,
@@ -404,10 +417,10 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 				{
 					"GetCurrentState",
 					"GetDesiredState",
-					"GetUpdateState",
-					"ProcessCreateState",
-					"ProcessDeleteState",
-					"ProcessUpdateState",
+					"NewUpdatePatch",
+					"Create",
+					"Delete",
+					"Update",
 				},
 			},
 			ErrorMatcher: nil,
@@ -421,7 +434,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			Ctx:           canceledcontext.NewContext(context.Background(), make(chan struct{})),
 			Resources: []Resource{
 				&testResource{
-					CancelingStep: "GetUpdateState",
+					CancelingStep: "NewUpdatePatch",
 				},
 				&testResource{},
 			},
@@ -429,7 +442,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 				{
 					"GetCurrentState",
 					"GetDesiredState",
-					"GetUpdateState",
+					"NewUpdatePatch",
 				},
 				nil,
 			},
@@ -445,22 +458,22 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			Resources: []Resource{
 				&testResource{},
 				&testResource{
-					CancelingStep: "GetUpdateState",
+					CancelingStep: "NewUpdatePatch",
 				},
 			},
 			ExpectedOrders: [][]string{
 				{
 					"GetCurrentState",
 					"GetDesiredState",
-					"GetUpdateState",
-					"ProcessCreateState",
-					"ProcessDeleteState",
-					"ProcessUpdateState",
+					"NewUpdatePatch",
+					"Create",
+					"Delete",
+					"Update",
 				},
 				{
 					"GetCurrentState",
 					"GetDesiredState",
-					"GetUpdateState",
+					"NewUpdatePatch",
 				},
 			},
 			ErrorMatcher: nil,
@@ -535,8 +548,8 @@ func (r *testResource) GetDesiredState(ctx context.Context, obj interface{}) (in
 	return nil, nil
 }
 
-func (r *testResource) GetCreateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
-	m := "GetCreateState"
+func (r *testResource) NewUpdatePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*Patch, error) {
+	m := "NewUpdatePatch"
 	r.Order = append(r.Order, m)
 
 	if r.CancelingStep == m {
@@ -550,11 +563,16 @@ func (r *testResource) GetCreateState(ctx context.Context, obj, currentState, de
 		return nil, r.Error
 	}
 
-	return nil, nil
+	// TODO test not invoking when patch part is not set.
+	p := NewPatch()
+	p.SetCreate("test create state")
+	p.SetUpdate("test update state")
+	p.SetDelete("test delete state")
+	return p, nil
 }
 
-func (r *testResource) GetDeleteState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
-	m := "GetDeleteState"
+func (r *testResource) NewDeletePatch(ctx context.Context, obj, currentState interface{}) (*Patch, error) {
+	m := "NewDeletePatch"
 	r.Order = append(r.Order, m)
 
 	if r.CancelingStep == m {
@@ -568,33 +586,20 @@ func (r *testResource) GetDeleteState(ctx context.Context, obj, currentState, de
 		return nil, r.Error
 	}
 
-	return nil, nil
-}
-
-func (r *testResource) GetUpdateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, interface{}, interface{}, error) {
-	m := "GetUpdateState"
-	r.Order = append(r.Order, m)
-
-	if r.CancelingStep == m {
-		canceledcontext.SetCanceled(ctx)
-		if canceledcontext.IsCanceled(ctx) {
-			return nil, nil, nil, nil
-		}
-	}
-
-	if r.returnErrorFor(m) {
-		return nil, nil, nil, r.Error
-	}
-
-	return nil, nil, nil, nil
+	// TODO test not invoking when patch part is not set.
+	p := NewPatch()
+	p.SetCreate("test create state")
+	p.SetUpdate("test update state")
+	p.SetDelete("test delete state")
+	return p, nil
 }
 
 func (r *testResource) Name() string {
 	return "testResource"
 }
 
-func (r *testResource) ProcessCreateState(ctx context.Context, obj, createState interface{}) error {
-	m := "ProcessCreateState"
+func (r *testResource) Create(ctx context.Context, obj, createState interface{}) error {
+	m := "Create"
 	r.Order = append(r.Order, m)
 
 	if r.CancelingStep == m {
@@ -611,8 +616,8 @@ func (r *testResource) ProcessCreateState(ctx context.Context, obj, createState 
 	return nil
 }
 
-func (r *testResource) ProcessDeleteState(ctx context.Context, obj, deleteState interface{}) error {
-	m := "ProcessDeleteState"
+func (r *testResource) Delete(ctx context.Context, obj, deleteState interface{}) error {
+	m := "Delete"
 	r.Order = append(r.Order, m)
 
 	if r.CancelingStep == m {
@@ -629,8 +634,8 @@ func (r *testResource) ProcessDeleteState(ctx context.Context, obj, deleteState 
 	return nil
 }
 
-func (r *testResource) ProcessUpdateState(ctx context.Context, obj, updateState interface{}) error {
-	m := "ProcessUpdateState"
+func (r *testResource) Update(ctx context.Context, obj, updateState interface{}) error {
+	m := "Update"
 	r.Order = append(r.Order, m)
 
 	if r.CancelingStep == m {

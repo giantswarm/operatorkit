@@ -31,14 +31,10 @@ func Test_Framework_InitCtxFunc_AddFunc(t *testing.T) {
 			ExpectedOrder: []string{
 				"GetCurrentState",
 				"GetDesiredState",
-				"GetCreateState",
-				"ProcessCreateState",
-				"GetCurrentState",
-				"GetDesiredState",
-				"GetUpdateState",
-				"ProcessCreateState",
-				"ProcessDeleteState",
-				"ProcessUpdateState",
+				"NewUpdatePatch",
+				"Create",
+				"Delete",
+				"Update",
 			},
 		},
 	}
@@ -93,9 +89,10 @@ func Test_Framework_InitCtxFunc_DeleteFunc(t *testing.T) {
 			},
 			ExpectedOrder: []string{
 				"GetCurrentState",
-				"GetDesiredState",
-				"GetDeleteState",
-				"ProcessDeleteState",
+				"NewDeletePatch",
+				"Create",
+				"Delete",
+				"Update",
 			},
 		},
 	}
@@ -151,14 +148,10 @@ func Test_Framework_InitCtxFunc_UpdateFunc(t *testing.T) {
 			ExpectedOrder: []string{
 				"GetCurrentState",
 				"GetDesiredState",
-				"GetCreateState",
-				"ProcessCreateState",
-				"GetCurrentState",
-				"GetDesiredState",
-				"GetUpdateState",
-				"ProcessCreateState",
-				"ProcessDeleteState",
-				"ProcessUpdateState",
+				"NewUpdatePatch",
+				"Create",
+				"Delete",
+				"Update",
 			},
 		},
 	}
@@ -216,64 +209,64 @@ func (r *testInitCtxFuncResource) GetDesiredState(ctx context.Context, obj inter
 	return nil, nil
 }
 
-func (r *testInitCtxFuncResource) GetCreateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
+func (r *testInitCtxFuncResource) NewUpdatePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*Patch, error) {
 	_, ok := testInitCtxFuncFromContext(ctx)
 	if ok {
-		m := "GetCreateState"
+		m := "NewUpdatePatch"
 		r.Order = append(r.Order, m)
 	}
 
-	return nil, nil
+	// TODO test not invoking when patch part is not set.
+	p := NewPatch()
+	p.SetCreate("test create state")
+	p.SetUpdate("test update state")
+	p.SetDelete("test delete state")
+	return p, nil
 }
 
-func (r *testInitCtxFuncResource) GetDeleteState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
+func (r *testInitCtxFuncResource) NewDeletePatch(ctx context.Context, obj, currentState interface{}) (*Patch, error) {
 	_, ok := testInitCtxFuncFromContext(ctx)
 	if ok {
-		m := "GetDeleteState"
+		m := "NewDeletePatch"
 		r.Order = append(r.Order, m)
 	}
 
-	return nil, nil
-}
-
-func (r *testInitCtxFuncResource) GetUpdateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, interface{}, interface{}, error) {
-	_, ok := testInitCtxFuncFromContext(ctx)
-	if ok {
-		m := "GetUpdateState"
-		r.Order = append(r.Order, m)
-	}
-
-	return nil, nil, nil, nil
+	// TODO test not invoking when patch part is not set.
+	p := NewPatch()
+	p.SetCreate("test create state")
+	p.SetUpdate("test update state")
+	p.SetDelete("test delete state")
+	return p, nil
 }
 
 func (r *testInitCtxFuncResource) Name() string {
 	return "testInitCtxFuncResource"
 }
 
-func (r *testInitCtxFuncResource) ProcessCreateState(ctx context.Context, obj, createState interface{}) error {
+func (r *testInitCtxFuncResource) Create(ctx context.Context, obj, createState interface{}) error {
 	_, ok := testInitCtxFuncFromContext(ctx)
 	if ok {
-		m := "ProcessCreateState"
+		m := "Create"
 		r.Order = append(r.Order, m)
 	}
 
 	return nil
 }
 
-func (r *testInitCtxFuncResource) ProcessDeleteState(ctx context.Context, obj, deleteState interface{}) error {
+func (r *testInitCtxFuncResource) Delete(ctx context.Context, obj, deleteState interface{}) error {
 	_, ok := testInitCtxFuncFromContext(ctx)
 	if ok {
-		m := "ProcessDeleteState"
+		m := "Delete"
 		r.Order = append(r.Order, m)
 	}
 
 	return nil
 }
 
-func (r *testInitCtxFuncResource) ProcessUpdateState(ctx context.Context, obj, updateState interface{}) error {
+func (r *testInitCtxFuncResource) Update(ctx context.Context, obj, updateState interface{}) error {
 	_, ok := testInitCtxFuncFromContext(ctx)
 	if ok {
-		m := "ProcessUpdateState"
+		m := "Update"
 		r.Order = append(r.Order, m)
 	}
 
