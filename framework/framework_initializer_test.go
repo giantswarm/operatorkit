@@ -217,7 +217,6 @@ func (r *testInitCtxFuncResource) NewUpdatePatch(ctx context.Context, obj, curre
 		r.Order = append(r.Order, m)
 	}
 
-	// TODO test not invoking when patch part is not set.
 	p := NewPatch()
 	p.SetCreate("test create state")
 	p.SetUpdate("test update state")
@@ -232,7 +231,6 @@ func (r *testInitCtxFuncResource) NewDeletePatch(ctx context.Context, obj, curre
 		r.Order = append(r.Order, m)
 	}
 
-	// TODO test not invoking when patch part is not set.
 	p := NewPatch()
 	p.SetCreate("test create state")
 	p.SetUpdate("test update state")
