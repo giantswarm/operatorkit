@@ -2,25 +2,64 @@
 
 # operatorkit
 
-The operatorkit package implements an opinionated framework for developing
-Kubernetes operators. It can be used as a library in golang. It is built on
-top of our [microkit](https://github.com/giantswarm/microkit) framework which
-provides base functionality like logging and error handling.
+The operatorkit is a library for creating [Kubernetes operators][operators]. It
+emerged as extracted common functionality of number of the operators we
+developed in Giant Swarm. The goal of the library is to provide common
+structure of the operator projects and encapsulate best practices learned
+during running operators in production.
+
+## Features
+
+- Reducing boilerplate code.
+- CRD/TPR primitives allowing to reliably create, watch custom resources, and
+  decode custom objects.
+- Independent packages. It is possible to use only a part of the library. 
+- Possibility to change behaviour that often is specific to an organization
+  like logging and error handling.
+- Minimal set of dependencies.
 
 ## Current Scope
 
-The initial scope is intentionally small and will be expanded as the community
-gains more experience developing operators.
+Project is split into independent packages providing complementary
+functionalities allowing to create production grade Kubernetes operators.
 
-* Kubernetes clientset using [client-go](https://github.com/kubernetes/client-go) for accessing the K8s APIs.
+- client - provides unified way of creating Kubernetes clients required by
+  other packages.
+- crd/tpr - provide CRD/TPR primitives, allowing to reliably create custom
+  resources, wait for their initialization, and generate endpoints URLs. 
+- informer - provides well defined watching functionality for virtually any
+  Kubernetes resource. It also provides a custom objects decoding functionality
+  reducing error prone boilerplate.
+- framework - provides a framework aiming to help writing reliable, robust
+  reconciliation loops.
 
 ## Future Scope
 
-The future scope may include but is not limited to.
+- Custom object migration. With operators running in production handling many
+  custom objects in multiple installations it is essential to be able to change
+  the custom resource definition. This is something we are struggling with at
+  the moment. We want to provide some generic way to deal with that problem
+  nicely.
+- Ensuring processing of custom object deletion. Freeing resources managed by
+  the operator after custom resource deletion is crucial part of the operator.
+  We think this is important that the operator processes custom resource
+  deletion even when it was not running during the deletion. Even if the
+  probability of such case is small we do not want risk orphaned resources. We
+  want to use [finalizers][finalizers] for that. At the moment we are blocked
+  with this bug https://github.com/kubernetes/kubernetes/issues/50528.
+- Framework is still under heavy lifting. As we create new operators, and run
+  current ones in different environments we discover new problems, learn how to
+  deal with them and try to move that knowledge to the framework.
 
-* Managing TPRs (Third Party Resources).
-* Watches for TPRs.
-* Reconciliation loops for managing TPOs (Third Party Objects).
+## Projects using operatorkit
+
+- https://github.com/giantswarm/aws-operator
+- https://github.com/giantswarm/azure-operator
+- https://github.com/giantswarm/cert-operator
+- https://github.com/giantswarm/flannel-operator
+- https://github.com/giantswarm/ingress-operator
+- https://github.com/giantswarm/kvm-operator
+- more to come
 
 ## Contact
 
@@ -36,7 +75,5 @@ See [CONTRIBUTING](CONTRIBUTING.md) for details on submitting patches, the contr
 
 operatorkit is under the Apache 2.0 license. See the [LICENSE](LICENSE) file for details.
 
-### credit
-- https://golang.org
-- https://github.com/kubernetes/kubernetes
-- https://github.com/go-kit/kit
+[finalizers]: https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-custom-resource-definitions/#finalizers
+[operators]: https://coreos.com/operators
