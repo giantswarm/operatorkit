@@ -81,49 +81,52 @@ type Resource interface {
 	// and return information about Flannel bridges, how they should look like on
 	// a server host.
 	//
-	// NOTE GetDesiredState is called on create and update events. When
-	// called on create events the provided custom object will be the
+	// NOTE GetDesiredState is called on create, delete and update events.
+	// When called on create events the provided custom object will be the
 	// custom object currently known to the informer. On update events the
 	// informer knows about the old and the new custom object.
 	// GetDesiredState then receives the new custom object to be able to
 	// compute the desired state of a system.
 	GetDesiredState(ctx context.Context, obj interface{}) (interface{}, error)
 
-	// NewUpdatePatch is callend upon observed CRO/TPO change. It receives the
-	// observed custom object, the current state as provided by GetCurrentState and
-	// the desired state as provided by GetDesiredState. NewUpdatePatch analyses
-	// the current and desired state and returns the patch state to be
-	// applied by Create, Delete, and Update functions. Create, Delete, and
-	// Update are called only when the corresponding patch state was
-	// created.
+	// NewUpdatePatch is callend upon observed CRO/TPO change. It receives
+	// the observed custom object, the current state as provided by
+	// GetCurrentState and the desired state as provided by
+	// GetDesiredState. NewUpdatePatch analyses the current and desired
+	// state and returns the patch to be applied by Create, Delete, and
+	// Update functions. ApplyCreatePatch, ApplyDeletePatch, and
+	// ApplyUpdatePatch are called only when the corresponding patch part
+	// was created.
 	NewUpdatePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*Patch, error)
 	// NewDeletePatch is called upon observed CRO/TPO deleteion. It
 	// receives the deleted custom object, the current state as provided by
-	// GetCurrentState. NewDeletePatch analyses the current state
-	// returns the patch state to be applied by Create, Delete, and Update
-	// functions. Create, Delete, and Update are called only when the
-	// corresponding patch state was created.
-	NewDeletePatch(ctx context.Context, obj, currentState interface{}) (*Patch, error)
+	// GetCurrentState and the desired state as provided by
+	// GetDesiredState. NewDeletePatch analyses the current and desired
+	// state returns the patch to be applied by Create, Delete, and Update
+	// functions. ApplyCreatePatch, ApplyDeletePatch, and
+	// ApplyUpdatePatch are called only when the corresponding patch part
+	// was created.
+	NewDeletePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*Patch, error)
 
-	// Create receives the new custom object observed during TPR watches.
-	// It also receives the Create portion of the Patch provided by
-	// NewUpdatePatch or NewDeletePatch. Create only has to create
+	// ApplyCreatePatch receives the new custom object observed during TPR watches.
+	// It also receives the ApplyCreatePatch portion of the Patch provided by
+	// NewUpdatePatch or NewDeletePatch. ApplyCreatePatch only has to create
 	// resources based on its provided input. All other reconciliation
 	// logic and state transformation is already done at this point of the
 	// reconciliation loop.
-	Create(ctx context.Context, obj, createPatch interface{}) error
-	// Delete receives the new custom object observed during TPR watches.
-	// It also receives the Delete portion of the Patch provided by
-	// NewUpdatePatch or NewDeletePatch. Delete only has to delete
+	ApplyCreatePatch(ctx context.Context, obj, createPatch interface{}) error
+	// ApplyDeletePatch receives the new custom object observed during TPR watches.
+	// It also receives the ApplyDeletePatch portion of the Patch provided by
+	// NewUpdatePatch or NewDeletePatch. ApplyDeletePatch only has to delete
 	// resources based on its provided input. All other reconciliation
 	// logic and state transformation is already done at this point of the
 	// reconciliation loop.
-	Delete(ctx context.Context, obj, deletePatch interface{}) error
-	// Update receives the new custom object observed during TPR watches.
+	ApplyDeletePatch(ctx context.Context, obj, deletePatch interface{}) error
+	// ApplyUpdatePatch receives the new custom object observed during TPR watches.
 	// It also receives the state intended to be updated as provided by
-	// NewUpdatePatch or NewDeletePatch. Update has to update resources
+	// NewUpdatePatch or NewDeletePatch. ApplyUpdatePatch has to update resources
 	// based on its provided input. All other reconciliation logic and
 	// state transformation is already done at this point of the
 	// reconciliation loop.
-	Update(ctx context.Context, obj, updatePatch interface{}) error
+	ApplyUpdatePatch(ctx context.Context, obj, updatePatch interface{}) error
 }

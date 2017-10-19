@@ -195,6 +195,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			ExpectedOrders: [][]string{
 				{
 					"GetCurrentState",
+					"GetDesiredState",
 					"NewDeletePatch",
 					"Create",
 					"Delete",
@@ -216,6 +217,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			ExpectedOrders: [][]string{
 				{
 					"GetCurrentState",
+					"GetDesiredState",
 					"NewDeletePatch",
 					"Create",
 					"Delete",
@@ -223,6 +225,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 				},
 				{
 					"GetCurrentState",
+					"GetDesiredState",
 					"NewDeletePatch",
 					"Create",
 					"Delete",
@@ -264,6 +267,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			ExpectedOrders: [][]string{
 				{
 					"GetCurrentState",
+					"GetDesiredState",
 					"NewDeletePatch",
 					"Create",
 					"Delete",
@@ -288,6 +292,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			ExpectedOrders: [][]string{
 				{
 					"GetCurrentState",
+					"GetDesiredState",
 					"NewDeletePatch",
 				},
 				nil,
@@ -310,6 +315,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 			ExpectedOrders: [][]string{
 				{
 					"GetCurrentState",
+					"GetDesiredState",
 					"NewDeletePatch",
 					"Create",
 					"Delete",
@@ -317,6 +323,7 @@ func Test_Framework_ProcessCreate_ResourceOrder(t *testing.T) {
 				},
 				{
 					"GetCurrentState",
+					"GetDesiredState",
 					"NewDeletePatch",
 				},
 			},
@@ -571,7 +578,7 @@ func (r *testResource) NewUpdatePatch(ctx context.Context, obj, currentState, de
 	return p, nil
 }
 
-func (r *testResource) NewDeletePatch(ctx context.Context, obj, currentState interface{}) (*Patch, error) {
+func (r *testResource) NewDeletePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*Patch, error) {
 	m := "NewDeletePatch"
 	r.Order = append(r.Order, m)
 
@@ -598,7 +605,7 @@ func (r *testResource) Name() string {
 	return "testResource"
 }
 
-func (r *testResource) Create(ctx context.Context, obj, createState interface{}) error {
+func (r *testResource) ApplyCreatePatch(ctx context.Context, obj, createState interface{}) error {
 	m := "Create"
 	r.Order = append(r.Order, m)
 
@@ -616,7 +623,7 @@ func (r *testResource) Create(ctx context.Context, obj, createState interface{})
 	return nil
 }
 
-func (r *testResource) Delete(ctx context.Context, obj, deleteState interface{}) error {
+func (r *testResource) ApplyDeletePatch(ctx context.Context, obj, deleteState interface{}) error {
 	m := "Delete"
 	r.Order = append(r.Order, m)
 
@@ -634,7 +641,7 @@ func (r *testResource) Delete(ctx context.Context, obj, deleteState interface{})
 	return nil
 }
 
-func (r *testResource) Update(ctx context.Context, obj, updateState interface{}) error {
+func (r *testResource) ApplyUpdatePatch(ctx context.Context, obj, updateState interface{}) error {
 	m := "Update"
 	r.Order = append(r.Order, m)
 

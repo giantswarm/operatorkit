@@ -255,7 +255,15 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 		if canceledcontext.IsCanceled(ctx) {
 			return nil
 		}
-		patch, err := r.NewDeletePatch(ctx, obj, currentState)
+		desiredState, err := r.GetDesiredState(ctx, obj)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
+		if canceledcontext.IsCanceled(ctx) {
+			return nil
+		}
+		patch, err := r.NewDeletePatch(ctx, obj, currentState, desiredState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -267,7 +275,7 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 		}
 		createState, ok := patch.getCreate()
 		if ok {
-			err := r.Create(ctx, obj, createState)
+			err := r.ApplyCreatePatch(ctx, obj, createState)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -278,7 +286,7 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 		}
 		deleteState, ok := patch.getDelete()
 		if ok {
-			err := r.Delete(ctx, obj, deleteState)
+			err := r.ApplyDeletePatch(ctx, obj, deleteState)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -289,7 +297,7 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 		}
 		updateState, ok := patch.getUpdate()
 		if ok {
-			err := r.Update(ctx, obj, updateState)
+			err := r.ApplyUpdatePatch(ctx, obj, updateState)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -384,7 +392,7 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 		}
 		createState, ok := patch.getCreate()
 		if ok {
-			err := r.Create(ctx, obj, createState)
+			err := r.ApplyCreatePatch(ctx, obj, createState)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -395,7 +403,7 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 		}
 		deleteState, ok := patch.getDelete()
 		if ok {
-			err := r.Delete(ctx, obj, deleteState)
+			err := r.ApplyDeletePatch(ctx, obj, deleteState)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -406,7 +414,7 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 		}
 		updateState, ok := patch.getUpdate()
 		if ok {
-			err := r.Update(ctx, obj, updateState)
+			err := r.ApplyUpdatePatch(ctx, obj, updateState)
 			if err != nil {
 				return microerror.Mask(err)
 			}
