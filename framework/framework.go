@@ -83,7 +83,7 @@ func New(config Config) (*Framework, error) {
 
 // AddFunc executes the framework's ProcessCreate function.
 func (f *Framework) AddFunc(obj interface{}) {
-	// AddFunc/DeleteFunc/UpdateFunc is synchornized to make sure only one
+	// AddFunc/DeleteFunc/UpdateFunc is synchronized to make sure only one
 	// of them is executed at a time. AddFunc/DeleteFunc/UpdateFunc is not
 	// thread safe. This is important because the source of truth for an
 	// operator are the reconciled resources. In case we would run the
@@ -116,7 +116,7 @@ func (f *Framework) AddFunc(obj interface{}) {
 
 // DeleteFunc executes the framework's ProcessDelete function.
 func (f *Framework) DeleteFunc(obj interface{}) {
-	// AddFunc/DeleteFunc/UpdateFunc is synchornized to make sure only one
+	// AddFunc/DeleteFunc/UpdateFunc is synchronized to make sure only one
 	// of them is executed at a time. AddFunc/DeleteFunc/UpdateFunc is not
 	// thread safe. This is important because the source of truth for an
 	// operator are the reconciled resources. In case we would run the
@@ -160,12 +160,11 @@ func (f *Framework) NewCacheResourceEventHandler() *cache.ResourceEventHandlerFu
 	return newHandler
 }
 
-// UpdateFunc only redirects to AddFunc and only dispatches the new custom
-// object received.
+// UpdateFunc executes the framework's ProcessUpdate function.
 func (f *Framework) UpdateFunc(oldObj, newObj interface{}) {
 	obj := newObj
 
-	// AddFunc/DeleteFunc/UpdateFunc is synchornized to make sure only one
+	// AddFunc/DeleteFunc/UpdateFunc is synchronized to make sure only one
 	// of them is executed at a time. AddFunc/DeleteFunc/UpdateFunc is not
 	// thread safe. This is important because the source of truth for an
 	// operator are the reconciled resources. In case we would run the
@@ -196,7 +195,7 @@ func (f *Framework) UpdateFunc(oldObj, newObj interface{}) {
 	f.logger.Log("action", "end", "component", "operatorkit", "function", "ProcessUpdate")
 }
 
-// ProcessAdd is a drop-in for an informer's AddFunc. It receives the custom
+// ProcessCreate is a drop-in for an informer's AddFunc. It receives the custom
 // object observed during TPR watches and anything that implements Resource.
 // ProcessCreate takes care about all necessary reconciliation logic for create
 // events.

@@ -5,13 +5,13 @@ import "context"
 type patchType string
 
 const (
-	patchCreate = "create"
-	patchDelete = "delete"
-	patchUpdate = "update"
+	patchCreate patchType = "create"
+	patchDelete patchType = "delete"
+	patchUpdate patchType = "update"
 )
 
 // Patch is a set of information required in order to reconcile to the desired
-// state. Patch is split to three parts: create, delete and update. The parts
+// state. Patch is split into three parts: create, delete and update. The parts
 // are passed as arguments to Resource's Create, Delete and Update functions
 // respectively. Patch is guaranteed to be applied in that order (i.e. create,
 // update, delete).
@@ -44,8 +44,9 @@ func (p *Patch) SetDelete(delete interface{}) { p.data[patchDelete] = delete }
 func (p *Patch) SetUpdate(update interface{}) { p.data[patchUpdate] = update }
 
 // Resource implements the building blocks of any resource business logic being
-// reconciled when observing TPRs. This interface provides a guideline for an
-// easier way to follow the rather complex intentions of operators in general.
+// reconciled when observing custom resources. This interface provides
+// a guideline for an easier way to follow the rather complex intentions of
+// operators in general.
 type Resource interface {
 	// Name returns the resource's name used for identification.
 	Name() string
@@ -58,12 +59,12 @@ type Resource interface {
 	// Underlying can be used for proper identification.
 	Underlying() Resource
 
-	// GetCurrentState receives the custom object observed during TPR watches. Its
-	// purpose is to return the current state of the resources being managed by
-	// the operator. This can e.g. be some actual data within a configmap as
-	// provided by the Kubernetes API. This is not limited to Kubernetes resources
-	// though. Another example would be to fetch and return information about
-	// Flannel bridges.
+	// GetCurrentState receives the custom object observed during custom
+	// resource watches. Its purpose is to return the current state of the
+	// resources being managed by the operator. This can e.g. be some
+	// actual data within a configmap as provided by the Kubernetes API.
+	// This is not limited to Kubernetes resources though. Another example
+	// would be to fetch and return information about Flannel bridges.
 	//
 	// NOTE GetCurrentState is called on create, delete and update events. When
 	// called on create and delete events the provided custom object will be the
@@ -72,14 +73,15 @@ type Resource interface {
 	// then receives the new custom object to be able to consume the current state
 	// of a system.
 	GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error)
-	// GetDesiredState receives the custom object observed during TPR watches. Its
-	// purpose is to return the desired state of the resources being managed by
-	// the operator. The desired state should always be able to be made up using
-	// the information provided by the TPO. This can e.g. be some data within a
-	// configmap, how it should be provided by the Kubernetes API. This is not
-	// limited to Kubernetes resources though. Another example would be to make up
-	// and return information about Flannel bridges, how they should look like on
-	// a server host.
+	// GetDesiredState receives the custom object observed during custom
+	// resource watches. Its purpose is to return the desired state of the
+	// resources being managed by the operator. The desired state should
+	// always be able to be made up using the information provided by the
+	// custom object. This can e.g. be some data within a configmap, how it
+	// should be provided by the Kubernetes API. This is not limited to
+	// Kubernetes resources though. Another example would be to make up and
+	// return information about Flannel bridges, how they should look like
+	// on a server host.
 	//
 	// NOTE GetDesiredState is called on create, delete and update events.
 	// When called on create events the provided custom object will be the
@@ -89,7 +91,7 @@ type Resource interface {
 	// compute the desired state of a system.
 	GetDesiredState(ctx context.Context, obj interface{}) (interface{}, error)
 
-	// NewUpdatePatch is callend upon observed CRO/TPO change. It receives
+	// NewUpdatePatch is callend upon observed custom object change. It receives
 	// the observed custom object, the current state as provided by
 	// GetCurrentState and the desired state as provided by
 	// GetDesiredState. NewUpdatePatch analyses the current and desired
@@ -98,7 +100,7 @@ type Resource interface {
 	// ApplyUpdatePatch are called only when the corresponding patch part
 	// was created.
 	NewUpdatePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*Patch, error)
-	// NewDeletePatch is called upon observed CRO/TPO deleteion. It
+	// NewDeletePatch is called upon observed custom object deletion. It
 	// receives the deleted custom object, the current state as provided by
 	// GetCurrentState and the desired state as provided by
 	// GetDesiredState. NewDeletePatch analyses the current and desired
@@ -108,25 +110,25 @@ type Resource interface {
 	// was created.
 	NewDeletePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*Patch, error)
 
-	// ApplyCreatePatch receives the new custom object observed during TPR watches.
-	// It also receives the ApplyCreatePatch portion of the Patch provided by
-	// NewUpdatePatch or NewDeletePatch. ApplyCreatePatch only has to create
-	// resources based on its provided input. All other reconciliation
-	// logic and state transformation is already done at this point of the
-	// reconciliation loop.
+	// ApplyCreatePatch receives the new custom object observed during
+	// custom resource watches. It also receives the ApplyCreatePatch
+	// portion of the Patch provided by NewUpdatePatch or NewDeletePatch.
+	// ApplyCreatePatch only has to create resources based on its provided
+	// input. All other reconciliation logic and state transformation is
+	// already done at this point of the reconciliation loop.
 	ApplyCreatePatch(ctx context.Context, obj, createPatch interface{}) error
-	// ApplyDeletePatch receives the new custom object observed during TPR watches.
-	// It also receives the ApplyDeletePatch portion of the Patch provided by
-	// NewUpdatePatch or NewDeletePatch. ApplyDeletePatch only has to delete
-	// resources based on its provided input. All other reconciliation
-	// logic and state transformation is already done at this point of the
-	// reconciliation loop.
+	// ApplyDeletePatch receives the new custom object observed during
+	// custom resource watches. It also receives the ApplyDeletePatch
+	// portion of the Patch provided by NewUpdatePatch or NewDeletePatch.
+	// ApplyDeletePatch only has to delete resources based on its provided
+	// input. All other reconciliation logic and state transformation is
+	// already done at this point of the reconciliation loop.
 	ApplyDeletePatch(ctx context.Context, obj, deletePatch interface{}) error
-	// ApplyUpdatePatch receives the new custom object observed during TPR watches.
-	// It also receives the state intended to be updated as provided by
-	// NewUpdatePatch or NewDeletePatch. ApplyUpdatePatch has to update resources
-	// based on its provided input. All other reconciliation logic and
-	// state transformation is already done at this point of the
-	// reconciliation loop.
+	// ApplyUpdatePatch receives the new custom object observed during
+	// custom resource watches. It also receives the state intended to be
+	// updated as provided by NewUpdatePatch or NewDeletePatch.
+	// ApplyUpdatePatch has to update resources based on its provided
+	// input. All other reconciliation logic and state transformation is
+	// already done at this point of the reconciliation loop.
 	ApplyUpdatePatch(ctx context.Context, obj, updatePatch interface{}) error
 }
