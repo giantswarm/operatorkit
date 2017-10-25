@@ -286,9 +286,9 @@ func (r *testResource) NewUpdatePatch(ctx context.Context, obj, cur, des interfa
 	r.Order = append(r.Order, m)
 
 	p := framework.NewPatch()
-	p.SetCreate("test create data")
-	p.SetUpdate("test update data")
-	p.SetDelete("test delete data")
+	p.SetCreateChange("test create data")
+	p.SetUpdateChange("test update data")
+	p.SetDeleteChange("test delete data")
 	return p, nil
 }
 
@@ -297,9 +297,9 @@ func (r *testResource) NewDeletePatch(ctx context.Context, obj, cur, des interfa
 	r.Order = append(r.Order, m)
 
 	p := framework.NewPatch()
-	p.SetCreate("test create data")
-	p.SetUpdate("test update data")
-	p.SetDelete("test delete data")
+	p.SetCreateChange("test create data")
+	p.SetUpdateChange("test update data")
+	p.SetDeleteChange("test delete data")
 	return p, nil
 }
 
@@ -307,21 +307,21 @@ func (r *testResource) Name() string {
 	return "testResource"
 }
 
-func (r *testResource) ApplyCreatePatch(ctx context.Context, obj, cre interface{}) error {
+func (r *testResource) ApplyCreateChange(ctx context.Context, obj, cre interface{}) error {
 	m := "ApplyCreatePatch"
 	r.Order = append(r.Order, m)
 
 	return nil
 }
 
-func (r *testResource) ApplyDeletePatch(ctx context.Context, obj, del interface{}) error {
+func (r *testResource) ApplyDeleteChange(ctx context.Context, obj, del interface{}) error {
 	m := "ApplyDeletePatch"
 	r.Order = append(r.Order, m)
 
 	return nil
 }
 
-func (r *testResource) ApplyUpdatePatch(ctx context.Context, obj, updateState interface{}) error {
+func (r *testResource) ApplyUpdateChange(ctx context.Context, obj, updateState interface{}) error {
 	m := "ApplyUpdatePatch"
 	r.Order = append(r.Order, m)
 

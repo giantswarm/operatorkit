@@ -116,10 +116,10 @@ func (r *Resource) Name() string {
 	return Name
 }
 
-func (r *Resource) ApplyCreatePatch(ctx context.Context, obj, cre interface{}) error {
+func (r *Resource) ApplyCreateChange(ctx context.Context, obj, cre interface{}) error {
 	r.logger.Log("action", "start", "component", "operatorkit", "function", "ApplyCreatePatch")
 
-	err := r.resource.ApplyCreatePatch(ctx, obj, cre)
+	err := r.resource.ApplyCreateChange(ctx, obj, cre)
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -129,10 +129,10 @@ func (r *Resource) ApplyCreatePatch(ctx context.Context, obj, cre interface{}) e
 	return nil
 }
 
-func (r *Resource) ApplyDeletePatch(ctx context.Context, obj, del interface{}) error {
+func (r *Resource) ApplyDeleteChange(ctx context.Context, obj, del interface{}) error {
 	r.logger.Log("action", "start", "component", "operatorkit", "function", "ApplyDeletePatch")
 
-	err := r.resource.ApplyDeletePatch(ctx, obj, del)
+	err := r.resource.ApplyDeleteChange(ctx, obj, del)
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -142,10 +142,10 @@ func (r *Resource) ApplyDeletePatch(ctx context.Context, obj, del interface{}) e
 	return nil
 }
 
-func (r *Resource) ApplyUpdatePatch(ctx context.Context, obj, upd interface{}) error {
+func (r *Resource) ApplyUpdateChange(ctx context.Context, obj, upd interface{}) error {
 	r.logger.Log("action", "start", "component", "operatorkit", "function", "ApplyUpdatePatch")
 
-	err := r.resource.ApplyUpdatePatch(ctx, obj, upd)
+	err := r.resource.ApplyUpdateChange(ctx, obj, upd)
 	if err != nil {
 		return microerror.Mask(err)
 	}

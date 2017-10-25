@@ -272,9 +272,9 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 		if canceledcontext.IsCanceled(ctx) {
 			return nil
 		}
-		createState, ok := patch.getCreate()
+		createState, ok := patch.getCreateChange()
 		if ok {
-			err := r.ApplyCreatePatch(ctx, obj, createState)
+			err := r.ApplyCreateChange(ctx, obj, createState)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -283,9 +283,9 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 		if canceledcontext.IsCanceled(ctx) {
 			return nil
 		}
-		deleteState, ok := patch.getDelete()
+		deleteState, ok := patch.getDeleteChange()
 		if ok {
-			err := r.ApplyDeletePatch(ctx, obj, deleteState)
+			err := r.ApplyDeleteChange(ctx, obj, deleteState)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -294,9 +294,9 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 		if canceledcontext.IsCanceled(ctx) {
 			return nil
 		}
-		updateState, ok := patch.getUpdate()
+		updateState, ok := patch.getUpdateChange()
 		if ok {
-			err := r.ApplyUpdatePatch(ctx, obj, updateState)
+			err := r.ApplyUpdateChange(ctx, obj, updateState)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -389,9 +389,9 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 		if canceledcontext.IsCanceled(ctx) {
 			return nil
 		}
-		createState, ok := patch.getCreate()
+		createState, ok := patch.getCreateChange()
 		if ok {
-			err := r.ApplyCreatePatch(ctx, obj, createState)
+			err := r.ApplyCreateChange(ctx, obj, createState)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -400,9 +400,9 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 		if canceledcontext.IsCanceled(ctx) {
 			return nil
 		}
-		deleteState, ok := patch.getDelete()
+		deleteState, ok := patch.getDeleteChange()
 		if ok {
-			err := r.ApplyDeletePatch(ctx, obj, deleteState)
+			err := r.ApplyDeleteChange(ctx, obj, deleteState)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -411,9 +411,9 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 		if canceledcontext.IsCanceled(ctx) {
 			return nil
 		}
-		updateState, ok := patch.getUpdate()
+		updateState, ok := patch.getUpdateChange()
 		if ok {
-			err := r.ApplyUpdatePatch(ctx, obj, updateState)
+			err := r.ApplyUpdateChange(ctx, obj, updateState)
 			if err != nil {
 				return microerror.Mask(err)
 			}

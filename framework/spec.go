@@ -55,8 +55,8 @@ type Resource interface {
 	// GetCurrentState and the desired state as provided by
 	// GetDesiredState. NewUpdatePatch analyses the current and desired
 	// state and returns the patch to be applied by Create, Delete, and
-	// Update functions. ApplyCreatePatch, ApplyDeletePatch, and
-	// ApplyUpdatePatch are called only when the corresponding patch part
+	// Update functions. ApplyCreateChange, ApplyDeleteChange, and
+	// ApplyUpdateChange are called only when the corresponding patch part
 	// was created.
 	NewUpdatePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*Patch, error)
 	// NewDeletePatch is called upon observed custom object deletion. It
@@ -64,30 +64,30 @@ type Resource interface {
 	// GetCurrentState and the desired state as provided by
 	// GetDesiredState. NewDeletePatch analyses the current and desired
 	// state returns the patch to be applied by Create, Delete, and Update
-	// functions. ApplyCreatePatch, ApplyDeletePatch, and
-	// ApplyUpdatePatch are called only when the corresponding patch part
+	// functions. ApplyCreateChange, ApplyDeleteChange, and
+	// ApplyUpdateChange are called only when the corresponding patch part
 	// was created.
 	NewDeletePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*Patch, error)
 
-	// ApplyCreatePatch receives the new custom object observed during
-	// custom resource watches. It also receives the ApplyCreatePatch
-	// portion of the Patch provided by NewUpdatePatch or NewDeletePatch.
-	// ApplyCreatePatch only has to create resources based on its provided
+	// ApplyCreateChange receives the new custom object observed during
+	// custom resource watches. It also receives the create portion of the
+	// Patch provided by NewUpdatePatch or NewDeletePatch.
+	// ApplyCreateChange only has to create resources based on its provided
 	// input. All other reconciliation logic and state transformation is
 	// already done at this point of the reconciliation loop.
-	ApplyCreatePatch(ctx context.Context, obj, createPatch interface{}) error
-	// ApplyDeletePatch receives the new custom object observed during
-	// custom resource watches. It also receives the ApplyDeletePatch
-	// portion of the Patch provided by NewUpdatePatch or NewDeletePatch.
-	// ApplyDeletePatch only has to delete resources based on its provided
+	ApplyCreateChange(ctx context.Context, obj, createPatch interface{}) error
+	// ApplyDeleteChange receives the new custom object observed during
+	// custom resource watches. It also receives the delete portion of the
+	// Patch provided by NewUpdatePatch or NewDeletePatch.
+	// ApplyDeleteChange only has to delete resources based on its provided
 	// input. All other reconciliation logic and state transformation is
 	// already done at this point of the reconciliation loop.
-	ApplyDeletePatch(ctx context.Context, obj, deletePatch interface{}) error
-	// ApplyUpdatePatch receives the new custom object observed during
-	// custom resource watches. It also receives the state intended to be
-	// updated as provided by NewUpdatePatch or NewDeletePatch.
-	// ApplyUpdatePatch has to update resources based on its provided
+	ApplyDeleteChange(ctx context.Context, obj, deletePatch interface{}) error
+	// ApplyUpdateChange receives the new custom object observed during
+	// custom resource watches. It also receives the update portion of the
+	// Patch provided by NewUpdatePatch or NewDeletePatch.
+	// ApplyUpdateChange has to update resources based on its provided
 	// input. All other reconciliation logic and state transformation is
 	// already done at this point of the reconciliation loop.
-	ApplyUpdatePatch(ctx context.Context, obj, updatePatch interface{}) error
+	ApplyUpdateChange(ctx context.Context, obj, updatePatch interface{}) error
 }

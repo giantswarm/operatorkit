@@ -183,9 +183,9 @@ func (r *Resource) Name() string {
 	return Name
 }
 
-func (r *Resource) ApplyCreatePatch(ctx context.Context, obj, createState interface{}) error {
+func (r *Resource) ApplyCreateChange(ctx context.Context, obj, createState interface{}) error {
 	o := func() error {
-		err := r.resource.ApplyCreatePatch(ctx, obj, createState)
+		err := r.resource.ApplyCreateChange(ctx, obj, createState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -205,9 +205,9 @@ func (r *Resource) ApplyCreatePatch(ctx context.Context, obj, createState interf
 	return nil
 }
 
-func (r *Resource) ApplyDeletePatch(ctx context.Context, obj, deleteState interface{}) error {
+func (r *Resource) ApplyDeleteChange(ctx context.Context, obj, deleteState interface{}) error {
 	o := func() error {
-		err := r.resource.ApplyDeletePatch(ctx, obj, deleteState)
+		err := r.resource.ApplyDeleteChange(ctx, obj, deleteState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -227,9 +227,9 @@ func (r *Resource) ApplyDeletePatch(ctx context.Context, obj, deleteState interf
 	return nil
 }
 
-func (r *Resource) ApplyUpdatePatch(ctx context.Context, obj, updateState interface{}) error {
+func (r *Resource) ApplyUpdateChange(ctx context.Context, obj, updateState interface{}) error {
 	o := func() error {
-		err := r.resource.ApplyUpdatePatch(ctx, obj, updateState)
+		err := r.resource.ApplyUpdateChange(ctx, obj, updateState)
 		if err != nil {
 			return microerror.Mask(err)
 		}

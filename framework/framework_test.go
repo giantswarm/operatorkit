@@ -498,23 +498,23 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 				},
 				&testResource{
 					SetupPatchFunc: func(p *Patch) {
-						p.SetCreate("test create data")
+						p.SetCreateChange("test create data")
 					},
 				},
 				&testResource{
 					SetupPatchFunc: func(p *Patch) {
-						p.SetDelete("test delete data")
+						p.SetDeleteChange("test delete data")
 					},
 				},
 				&testResource{
 					SetupPatchFunc: func(p *Patch) {
-						p.SetUpdate("test update data")
+						p.SetUpdateChange("test update data")
 					},
 				},
 				&testResource{
 					SetupPatchFunc: func(p *Patch) {
-						p.SetCreate("test create data")
-						p.SetDelete("test delete data")
+						p.SetCreateChange("test create data")
+						p.SetDeleteChange("test delete data")
 					},
 				},
 			},
@@ -565,23 +565,23 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 				},
 				&testResource{
 					SetupPatchFunc: func(p *Patch) {
-						p.SetCreate("test create data")
+						p.SetCreateChange("test create data")
 					},
 				},
 				&testResource{
 					SetupPatchFunc: func(p *Patch) {
-						p.SetDelete("test delete data")
+						p.SetDeleteChange("test delete data")
 					},
 				},
 				&testResource{
 					SetupPatchFunc: func(p *Patch) {
-						p.SetUpdate("test update data")
+						p.SetUpdateChange("test update data")
 					},
 				},
 				&testResource{
 					SetupPatchFunc: func(p *Patch) {
-						p.SetCreate("test create data")
-						p.SetDelete("test delete data")
+						p.SetCreateChange("test create data")
+						p.SetDeleteChange("test delete data")
 					},
 				},
 			},
@@ -632,23 +632,23 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 				},
 				&testResource{
 					SetupPatchFunc: func(p *Patch) {
-						p.SetCreate("test create data")
+						p.SetCreateChange("test create data")
 					},
 				},
 				&testResource{
 					SetupPatchFunc: func(p *Patch) {
-						p.SetDelete("test delete data")
+						p.SetDeleteChange("test delete data")
 					},
 				},
 				&testResource{
 					SetupPatchFunc: func(p *Patch) {
-						p.SetUpdate("test update data")
+						p.SetUpdateChange("test update data")
 					},
 				},
 				&testResource{
 					SetupPatchFunc: func(p *Patch) {
-						p.SetCreate("test create data")
-						p.SetDelete("test delete data")
+						p.SetCreateChange("test create data")
+						p.SetDeleteChange("test delete data")
 					},
 				},
 			},
@@ -776,9 +776,9 @@ func (r *testResource) NewUpdatePatch(ctx context.Context, obj, currentState, de
 	if r.SetupPatchFunc != nil {
 		r.SetupPatchFunc(p)
 	} else {
-		p.SetCreate("test create data")
-		p.SetUpdate("test update data")
-		p.SetDelete("test delete data")
+		p.SetCreateChange("test create data")
+		p.SetUpdateChange("test update data")
+		p.SetDeleteChange("test delete data")
 	}
 	return p, nil
 }
@@ -802,9 +802,9 @@ func (r *testResource) NewDeletePatch(ctx context.Context, obj, currentState, de
 	if r.SetupPatchFunc != nil {
 		r.SetupPatchFunc(p)
 	} else {
-		p.SetCreate("test create data")
-		p.SetUpdate("test update data")
-		p.SetDelete("test delete data")
+		p.SetCreateChange("test create data")
+		p.SetUpdateChange("test update data")
+		p.SetDeleteChange("test delete data")
 	}
 	return p, nil
 }
@@ -813,7 +813,7 @@ func (r *testResource) Name() string {
 	return "testResource"
 }
 
-func (r *testResource) ApplyCreatePatch(ctx context.Context, obj, createState interface{}) error {
+func (r *testResource) ApplyCreateChange(ctx context.Context, obj, createState interface{}) error {
 	m := "ApplyCreatePatch"
 	r.Order = append(r.Order, m)
 
@@ -831,7 +831,7 @@ func (r *testResource) ApplyCreatePatch(ctx context.Context, obj, createState in
 	return nil
 }
 
-func (r *testResource) ApplyDeletePatch(ctx context.Context, obj, deleteState interface{}) error {
+func (r *testResource) ApplyDeleteChange(ctx context.Context, obj, deleteState interface{}) error {
 	m := "ApplyDeletePatch"
 	r.Order = append(r.Order, m)
 
@@ -849,7 +849,7 @@ func (r *testResource) ApplyDeletePatch(ctx context.Context, obj, deleteState in
 	return nil
 }
 
-func (r *testResource) ApplyUpdatePatch(ctx context.Context, obj, updateState interface{}) error {
+func (r *testResource) ApplyUpdateChange(ctx context.Context, obj, updateState interface{}) error {
 	m := "ApplyUpdatePatch"
 	r.Order = append(r.Order, m)
 
