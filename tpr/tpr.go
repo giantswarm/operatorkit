@@ -271,6 +271,8 @@ func (t *TPR) create(retry backoff.BackOff) error {
 		if err != nil {
 			return microerror.Maskf(err, "creating TPR %s", t.name)
 		}
+
+		return nil
 	}
 
 	// Try creating the TPR once without retry, since I
