@@ -202,7 +202,7 @@ func (t *TPR) CreateAndWait() error {
 // poll for TPR readiness. Returns alreadyExistsError when the resource already
 // exists.
 func (t *TPR) CreateAndWaitBackOff(initBackOff backoff.BackOff) error {
-	err := t.create()
+	err := t.create(initBackOff)
 	if err != nil {
 		return microerror.Maskf(err, "creating TPR %s", t.name)
 	}
@@ -252,7 +252,7 @@ func (t *TPR) NewInformer(resourceEventHandler cache.ResourceEventHandler, zeroO
 
 // create is extracted for testing because fake REST client does not work.
 // Therefore waitInit can not be tested.
-func (t *TPR) create() error {
+func (t *TPR) create(retry backoff.BackOff) error {
 	tpr := &v1beta1.ThirdPartyResource{
 		ObjectMeta: apismetav1.ObjectMeta{
 			Name: t.name,
@@ -263,13 +263,23 @@ func (t *TPR) create() error {
 		Description: t.description,
 	}
 
-	_, err := t.k8sClient.ExtensionsV1beta1().ThirdPartyResources().Create(tpr)
-	if err != nil && apierrors.IsAlreadyExists(err) {
-		return microerror.Mask(alreadyExistsError)
+	createTpr := func() error {
+		_, err := t.k8sClient.ExtensionsV1beta1().ThirdPartyResources().Create(tpr)
+		if err != nil && apierrors.IsAlreadyExists(err) {
+			return backoff.Permanent(microerror.Mask(alreadyExistsError))
+		}
+		if err != nil {
+			return microerror.Maskf(err, "creating TPR %s", t.name)
+		}
+
+		return nil
 	}
+
+	err := backoff.Retry(createTpr, retry)
 	if err != nil {
-		return microerror.Maskf(err, "creating TPR %s", t.name)
+		return microerror.Mask(err)
 	}
+
 	return nil
 }
 
