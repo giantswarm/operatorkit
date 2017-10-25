@@ -1,4 +1,4 @@
-package crdclient
+package k8sextclient
 
 import (
 	"net/url"
@@ -48,7 +48,8 @@ func DefaultConfig() Config {
 	}
 }
 
-// New returns a CRD Clientset set up with the provided configuration.
+// New returns a Kubernetes extensions API Clientset with the provided
+// configuration.
 func New(config Config) (apiextensionsclient.Interface, error) {
 	// Dependencies.
 	if config.Logger == nil {
