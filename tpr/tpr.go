@@ -275,11 +275,16 @@ func (t *TPR) create(retry backoff.BackOff) error {
 		return nil
 	}
 
-	// Try creating the TPR once without retry, since I
+	// Try creating the TPR once without a retry, since I
 	// do not want to retry on the 'alreadyExistsError'.
 	err := createTpr()
 	if err != nil && apierrors.IsAlreadyExists(err) {
 		return microerror.Mask(alreadyExistsError)
+	}
+
+	// TPR created succesfully. Don't try to create it again with retries.
+	if err == nil {
+		return nil
 	}
 
 	// Now try creating the TPR with retries.
