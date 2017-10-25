@@ -49,8 +49,10 @@ func Test_LogResource_ProcessCreate_ResourceOrder(t *testing.T) {
 		e := []string{
 			"GetCurrentState",
 			"GetDesiredState",
-			"GetCreateState",
-			"ProcessCreateState",
+			"NewUpdatePatch",
+			"ApplyCreatePatch",
+			"ApplyDeletePatch",
+			"ApplyUpdatePatch",
 		}
 		if !reflect.DeepEqual(e, tr.Order) {
 			t.Fatal("expected", e, "got", tr.Order)
@@ -64,10 +66,10 @@ func Test_LogResource_ProcessCreate_ResourceOrder(t *testing.T) {
 			"GetCurrentState",
 			"GetDesiredState",
 			"GetDesiredState",
-			"GetCreateState",
-			"GetCreateState",
-			"ProcessCreateState",
-			"ProcessCreateState",
+			"NewUpdatePatch",
+			"NewUpdatePatch",
+			"ApplyCreatePatch",
+			"ApplyCreatePatch",
 		}
 		scanner := bufio.NewScanner(out)
 		for _, f := range fields {
@@ -128,8 +130,10 @@ func Test_LogResource_ProcessDelete_ResourceOrder(t *testing.T) {
 		e := []string{
 			"GetCurrentState",
 			"GetDesiredState",
-			"GetDeleteState",
-			"ProcessDeleteState",
+			"NewDeletePatch",
+			"ApplyCreatePatch",
+			"ApplyDeletePatch",
+			"ApplyUpdatePatch",
 		}
 		if !reflect.DeepEqual(e, tr.Order) {
 			t.Fatal("expected", e, "got", tr.Order)
@@ -143,10 +147,14 @@ func Test_LogResource_ProcessDelete_ResourceOrder(t *testing.T) {
 			"GetCurrentState",
 			"GetDesiredState",
 			"GetDesiredState",
-			"GetDeleteState",
-			"GetDeleteState",
-			"ProcessDeleteState",
-			"ProcessDeleteState",
+			"NewDeletePatch",
+			"NewDeletePatch",
+			"ApplyCreatePatch",
+			"ApplyCreatePatch",
+			"ApplyDeletePatch",
+			"ApplyDeletePatch",
+			"ApplyUpdatePatch",
+			"ApplyUpdatePatch",
 		}
 		scanner := bufio.NewScanner(out)
 		for _, f := range fields {
@@ -207,10 +215,10 @@ func Test_LogResource_ProcessUpdate_ResourceOrder(t *testing.T) {
 		e := []string{
 			"GetCurrentState",
 			"GetDesiredState",
-			"GetUpdateState",
-			"ProcessCreateState",
-			"ProcessDeleteState",
-			"ProcessUpdateState",
+			"NewUpdatePatch",
+			"ApplyCreatePatch",
+			"ApplyDeletePatch",
+			"ApplyUpdatePatch",
 		}
 		if !reflect.DeepEqual(e, tr.Order) {
 			t.Fatal("expected", e, "got", tr.Order)
@@ -224,14 +232,14 @@ func Test_LogResource_ProcessUpdate_ResourceOrder(t *testing.T) {
 			"GetCurrentState",
 			"GetDesiredState",
 			"GetDesiredState",
-			"GetUpdateState",
-			"GetUpdateState",
-			"ProcessCreateState",
-			"ProcessCreateState",
-			"ProcessDeleteState",
-			"ProcessDeleteState",
-			"ProcessUpdateState",
-			"ProcessUpdateState",
+			"NewUpdatePatch",
+			"NewUpdatePatch",
+			"ApplyCreatePatch",
+			"ApplyCreatePatch",
+			"ApplyDeletePatch",
+			"ApplyDeletePatch",
+			"ApplyUpdatePatch",
+			"ApplyUpdatePatch",
 		}
 		scanner := bufio.NewScanner(out)
 		for _, f := range fields {
@@ -273,47 +281,48 @@ func (r *testResource) GetDesiredState(ctx context.Context, obj interface{}) (in
 	return nil, nil
 }
 
-func (r *testResource) GetCreateState(ctx context.Context, obj, cur, des interface{}) (interface{}, error) {
-	m := "GetCreateState"
+func (r *testResource) NewUpdatePatch(ctx context.Context, obj, cur, des interface{}) (*framework.Patch, error) {
+	m := "NewUpdatePatch"
 	r.Order = append(r.Order, m)
 
-	return nil, nil
+	p := framework.NewPatch()
+	p.SetCreateChange("test create data")
+	p.SetUpdateChange("test update data")
+	p.SetDeleteChange("test delete data")
+	return p, nil
 }
 
-func (r *testResource) GetDeleteState(ctx context.Context, obj, cur, des interface{}) (interface{}, error) {
-	m := "GetDeleteState"
+func (r *testResource) NewDeletePatch(ctx context.Context, obj, cur, des interface{}) (*framework.Patch, error) {
+	m := "NewDeletePatch"
 	r.Order = append(r.Order, m)
 
-	return nil, nil
-}
-
-func (r *testResource) GetUpdateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, interface{}, interface{}, error) {
-	m := "GetUpdateState"
-	r.Order = append(r.Order, m)
-
-	return nil, nil, nil, nil
+	p := framework.NewPatch()
+	p.SetCreateChange("test create data")
+	p.SetUpdateChange("test update data")
+	p.SetDeleteChange("test delete data")
+	return p, nil
 }
 
 func (r *testResource) Name() string {
 	return "testResource"
 }
 
-func (r *testResource) ProcessCreateState(ctx context.Context, obj, cre interface{}) error {
-	m := "ProcessCreateState"
+func (r *testResource) ApplyCreateChange(ctx context.Context, obj, cre interface{}) error {
+	m := "ApplyCreatePatch"
 	r.Order = append(r.Order, m)
 
 	return nil
 }
 
-func (r *testResource) ProcessDeleteState(ctx context.Context, obj, del interface{}) error {
-	m := "ProcessDeleteState"
+func (r *testResource) ApplyDeleteChange(ctx context.Context, obj, del interface{}) error {
+	m := "ApplyDeletePatch"
 	r.Order = append(r.Order, m)
 
 	return nil
 }
 
-func (r *testResource) ProcessUpdateState(ctx context.Context, obj, updateState interface{}) error {
-	m := "ProcessUpdateState"
+func (r *testResource) ApplyUpdateChange(ctx context.Context, obj, updateState interface{}) error {
+	m := "ApplyUpdatePatch"
 	r.Order = append(r.Order, m)
 
 	return nil
