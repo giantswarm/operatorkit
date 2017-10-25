@@ -272,9 +272,9 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 		if canceledcontext.IsCanceled(ctx) {
 			return nil
 		}
-		createState, ok := patch.getCreateChange()
+		createChange, ok := patch.getCreateChange()
 		if ok {
-			err := r.ApplyCreateChange(ctx, obj, createState)
+			err := r.ApplyCreateChange(ctx, obj, createChange)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -283,9 +283,9 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 		if canceledcontext.IsCanceled(ctx) {
 			return nil
 		}
-		deleteState, ok := patch.getDeleteChange()
+		deleteChange, ok := patch.getDeleteChange()
 		if ok {
-			err := r.ApplyDeleteChange(ctx, obj, deleteState)
+			err := r.ApplyDeleteChange(ctx, obj, deleteChange)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -294,9 +294,9 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 		if canceledcontext.IsCanceled(ctx) {
 			return nil
 		}
-		updateState, ok := patch.getUpdateChange()
+		updateChange, ok := patch.getUpdateChange()
 		if ok {
-			err := r.ApplyUpdateChange(ctx, obj, updateState)
+			err := r.ApplyUpdateChange(ctx, obj, updateChange)
 			if err != nil {
 				return microerror.Mask(err)
 			}

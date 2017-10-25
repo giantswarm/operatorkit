@@ -75,19 +75,19 @@ type Resource interface {
 	// ApplyCreateChange only has to create resources based on its provided
 	// input. All other reconciliation logic and state transformation is
 	// already done at this point of the reconciliation loop.
-	ApplyCreateChange(ctx context.Context, obj, createPatch interface{}) error
+	ApplyCreateChange(ctx context.Context, obj, createChange interface{}) error
 	// ApplyDeleteChange receives the new custom object observed during
 	// custom resource watches. It also receives the delete portion of the
 	// Patch provided by NewUpdatePatch or NewDeletePatch.
 	// ApplyDeleteChange only has to delete resources based on its provided
 	// input. All other reconciliation logic and state transformation is
 	// already done at this point of the reconciliation loop.
-	ApplyDeleteChange(ctx context.Context, obj, deletePatch interface{}) error
+	ApplyDeleteChange(ctx context.Context, obj, deleteChange interface{}) error
 	// ApplyUpdateChange receives the new custom object observed during
 	// custom resource watches. It also receives the update portion of the
 	// Patch provided by NewUpdatePatch or NewDeletePatch.
 	// ApplyUpdateChange has to update resources based on its provided
 	// input. All other reconciliation logic and state transformation is
 	// already done at this point of the reconciliation loop.
-	ApplyUpdateChange(ctx context.Context, obj, updatePatch interface{}) error
+	ApplyUpdateChange(ctx context.Context, obj, updateChange interface{}) error
 }
