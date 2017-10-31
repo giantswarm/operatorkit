@@ -65,6 +65,7 @@ func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interf
 
 	v, err := r.resource.GetCurrentState(ctx, obj)
 	if err != nil {
+		r.logger.Log("action", "error", "component", "operatorkit", "function", "GetCurrentState")
 		return nil, microerror.Mask(err)
 	}
 
@@ -78,6 +79,7 @@ func (r *Resource) GetDesiredState(ctx context.Context, obj interface{}) (interf
 
 	v, err := r.resource.GetDesiredState(ctx, obj)
 	if err != nil {
+		r.logger.Log("action", "error", "component", "operatorkit", "function", "GetDesiredState")
 		return nil, microerror.Mask(err)
 	}
 
@@ -91,6 +93,7 @@ func (r *Resource) NewUpdatePatch(ctx context.Context, obj, cur, des interface{}
 
 	v, err := r.resource.NewUpdatePatch(ctx, obj, cur, des)
 	if err != nil {
+		r.logger.Log("action", "error", "component", "operatorkit", "function", "NewUpdatePatch")
 		return nil, microerror.Mask(err)
 	}
 
@@ -104,6 +107,7 @@ func (r *Resource) NewDeletePatch(ctx context.Context, obj, cur, des interface{}
 
 	v, err := r.resource.NewDeletePatch(ctx, obj, cur, des)
 	if err != nil {
+		r.logger.Log("action", "error", "component", "operatorkit", "function", "NewDeletePatch")
 		return nil, microerror.Mask(err)
 	}
 
@@ -121,6 +125,7 @@ func (r *Resource) ApplyCreateChange(ctx context.Context, obj, cre interface{}) 
 
 	err := r.resource.ApplyCreateChange(ctx, obj, cre)
 	if err != nil {
+		r.logger.Log("action", "error", "component", "operatorkit", "function", "ApplyCreatePatch")
 		return microerror.Mask(err)
 	}
 
@@ -134,6 +139,7 @@ func (r *Resource) ApplyDeleteChange(ctx context.Context, obj, del interface{}) 
 
 	err := r.resource.ApplyDeleteChange(ctx, obj, del)
 	if err != nil {
+		r.logger.Log("action", "error", "component", "operatorkit", "function", "ApplyDeletePatch")
 		return microerror.Mask(err)
 	}
 
@@ -147,6 +153,7 @@ func (r *Resource) ApplyUpdateChange(ctx context.Context, obj, upd interface{}) 
 
 	err := r.resource.ApplyUpdateChange(ctx, obj, upd)
 	if err != nil {
+		r.logger.Log("action", "error", "component", "operatorkit", "function", "ApplyUpdatePatch")
 		return microerror.Mask(err)
 	}
 
