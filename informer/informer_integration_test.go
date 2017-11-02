@@ -38,9 +38,10 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 
 	"github.com/giantswarm/micrologger/microloggertest"
-	"github.com/giantswarm/operatorkit/client/crdclient"
+	"github.com/giantswarm/operatorkit/client/k8sextclient"
 	"github.com/giantswarm/operatorkit/crd"
 	fakecrd "github.com/giantswarm/operatorkit/crd/fake"
+	"github.com/giantswarm/operatorkit/crdclient"
 )
 
 var (
@@ -51,7 +52,8 @@ var (
 	keyFile string
 
 	newCRD            *crd.CRD
-	newCRDClient      apiextensionsclient.Interface
+	newCRDClient      *crdclient.CRDClient
+	newK8sExtClient   apiextensionsclient.Interface
 	newInformer       *Informer
 	newWatcherFactory WatcherFactory
 )
@@ -85,7 +87,7 @@ func init() {
 	}
 
 	{
-		c := crdclient.DefaultConfig()
+		c := k8sextclient.DefaultConfig()
 
 		c.Logger = microloggertest.New()
 
@@ -94,6 +96,18 @@ func init() {
 		c.TLS.CAFile = caFile
 		c.TLS.CrtFile = crtFile
 		c.TLS.KeyFile = keyFile
+
+		newK8sExtClient, err = k8sextclient.New(c)
+		if err != nil {
+			panic(fmt.Sprintf("%#v", err))
+		}
+	}
+
+	{
+		c := crdclient.DefaultConfig()
+
+		c.Logger = microloggertest.New()
+		c.K8sExtClient = newK8sExtClient
 
 		newCRDClient, err = crdclient.New(c)
 		if err != nil {
@@ -123,7 +137,7 @@ func init() {
 			NewObjectFunc:     func() runtime.Object { return &fakecrd.CustomObject{} },
 			NewObjectListFunc: func() runtime.Object { return &fakecrd.List{} },
 		}
-		newWatcherFactory = NewWatcherFactory(newCRDClient.Discovery().RESTClient(), newCRD.WatchEndpoint(), zeroObjectFactory)
+		newWatcherFactory = NewWatcherFactory(newK8sExtClient.Discovery().RESTClient(), newCRD.WatchEndpoint(), zeroObjectFactory)
 	}
 }
 
@@ -164,7 +178,7 @@ func testCreateCRO(t *testing.T, ID string) {
 	p := newCRD.CreateEndpoint()
 	b := fakecrd.NewCRO(ID)
 
-	err := newCRDClient.Discovery().RESTClient().Post().AbsPath(p).Body(b).Do().Error()
+	err := newK8sExtClient.Discovery().RESTClient().Post().AbsPath(p).Body(b).Do().Error()
 	if err != nil {
 		t.Fatalf("expected %#v got %#v", nil, err)
 	}
@@ -173,7 +187,7 @@ func testCreateCRO(t *testing.T, ID string) {
 func testDeleteCRO(t *testing.T, ID string) {
 	p := newCRD.ResourceEndpoint(ID)
 
-	err := newCRDClient.Discovery().RESTClient().Delete().AbsPath(p).Do().Error()
+	err := newK8sExtClient.Discovery().RESTClient().Delete().AbsPath(p).Do().Error()
 	if err != nil {
 		t.Fatalf("expected %#v got %#v", nil, err)
 	}
@@ -182,14 +196,14 @@ func testDeleteCRO(t *testing.T, ID string) {
 func testSetup(t *testing.T) {
 	testTeardown(t)
 
-	err := crd.Ensure(context.TODO(), newCRD, newCRDClient, backoff.NewExponentialBackOff())
+	err := newCRDClient.Ensure(context.TODO(), newCRD, backoff.NewExponentialBackOff())
 	if err != nil {
 		t.Fatalf("expected %#v got %#v", nil, err)
 	}
 }
 
 func testTeardown(t *testing.T) {
-	err := newCRDClient.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(newCRD.Name(), nil)
+	err := newK8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(newCRD.Name(), nil)
 	if errors.IsNotFound(err) {
 		// fall though
 	} else if err != nil {
