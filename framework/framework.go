@@ -212,11 +212,37 @@ func (f *Framework) UpdateFunc(oldObj, newObj interface{}) {
 //     }
 //
 func ProcessCreate(ctx context.Context, obj interface{}, resources []Resource) error {
-	err := ProcessUpdate(ctx, obj, resources)
-	if err != nil {
-		return microerror.Mask(err)
+	// NOTE it does the same thing as ProcessUpdate.
+	err := process(ctx, obj, false, resources)
+	return microerror.Mask(err)
+}
+
+// ProcessEvents takes the event channels created by the operatorkit informer
+// and executes the framework's event functions accordingly.
+func (f *Framework) ProcessEvents(ctx context.Context, deleteChan chan watch.Event, updateChan chan watch.Event, errChan chan error) {
+	operation := func() error {
+		for {
+			select {
+			case e := <-deleteChan:
+				f.DeleteFunc(e.Object)
+			case e := <-updateChan:
+				f.UpdateFunc(nil, e.Object)
+			case err := <-errChan:
+				return microerror.Mask(err)
+			case <-ctx.Done():
+				return nil
+			}
+		}
 	}
-	return nil
+
+	notifier := func(err error, d time.Duration) {
+		f.logger.Log("error", fmt.Sprintf("%#v", err))
+	}
+
+	err := backoff.RetryNotify(operation, f.backOff, notifier)
+	if err != nil {
+		f.logger.Log("error", fmt.Sprintf("%#v", err))
+	}
 }
 
 // ProcessDelete is a drop-in for an informer's DeleteFunc. It receives the
@@ -236,6 +262,35 @@ func ProcessCreate(ctx context.Context, obj interface{}, resources []Resource) e
 //     }
 //
 func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) error {
+	err := process(ctx, obj, true, resources)
+	return microerror.Mask(err)
+
+}
+
+// ProcessUpdate is a drop-in for an informer's UpdateFunc. It receives the new
+// custom object observed during TPR watches and anything that implements
+// Resource. ProcessUpdate takes care about all necessary reconciliation logic
+// for update events. For complex resources this means state has to be created,
+// deleted and updated eventually, in this order.
+//
+//     func updateFunc(oldObj, newObj interface{}) {
+//         err := f.ProcessUpdate(newObj, resources)
+//         if err != nil {
+//             // error handling here
+//         }
+//     }
+//
+//     newResourceEventHandler := &cache.ResourceEventHandlerFuncs{
+//         UpdateFunc:    updateFunc,
+//     }
+//
+func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) error {
+	// NOTE it does the same thing as ProcessCreate.
+	err := process(ctx, obj, false, resources)
+	return microerror.Mask(err)
+}
+
+func process(ctx context.Context, obj interface{}, deleted bool, resources []Resource) error {
 	if len(resources) == 0 {
 		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}
@@ -246,7 +301,7 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 		if canceledcontext.IsCanceled(ctx) {
 			return nil
 		}
-		currentState, err := r.GetCurrentState(ctx, obj)
+		currentState, err := r.GetCurrentState(ctx, obj, deleted)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -254,7 +309,7 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 		if canceledcontext.IsCanceled(ctx) {
 			return nil
 		}
-		desiredState, err := r.GetDesiredState(ctx, obj)
+		desiredState, err := r.GetDesiredState(ctx, obj, deleted)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -262,7 +317,7 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 		if canceledcontext.IsCanceled(ctx) {
 			return nil
 		}
-		patch, err := r.NewDeletePatch(ctx, obj, currentState, desiredState)
+		patch, err := r.NewPatch(ctx, obj, currentState, desiredState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -297,123 +352,6 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 		updateChange, ok := patch.getUpdateChange()
 		if ok {
 			err := r.ApplyUpdateChange(ctx, obj, updateChange)
-			if err != nil {
-				return microerror.Mask(err)
-			}
-		}
-
-	}
-
-	return nil
-}
-
-// ProcessEvents takes the event channels created by the operatorkit informer
-// and executes the framework's event functions accordingly.
-func (f *Framework) ProcessEvents(ctx context.Context, deleteChan chan watch.Event, updateChan chan watch.Event, errChan chan error) {
-	operation := func() error {
-		for {
-			select {
-			case e := <-deleteChan:
-				f.DeleteFunc(e.Object)
-			case e := <-updateChan:
-				f.UpdateFunc(nil, e.Object)
-			case err := <-errChan:
-				return microerror.Mask(err)
-			case <-ctx.Done():
-				return nil
-			}
-		}
-	}
-
-	notifier := func(err error, d time.Duration) {
-		f.logger.Log("error", fmt.Sprintf("%#v", err))
-	}
-
-	err := backoff.RetryNotify(operation, f.backOff, notifier)
-	if err != nil {
-		f.logger.Log("error", fmt.Sprintf("%#v", err))
-	}
-}
-
-// ProcessUpdate is a drop-in for an informer's UpdateFunc. It receives the new
-// custom object observed during TPR watches and anything that implements
-// Resource. ProcessUpdate takes care about all necessary reconciliation logic
-// for update events. For complex resources this means state has to be created,
-// deleted and updated eventually, in this order.
-//
-//     func updateFunc(oldObj, newObj interface{}) {
-//         err := f.ProcessUpdate(newObj, resources)
-//         if err != nil {
-//             // error handling here
-//         }
-//     }
-//
-//     newResourceEventHandler := &cache.ResourceEventHandlerFuncs{
-//         UpdateFunc:    updateFunc,
-//     }
-//
-func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) error {
-	if len(resources) == 0 {
-		return microerror.Maskf(executionFailedError, "resources must not be empty")
-	}
-
-	for _, r := range resources {
-		// Create the patch.
-
-		if canceledcontext.IsCanceled(ctx) {
-			return nil
-		}
-		currentState, err := r.GetCurrentState(ctx, obj)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-
-		if canceledcontext.IsCanceled(ctx) {
-			return nil
-		}
-		desiredState, err := r.GetDesiredState(ctx, obj)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-
-		if canceledcontext.IsCanceled(ctx) {
-			return nil
-		}
-		patch, err := r.NewUpdatePatch(ctx, obj, currentState, desiredState)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-
-		// Apply the patch.
-
-		if canceledcontext.IsCanceled(ctx) {
-			return nil
-		}
-		createState, ok := patch.getCreateChange()
-		if ok {
-			err := r.ApplyCreateChange(ctx, obj, createState)
-			if err != nil {
-				return microerror.Mask(err)
-			}
-		}
-
-		if canceledcontext.IsCanceled(ctx) {
-			return nil
-		}
-		deleteState, ok := patch.getDeleteChange()
-		if ok {
-			err := r.ApplyDeleteChange(ctx, obj, deleteState)
-			if err != nil {
-				return microerror.Mask(err)
-			}
-		}
-
-		if canceledcontext.IsCanceled(ctx) {
-			return nil
-		}
-		updateState, ok := patch.getUpdateChange()
-		if ok {
-			err := r.ApplyUpdateChange(ctx, obj, updateState)
 			if err != nil {
 				return microerror.Mask(err)
 			}

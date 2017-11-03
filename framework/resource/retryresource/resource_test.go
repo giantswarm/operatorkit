@@ -3,11 +3,13 @@ package retryresource
 import (
 	"context"
 	"fmt"
+
 	"reflect"
 	"testing"
 
 	"github.com/cenk/backoff"
 	"github.com/giantswarm/operatorkit/framework"
+	"github.com/giantswarm/operatorkit/framework/context/canceledcontext"
 )
 
 // Test_RetryResource_ProcessCreate_ResourceOrder_RetryOnError ensures the
@@ -23,10 +25,10 @@ func Test_RetryResource_ProcessCreate_ResourceOrder_RetryOnError(t *testing.T) {
 			ErrorCount:  1,
 			ErrorMethod: "GetCurrentState",
 			ExpectedMethodOrder: []string{
-				"GetCurrentState",
-				"GetCurrentState",
-				"GetDesiredState",
-				"NewUpdatePatch",
+				"GetCurrentState(deleted=false)",
+				"GetCurrentState(deleted=false)",
+				"GetDesiredState(deleted=false)",
+				"NewPatch",
 				"ApplyCreatePatch",
 				"ApplyDeletePatch",
 				"ApplyUpdatePatch",
@@ -36,11 +38,11 @@ func Test_RetryResource_ProcessCreate_ResourceOrder_RetryOnError(t *testing.T) {
 			ErrorCount:  2,
 			ErrorMethod: "GetCurrentState",
 			ExpectedMethodOrder: []string{
-				"GetCurrentState",
-				"GetCurrentState",
-				"GetCurrentState",
-				"GetDesiredState",
-				"NewUpdatePatch",
+				"GetCurrentState(deleted=false)",
+				"GetCurrentState(deleted=false)",
+				"GetCurrentState(deleted=false)",
+				"GetDesiredState(deleted=false)",
+				"NewPatch",
 				"ApplyCreatePatch",
 				"ApplyDeletePatch",
 				"ApplyUpdatePatch",
@@ -50,9 +52,9 @@ func Test_RetryResource_ProcessCreate_ResourceOrder_RetryOnError(t *testing.T) {
 			ErrorCount:  2,
 			ErrorMethod: "ApplyCreatePatch",
 			ExpectedMethodOrder: []string{
-				"GetCurrentState",
-				"GetDesiredState",
-				"NewUpdatePatch",
+				"GetCurrentState(deleted=false)",
+				"GetDesiredState(deleted=false)",
+				"NewPatch",
 				"ApplyCreatePatch",
 				"ApplyCreatePatch",
 				"ApplyCreatePatch",
@@ -118,9 +120,9 @@ func Test_RetryResource_ProcessCreate_ResourceOrder(t *testing.T) {
 	}
 
 	e := []string{
-		"GetCurrentState",
-		"GetDesiredState",
-		"NewUpdatePatch",
+		"GetCurrentState(deleted=false)",
+		"GetDesiredState(deleted=false)",
+		"NewPatch",
 		"ApplyCreatePatch",
 		"ApplyDeletePatch",
 		"ApplyUpdatePatch",
@@ -143,10 +145,10 @@ func Test_RetryResource_ProcessDelete_ResourceOrder_RetryOnError(t *testing.T) {
 			ErrorCount:  1,
 			ErrorMethod: "GetCurrentState",
 			ExpectedMethodOrder: []string{
-				"GetCurrentState",
-				"GetCurrentState",
-				"GetDesiredState",
-				"NewDeletePatch",
+				"GetCurrentState(deleted=true)",
+				"GetCurrentState(deleted=true)",
+				"GetDesiredState(deleted=true)",
+				"NewPatch",
 				"ApplyCreatePatch",
 				"ApplyDeletePatch",
 				"ApplyUpdatePatch",
@@ -156,11 +158,11 @@ func Test_RetryResource_ProcessDelete_ResourceOrder_RetryOnError(t *testing.T) {
 			ErrorCount:  2,
 			ErrorMethod: "GetCurrentState",
 			ExpectedMethodOrder: []string{
-				"GetCurrentState",
-				"GetCurrentState",
-				"GetCurrentState",
-				"GetDesiredState",
-				"NewDeletePatch",
+				"GetCurrentState(deleted=true)",
+				"GetCurrentState(deleted=true)",
+				"GetCurrentState(deleted=true)",
+				"GetDesiredState(deleted=true)",
+				"NewPatch",
 				"ApplyCreatePatch",
 				"ApplyDeletePatch",
 				"ApplyUpdatePatch",
@@ -170,9 +172,9 @@ func Test_RetryResource_ProcessDelete_ResourceOrder_RetryOnError(t *testing.T) {
 			ErrorCount:  2,
 			ErrorMethod: "ApplyDeletePatch",
 			ExpectedMethodOrder: []string{
-				"GetCurrentState",
-				"GetDesiredState",
-				"NewDeletePatch",
+				"GetCurrentState(deleted=true)",
+				"GetDesiredState(deleted=true)",
+				"NewPatch",
 				"ApplyCreatePatch",
 				"ApplyDeletePatch",
 				"ApplyDeletePatch",
@@ -238,9 +240,9 @@ func Test_RetryResource_ProcessDelete_ResourceOrder(t *testing.T) {
 	}
 
 	e := []string{
-		"GetCurrentState",
-		"GetDesiredState",
-		"NewDeletePatch",
+		"GetCurrentState(deleted=true)",
+		"GetDesiredState(deleted=true)",
+		"NewPatch",
 		"ApplyCreatePatch",
 		"ApplyDeletePatch",
 		"ApplyUpdatePatch",
@@ -263,10 +265,10 @@ func Test_RetryResource_ProcessUpdate_ResourceOrder_RetryOnError(t *testing.T) {
 			ErrorCount:  1,
 			ErrorMethod: "GetCurrentState",
 			ExpectedMethodOrder: []string{
-				"GetCurrentState",
-				"GetCurrentState",
-				"GetDesiredState",
-				"NewUpdatePatch",
+				"GetCurrentState(deleted=false)",
+				"GetCurrentState(deleted=false)",
+				"GetDesiredState(deleted=false)",
+				"NewPatch",
 				"ApplyCreatePatch",
 				"ApplyDeletePatch",
 				"ApplyUpdatePatch",
@@ -276,11 +278,11 @@ func Test_RetryResource_ProcessUpdate_ResourceOrder_RetryOnError(t *testing.T) {
 			ErrorCount:  2,
 			ErrorMethod: "GetCurrentState",
 			ExpectedMethodOrder: []string{
-				"GetCurrentState",
-				"GetCurrentState",
-				"GetCurrentState",
-				"GetDesiredState",
-				"NewUpdatePatch",
+				"GetCurrentState(deleted=false)",
+				"GetCurrentState(deleted=false)",
+				"GetCurrentState(deleted=false)",
+				"GetDesiredState(deleted=false)",
+				"NewPatch",
 				"ApplyCreatePatch",
 				"ApplyDeletePatch",
 				"ApplyUpdatePatch",
@@ -290,9 +292,9 @@ func Test_RetryResource_ProcessUpdate_ResourceOrder_RetryOnError(t *testing.T) {
 			ErrorCount:  2,
 			ErrorMethod: "ApplyUpdatePatch",
 			ExpectedMethodOrder: []string{
-				"GetCurrentState",
-				"GetDesiredState",
-				"NewUpdatePatch",
+				"GetCurrentState(deleted=false)",
+				"GetDesiredState(deleted=false)",
+				"NewPatch",
 				"ApplyCreatePatch",
 				"ApplyDeletePatch",
 				"ApplyUpdatePatch",
@@ -358,9 +360,9 @@ func Test_RetryResource_ProcessUpdate_ResourceOrder(t *testing.T) {
 	}
 
 	e := []string{
-		"GetCurrentState",
-		"GetDesiredState",
-		"NewUpdatePatch",
+		"GetCurrentState(deleted=false)",
+		"GetDesiredState(deleted=false)",
+		"NewPatch",
 		"ApplyCreatePatch",
 		"ApplyDeletePatch",
 		"ApplyUpdatePatch",
@@ -371,17 +373,26 @@ func Test_RetryResource_ProcessUpdate_ResourceOrder(t *testing.T) {
 }
 
 type testResource struct {
-	Error       error
-	ErrorCount  int
-	ErrorMethod string
-	Order       []string
+	CancelingStep  string
+	Error          error
+	ErrorCount     int
+	ErrorMethod    string
+	Order          []string
+	SetupPatchFunc func(p *framework.Patch)
 
 	errorCount int
 }
 
-func (r *testResource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
+func (r *testResource) GetCurrentState(ctx context.Context, obj interface{}, deleted bool) (interface{}, error) {
 	m := "GetCurrentState"
-	r.Order = append(r.Order, m)
+	r.Order = append(r.Order, fmt.Sprintf("%s(deleted=%t)", m, deleted))
+
+	if r.CancelingStep == m {
+		canceledcontext.SetCanceled(ctx)
+		if canceledcontext.IsCanceled(ctx) {
+			return nil, nil
+		}
+	}
 
 	if r.returnErrorFor(m) {
 		return nil, r.Error
@@ -390,9 +401,16 @@ func (r *testResource) GetCurrentState(ctx context.Context, obj interface{}) (in
 	return nil, nil
 }
 
-func (r *testResource) GetDesiredState(ctx context.Context, obj interface{}) (interface{}, error) {
+func (r *testResource) GetDesiredState(ctx context.Context, obj interface{}, deleted bool) (interface{}, error) {
 	m := "GetDesiredState"
-	r.Order = append(r.Order, m)
+	r.Order = append(r.Order, fmt.Sprintf("%s(deleted=%t)", m, deleted))
+
+	if r.CancelingStep == m {
+		canceledcontext.SetCanceled(ctx)
+		if canceledcontext.IsCanceled(ctx) {
+			return nil, nil
+		}
+	}
 
 	if r.returnErrorFor(m) {
 		return nil, r.Error
@@ -401,25 +419,29 @@ func (r *testResource) GetDesiredState(ctx context.Context, obj interface{}) (in
 	return nil, nil
 }
 
-func (r *testResource) NewUpdatePatch(ctx context.Context, obj, cur, des interface{}) (*framework.Patch, error) {
-	m := "NewUpdatePatch"
+func (r *testResource) NewPatch(ctx context.Context, obj, currentState, desiredState interface{}) (*framework.Patch, error) {
+	m := "NewPatch"
 	r.Order = append(r.Order, m)
 
-	p := framework.NewPatch()
-	p.SetCreateChange("test create data")
-	p.SetUpdateChange("test update data")
-	p.SetDeleteChange("test delete data")
-	return p, nil
-}
+	if r.CancelingStep == m {
+		canceledcontext.SetCanceled(ctx)
+		if canceledcontext.IsCanceled(ctx) {
+			return nil, nil
+		}
+	}
 
-func (r *testResource) NewDeletePatch(ctx context.Context, obj, cur, des interface{}) (*framework.Patch, error) {
-	m := "NewDeletePatch"
-	r.Order = append(r.Order, m)
+	if r.returnErrorFor(m) {
+		return nil, r.Error
+	}
 
 	p := framework.NewPatch()
-	p.SetCreateChange("test create data")
-	p.SetUpdateChange("test update data")
-	p.SetDeleteChange("test delete data")
+	if r.SetupPatchFunc != nil {
+		r.SetupPatchFunc(p)
+	} else {
+		p.SetCreateChange("test create data")
+		p.SetUpdateChange("test update data")
+		p.SetDeleteChange("test delete data")
+	}
 	return p, nil
 }
 
@@ -430,6 +452,13 @@ func (r *testResource) Name() string {
 func (r *testResource) ApplyCreateChange(ctx context.Context, obj, createState interface{}) error {
 	m := "ApplyCreatePatch"
 	r.Order = append(r.Order, m)
+
+	if r.CancelingStep == m {
+		canceledcontext.SetCanceled(ctx)
+		if canceledcontext.IsCanceled(ctx) {
+			return nil
+		}
+	}
 
 	if r.returnErrorFor(m) {
 		return r.Error
@@ -442,6 +471,13 @@ func (r *testResource) ApplyDeleteChange(ctx context.Context, obj, deleteState i
 	m := "ApplyDeletePatch"
 	r.Order = append(r.Order, m)
 
+	if r.CancelingStep == m {
+		canceledcontext.SetCanceled(ctx)
+		if canceledcontext.IsCanceled(ctx) {
+			return nil
+		}
+	}
+
 	if r.returnErrorFor(m) {
 		return r.Error
 	}
@@ -452,6 +488,13 @@ func (r *testResource) ApplyDeleteChange(ctx context.Context, obj, deleteState i
 func (r *testResource) ApplyUpdateChange(ctx context.Context, obj, updateState interface{}) error {
 	m := "ApplyUpdatePatch"
 	r.Order = append(r.Order, m)
+
+	if r.CancelingStep == m {
+		canceledcontext.SetCanceled(ctx)
+		if canceledcontext.IsCanceled(ctx) {
+			return nil
+		}
+	}
 
 	if r.returnErrorFor(m) {
 		return r.Error
