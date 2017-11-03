@@ -5,11 +5,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"testing"
 
 	"github.com/giantswarm/micrologger"
 	"github.com/giantswarm/operatorkit/framework"
+	"github.com/giantswarm/operatorkit/framework/context/canceledcontext"
 )
 
 // Test_LogResource_ProcessCreate_ResourceOrder ensures the resource's
@@ -47,9 +49,9 @@ func Test_LogResource_ProcessCreate_ResourceOrder(t *testing.T) {
 	// Ensure the operations are properly executed in order.
 	{
 		e := []string{
-			"GetCurrentState",
-			"GetDesiredState",
-			"NewUpdatePatch",
+			"GetCurrentState(deleted=false)",
+			"GetDesiredState(deleted=false)",
+			"NewPatch",
 			"ApplyCreatePatch",
 			"ApplyDeletePatch",
 			"ApplyUpdatePatch",
@@ -66,8 +68,8 @@ func Test_LogResource_ProcessCreate_ResourceOrder(t *testing.T) {
 			"GetCurrentState",
 			"GetDesiredState",
 			"GetDesiredState",
-			"NewUpdatePatch",
-			"NewUpdatePatch",
+			"NewPatch",
+			"NewPatch",
 			"ApplyCreatePatch",
 			"ApplyCreatePatch",
 		}
@@ -128,9 +130,9 @@ func Test_LogResource_ProcessDelete_ResourceOrder(t *testing.T) {
 	// Ensure the operations are properly executed in order.
 	{
 		e := []string{
-			"GetCurrentState",
-			"GetDesiredState",
-			"NewDeletePatch",
+			"GetCurrentState(deleted=true)",
+			"GetDesiredState(deleted=true)",
+			"NewPatch",
 			"ApplyCreatePatch",
 			"ApplyDeletePatch",
 			"ApplyUpdatePatch",
@@ -147,8 +149,8 @@ func Test_LogResource_ProcessDelete_ResourceOrder(t *testing.T) {
 			"GetCurrentState",
 			"GetDesiredState",
 			"GetDesiredState",
-			"NewDeletePatch",
-			"NewDeletePatch",
+			"NewPatch",
+			"NewPatch",
 			"ApplyCreatePatch",
 			"ApplyCreatePatch",
 			"ApplyDeletePatch",
@@ -213,9 +215,9 @@ func Test_LogResource_ProcessUpdate_ResourceOrder(t *testing.T) {
 	// Ensure the operations are properly executed in order.
 	{
 		e := []string{
-			"GetCurrentState",
-			"GetDesiredState",
-			"NewUpdatePatch",
+			"GetCurrentState(deleted=false)",
+			"GetDesiredState(deleted=false)",
+			"NewPatch",
 			"ApplyCreatePatch",
 			"ApplyDeletePatch",
 			"ApplyUpdatePatch",
@@ -232,8 +234,8 @@ func Test_LogResource_ProcessUpdate_ResourceOrder(t *testing.T) {
 			"GetCurrentState",
 			"GetDesiredState",
 			"GetDesiredState",
-			"NewUpdatePatch",
-			"NewUpdatePatch",
+			"NewPatch",
+			"NewPatch",
 			"ApplyCreatePatch",
 			"ApplyCreatePatch",
 			"ApplyDeletePatch",
@@ -264,42 +266,75 @@ func Test_LogResource_ProcessUpdate_ResourceOrder(t *testing.T) {
 }
 
 type testResource struct {
-	Order []string
+	CancelingStep  string
+	Error          error
+	ErrorCount     int
+	ErrorMethod    string
+	Order          []string
+	SetupPatchFunc func(p *framework.Patch)
+
+	errorCount int
 }
 
-func (r *testResource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
+func (r *testResource) GetCurrentState(ctx context.Context, obj interface{}, deleted bool) (interface{}, error) {
 	m := "GetCurrentState"
-	r.Order = append(r.Order, m)
+	r.Order = append(r.Order, fmt.Sprintf("%s(deleted=%t)", m, deleted))
+
+	if r.CancelingStep == m {
+		canceledcontext.SetCanceled(ctx)
+		if canceledcontext.IsCanceled(ctx) {
+			return nil, nil
+		}
+	}
+
+	if r.returnErrorFor(m) {
+		return nil, r.Error
+	}
 
 	return nil, nil
 }
 
-func (r *testResource) GetDesiredState(ctx context.Context, obj interface{}) (interface{}, error) {
+func (r *testResource) GetDesiredState(ctx context.Context, obj interface{}, deleted bool) (interface{}, error) {
 	m := "GetDesiredState"
-	r.Order = append(r.Order, m)
+	r.Order = append(r.Order, fmt.Sprintf("%s(deleted=%t)", m, deleted))
+
+	if r.CancelingStep == m {
+		canceledcontext.SetCanceled(ctx)
+		if canceledcontext.IsCanceled(ctx) {
+			return nil, nil
+		}
+	}
+
+	if r.returnErrorFor(m) {
+		return nil, r.Error
+	}
 
 	return nil, nil
 }
 
-func (r *testResource) NewUpdatePatch(ctx context.Context, obj, cur, des interface{}) (*framework.Patch, error) {
-	m := "NewUpdatePatch"
+func (r *testResource) NewPatch(ctx context.Context, obj, currentState, desiredState interface{}) (*framework.Patch, error) {
+	m := "NewPatch"
 	r.Order = append(r.Order, m)
 
-	p := framework.NewPatch()
-	p.SetCreateChange("test create data")
-	p.SetUpdateChange("test update data")
-	p.SetDeleteChange("test delete data")
-	return p, nil
-}
+	if r.CancelingStep == m {
+		canceledcontext.SetCanceled(ctx)
+		if canceledcontext.IsCanceled(ctx) {
+			return nil, nil
+		}
+	}
 
-func (r *testResource) NewDeletePatch(ctx context.Context, obj, cur, des interface{}) (*framework.Patch, error) {
-	m := "NewDeletePatch"
-	r.Order = append(r.Order, m)
+	if r.returnErrorFor(m) {
+		return nil, r.Error
+	}
 
 	p := framework.NewPatch()
-	p.SetCreateChange("test create data")
-	p.SetUpdateChange("test update data")
-	p.SetDeleteChange("test delete data")
+	if r.SetupPatchFunc != nil {
+		r.SetupPatchFunc(p)
+	} else {
+		p.SetCreateChange("test create data")
+		p.SetUpdateChange("test update data")
+		p.SetDeleteChange("test delete data")
+	}
 	return p, nil
 }
 
@@ -307,16 +342,38 @@ func (r *testResource) Name() string {
 	return "testResource"
 }
 
-func (r *testResource) ApplyCreateChange(ctx context.Context, obj, cre interface{}) error {
+func (r *testResource) ApplyCreateChange(ctx context.Context, obj, createState interface{}) error {
 	m := "ApplyCreatePatch"
 	r.Order = append(r.Order, m)
+
+	if r.CancelingStep == m {
+		canceledcontext.SetCanceled(ctx)
+		if canceledcontext.IsCanceled(ctx) {
+			return nil
+		}
+	}
+
+	if r.returnErrorFor(m) {
+		return r.Error
+	}
 
 	return nil
 }
 
-func (r *testResource) ApplyDeleteChange(ctx context.Context, obj, del interface{}) error {
+func (r *testResource) ApplyDeleteChange(ctx context.Context, obj, deleteState interface{}) error {
 	m := "ApplyDeletePatch"
 	r.Order = append(r.Order, m)
+
+	if r.CancelingStep == m {
+		canceledcontext.SetCanceled(ctx)
+		if canceledcontext.IsCanceled(ctx) {
+			return nil
+		}
+	}
+
+	if r.returnErrorFor(m) {
+		return r.Error
+	}
 
 	return nil
 }
@@ -325,9 +382,31 @@ func (r *testResource) ApplyUpdateChange(ctx context.Context, obj, updateState i
 	m := "ApplyUpdatePatch"
 	r.Order = append(r.Order, m)
 
+	if r.CancelingStep == m {
+		canceledcontext.SetCanceled(ctx)
+		if canceledcontext.IsCanceled(ctx) {
+			return nil
+		}
+	}
+
+	if r.returnErrorFor(m) {
+		return r.Error
+	}
+
 	return nil
 }
 
 func (r *testResource) Underlying() framework.Resource {
 	return r
+}
+
+func (r *testResource) returnErrorFor(errorMethod string) bool {
+	ok := r.Error != nil && r.ErrorCount > r.errorCount && r.ErrorMethod == errorMethod
+
+	if ok {
+		r.errorCount++
+		return true
+	}
+
+	return false
 }

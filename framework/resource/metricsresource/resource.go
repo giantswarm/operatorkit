@@ -70,12 +70,12 @@ func New(config Config) (*Resource, error) {
 	return newResource, nil
 }
 
-func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
+func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}, deleted bool) (interface{}, error) {
 	o := "GetCurrentState"
 
 	defer r.updateMetrics(o, time.Now())
 
-	v, err := r.resource.GetCurrentState(ctx, obj)
+	v, err := r.resource.GetCurrentState(ctx, obj, deleted)
 	if err != nil {
 		r.updateErrorMetrics(o)
 		return nil, microerror.Mask(err)
@@ -84,12 +84,12 @@ func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interf
 	return v, nil
 }
 
-func (r *Resource) GetDesiredState(ctx context.Context, obj interface{}) (interface{}, error) {
+func (r *Resource) GetDesiredState(ctx context.Context, obj interface{}, deleted bool) (interface{}, error) {
 	o := "GetDesiredState"
 
 	defer r.updateMetrics(o, time.Now())
 
-	v, err := r.resource.GetDesiredState(ctx, obj)
+	v, err := r.resource.GetDesiredState(ctx, obj, deleted)
 	if err != nil {
 		r.updateErrorMetrics(o)
 		return nil, microerror.Mask(err)
@@ -98,26 +98,12 @@ func (r *Resource) GetDesiredState(ctx context.Context, obj interface{}) (interf
 	return v, nil
 }
 
-func (r *Resource) NewUpdatePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*framework.Patch, error) {
-	o := "NewUpdatePatch"
+func (r *Resource) NewPatch(ctx context.Context, obj, currentState, desiredState interface{}) (*framework.Patch, error) {
+	o := "NewPatch"
 
 	defer r.updateMetrics(o, time.Now())
 
-	v, err := r.resource.NewUpdatePatch(ctx, obj, currentState, desiredState)
-	if err != nil {
-		r.updateErrorMetrics(o)
-		return nil, microerror.Mask(err)
-	}
-
-	return v, nil
-}
-
-func (r *Resource) NewDeletePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*framework.Patch, error) {
-	o := "NewDeletePatch"
-
-	defer r.updateMetrics(o, time.Now())
-
-	v, err := r.resource.NewDeletePatch(ctx, obj, currentState, desiredState)
+	v, err := r.resource.NewPatch(ctx, obj, currentState, desiredState)
 	if err != nil {
 		r.updateErrorMetrics(o)
 		return nil, microerror.Mask(err)

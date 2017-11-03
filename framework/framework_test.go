@@ -2,6 +2,7 @@ package framework
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -38,9 +39,9 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 			},
 			ExpectedOrders: [][]string{
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewUpdatePatch",
+					"GetCurrentState(deleted=false)",
+					"GetDesiredState(deleted=false)",
+					"NewPatch",
 					"ApplyCreatePatch",
 					"ApplyDeletePatch",
 					"ApplyUpdatePatch",
@@ -60,17 +61,17 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 			},
 			ExpectedOrders: [][]string{
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewUpdatePatch",
+					"GetCurrentState(deleted=false)",
+					"GetDesiredState(deleted=false)",
+					"NewPatch",
 					"ApplyCreatePatch",
 					"ApplyDeletePatch",
 					"ApplyUpdatePatch",
 				},
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewUpdatePatch",
+					"GetCurrentState(deleted=false)",
+					"GetDesiredState(deleted=false)",
+					"NewPatch",
 					"ApplyCreatePatch",
 					"ApplyDeletePatch",
 					"ApplyUpdatePatch",
@@ -91,7 +92,7 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 			},
 			ExpectedOrders: [][]string{
 				{
-					"GetCurrentState",
+					"GetCurrentState(deleted=false)",
 				},
 			},
 			ErrorMatcher: nil,
@@ -110,9 +111,9 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 			},
 			ExpectedOrders: [][]string{
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewUpdatePatch",
+					"GetCurrentState(deleted=false)",
+					"GetDesiredState(deleted=false)",
+					"NewPatch",
 					"ApplyCreatePatch",
 					"ApplyDeletePatch",
 					"ApplyUpdatePatch",
@@ -129,15 +130,15 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 			Ctx:           canceledcontext.NewContext(context.Background(), make(chan struct{})),
 			Resources: []Resource{
 				&testResource{
-					CancelingStep: "NewUpdatePatch",
+					CancelingStep: "NewPatch",
 				},
 				&testResource{},
 			},
 			ExpectedOrders: [][]string{
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewUpdatePatch",
+					"GetCurrentState(deleted=false)",
+					"GetDesiredState(deleted=false)",
+					"NewPatch",
 				},
 				nil,
 			},
@@ -153,22 +154,22 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 			Resources: []Resource{
 				&testResource{},
 				&testResource{
-					CancelingStep: "NewUpdatePatch",
+					CancelingStep: "NewPatch",
 				},
 			},
 			ExpectedOrders: [][]string{
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewUpdatePatch",
+					"GetCurrentState(deleted=false)",
+					"GetDesiredState(deleted=false)",
+					"NewPatch",
 					"ApplyCreatePatch",
 					"ApplyDeletePatch",
 					"ApplyUpdatePatch",
 				},
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewUpdatePatch",
+					"GetCurrentState(deleted=false)",
+					"GetDesiredState(deleted=false)",
+					"NewPatch",
 				},
 			},
 			ErrorMatcher: nil,
@@ -194,9 +195,9 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 			},
 			ExpectedOrders: [][]string{
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewDeletePatch",
+					"GetCurrentState(deleted=true)",
+					"GetDesiredState(deleted=true)",
+					"NewPatch",
 					"ApplyCreatePatch",
 					"ApplyDeletePatch",
 					"ApplyUpdatePatch",
@@ -216,17 +217,17 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 			},
 			ExpectedOrders: [][]string{
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewDeletePatch",
+					"GetCurrentState(deleted=true)",
+					"GetDesiredState(deleted=true)",
+					"NewPatch",
 					"ApplyCreatePatch",
 					"ApplyDeletePatch",
 					"ApplyUpdatePatch",
 				},
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewDeletePatch",
+					"GetCurrentState(deleted=true)",
+					"GetDesiredState(deleted=true)",
+					"NewPatch",
 					"ApplyCreatePatch",
 					"ApplyDeletePatch",
 					"ApplyUpdatePatch",
@@ -247,7 +248,7 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 			},
 			ExpectedOrders: [][]string{
 				{
-					"GetCurrentState",
+					"GetCurrentState(deleted=true)",
 				},
 			},
 			ErrorMatcher: nil,
@@ -266,9 +267,9 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 			},
 			ExpectedOrders: [][]string{
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewDeletePatch",
+					"GetCurrentState(deleted=true)",
+					"GetDesiredState(deleted=true)",
+					"NewPatch",
 					"ApplyCreatePatch",
 					"ApplyDeletePatch",
 					"ApplyUpdatePatch",
@@ -285,15 +286,15 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 			Ctx:           canceledcontext.NewContext(context.Background(), make(chan struct{})),
 			Resources: []Resource{
 				&testResource{
-					CancelingStep: "NewDeletePatch",
+					CancelingStep: "NewPatch",
 				},
 				&testResource{},
 			},
 			ExpectedOrders: [][]string{
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewDeletePatch",
+					"GetCurrentState(deleted=true)",
+					"GetDesiredState(deleted=true)",
+					"NewPatch",
 				},
 				nil,
 			},
@@ -309,22 +310,22 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 			Resources: []Resource{
 				&testResource{},
 				&testResource{
-					CancelingStep: "NewDeletePatch",
+					CancelingStep: "NewPatch",
 				},
 			},
 			ExpectedOrders: [][]string{
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewDeletePatch",
+					"GetCurrentState(deleted=true)",
+					"GetDesiredState(deleted=true)",
+					"NewPatch",
 					"ApplyCreatePatch",
 					"ApplyDeletePatch",
 					"ApplyUpdatePatch",
 				},
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewDeletePatch",
+					"GetCurrentState(deleted=true)",
+					"GetDesiredState(deleted=true)",
+					"NewPatch",
 				},
 			},
 			ErrorMatcher: nil,
@@ -350,9 +351,9 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 			},
 			ExpectedOrders: [][]string{
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewUpdatePatch",
+					"GetCurrentState(deleted=false)",
+					"GetDesiredState(deleted=false)",
+					"NewPatch",
 					"ApplyCreatePatch",
 					"ApplyDeletePatch",
 					"ApplyUpdatePatch",
@@ -372,17 +373,17 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 			},
 			ExpectedOrders: [][]string{
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewUpdatePatch",
+					"GetCurrentState(deleted=false)",
+					"GetDesiredState(deleted=false)",
+					"NewPatch",
 					"ApplyCreatePatch",
 					"ApplyDeletePatch",
 					"ApplyUpdatePatch",
 				},
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewUpdatePatch",
+					"GetCurrentState(deleted=false)",
+					"GetDesiredState(deleted=false)",
+					"NewPatch",
 					"ApplyCreatePatch",
 					"ApplyDeletePatch",
 					"ApplyUpdatePatch",
@@ -403,7 +404,7 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 			},
 			ExpectedOrders: [][]string{
 				{
-					"GetCurrentState",
+					"GetCurrentState(deleted=false)",
 				},
 			},
 			ErrorMatcher: nil,
@@ -422,9 +423,9 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 			},
 			ExpectedOrders: [][]string{
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewUpdatePatch",
+					"GetCurrentState(deleted=false)",
+					"GetDesiredState(deleted=false)",
+					"NewPatch",
 					"ApplyCreatePatch",
 					"ApplyDeletePatch",
 					"ApplyUpdatePatch",
@@ -441,15 +442,15 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 			Ctx:           canceledcontext.NewContext(context.Background(), make(chan struct{})),
 			Resources: []Resource{
 				&testResource{
-					CancelingStep: "NewUpdatePatch",
+					CancelingStep: "NewPatch",
 				},
 				&testResource{},
 			},
 			ExpectedOrders: [][]string{
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewUpdatePatch",
+					"GetCurrentState(deleted=false)",
+					"GetDesiredState(deleted=false)",
+					"NewPatch",
 				},
 				nil,
 			},
@@ -465,22 +466,22 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 			Resources: []Resource{
 				&testResource{},
 				&testResource{
-					CancelingStep: "NewUpdatePatch",
+					CancelingStep: "NewPatch",
 				},
 			},
 			ExpectedOrders: [][]string{
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewUpdatePatch",
+					"GetCurrentState(deleted=false)",
+					"GetDesiredState(deleted=false)",
+					"NewPatch",
 					"ApplyCreatePatch",
 					"ApplyDeletePatch",
 					"ApplyUpdatePatch",
 				},
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewUpdatePatch",
+					"GetCurrentState(deleted=false)",
+					"GetDesiredState(deleted=false)",
+					"NewPatch",
 				},
 			},
 			ErrorMatcher: nil,
@@ -520,32 +521,32 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 			},
 			ExpectedOrders: [][]string{
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewUpdatePatch",
+					"GetCurrentState(deleted=false)",
+					"GetDesiredState(deleted=false)",
+					"NewPatch",
 				},
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewUpdatePatch",
+					"GetCurrentState(deleted=false)",
+					"GetDesiredState(deleted=false)",
+					"NewPatch",
 					"ApplyCreatePatch",
 				},
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewUpdatePatch",
+					"GetCurrentState(deleted=false)",
+					"GetDesiredState(deleted=false)",
+					"NewPatch",
 					"ApplyDeletePatch",
 				},
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewUpdatePatch",
+					"GetCurrentState(deleted=false)",
+					"GetDesiredState(deleted=false)",
+					"NewPatch",
 					"ApplyUpdatePatch",
 				},
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewUpdatePatch",
+					"GetCurrentState(deleted=false)",
+					"GetDesiredState(deleted=false)",
+					"NewPatch",
 					"ApplyCreatePatch",
 					"ApplyDeletePatch",
 				},
@@ -587,32 +588,32 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 			},
 			ExpectedOrders: [][]string{
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewDeletePatch",
+					"GetCurrentState(deleted=true)",
+					"GetDesiredState(deleted=true)",
+					"NewPatch",
 				},
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewDeletePatch",
+					"GetCurrentState(deleted=true)",
+					"GetDesiredState(deleted=true)",
+					"NewPatch",
 					"ApplyCreatePatch",
 				},
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewDeletePatch",
+					"GetCurrentState(deleted=true)",
+					"GetDesiredState(deleted=true)",
+					"NewPatch",
 					"ApplyDeletePatch",
 				},
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewDeletePatch",
+					"GetCurrentState(deleted=true)",
+					"GetDesiredState(deleted=true)",
+					"NewPatch",
 					"ApplyUpdatePatch",
 				},
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewDeletePatch",
+					"GetCurrentState(deleted=true)",
+					"GetDesiredState(deleted=true)",
+					"NewPatch",
 					"ApplyCreatePatch",
 					"ApplyDeletePatch",
 				},
@@ -654,32 +655,32 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 			},
 			ExpectedOrders: [][]string{
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewUpdatePatch",
+					"GetCurrentState(deleted=false)",
+					"GetDesiredState(deleted=false)",
+					"NewPatch",
 				},
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewUpdatePatch",
+					"GetCurrentState(deleted=false)",
+					"GetDesiredState(deleted=false)",
+					"NewPatch",
 					"ApplyCreatePatch",
 				},
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewUpdatePatch",
+					"GetCurrentState(deleted=false)",
+					"GetDesiredState(deleted=false)",
+					"NewPatch",
 					"ApplyDeletePatch",
 				},
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewUpdatePatch",
+					"GetCurrentState(deleted=false)",
+					"GetDesiredState(deleted=false)",
+					"NewPatch",
 					"ApplyUpdatePatch",
 				},
 				{
-					"GetCurrentState",
-					"GetDesiredState",
-					"NewUpdatePatch",
+					"GetCurrentState(deleted=false)",
+					"GetDesiredState(deleted=false)",
+					"NewPatch",
 					"ApplyCreatePatch",
 					"ApplyDeletePatch",
 				},
@@ -721,9 +722,9 @@ type testResource struct {
 	errorCount int
 }
 
-func (r *testResource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
+func (r *testResource) GetCurrentState(ctx context.Context, obj interface{}, deleted bool) (interface{}, error) {
 	m := "GetCurrentState"
-	r.Order = append(r.Order, m)
+	r.Order = append(r.Order, fmt.Sprintf("%s(deleted=%t)", m, deleted))
 
 	if r.CancelingStep == m {
 		canceledcontext.SetCanceled(ctx)
@@ -739,9 +740,9 @@ func (r *testResource) GetCurrentState(ctx context.Context, obj interface{}) (in
 	return nil, nil
 }
 
-func (r *testResource) GetDesiredState(ctx context.Context, obj interface{}) (interface{}, error) {
+func (r *testResource) GetDesiredState(ctx context.Context, obj interface{}, deleted bool) (interface{}, error) {
 	m := "GetDesiredState"
-	r.Order = append(r.Order, m)
+	r.Order = append(r.Order, fmt.Sprintf("%s(deleted=%t)", m, deleted))
 
 	if r.CancelingStep == m {
 		canceledcontext.SetCanceled(ctx)
@@ -757,34 +758,8 @@ func (r *testResource) GetDesiredState(ctx context.Context, obj interface{}) (in
 	return nil, nil
 }
 
-func (r *testResource) NewUpdatePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*Patch, error) {
-	m := "NewUpdatePatch"
-	r.Order = append(r.Order, m)
-
-	if r.CancelingStep == m {
-		canceledcontext.SetCanceled(ctx)
-		if canceledcontext.IsCanceled(ctx) {
-			return nil, nil
-		}
-	}
-
-	if r.returnErrorFor(m) {
-		return nil, r.Error
-	}
-
-	p := NewPatch()
-	if r.SetupPatchFunc != nil {
-		r.SetupPatchFunc(p)
-	} else {
-		p.SetCreateChange("test create data")
-		p.SetUpdateChange("test update data")
-		p.SetDeleteChange("test delete data")
-	}
-	return p, nil
-}
-
-func (r *testResource) NewDeletePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*Patch, error) {
-	m := "NewDeletePatch"
+func (r *testResource) NewPatch(ctx context.Context, obj, currentState, desiredState interface{}) (*Patch, error) {
+	m := "NewPatch"
 	r.Order = append(r.Order, m)
 
 	if r.CancelingStep == m {

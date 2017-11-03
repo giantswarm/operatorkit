@@ -79,12 +79,12 @@ type Resource struct {
 	resource framework.Resource
 }
 
-func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
+func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}, deleted bool) (interface{}, error) {
 	var err error
 
 	var v interface{}
 	o := func() error {
-		v, err = r.resource.GetCurrentState(ctx, obj)
+		v, err = r.resource.GetCurrentState(ctx, obj, deleted)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -104,12 +104,12 @@ func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interf
 	return v, nil
 }
 
-func (r *Resource) GetDesiredState(ctx context.Context, obj interface{}) (interface{}, error) {
+func (r *Resource) GetDesiredState(ctx context.Context, obj interface{}, deleted bool) (interface{}, error) {
 	var err error
 
 	var v interface{}
 	o := func() error {
-		v, err = r.resource.GetDesiredState(ctx, obj)
+		v, err = r.resource.GetDesiredState(ctx, obj, deleted)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -129,12 +129,12 @@ func (r *Resource) GetDesiredState(ctx context.Context, obj interface{}) (interf
 	return v, nil
 }
 
-func (r *Resource) NewUpdatePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*framework.Patch, error) {
+func (r *Resource) NewPatch(ctx context.Context, obj, currentState, desiredState interface{}) (*framework.Patch, error) {
 	var err error
 
 	var v *framework.Patch
 	o := func() error {
-		v, err = r.resource.NewUpdatePatch(ctx, obj, currentState, desiredState)
+		v, err = r.resource.NewPatch(ctx, obj, currentState, desiredState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -143,32 +143,7 @@ func (r *Resource) NewUpdatePatch(ctx context.Context, obj, currentState, desire
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.Log("warning", fmt.Sprintf("retrying 'NewUpdatePatch' due to error (%s)", err.Error()))
-	}
-
-	err = backoff.RetryNotify(o, r.backOff, n)
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
-
-	return v, nil
-}
-
-func (r *Resource) NewDeletePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*framework.Patch, error) {
-	var err error
-
-	var v *framework.Patch
-	o := func() error {
-		v, err = r.resource.NewDeletePatch(ctx, obj, currentState, desiredState)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-
-		return nil
-	}
-
-	n := func(err error, dur time.Duration) {
-		r.logger.Log("warning", fmt.Sprintf("retrying 'NewDeletePatch' due to error (%s)", err.Error()))
+		r.logger.Log("warning", fmt.Sprintf("retrying 'NewPatch' due to error (%s)", err.Error()))
 	}
 
 	err = backoff.RetryNotify(o, r.backOff, n)

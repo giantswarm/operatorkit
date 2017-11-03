@@ -2,6 +2,7 @@ package framework
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -29,9 +30,9 @@ func Test_Framework_InitCtxFunc_AddFunc(t *testing.T) {
 				return ctx, nil
 			},
 			ExpectedOrder: []string{
-				"GetCurrentState",
-				"GetDesiredState",
-				"NewUpdatePatch",
+				"GetCurrentState(deleted=false)",
+				"GetDesiredState(deleted=false)",
+				"NewPatch",
 				"Create",
 				"Delete",
 				"Update",
@@ -88,9 +89,9 @@ func Test_Framework_InitCtxFunc_DeleteFunc(t *testing.T) {
 				return ctx, nil
 			},
 			ExpectedOrder: []string{
-				"GetCurrentState",
-				"GetDesiredState",
-				"NewDeletePatch",
+				"GetCurrentState(deleted=true)",
+				"GetDesiredState(deleted=true)",
+				"NewPatch",
 				"Create",
 				"Delete",
 				"Update",
@@ -147,9 +148,9 @@ func Test_Framework_InitCtxFunc_UpdateFunc(t *testing.T) {
 				return ctx, nil
 			},
 			ExpectedOrder: []string{
-				"GetCurrentState",
-				"GetDesiredState",
-				"NewUpdatePatch",
+				"GetCurrentState(deleted=false)",
+				"GetDesiredState(deleted=false)",
+				"NewPatch",
 				"Create",
 				"Delete",
 				"Update",
@@ -190,44 +191,30 @@ type testInitCtxFuncResource struct {
 	Order []string
 }
 
-func (r *testInitCtxFuncResource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
+func (r *testInitCtxFuncResource) GetCurrentState(ctx context.Context, obj interface{}, deleted bool) (interface{}, error) {
 	_, ok := testInitCtxFuncFromContext(ctx)
 	if ok {
 		m := "GetCurrentState"
-		r.Order = append(r.Order, m)
+		r.Order = append(r.Order, fmt.Sprintf("%s(deleted=%t)", m, deleted))
 	}
 
 	return nil, nil
 }
 
-func (r *testInitCtxFuncResource) GetDesiredState(ctx context.Context, obj interface{}) (interface{}, error) {
+func (r *testInitCtxFuncResource) GetDesiredState(ctx context.Context, obj interface{}, deleted bool) (interface{}, error) {
 	_, ok := testInitCtxFuncFromContext(ctx)
 	if ok {
 		m := "GetDesiredState"
-		r.Order = append(r.Order, m)
+		r.Order = append(r.Order, fmt.Sprintf("%s(deleted=%t)", m, deleted))
 	}
 
 	return nil, nil
 }
 
-func (r *testInitCtxFuncResource) NewUpdatePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*Patch, error) {
+func (r *testInitCtxFuncResource) NewPatch(ctx context.Context, obj, currentState, desiredState interface{}) (*Patch, error) {
 	_, ok := testInitCtxFuncFromContext(ctx)
 	if ok {
-		m := "NewUpdatePatch"
-		r.Order = append(r.Order, m)
-	}
-
-	p := NewPatch()
-	p.SetCreateChange("test create state")
-	p.SetUpdateChange("test update state")
-	p.SetDeleteChange("test delete state")
-	return p, nil
-}
-
-func (r *testInitCtxFuncResource) NewDeletePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*Patch, error) {
-	_, ok := testInitCtxFuncFromContext(ctx)
-	if ok {
-		m := "NewDeletePatch"
+		m := "NewPatch"
 		r.Order = append(r.Order, m)
 	}
 

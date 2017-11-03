@@ -19,38 +19,44 @@ type Resource interface {
 	Underlying() Resource
 
 	// GetCurrentState receives the custom object observed during custom
-	// resource watches. Its purpose is to return the current state of the
-	// resources being managed by the operator. This can e.g. be some
-	// actual data within a configmap as provided by the Kubernetes API.
-	// This is not limited to Kubernetes resources though. Another example
-	// would be to fetch and return information about Flannel bridges.
+	// resource watches. It also receives deleted parameter indicating
+	// wheather the object was deleted or updated. Its purpose is to return
+	// the current state of the resources being managed by the operator.
+	// This can e.g. be some actual data within a configmap as provided by
+	// the Kubernetes API.  This is not limited to Kubernetes resources
+	// though. Another example would be to fetch and return information
+	// about Flannel bridges.
 	//
-	// NOTE GetCurrentState is called on create, delete and update events. When
-	// called on create and delete events the provided custom object will be the
-	// custom object currently known to the informer. On update events the
-	// informer knows about the old and the new custom object. GetCurrentState
-	// then receives the new custom object to be able to consume the current state
-	// of a system.
-	GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error)
+	// NOTE deleted parameter is most likely ignored in GetCurrentState. It
+	// is there for definition compatibility with GetDesiredState.
+	//
+	// NOTE GetCurrentState is called on add, modify and delete events. On
+	// add event the delete parameter is false, and the object is the
+	// object being added.  On modify event the delete parameter is false,
+	// and the object is in the observed updated version.  On delete event
+	// the delete parameter is true and the object is in last state
+	// observed before deletion.
+	GetCurrentState(ctx context.Context, obj interface{}, deleted bool) (interface{}, error)
 	// GetDesiredState receives the custom object observed during custom
-	// resource watches. Its purpose is to return the desired state of the
-	// resources being managed by the operator. The desired state should
-	// always be able to be made up using the information provided by the
-	// custom object. This can e.g. be some data within a configmap, how it
-	// should be provided by the Kubernetes API. This is not limited to
-	// Kubernetes resources though. Another example would be to make up and
-	// return information about Flannel bridges, how they should look like
-	// on a server host.
+	// resource watches. It also receives deleted parameter indicating wheather
+	// the object was deleted or updated. Its purpose is to return the
+	// desired state of the resources being managed by the operator. The
+	// desired state should always be able to be made up using the
+	// information provided by the custom object. This can e.g. be some
+	// data within a configmap, how it should be provided by the Kubernetes
+	// API. This is not limited to Kubernetes resources though. Another
+	// example would be to make up and return information about Flannel
+	// bridges, how they should look like on a server host.
 	//
-	// NOTE GetDesiredState is called on create, delete and update events.
-	// When called on create events the provided custom object will be the
-	// custom object currently known to the informer. On update events the
-	// informer knows about the old and the new custom object.
-	// GetDesiredState then receives the new custom object to be able to
-	// compute the desired state of a system.
-	GetDesiredState(ctx context.Context, obj interface{}) (interface{}, error)
+	// NOTE GetDesiredState is called on add, modify and delete events. On
+	// add event the delete parameter is false, and the object is the
+	// object being added. On modify event the delete parameter is false,
+	// and the object is in the observed updated version. On delete event
+	// the delete parameter is true and the object is in last state
+	// observed before deletion.
+	GetDesiredState(ctx context.Context, obj interface{}, deleted bool) (interface{}, error)
 
-	// NewUpdatePatch is callend upon observed custom object change. It receives
+	// NewPatch is callend upon observed custom object change. It receives
 	// the observed custom object, the current state as provided by
 	// GetCurrentState and the desired state as provided by
 	// GetDesiredState. NewUpdatePatch analyses the current and desired
@@ -58,16 +64,7 @@ type Resource interface {
 	// Update functions. ApplyCreateChange, ApplyDeleteChange, and
 	// ApplyUpdateChange are called only when the corresponding patch part
 	// was created.
-	NewUpdatePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*Patch, error)
-	// NewDeletePatch is called upon observed custom object deletion. It
-	// receives the deleted custom object, the current state as provided by
-	// GetCurrentState and the desired state as provided by
-	// GetDesiredState. NewDeletePatch analyses the current and desired
-	// state returns the patch to be applied by Create, Delete, and Update
-	// functions. ApplyCreateChange, ApplyDeleteChange, and
-	// ApplyUpdateChange are called only when the corresponding patch part
-	// was created.
-	NewDeletePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*Patch, error)
+	NewPatch(ctx context.Context, obj, currentState, desiredState interface{}) (*Patch, error)
 
 	// ApplyCreateChange receives the new custom object observed during
 	// custom resource watches. It also receives the create portion of the
