@@ -26,8 +26,14 @@ type Config struct {
 	// within the context initializer function. InitCtxFunc receives the custom
 	// object being reconciled as second argument. Information provided by the
 	// custom object can be used to initialize the context.
-	InitCtxFunc    func(ctx context.Context, obj interface{}) (context.Context, error)
-	Logger         micrologger.Logger
+	InitCtxFunc func(ctx context.Context, obj interface{}) (context.Context, error)
+	Logger      micrologger.Logger
+	// ResourceRouter is to decide which resources to execute. Each custom object
+	// being reconciled is executed against a list of resources. Since custom
+	// objects may differ in version and/or structure the resource router enables
+	// custom inspection before each reconciliation loop. That way whole resources
+	// can be versioned and different resources can be executed depending on the
+	// custom object being reconciled.
 	ResourceRouter func(ctx context.Context, obj interface{}) ([]Resource, error)
 }
 
