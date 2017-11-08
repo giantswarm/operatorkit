@@ -280,7 +280,7 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 			}
 		}
 
-		if canceledcontext.IsCanceled(ctx) {
+		if canceledcontext.IsCanceled(ctx) || patch == nil {
 			return nil
 		}
 		deleteChange, ok := patch.getDeleteChange()
@@ -386,7 +386,7 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 
 		// Apply the patch.
 
-		if canceledcontext.IsCanceled(ctx) {
+		if canceledcontext.IsCanceled(ctx) || patch == nil {
 			return nil
 		}
 		createState, ok := patch.getCreateChange()
