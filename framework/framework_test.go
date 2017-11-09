@@ -692,7 +692,7 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 		err := tc.ProcessMethod(tc.Ctx, nil, tc.Resources)
 		if err != nil {
 			if tc.ErrorMatcher == nil {
-				t.Fatal("test", i+1, "expected", "error matcher", "got", nil)
+				t.Fatal("test", i+1, "expected", nil, "got", "error matcher")
 			} else if !tc.ErrorMatcher(err) {
 				t.Fatal("test", i+1, "expected", true, "got", false)
 			}
@@ -764,7 +764,7 @@ func (r *testResource) NewUpdatePatch(ctx context.Context, obj, currentState, de
 	if r.CancelingStep == m {
 		canceledcontext.SetCanceled(ctx)
 		if canceledcontext.IsCanceled(ctx) {
-			return nil, nil
+			return NewPatch(), nil
 		}
 	}
 
@@ -790,7 +790,7 @@ func (r *testResource) NewDeletePatch(ctx context.Context, obj, currentState, de
 	if r.CancelingStep == m {
 		canceledcontext.SetCanceled(ctx)
 		if canceledcontext.IsCanceled(ctx) {
-			return nil, nil
+			return NewPatch(), nil
 		}
 	}
 
