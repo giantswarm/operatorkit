@@ -267,6 +267,10 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 			return microerror.Mask(err)
 		}
 
+		if patch == nil {
+			return microerror.Maskf(executionFailedError, "patch must not be nil")
+		}
+
 		// Apply the patch.
 
 		if canceledcontext.IsCanceled(ctx) {
@@ -280,7 +284,7 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 			}
 		}
 
-		if canceledcontext.IsCanceled(ctx) || patch == nil {
+		if canceledcontext.IsCanceled(ctx) {
 			return nil
 		}
 		deleteChange, ok := patch.getDeleteChange()
@@ -384,9 +388,13 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 			return microerror.Mask(err)
 		}
 
+		if patch == nil {
+			return microerror.Maskf(executionFailedError, "patch must not be nil")
+		}
+
 		// Apply the patch.
 
-		if canceledcontext.IsCanceled(ctx) || patch == nil {
+		if canceledcontext.IsCanceled(ctx) {
 			return nil
 		}
 		createState, ok := patch.getCreateChange()
