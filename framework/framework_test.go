@@ -764,7 +764,7 @@ func (r *testResource) NewUpdatePatch(ctx context.Context, obj, currentState, de
 	if r.CancelingStep == m {
 		canceledcontext.SetCanceled(ctx)
 		if canceledcontext.IsCanceled(ctx) {
-			return nil, nil
+			return NewPatch(), nil
 		}
 	}
 
@@ -790,7 +790,7 @@ func (r *testResource) NewDeletePatch(ctx context.Context, obj, currentState, de
 	if r.CancelingStep == m {
 		canceledcontext.SetCanceled(ctx)
 		if canceledcontext.IsCanceled(ctx) {
-			return nil, nil
+			return NewPatch(), nil
 		}
 	}
 
