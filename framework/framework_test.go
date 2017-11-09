@@ -692,7 +692,7 @@ func Test_Framework_ResourceCallOrder(t *testing.T) {
 		err := tc.ProcessMethod(tc.Ctx, nil, tc.Resources)
 		if err != nil {
 			if tc.ErrorMatcher == nil {
-				t.Fatal("test", i+1, "expected", "error matcher", "got", nil)
+				t.Fatal("test", i+1, "expected", nil, "got", "error matcher")
 			} else if !tc.ErrorMatcher(err) {
 				t.Fatal("test", i+1, "expected", true, "got", false)
 			}
