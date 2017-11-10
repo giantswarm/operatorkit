@@ -28,7 +28,13 @@ type Config struct {
 	// custom object can be used to initialize the context.
 	InitCtxFunc func(ctx context.Context, obj interface{}) (context.Context, error)
 	Logger      micrologger.Logger
-	Resources   []Resource
+	// ResourceRouter is to decide which resources to execute. Each custom object
+	// being reconciled is executed against a list of resources. Since custom
+	// objects may differ in version and/or structure the resource router enables
+	// custom inspection before each reconciliation loop. That way whole resources
+	// can be versioned and different resources can be executed depending on the
+	// custom object being reconciled.
+	ResourceRouter func(ctx context.Context, obj interface{}) ([]Resource, error)
 }
 
 // DefaultConfig provides a default configuration to create a new operator
@@ -36,19 +42,19 @@ type Config struct {
 func DefaultConfig() Config {
 	return Config{
 		// Dependencies.
-		BackOff:     nil,
-		InitCtxFunc: nil,
-		Logger:      nil,
-		Resources:   nil,
+		BackOff:        nil,
+		InitCtxFunc:    nil,
+		Logger:         nil,
+		ResourceRouter: nil,
 	}
 }
 
 type Framework struct {
 	// Dependencies.
-	backOff     backoff.BackOff
-	initializer func(ctx context.Context, obj interface{}) (context.Context, error)
-	logger      micrologger.Logger
-	resources   []Resource
+	backOff        backoff.BackOff
+	initializer    func(ctx context.Context, obj interface{}) (context.Context, error)
+	logger         micrologger.Logger
+	resourceRouter func(ctx context.Context, obj interface{}) ([]Resource, error)
 
 	// Internals.
 	mutex sync.Mutex
@@ -63,16 +69,16 @@ func New(config Config) (*Framework, error) {
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
 	}
-	if len(config.Resources) == 0 {
-		return nil, microerror.Maskf(invalidConfigError, "config.Resources must not be empty")
+	if config.ResourceRouter == nil {
+		return nil, microerror.Maskf(invalidConfigError, "config.ResourceRouter must not be empty")
 	}
 
 	newFramework := &Framework{
 		// Dependencies.
-		backOff:     config.BackOff,
-		initializer: config.InitCtxFunc,
-		logger:      config.Logger,
-		resources:   config.Resources,
+		backOff:        config.BackOff,
+		initializer:    config.InitCtxFunc,
+		logger:         config.Logger,
+		resourceRouter: config.ResourceRouter,
 
 		// Internals.
 		mutex: sync.Mutex{},
@@ -103,9 +109,15 @@ func (f *Framework) AddFunc(obj interface{}) {
 		}
 	}
 
+	rs, err := f.resourceRouter(ctx, obj)
+	if err != nil {
+		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "create")
+		return
+	}
+
 	f.logger.Log("action", "start", "component", "operatorkit", "function", "ProcessCreate")
 
-	err := ProcessCreate(ctx, obj, f.resources)
+	err = ProcessCreate(ctx, obj, rs)
 	if err != nil {
 		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "create")
 		return
@@ -136,9 +148,15 @@ func (f *Framework) DeleteFunc(obj interface{}) {
 		}
 	}
 
+	rs, err := f.resourceRouter(ctx, obj)
+	if err != nil {
+		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "delete")
+		return
+	}
+
 	f.logger.Log("action", "start", "component", "operatorkit", "function", "ProcessDelete")
 
-	err := ProcessDelete(ctx, obj, f.resources)
+	err = ProcessDelete(ctx, obj, rs)
 	if err != nil {
 		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "delete")
 		return
@@ -179,14 +197,20 @@ func (f *Framework) UpdateFunc(oldObj, newObj interface{}) {
 		var err error
 		ctx, err = f.initializer(ctx, obj)
 		if err != nil {
-			f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "create")
+			f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "update")
 			return
 		}
 	}
 
+	rs, err := f.resourceRouter(ctx, obj)
+	if err != nil {
+		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "update")
+		return
+	}
+
 	f.logger.Log("action", "start", "component", "operatorkit", "function", "ProcessUpdate")
 
-	err := ProcessUpdate(ctx, obj, f.resources)
+	err = ProcessUpdate(ctx, obj, rs)
 	if err != nil {
 		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "update")
 		return
