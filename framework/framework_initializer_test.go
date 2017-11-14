@@ -7,6 +7,8 @@ import (
 
 	"github.com/cenk/backoff"
 	"github.com/giantswarm/micrologger/microloggertest"
+	"github.com/giantswarm/operatorkit/informer/informertest"
+	"github.com/giantswarm/operatorkit/tpr/tprtest"
 )
 
 func Test_Framework_InitCtxFunc_AddFunc(t *testing.T) {
@@ -46,12 +48,14 @@ func Test_Framework_InitCtxFunc_AddFunc(t *testing.T) {
 		{
 			c := DefaultConfig()
 
-			c.BackOff = &backoff.StopBackOff{}
+			c.BackOffFactory = func() backoff.BackOff { return &backoff.StopBackOff{} }
+			c.Informer = informertest.New()
 			c.InitCtxFunc = tc.InitCtxFunc
 			c.Logger = microloggertest.New()
 			c.ResourceRouter = DefaultResourceRouter([]Resource{
 				r,
 			})
+			c.TPR = tprtest.New()
 
 			var err error
 			f, err = New(c)
@@ -105,12 +109,14 @@ func Test_Framework_InitCtxFunc_DeleteFunc(t *testing.T) {
 		{
 			c := DefaultConfig()
 
-			c.BackOff = &backoff.StopBackOff{}
+			c.BackOffFactory = func() backoff.BackOff { return &backoff.StopBackOff{} }
+			c.Informer = informertest.New()
 			c.InitCtxFunc = tc.InitCtxFunc
 			c.Logger = microloggertest.New()
 			c.ResourceRouter = DefaultResourceRouter([]Resource{
 				r,
 			})
+			c.TPR = tprtest.New()
 
 			var err error
 			f, err = New(c)
@@ -164,12 +170,14 @@ func Test_Framework_InitCtxFunc_UpdateFunc(t *testing.T) {
 		{
 			c := DefaultConfig()
 
-			c.BackOff = &backoff.StopBackOff{}
+			c.BackOffFactory = func() backoff.BackOff { return &backoff.StopBackOff{} }
+			c.Informer = informertest.New()
 			c.InitCtxFunc = tc.InitCtxFunc
 			c.Logger = microloggertest.New()
 			c.ResourceRouter = DefaultResourceRouter([]Resource{
 				r,
 			})
+			c.TPR = tprtest.New()
 
 			var err error
 			f, err = New(c)
