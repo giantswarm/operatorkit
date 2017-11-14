@@ -49,7 +49,7 @@ func Test_Framework_InitCtxFunc_AddFunc(t *testing.T) {
 			c.BackOff = &backoff.StopBackOff{}
 			c.InitCtxFunc = tc.InitCtxFunc
 			c.Logger = microloggertest.New()
-			c.ResourceRouter = NewDefaultResourceRouter([]Resource{
+			c.ResourceRouter = DefaultResourceRouter([]Resource{
 				r,
 			})
 
@@ -108,7 +108,7 @@ func Test_Framework_InitCtxFunc_DeleteFunc(t *testing.T) {
 			c.BackOff = &backoff.StopBackOff{}
 			c.InitCtxFunc = tc.InitCtxFunc
 			c.Logger = microloggertest.New()
-			c.ResourceRouter = NewDefaultResourceRouter([]Resource{
+			c.ResourceRouter = DefaultResourceRouter([]Resource{
 				r,
 			})
 
@@ -167,7 +167,7 @@ func Test_Framework_InitCtxFunc_UpdateFunc(t *testing.T) {
 			c.BackOff = &backoff.StopBackOff{}
 			c.InitCtxFunc = tc.InitCtxFunc
 			c.Logger = microloggertest.New()
-			c.ResourceRouter = NewDefaultResourceRouter([]Resource{
+			c.ResourceRouter = DefaultResourceRouter([]Resource{
 				r,
 			})
 
