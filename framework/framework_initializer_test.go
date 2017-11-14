@@ -52,7 +52,7 @@ func Test_Framework_InitCtxFunc_AddFunc(t *testing.T) {
 			c.Informer = informertest.New()
 			c.InitCtxFunc = tc.InitCtxFunc
 			c.Logger = microloggertest.New()
-			c.ResourceRouter = NewDefaultResourceRouter([]Resource{
+			c.ResourceRouter = DefaultResourceRouter([]Resource{
 				r,
 			})
 			c.TPR = tprtest.New()
@@ -113,7 +113,7 @@ func Test_Framework_InitCtxFunc_DeleteFunc(t *testing.T) {
 			c.Informer = informertest.New()
 			c.InitCtxFunc = tc.InitCtxFunc
 			c.Logger = microloggertest.New()
-			c.ResourceRouter = NewDefaultResourceRouter([]Resource{
+			c.ResourceRouter = DefaultResourceRouter([]Resource{
 				r,
 			})
 			c.TPR = tprtest.New()
@@ -174,7 +174,7 @@ func Test_Framework_InitCtxFunc_UpdateFunc(t *testing.T) {
 			c.Informer = informertest.New()
 			c.InitCtxFunc = tc.InitCtxFunc
 			c.Logger = microloggertest.New()
-			c.ResourceRouter = NewDefaultResourceRouter([]Resource{
+			c.ResourceRouter = DefaultResourceRouter([]Resource{
 				r,
 			})
 			c.TPR = tprtest.New()
