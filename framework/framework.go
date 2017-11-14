@@ -22,8 +22,8 @@ import (
 type Config struct {
 	// Dependencies.
 
-	BackOff  backoff.BackOff
-	Informer informer.Interface
+	BackOffFactory func() backoff.BackOff
+	Informer       informer.Interface
 	// InitCtxFunc is to prepare the given context for a single reconciliation
 	// loop. Operators can implement common context packages to enable
 	// communication between resources. These context packages can be set up
@@ -47,7 +47,7 @@ type Config struct {
 func DefaultConfig() Config {
 	return Config{
 		// Dependencies.
-		BackOff:        nil,
+		BackOffFactory: nil,
 		Informer:       nil,
 		InitCtxFunc:    nil,
 		Logger:         nil,
@@ -58,7 +58,7 @@ func DefaultConfig() Config {
 
 type Framework struct {
 	// Dependencies.
-	backOff        backoff.BackOff
+	backOffFactory func() backoff.BackOff
 	informer       informer.Interface
 	initCtxFunc    func(ctx context.Context, obj interface{}) (context.Context, error)
 	logger         micrologger.Logger
@@ -73,8 +73,8 @@ type Framework struct {
 // New creates a new configured operator framework.
 func New(config Config) (*Framework, error) {
 	// Dependencies.
-	if config.BackOff == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.BackOff must not be empty")
+	if config.BackOffFactory == nil {
+		return nil, microerror.Maskf(invalidConfigError, "config.BackOffFactory must not be empty")
 	}
 	if config.Informer == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Informer must not be empty")
@@ -91,7 +91,7 @@ func New(config Config) (*Framework, error) {
 
 	f := &Framework{
 		// Dependencies.
-		backOff:        config.BackOff,
+		backOffFactory: config.BackOffFactory,
 		informer:       config.Informer,
 		initCtxFunc:    config.InitCtxFunc,
 		logger:         config.Logger,
@@ -160,7 +160,7 @@ func (f *Framework) Boot() {
 			f.logger.Log("warning", fmt.Sprintf("retrying operator boot due to error: %#v", microerror.Mask(err)))
 		}
 
-		err := backoff.RetryNotify(operation, f.backOff, notifier)
+		err := backoff.RetryNotify(operation, f.backOffFactory(), notifier)
 		if err != nil {
 			f.logger.Log("error", fmt.Sprintf("stop operator boot retries due to too many errors: %#v", microerror.Mask(err)))
 			os.Exit(1)
@@ -396,12 +396,13 @@ func (f *Framework) ProcessEvents(ctx context.Context, deleteChan chan watch.Eve
 	}
 
 	notifier := func(err error, d time.Duration) {
-		f.logger.Log("error", fmt.Sprintf("%#v", err))
+		f.logger.Log("warning", fmt.Sprintf("retrying operator event processing due to error: %#v", microerror.Mask(err)))
 	}
 
-	err := backoff.RetryNotify(operation, f.backOff, notifier)
+	err := backoff.RetryNotify(operation, f.backOffFactory(), notifier)
 	if err != nil {
-		f.logger.Log("error", fmt.Sprintf("%#v", err))
+		f.logger.Log("error", fmt.Sprintf("stop operator event processing retries due to too many errors: %#v", microerror.Mask(err)))
+		os.Exit(1)
 	}
 }
 

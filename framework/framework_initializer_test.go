@@ -48,7 +48,7 @@ func Test_Framework_InitCtxFunc_AddFunc(t *testing.T) {
 		{
 			c := DefaultConfig()
 
-			c.BackOff = &backoff.StopBackOff{}
+			c.BackOffFactory = func() backoff.BackOff { return &backoff.StopBackOff{} }
 			c.Informer = informertest.New()
 			c.InitCtxFunc = tc.InitCtxFunc
 			c.Logger = microloggertest.New()
@@ -109,7 +109,7 @@ func Test_Framework_InitCtxFunc_DeleteFunc(t *testing.T) {
 		{
 			c := DefaultConfig()
 
-			c.BackOff = &backoff.StopBackOff{}
+			c.BackOffFactory = func() backoff.BackOff { return &backoff.StopBackOff{} }
 			c.Informer = informertest.New()
 			c.InitCtxFunc = tc.InitCtxFunc
 			c.Logger = microloggertest.New()
@@ -170,7 +170,7 @@ func Test_Framework_InitCtxFunc_UpdateFunc(t *testing.T) {
 		{
 			c := DefaultConfig()
 
-			c.BackOff = &backoff.StopBackOff{}
+			c.BackOffFactory = func() backoff.BackOff { return &backoff.StopBackOff{} }
 			c.Informer = informertest.New()
 			c.InitCtxFunc = tc.InitCtxFunc
 			c.Logger = microloggertest.New()
