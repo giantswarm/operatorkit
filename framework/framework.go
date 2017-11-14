@@ -39,7 +39,12 @@ type Config struct {
 	// can be versioned and different resources can be executed depending on the
 	// custom object being reconciled.
 	ResourceRouter func(ctx context.Context, obj interface{}) ([]Resource, error)
-	TPR            tpr.Interface
+	// TPR can be provided to ensure a third party resource exists. When given the
+	// boot process of the framework ensures the TPR is created before starting
+	// the conciliation.
+	//
+	// NOTE this is deprecated since the CRD concept is the successor of the TPR.
+	TPR tpr.Interface
 }
 
 // DefaultConfig provides a default configuration to create a new operator
@@ -84,9 +89,6 @@ func New(config Config) (*Framework, error) {
 	}
 	if config.ResourceRouter == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.ResourceRouter must not be empty")
-	}
-	if config.TPR == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.TPR must not be empty")
 	}
 
 	f := &Framework{
@@ -499,11 +501,13 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 }
 
 func (f *Framework) bootWithError() error {
-	err := f.tpr.CreateAndWait()
-	if tpr.IsAlreadyExists(err) {
-		f.logger.Log("debug", "third party resource already exists")
-	} else if err != nil {
-		return microerror.Mask(err)
+	if f.tpr != nil {
+		err := f.tpr.CreateAndWait()
+		if tpr.IsAlreadyExists(err) {
+			f.logger.Log("debug", "third party resource already exists")
+		} else if err != nil {
+			return microerror.Mask(err)
+		}
 	}
 
 	f.logger.Log("debug", "starting list/watch")
