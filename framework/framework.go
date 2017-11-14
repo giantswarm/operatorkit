@@ -502,11 +502,15 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 
 func (f *Framework) bootWithError() error {
 	if f.tpr != nil {
+		f.logger.Log("debug", "ensuring third party resource exists")
+
 		err := f.tpr.CreateAndWait()
 		if tpr.IsAlreadyExists(err) {
 			f.logger.Log("debug", "third party resource already exists")
 		} else if err != nil {
 			return microerror.Mask(err)
+		} else {
+			f.logger.Log("debug", "created third party resource")
 		}
 	}
 
