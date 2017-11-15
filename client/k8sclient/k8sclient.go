@@ -1,11 +1,12 @@
-package crdclient
+package k8sclient
 
 import (
 	"net/url"
 
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
@@ -37,9 +38,20 @@ type Config struct {
 // DefaultConfig provides a default configuration to create a new Kubernetes
 // Clientset by best effort.
 func DefaultConfig() Config {
+	var err error
+
+	var newLogger micrologger.Logger
+	{
+		config := micrologger.DefaultConfig()
+		newLogger, err = micrologger.New(config)
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	return Config{
 		// Dependencies.
-		Logger: nil,
+		Logger: newLogger,
 
 		// Settings.
 		Address:   "",
@@ -48,8 +60,8 @@ func DefaultConfig() Config {
 	}
 }
 
-// New returns a CRD Clientset set up with the provided configuration.
-func New(config Config) (apiextensionsclient.Interface, error) {
+// New returns a Kubernetes Clientset with the provided configuration.
+func New(config Config) (kubernetes.Interface, error) {
 	// Dependencies.
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
@@ -58,6 +70,14 @@ func New(config Config) (apiextensionsclient.Interface, error) {
 	// Settings.
 	if config.Address == "" && !config.InCluster {
 		return nil, microerror.Maskf(invalidConfigError, "config.Address must not be empty when not creating in-cluster client")
+	}
+
+	if config.Address != "" {
+		_, err := url.Parse(config.Address)
+		if err != nil {
+			return nil, microerror.Maskf(invalidConfigError,
+				"config.Address=%s must be a valid URL: %s", config.Address, err)
+		}
 	}
 
 	var err error
@@ -73,12 +93,6 @@ func New(config Config) (apiextensionsclient.Interface, error) {
 	} else {
 		config.Logger.Log("debug", "creating out-cluster config")
 
-		// Kubernetes listen URL.
-		_, err := url.Parse(config.Address)
-		if err != nil {
-			return nil, microerror.Mask(err)
-		}
-
 		restConfig = &rest.Config{
 			Host: config.Address,
 			TLSClientConfig: rest.TLSClientConfig{
@@ -92,10 +106,10 @@ func New(config Config) (apiextensionsclient.Interface, error) {
 	restConfig.Burst = MaxBurst
 	restConfig.QPS = MaxQPS
 
-	newClient, err := apiextensionsclient.NewForConfig(restConfig)
+	client, err := kubernetes.NewForConfig(restConfig)
 	if err != nil {
-		return nil, microerror.Mask(err)
+		return nil, err
 	}
 
-	return newClient, nil
+	return client, nil
 }

@@ -41,6 +41,7 @@ const (
 // Config represents the configuration used to create a new Informer.
 type Config struct {
 	// Dependencies.
+
 	BackOff        backoff.BackOff
 	WatcherFactory WatcherFactory
 
@@ -309,8 +310,6 @@ func (i *Informer) fillCache(ctx context.Context, eventChan chan watch.Event) er
 			return nil
 		}
 	}
-
-	return nil
 }
 
 // isCachedFilled checks whether the informer cache is filled.
@@ -392,8 +391,6 @@ func (i *Informer) streamEvents(ctx context.Context, eventChan chan watch.Event)
 			}
 		}
 	}
-
-	return nil
 }
 
 // uncacheAndSend sends the received event to the provided delete channel and

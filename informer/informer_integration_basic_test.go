@@ -15,6 +15,8 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 	testSetup(t)
 	defer testTeardown(t)
 
+	const timeDelta = time.Millisecond * 100
+
 	objectIDOne := "al7qy"
 	objectIDTwo := "al8qy"
 
@@ -73,9 +75,9 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 			testAssertCROWithID(t, e, objectIDTwo)
 		}
 
-		d := time.Now().Sub(start)
-		if d.Seconds() > 0.1 {
-			t.Fatalf("expected %#v got %#v", "round about 0.1 second", d.Seconds())
+		d := time.Since(start)
+		if !durationEquals(0, d, timeDelta) {
+			t.Fatalf("expected %#v got %#v", "round about 0 seconds", d.Seconds())
 		}
 	}
 
@@ -93,8 +95,8 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 			testAssertCROWithID(t, e, objectIDOne, objectIDTwo)
 		}
 
-		d := time.Now().Sub(start)
-		if d.Seconds() > 10.1 {
+		d := time.Since(start)
+		if !durationEquals(10*time.Second, d, timeDelta) {
 			t.Fatalf("expected %#v got %#v", "round about 10 seconds", d.Seconds())
 		}
 	}
@@ -113,8 +115,8 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 			testAssertCROWithID(t, e, objectIDOne, objectIDTwo)
 		}
 
-		d := time.Now().Sub(start)
-		if d.Seconds() > 2.1 {
+		d := time.Since(start)
+		if !durationEquals(2*time.Second, d, timeDelta) {
 			t.Fatalf("expected %#v got %#v", "round about 2 seconds", d.Seconds())
 		}
 	}
@@ -133,9 +135,9 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 			t.Fatalf("expected delete event got update event")
 		}
 
-		d := time.Now().Sub(start)
-		if d.Seconds() > 0.1 {
-			t.Fatalf("expected %#v got %#v", "round about 0.1 second", d.Seconds())
+		d := time.Since(start)
+		if !durationEquals(0, d, timeDelta) {
+			t.Fatalf("expected %#v got %#v", "round about 0 seconds", d.Seconds())
 		}
 	}
 
@@ -151,11 +153,22 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 			testAssertCROWithID(t, e, objectIDTwo)
 		}
 
-		d := time.Now().Sub(start)
-		if d.Seconds() > 10.1 {
+		d := time.Since(start)
+		if !durationEquals(10*time.Second, d, timeDelta) {
 			t.Fatalf("expected %#v got %#v", "round about 10 seconds", d.Seconds())
 		}
 	}
 
 	cancelFunc()
+}
+
+func durationEquals(expected, actual, delta time.Duration) bool {
+	var diff time.Duration
+	if expected > actual {
+		diff = expected - actual
+	} else {
+		diff = actual - expected
+	}
+
+	return diff < delta
 }
