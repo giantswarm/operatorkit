@@ -7,7 +7,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
 	"github.com/giantswarm/microerror"
-	"github.com/giantswarm/micrologger"
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/rest"
 )
@@ -28,10 +27,6 @@ type TLSClientConfig struct {
 
 // Config contains the common attributes to create a Kubernetes Clientset.
 type Config struct {
-	// Dependencies.
-
-	Logger micrologger.Logger
-
 	// Settings
 
 	Address   string
@@ -48,10 +43,6 @@ type Config struct {
 // Clientset by best effort.
 func DefaultConfig() Config {
 	return Config{
-		// Dependencies.
-
-		Logger: nil,
-
 		// Settings.
 
 		Address:   "",
@@ -63,11 +54,6 @@ func DefaultConfig() Config {
 }
 
 func (c Config) Validate() error {
-	// Dependencies.
-	if c.Logger == nil {
-		return microerror.Maskf(invalidConfigError, "Logger must not be empty")
-	}
-
 	// Settings.
 	if c.Address == "" && !c.InCluster {
 		return microerror.Maskf(invalidConfigError, "Address must not be empty when not creating in-cluster client")
