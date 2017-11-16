@@ -2,6 +2,7 @@ package tpr
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/cenkalti/backoff"
@@ -130,6 +131,9 @@ type TPR struct {
 	logger    micrologger.Logger
 
 	// Internals.
+	listFunc          func(options apismetav1.ListOptions) (runtime.Object, error)
+	watchFunc         func(options apismetav1.ListOptions) (watch.Interface, error)
+	zeroObjectFactory ZeroObjectFactory
 
 	// apiVersion is group/version.
 	apiVersion   string
@@ -213,36 +217,48 @@ func (t *TPR) CreateAndWaitBackOff(initBackOff backoff.BackOff) error {
 	return nil
 }
 
+func (t *TPR) newListFunc(zeroObjectFactory ZeroObjectFactory) func(options apismetav1.ListOptions) (runtime.Object, error) {
+	return func(options apismetav1.ListOptions) (runtime.Object, error) {
+		t.logger.Log("debug", "executing the reconciler's list function", "event", "list")
+
+		req := t.k8sClient.Core().RESTClient().Get().AbsPath(t.Endpoint(""))
+		b, err := req.DoRaw()
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+
+		v := zeroObjectFactory.NewObjectList()
+		if err := json.Unmarshal(b, v); err != nil {
+			return nil, microerror.Mask(err)
+		}
+
+		return v, nil
+	}
+}
+
+func (t *TPR) newWatchFunc(zeroObjectFactory ZeroObjectFactory) func(options apismetav1.ListOptions) (watch.Interface, error) {
+	return func(options apismetav1.ListOptions) (watch.Interface, error) {
+		t.logger.Log("debug", "executing the reconciler's watch function", "event", "watch")
+
+		req := t.k8sClient.CoreV1().RESTClient().Get().AbsPath(t.WatchEndpoint(""))
+		stream, err := req.Stream()
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+
+		watcher := watch.NewStreamWatcher(newDecoder(stream, zeroObjectFactory))
+		return watcher, nil
+	}
+}
+
 func (t *TPR) NewInformer(resourceEventHandler cache.ResourceEventHandler, zeroObjectFactory ZeroObjectFactory) cache.Controller {
+	t.listFunc = t.newListFunc(zeroObjectFactory)
+	t.watchFunc = t.newWatchFunc(zeroObjectFactory)
+	t.zeroObjectFactory = zeroObjectFactory
+
 	listWatch := &cache.ListWatch{
-		ListFunc: func(options apismetav1.ListOptions) (runtime.Object, error) {
-			t.logger.Log("debug", "executing the reconciler's list function", "event", "list")
-
-			req := t.k8sClient.Core().RESTClient().Get().AbsPath(t.Endpoint(""))
-			b, err := req.DoRaw()
-			if err != nil {
-				return nil, microerror.Mask(err)
-			}
-
-			v := zeroObjectFactory.NewObjectList()
-			if err := json.Unmarshal(b, v); err != nil {
-				return nil, microerror.Mask(err)
-			}
-
-			return v, nil
-		},
-		WatchFunc: func(options apismetav1.ListOptions) (watch.Interface, error) {
-			t.logger.Log("debug", "executing the reconciler's watch function", "event", "watch")
-
-			req := t.k8sClient.CoreV1().RESTClient().Get().AbsPath(t.WatchEndpoint(""))
-			stream, err := req.Stream()
-			if err != nil {
-				return nil, microerror.Mask(err)
-			}
-
-			watcher := watch.NewStreamWatcher(newDecoder(stream, zeroObjectFactory))
-			return watcher, nil
-		},
+		ListFunc:  t.listFunc,
+		WatchFunc: t.watchFunc,
 	}
 
 	_, informer := cache.NewInformer(listWatch, zeroObjectFactory.NewObject(), t.resyncPeriod, resourceEventHandler)
@@ -296,4 +312,21 @@ func (t *TPR) waitInit(retry backoff.BackOff) error {
 		err = tprInitTimeoutError
 	}
 	return microerror.Maskf(err, "requesting TPR %s", t.name)
+}
+
+func (t *TPR) StartMetrics() {
+	go func() {
+		ticker := time.NewTicker(time.Second * 5)
+
+		for range ticker.C {
+			list, err := t.listFunc(apismetav1.ListOptions{})
+			if err != nil {
+				t.logger.Log("error", "could not list objects for metrics", "message", err.Error())
+				continue
+			}
+
+			// TODO: set metrics.
+			t.logger.Log("info", fmt.Sprintf("%#v", list))
+		}
+	}()
 }
