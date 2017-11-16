@@ -60,7 +60,7 @@ func DefaultConfig() Config {
 	}
 }
 
-// New returns a Kubernetes Clientset with the provided configuration.
+// New is DEPRECATED.
 func New(config Config) (kubernetes.Interface, error) {
 	// Dependencies.
 	if config.Logger == nil {

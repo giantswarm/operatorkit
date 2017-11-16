@@ -48,8 +48,7 @@ func DefaultConfig() Config {
 	}
 }
 
-// New returns a Kubernetes extensions API Clientset with the provided
-// configuration.
+// New is DEPRECATED.
 func New(config Config) (apiextensionsclient.Interface, error) {
 	// Dependencies.
 	if config.Logger == nil {
