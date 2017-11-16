@@ -22,7 +22,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cenk/backoff"
 	"github.com/giantswarm/microerror"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/watch"
@@ -42,7 +41,6 @@ const (
 type Config struct {
 	// Dependencies.
 
-	BackOff        backoff.BackOff
 	WatcherFactory WatcherFactory
 
 	// Settings.
@@ -61,7 +59,6 @@ type Config struct {
 func DefaultConfig() Config {
 	return Config{
 		// Dependencies.
-		BackOff:        nil,
 		WatcherFactory: nil,
 
 		// Settings.
@@ -74,7 +71,6 @@ func DefaultConfig() Config {
 // in a deterministic way.
 type Informer struct {
 	// Dependencies.
-	backOff        backoff.BackOff
 	watcherFactory WatcherFactory
 
 	// Internals.
@@ -89,9 +85,6 @@ type Informer struct {
 // New creates a new Informer.
 func New(config Config) (*Informer, error) {
 	// Dependencies.
-	if config.BackOff == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.BackOff must not be empty")
-	}
 	if config.WatcherFactory == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.WatcherFactory must not be empty")
 	}
@@ -103,7 +96,6 @@ func New(config Config) (*Informer, error) {
 
 	newInformer := &Informer{
 		// Settings.
-		backOff:        config.BackOff,
 		watcherFactory: config.WatcherFactory,
 
 		// Internals.
