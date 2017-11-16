@@ -6,6 +6,7 @@ import (
 
 type Interface interface {
 	CreateAndWait() error
+	StartMetrics()
 }
 
 // ZeroObjectFuncs provides zero values of an object and objects' list ready to

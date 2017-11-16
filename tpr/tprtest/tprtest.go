@@ -9,3 +9,5 @@ func New() *TPRTest {
 func (i *TPRTest) CreateAndWait() error {
 	return nil
 }
+
+func (i *TPRTest) StartMetrics() {}
