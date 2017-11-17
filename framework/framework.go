@@ -516,6 +516,8 @@ func (f *Framework) bootWithError() error {
 		} else {
 			f.logger.Log("debug", "created third party resource")
 		}
+
+		f.tpr.CollectMetrics(context.TODO())
 	}
 
 	f.logger.Log("debug", "starting list/watch")
