@@ -5,7 +5,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func NewRestClient(config Config, group, version string) (rest.Interface, error) {
+func NewRest(config Config) (rest.Interface, error) {
 	err := config.Validate()
 	if err != nil {
 		return nil, microerror.Mask(err)
@@ -26,6 +26,7 @@ func NewRestClient(config Config, group, version string) (rest.Interface, error)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
+	client.Get().Namespace("...").Resource("kvms").DoRaw()
 
 	return client, nil
 }

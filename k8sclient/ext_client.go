@@ -5,7 +5,7 @@ import (
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 )
 
-func NewExtClient(config Config) (apiextensionsclient.Interface, error) {
+func NewExt(config Config) (apiextensionsclient.Interface, error) {
 	err := config.Validate()
 	if err != nil {
 		return nil, microerror.Mask(err)

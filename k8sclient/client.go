@@ -5,7 +5,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func NewClient(config Config) (kubernetes.Interface, error) {
+func New(config Config) (kubernetes.Interface, error) {
 	err := config.Validate()
 	if err != nil {
 		return nil, microerror.Mask(err)
