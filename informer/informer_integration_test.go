@@ -144,7 +144,6 @@ func init() {
 func testNewInformer(t *testing.T, rateWait, resyncPeriod time.Duration) *Informer {
 	c := DefaultConfig()
 
-	c.BackOff = backoff.NewExponentialBackOff()
 	c.WatcherFactory = newWatcherFactory
 
 	c.RateWait = rateWait
