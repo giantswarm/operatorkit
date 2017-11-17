@@ -1,12 +1,12 @@
-hash: da9757a32efee154fde102aa8c8ec1589aac2389c83453635b82268fc1a68d40
-updated: 2017-10-03T14:14:56.365321472+02:00
+hash: 14f39052e4af8f278465730a1f238e28dfb8dfd3644a46de0ba256d4ac4438fc
+updated: 2017-11-17T11:53:50.684956762+01:00
 imports:
 - name: github.com/beorn7/perks
   version: 3ac7bf7a47d159a033b107610db8a1b6575507a4
   subpackages:
   - quantile
 - name: github.com/cenk/backoff
-  version: 61ba96c4d1002f22e06acb8e34a7650611125a63
+  version: 309aa717adbf351e92864cbedf9cca0b769a4b5a
 - name: github.com/cenkalti/backoff
   version: 61153c768f31ee5f130071d08fc82b85208528de
 - name: github.com/davecgh/go-spew
@@ -29,7 +29,7 @@ imports:
 - name: github.com/giantswarm/microerror
   version: 5ade94eb4ee35ef72eb9382228470caeddb29989
 - name: github.com/giantswarm/micrologger
-  version: 8a69b2ab80ba2d0bd40d609206518fefacfc8fdf
+  version: 954d1261928bbb50dc917c629edf0b71db6a1527
   subpackages:
   - microloggertest
 - name: github.com/go-kit/kit
@@ -62,12 +62,7 @@ imports:
 - name: github.com/golang/protobuf
   version: 4bd1920723d7b7c925de087aa32e2187708897f7
   subpackages:
-  - jsonpb
   - proto
-  - ptypes
-  - ptypes/any
-  - ptypes/duration
-  - ptypes/timestamp
 - name: github.com/google/gofuzz
   version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
 - name: github.com/hashicorp/golang-lru
@@ -91,7 +86,7 @@ imports:
   subpackages:
   - pbutil
 - name: github.com/prometheus/client_golang
-  version: 967789050ba94deca04a5e84cce8ad472ce313c1
+  version: 5cec1d0429b02e4323e042eb04dafdb079ddf568
   subpackages:
   - prometheus
 - name: github.com/prometheus/client_model
@@ -122,15 +117,11 @@ imports:
   version: f2499483f923065a842d38eb4c7f1927e6fc6e6d
   subpackages:
   - context
-  - html
-  - html/atom
+  - context/ctxhttp
   - http2
   - http2/hpack
   - idna
-  - internal/timeseries
   - lex/httplex
-  - trace
-  - websocket
 - name: golang.org/x/text
   version: 2910a502d2bf9e43193af9d68ca516529614eed3
   subpackages:
