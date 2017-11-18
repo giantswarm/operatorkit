@@ -10,6 +10,7 @@ import (
 	"github.com/cenk/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
+	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 
@@ -386,9 +387,13 @@ func (f *Framework) ProcessEvents(ctx context.Context, deleteChan chan watch.Eve
 		for {
 			select {
 			case e := <-deleteChan:
+				t := prometheus.NewTimer(frameworkHistogram.WithLabelValues("delete"))
 				f.DeleteFunc(e.Object)
+				t.ObserveDuration()
 			case e := <-updateChan:
+				t := prometheus.NewTimer(frameworkHistogram.WithLabelValues("update"))
 				f.UpdateFunc(nil, e.Object)
+				t.ObserveDuration()
 			case err := <-errChan:
 				return microerror.Mask(err)
 			case <-ctx.Done():
@@ -456,7 +461,6 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 		if err != nil {
 			return microerror.Mask(err)
 		}
-
 		if patch == nil {
 			return microerror.Maskf(executionFailedError, "patch must not be nil")
 		}
@@ -512,6 +516,8 @@ func (f *Framework) bootWithError() error {
 		} else {
 			f.logger.Log("debug", "created third party resource")
 		}
+
+		f.tpr.CollectMetrics(context.TODO())
 	}
 
 	f.logger.Log("debug", "starting list/watch")
