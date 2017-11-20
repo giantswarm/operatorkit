@@ -72,8 +72,10 @@ type Framework struct {
 	tpr            tpr.Interface
 
 	// Internals.
-	bootOnce sync.Once
-	mutex    sync.Mutex
+	addMutex    sync.Mutex
+	bootOnce    sync.Once
+	deleteMutex sync.Mutex
+	updateMutex sync.Mutex
 }
 
 // New creates a new configured operator framework.
@@ -102,8 +104,10 @@ func New(config Config) (*Framework, error) {
 		tpr:            config.TPR,
 
 		// Internals.
-		bootOnce: sync.Once{},
-		mutex:    sync.Mutex{},
+		addMutex:    sync.Mutex{},
+		bootOnce:    sync.Once{},
+		deleteMutex: sync.Mutex{},
+		updateMutex: sync.Mutex{},
 	}
 
 	return f, nil
@@ -116,8 +120,8 @@ func (f *Framework) AddFunc(obj interface{}) {
 	// thread safe. This is important because the source of truth for an
 	// operator are the reconciled resources. In case we would run the
 	// operator logic in parallel, we would run into race conditions.
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
+	f.addMutex.Lock()
+	defer f.addMutex.Unlock()
 
 	ctx := context.Background()
 	ctx = canceledcontext.NewContext(ctx, make(chan struct{}))
@@ -178,8 +182,8 @@ func (f *Framework) DeleteFunc(obj interface{}) {
 	// thread safe. This is important because the source of truth for an
 	// operator are the reconciled resources. In case we would run the
 	// operator logic in parallel, we would run into race conditions.
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
+	f.deleteMutex.Lock()
+	defer f.deleteMutex.Unlock()
 
 	ctx := context.Background()
 	ctx = canceledcontext.NewContext(ctx, make(chan struct{}))
@@ -232,8 +236,8 @@ func (f *Framework) UpdateFunc(oldObj, newObj interface{}) {
 	// thread safe. This is important because the source of truth for an
 	// operator are the reconciled resources. In case we would run the
 	// operator logic in parallel, we would run into race conditions.
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
+	f.updateMutex.Lock()
+	defer f.updateMutex.Unlock()
 
 	ctx := context.Background()
 	ctx = canceledcontext.NewContext(ctx, make(chan struct{}))
