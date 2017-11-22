@@ -2,6 +2,7 @@
 package micrologger
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"github.com/go-stack/stack"
 
 	"github.com/giantswarm/microerror"
+	"github.com/giantswarm/micrologger/loggercontext"
 )
 
 // Config represents the configuration used to create a new logger.
@@ -65,12 +67,31 @@ type logger struct {
 	Logger kitlog.Logger
 }
 
-func (l *logger) With(keyvals ...interface{}) Logger {
-	return &logger{
-		Logger: kitlog.With(l.Logger, keyvals...),
-	}
+func (l *logger) Log(keyVals ...interface{}) error {
+	return l.Logger.Log(keyVals...)
 }
 
-func (l *logger) Log(keyvals ...interface{}) error {
-	return l.Logger.Log(keyvals...)
+func (l *logger) LogWithCtx(ctx context.Context, keyVals ...interface{}) error {
+	container, ok := loggercontext.FromContext(ctx)
+	if !ok {
+		return l.Logger.Log(keyVals...)
+	}
+
+	var newKeyVals []interface{}
+	{
+		newKeyVals = append(newKeyVals, keyVals...)
+
+		for k, v := range container.KeyVals {
+			newKeyVals = append(newKeyVals, k)
+			newKeyVals = append(newKeyVals, v)
+		}
+	}
+
+	return l.Logger.Log(newKeyVals...)
+}
+
+func (l *logger) With(keyVals ...interface{}) Logger {
+	return &logger{
+		Logger: kitlog.With(l.Logger, keyVals...),
+	}
 }
