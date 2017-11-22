@@ -126,32 +126,34 @@ func (f *Framework) AddFunc(obj interface{}) {
 		var err error
 		ctx, err = f.initCtxFunc(ctx, obj)
 		if err != nil {
-			f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "create")
+			f.logger.LogWithCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "create")
 			return
 		}
 	}
 
 	rs, err := f.resourceRouter(ctx, obj)
 	if err != nil {
-		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "create")
+		f.logger.LogWithCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "create")
 		return
 	}
 
-	f.logger.Log("action", "start", "component", "operatorkit", "function", "ProcessCreate")
+	f.logger.LogWithCtx(ctx, "action", "start", "component", "operatorkit", "function", "ProcessCreate")
 
 	err = ProcessCreate(ctx, obj, rs)
 	if err != nil {
-		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "create")
+		f.logger.LogWithCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "create")
 		return
 	}
 
-	f.logger.Log("action", "end", "component", "operatorkit", "function", "ProcessCreate")
+	f.logger.LogWithCtx(ctx, "action", "end", "component", "operatorkit", "function", "ProcessCreate")
 }
 
 func (f *Framework) Boot() {
+	ctx := context.TODO()
+
 	f.bootOnce.Do(func() {
 		operation := func() error {
-			err := f.bootWithError()
+			err := f.bootWithError(ctx)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -160,12 +162,12 @@ func (f *Framework) Boot() {
 		}
 
 		notifier := func(err error, d time.Duration) {
-			f.logger.Log("warning", fmt.Sprintf("retrying operator boot due to error: %#v", microerror.Mask(err)))
+			f.logger.LogWithCtx(ctx, "warning", fmt.Sprintf("retrying operator boot due to error: %#v", microerror.Mask(err)))
 		}
 
 		err := backoff.RetryNotify(operation, f.backOffFactory(), notifier)
 		if err != nil {
-			f.logger.Log("error", fmt.Sprintf("stop operator boot retries due to too many errors: %#v", microerror.Mask(err)))
+			f.logger.LogWithCtx(ctx, "error", fmt.Sprintf("stop operator boot retries due to too many errors: %#v", microerror.Mask(err)))
 			os.Exit(1)
 		}
 	})
@@ -188,26 +190,26 @@ func (f *Framework) DeleteFunc(obj interface{}) {
 		var err error
 		ctx, err = f.initCtxFunc(ctx, obj)
 		if err != nil {
-			f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "delete")
+			f.logger.LogWithCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "delete")
 			return
 		}
 	}
 
 	rs, err := f.resourceRouter(ctx, obj)
 	if err != nil {
-		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "delete")
+		f.logger.LogWithCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "delete")
 		return
 	}
 
-	f.logger.Log("action", "start", "component", "operatorkit", "function", "ProcessDelete")
+	f.logger.LogWithCtx(ctx, "action", "start", "component", "operatorkit", "function", "ProcessDelete")
 
 	err = ProcessDelete(ctx, obj, rs)
 	if err != nil {
-		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "delete")
+		f.logger.LogWithCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "delete")
 		return
 	}
 
-	f.logger.Log("action", "end", "component", "operatorkit", "function", "ProcessDelete")
+	f.logger.LogWithCtx(ctx, "action", "end", "component", "operatorkit", "function", "ProcessDelete")
 }
 
 // NewCacheResourceEventHandler returns the framework's event handler for the
@@ -242,26 +244,26 @@ func (f *Framework) UpdateFunc(oldObj, newObj interface{}) {
 		var err error
 		ctx, err = f.initCtxFunc(ctx, obj)
 		if err != nil {
-			f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "update")
+			f.logger.LogWithCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "update")
 			return
 		}
 	}
 
 	rs, err := f.resourceRouter(ctx, obj)
 	if err != nil {
-		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "update")
+		f.logger.LogWithCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "update")
 		return
 	}
 
-	f.logger.Log("action", "start", "component", "operatorkit", "function", "ProcessUpdate")
+	f.logger.LogWithCtx(ctx, "action", "start", "component", "operatorkit", "function", "ProcessUpdate")
 
 	err = ProcessUpdate(ctx, obj, rs)
 	if err != nil {
-		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "update")
+		f.logger.LogWithCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "update")
 		return
 	}
 
-	f.logger.Log("action", "end", "component", "operatorkit", "function", "ProcessUpdate")
+	f.logger.LogWithCtx(ctx, "action", "end", "component", "operatorkit", "function", "ProcessUpdate")
 }
 
 // ProcessCreate is a drop-in for an informer's AddFunc. It receives the custom
@@ -403,12 +405,12 @@ func (f *Framework) ProcessEvents(ctx context.Context, deleteChan chan watch.Eve
 	}
 
 	notifier := func(err error, d time.Duration) {
-		f.logger.Log("warning", fmt.Sprintf("retrying operator event processing due to error: %#v", microerror.Mask(err)))
+		f.logger.LogWithCtx(ctx, "warning", fmt.Sprintf("retrying operator event processing due to error: %#v", microerror.Mask(err)))
 	}
 
 	err := backoff.RetryNotify(operation, f.backOffFactory(), notifier)
 	if err != nil {
-		f.logger.Log("error", fmt.Sprintf("stop operator event processing retries due to too many errors: %#v", microerror.Mask(err)))
+		f.logger.LogWithCtx(ctx, "error", fmt.Sprintf("stop operator event processing retries due to too many errors: %#v", microerror.Mask(err)))
 		os.Exit(1)
 	}
 }
@@ -504,23 +506,23 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 	return nil
 }
 
-func (f *Framework) bootWithError() error {
+func (f *Framework) bootWithError(ctx context.Context) error {
 	if f.tpr != nil {
-		f.logger.Log("debug", "ensuring third party resource exists")
+		f.logger.LogWithCtx(ctx, "debug", "ensuring third party resource exists")
 
 		err := f.tpr.CreateAndWait()
 		if tpr.IsAlreadyExists(err) {
-			f.logger.Log("debug", "third party resource already exists")
+			f.logger.LogWithCtx(ctx, "debug", "third party resource already exists")
 		} else if err != nil {
 			return microerror.Mask(err)
 		} else {
-			f.logger.Log("debug", "created third party resource")
+			f.logger.LogWithCtx(ctx, "debug", "created third party resource")
 		}
 
 		f.tpr.CollectMetrics(context.TODO())
 	}
 
-	f.logger.Log("debug", "starting list/watch")
+	f.logger.LogWithCtx(ctx, "debug", "starting list/watch")
 
 	deleteChan, updateChan, errChan := f.informer.Watch(context.TODO())
 	f.ProcessEvents(context.TODO(), deleteChan, updateChan, errChan)
