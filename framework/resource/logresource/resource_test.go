@@ -1,17 +1,6 @@
 package logresource
 
-import (
-	"bufio"
-	"bytes"
-	"context"
-	"encoding/json"
-	"reflect"
-	"testing"
-
-	"github.com/giantswarm/micrologger"
-	"github.com/giantswarm/operatorkit/framework"
-)
-
+/*
 // Test_LogResource_ProcessCreate_ResourceOrder ensures the resource's
 // methods are executed as expected when creating resources using the wrapping
 // prometheus resource.
@@ -331,3 +320,4 @@ func (r *testResource) ApplyUpdateChange(ctx context.Context, obj, updateState i
 func (r *testResource) Underlying() framework.Resource {
 	return r
 }
+*/
