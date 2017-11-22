@@ -1,5 +1,5 @@
 hash: 14f39052e4af8f278465730a1f238e28dfb8dfd3644a46de0ba256d4ac4438fc
-updated: 2017-11-17T11:53:50.684956762+01:00
+updated: 2017-11-22T17:08:04.416950417+01:00
 imports:
 - name: github.com/beorn7/perks
   version: 3ac7bf7a47d159a033b107610db8a1b6575507a4
@@ -27,10 +27,11 @@ imports:
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
 - name: github.com/giantswarm/microerror
-  version: 5ade94eb4ee35ef72eb9382228470caeddb29989
+  version: ec5f66bb657662031c0d651504fee6908cdf28d9
 - name: github.com/giantswarm/micrologger
-  version: 954d1261928bbb50dc917c629edf0b71db6a1527
+  version: c2ffba36495025eff48982e6543397dbc4da0ac6
   subpackages:
+  - loggercontext
   - microloggertest
 - name: github.com/go-kit/kit
   version: a9ca6725cbbea455e61c6bc8a1ed28e81eb3493b
@@ -86,7 +87,7 @@ imports:
   subpackages:
   - pbutil
 - name: github.com/prometheus/client_golang
-  version: 5cec1d0429b02e4323e042eb04dafdb079ddf568
+  version: 1cdba8fdde81f444626530cce66e138d2f68ae1c
   subpackages:
   - prometheus
 - name: github.com/prometheus/client_model
