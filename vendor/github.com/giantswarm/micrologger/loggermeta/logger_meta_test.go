@@ -1,4 +1,4 @@
-package loggercontext
+package loggermeta
 
 import (
 	"context"
@@ -13,7 +13,7 @@ func Test_LoggerContext_NewContainer(t *testing.T) {
 		t.Fatalf("expected %#v got %#v", false, true)
 	}
 
-	ctx = NewContext(ctx, NewContainer())
+	ctx = NewContext(ctx, New())
 
 	c1, ok := FromContext(ctx)
 	if !ok {
