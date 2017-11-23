@@ -12,7 +12,7 @@ import (
 	"github.com/go-stack/stack"
 
 	"github.com/giantswarm/microerror"
-	"github.com/giantswarm/micrologger/loggercontext"
+	"github.com/giantswarm/micrologger/loggermeta"
 )
 
 // Config represents the configuration used to create a new logger.
@@ -71,8 +71,8 @@ func (l *logger) Log(keyVals ...interface{}) error {
 	return l.Logger.Log(keyVals...)
 }
 
-func (l *logger) LogWithCtx(ctx context.Context, keyVals ...interface{}) error {
-	container, ok := loggercontext.FromContext(ctx)
+func (l *logger) LogCtx(ctx context.Context, keyVals ...interface{}) error {
+	meta, ok := loggermeta.FromContext(ctx)
 	if !ok {
 		return l.Logger.Log(keyVals...)
 	}
@@ -81,7 +81,7 @@ func (l *logger) LogWithCtx(ctx context.Context, keyVals ...interface{}) error {
 	{
 		newKeyVals = append(newKeyVals, keyVals...)
 
-		for k, v := range container.KeyVals {
+		for k, v := range meta.KeyVals {
 			newKeyVals = append(newKeyVals, k)
 			newKeyVals = append(newKeyVals, v)
 		}

@@ -1,12 +1,12 @@
 hash: 14f39052e4af8f278465730a1f238e28dfb8dfd3644a46de0ba256d4ac4438fc
-updated: 2017-11-22T17:08:04.416950417+01:00
+updated: 2017-11-23T09:53:24.306422314+01:00
 imports:
 - name: github.com/beorn7/perks
   version: 3ac7bf7a47d159a033b107610db8a1b6575507a4
   subpackages:
   - quantile
 - name: github.com/cenk/backoff
-  version: 309aa717adbf351e92864cbedf9cca0b769a4b5a
+  version: 61ba96c4d1002f22e06acb8e34a7650611125a63
 - name: github.com/cenkalti/backoff
   version: 61153c768f31ee5f130071d08fc82b85208528de
 - name: github.com/davecgh/go-spew
@@ -29,9 +29,9 @@ imports:
 - name: github.com/giantswarm/microerror
   version: ec5f66bb657662031c0d651504fee6908cdf28d9
 - name: github.com/giantswarm/micrologger
-  version: c2ffba36495025eff48982e6543397dbc4da0ac6
+  version: bab5376fda89f10a5ebc5bd9feedab634400ab75
   subpackages:
-  - loggercontext
+  - loggermeta
   - microloggertest
 - name: github.com/go-kit/kit
   version: a9ca6725cbbea455e61c6bc8a1ed28e81eb3493b

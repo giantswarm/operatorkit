@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/giantswarm/micrologger/loggercontext"
+	"github.com/giantswarm/micrologger/loggermeta"
 )
 
 func Test_Logger_LogWithCtx(t *testing.T) {
@@ -27,7 +27,7 @@ func Test_Logger_LogWithCtx(t *testing.T) {
 	}
 
 	{
-		log.LogWithCtx(context.TODO(), "foo", "bar")
+		log.LogCtx(context.TODO(), "foo", "bar")
 
 		var got map[string]string
 		err := json.Unmarshal(out.Bytes(), &got)
@@ -53,15 +53,15 @@ func Test_Logger_LogWithCtx(t *testing.T) {
 
 	var ctx context.Context
 	{
-		container := loggercontext.NewContainer()
-		container.KeyVals["baz"] = "zap"
+		meta := loggermeta.New()
+		meta.KeyVals["baz"] = "zap"
 
-		ctx = loggercontext.NewContext(context.Background(), container)
+		ctx = loggermeta.NewContext(context.Background(), meta)
 	}
 
 	{
 		out.Reset()
-		log.LogWithCtx(ctx, "foo", "bar")
+		log.LogCtx(ctx, "foo", "bar")
 
 		var got map[string]string
 		err := json.Unmarshal(out.Bytes(), &got)

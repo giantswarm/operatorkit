@@ -10,7 +10,7 @@ import (
 	"github.com/cenk/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-	"github.com/giantswarm/micrologger/loggercontext"
+	"github.com/giantswarm/micrologger/loggermeta"
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
@@ -127,26 +127,26 @@ func (f *Framework) AddFunc(obj interface{}) {
 		var err error
 		ctx, err = f.initCtxFunc(ctx, obj)
 		if err != nil {
-			f.logger.LogWithCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "create")
+			f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "create")
 			return
 		}
 	}
 
 	rs, err := f.resourceRouter(ctx, obj)
 	if err != nil {
-		f.logger.LogWithCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "create")
+		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "create")
 		return
 	}
 
-	f.logger.LogWithCtx(ctx, "action", "start", "component", "operatorkit", "function", "ProcessCreate")
+	f.logger.LogCtx(ctx, "action", "start", "component", "operatorkit", "function", "ProcessCreate")
 
 	err = ProcessCreate(ctx, obj, rs)
 	if err != nil {
-		f.logger.LogWithCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "create")
+		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "create")
 		return
 	}
 
-	f.logger.LogWithCtx(ctx, "action", "end", "component", "operatorkit", "function", "ProcessCreate")
+	f.logger.LogCtx(ctx, "action", "end", "component", "operatorkit", "function", "ProcessCreate")
 }
 
 func (f *Framework) Boot() {
@@ -163,12 +163,12 @@ func (f *Framework) Boot() {
 		}
 
 		notifier := func(err error, d time.Duration) {
-			f.logger.LogWithCtx(ctx, "warning", fmt.Sprintf("retrying operator boot due to error: %#v", microerror.Mask(err)))
+			f.logger.LogCtx(ctx, "warning", fmt.Sprintf("retrying operator boot due to error: %#v", microerror.Mask(err)))
 		}
 
 		err := backoff.RetryNotify(operation, f.backOffFactory(), notifier)
 		if err != nil {
-			f.logger.LogWithCtx(ctx, "error", fmt.Sprintf("stop operator boot retries due to too many errors: %#v", microerror.Mask(err)))
+			f.logger.LogCtx(ctx, "error", fmt.Sprintf("stop operator boot retries due to too many errors: %#v", microerror.Mask(err)))
 			os.Exit(1)
 		}
 	})
@@ -191,26 +191,26 @@ func (f *Framework) DeleteFunc(obj interface{}) {
 		var err error
 		ctx, err = f.initCtxFunc(ctx, obj)
 		if err != nil {
-			f.logger.LogWithCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "delete")
+			f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "delete")
 			return
 		}
 	}
 
 	rs, err := f.resourceRouter(ctx, obj)
 	if err != nil {
-		f.logger.LogWithCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "delete")
+		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "delete")
 		return
 	}
 
-	f.logger.LogWithCtx(ctx, "action", "start", "component", "operatorkit", "function", "ProcessDelete")
+	f.logger.LogCtx(ctx, "action", "start", "component", "operatorkit", "function", "ProcessDelete")
 
 	err = ProcessDelete(ctx, obj, rs)
 	if err != nil {
-		f.logger.LogWithCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "delete")
+		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "delete")
 		return
 	}
 
-	f.logger.LogWithCtx(ctx, "action", "end", "component", "operatorkit", "function", "ProcessDelete")
+	f.logger.LogCtx(ctx, "action", "end", "component", "operatorkit", "function", "ProcessDelete")
 }
 
 // NewCacheResourceEventHandler returns the framework's event handler for the
@@ -245,26 +245,26 @@ func (f *Framework) UpdateFunc(oldObj, newObj interface{}) {
 		var err error
 		ctx, err = f.initCtxFunc(ctx, obj)
 		if err != nil {
-			f.logger.LogWithCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "update")
+			f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "update")
 			return
 		}
 	}
 
 	rs, err := f.resourceRouter(ctx, obj)
 	if err != nil {
-		f.logger.LogWithCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "update")
+		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "update")
 		return
 	}
 
-	f.logger.LogWithCtx(ctx, "action", "start", "component", "operatorkit", "function", "ProcessUpdate")
+	f.logger.LogCtx(ctx, "action", "start", "component", "operatorkit", "function", "ProcessUpdate")
 
 	err = ProcessUpdate(ctx, obj, rs)
 	if err != nil {
-		f.logger.LogWithCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "update")
+		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "update")
 		return
 	}
 
-	f.logger.LogWithCtx(ctx, "action", "end", "component", "operatorkit", "function", "ProcessUpdate")
+	f.logger.LogCtx(ctx, "action", "end", "component", "operatorkit", "function", "ProcessUpdate")
 }
 
 // ProcessCreate is a drop-in for an informer's AddFunc. It receives the custom
@@ -321,7 +321,7 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 				return nil
 			}
 
-			container, ok := loggercontext.FromContext(ctx)
+			container, ok := loggermeta.FromContext(ctx)
 			if ok {
 				container.KeyVals["function"] = "GetCurrentState"
 				defer delete(container.KeyVals, "function")
@@ -338,7 +338,7 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 				return nil
 			}
 
-			container, ok := loggercontext.FromContext(ctx)
+			container, ok := loggermeta.FromContext(ctx)
 			if ok {
 				container.KeyVals["function"] = "GetDesiredState"
 				defer delete(container.KeyVals, "function")
@@ -355,7 +355,7 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 				return nil
 			}
 
-			container, ok := loggercontext.FromContext(ctx)
+			container, ok := loggermeta.FromContext(ctx)
 			if ok {
 				container.KeyVals["function"] = "NewDeletePatch"
 				defer delete(container.KeyVals, "function")
@@ -377,7 +377,7 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 
 			createChange, ok := patch.getCreateChange()
 			if ok {
-				container, ok := loggercontext.FromContext(ctx)
+				container, ok := loggermeta.FromContext(ctx)
 				if ok {
 					container.KeyVals["function"] = "ApplyCreateChange"
 					defer delete(container.KeyVals, "function")
@@ -396,7 +396,7 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 
 			deleteChange, ok := patch.getDeleteChange()
 			if ok {
-				container, ok := loggercontext.FromContext(ctx)
+				container, ok := loggermeta.FromContext(ctx)
 				if ok {
 					container.KeyVals["function"] = "ApplyDeleteChange"
 					defer delete(container.KeyVals, "function")
@@ -415,7 +415,7 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 
 			updateChange, ok := patch.getUpdateChange()
 			if ok {
-				container, ok := loggercontext.FromContext(ctx)
+				container, ok := loggermeta.FromContext(ctx)
 				if ok {
 					container.KeyVals["function"] = "ApplyUpdateChange"
 					defer delete(container.KeyVals, "function")
@@ -454,12 +454,12 @@ func (f *Framework) ProcessEvents(ctx context.Context, deleteChan chan watch.Eve
 	}
 
 	notifier := func(err error, d time.Duration) {
-		f.logger.LogWithCtx(ctx, "warning", fmt.Sprintf("retrying operator event processing due to error: %#v", microerror.Mask(err)))
+		f.logger.LogCtx(ctx, "warning", fmt.Sprintf("retrying operator event processing due to error: %#v", microerror.Mask(err)))
 	}
 
 	err := backoff.RetryNotify(operation, f.backOffFactory(), notifier)
 	if err != nil {
-		f.logger.LogWithCtx(ctx, "error", fmt.Sprintf("stop operator event processing retries due to too many errors: %#v", microerror.Mask(err)))
+		f.logger.LogCtx(ctx, "error", fmt.Sprintf("stop operator event processing retries due to too many errors: %#v", microerror.Mask(err)))
 		os.Exit(1)
 	}
 }
@@ -495,7 +495,7 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 				return nil
 			}
 
-			container, ok := loggercontext.FromContext(ctx)
+			container, ok := loggermeta.FromContext(ctx)
 			if ok {
 				container.KeyVals["function"] = "GetCurrentState"
 				defer delete(container.KeyVals, "function")
@@ -512,7 +512,7 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 				return nil
 			}
 
-			container, ok := loggercontext.FromContext(ctx)
+			container, ok := loggermeta.FromContext(ctx)
 			if ok {
 				container.KeyVals["function"] = "GetDesiredState"
 				defer delete(container.KeyVals, "function")
@@ -529,7 +529,7 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 				return nil
 			}
 
-			container, ok := loggercontext.FromContext(ctx)
+			container, ok := loggermeta.FromContext(ctx)
 			if ok {
 				container.KeyVals["function"] = "NewUpdatePatch"
 				defer delete(container.KeyVals, "function")
@@ -551,7 +551,7 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 
 			createState, ok := patch.getCreateChange()
 			if ok {
-				container, ok := loggercontext.FromContext(ctx)
+				container, ok := loggermeta.FromContext(ctx)
 				if ok {
 					container.KeyVals["function"] = "ApplyCreateChange"
 					defer delete(container.KeyVals, "function")
@@ -570,7 +570,7 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 
 			deleteState, ok := patch.getDeleteChange()
 			if ok {
-				container, ok := loggercontext.FromContext(ctx)
+				container, ok := loggermeta.FromContext(ctx)
 				if ok {
 					container.KeyVals["function"] = "ApplyDeleteChange"
 					defer delete(container.KeyVals, "function")
@@ -589,7 +589,7 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 
 			updateState, ok := patch.getUpdateChange()
 			if ok {
-				container, ok := loggercontext.FromContext(ctx)
+				container, ok := loggermeta.FromContext(ctx)
 				if ok {
 					container.KeyVals["function"] = "ApplyUpdateChange"
 					defer delete(container.KeyVals, "function")
@@ -607,21 +607,21 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 
 func (f *Framework) bootWithError(ctx context.Context) error {
 	if f.tpr != nil {
-		f.logger.LogWithCtx(ctx, "debug", "ensuring third party resource exists")
+		f.logger.LogCtx(ctx, "debug", "ensuring third party resource exists")
 
 		err := f.tpr.CreateAndWait()
 		if tpr.IsAlreadyExists(err) {
-			f.logger.LogWithCtx(ctx, "debug", "third party resource already exists")
+			f.logger.LogCtx(ctx, "debug", "third party resource already exists")
 		} else if err != nil {
 			return microerror.Mask(err)
 		} else {
-			f.logger.LogWithCtx(ctx, "debug", "created third party resource")
+			f.logger.LogCtx(ctx, "debug", "created third party resource")
 		}
 
 		f.tpr.CollectMetrics(context.TODO())
 	}
 
-	f.logger.LogWithCtx(ctx, "debug", "starting list/watch")
+	f.logger.LogCtx(ctx, "debug", "starting list/watch")
 
 	deleteChan, updateChan, errChan := f.informer.Watch(context.TODO())
 	f.ProcessEvents(context.TODO(), deleteChan, updateChan, errChan)
