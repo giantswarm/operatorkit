@@ -10,6 +10,7 @@ import (
 	"github.com/cenk/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
+	"github.com/giantswarm/micrologger/loggercontext"
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
@@ -312,71 +313,119 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 	}
 
 	for _, r := range resources {
-		// Create the patch.
+		var err error
 
-		if canceledcontext.IsCanceled(ctx) {
-			return nil
-		}
-		currentState, err := r.GetCurrentState(ctx, obj)
-		if err != nil {
-			return microerror.Mask(err)
-		}
+		var currentState interface{}
+		{
+			if canceledcontext.IsCanceled(ctx) {
+				return nil
+			}
 
-		if canceledcontext.IsCanceled(ctx) {
-			return nil
-		}
-		desiredState, err := r.GetDesiredState(ctx, obj)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-
-		if canceledcontext.IsCanceled(ctx) {
-			return nil
-		}
-		patch, err := r.NewDeletePatch(ctx, obj, currentState, desiredState)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-
-		if patch == nil {
-			return microerror.Maskf(executionFailedError, "patch must not be nil")
-		}
-
-		// Apply the patch.
-
-		if canceledcontext.IsCanceled(ctx) {
-			return nil
-		}
-		createChange, ok := patch.getCreateChange()
-		if ok {
-			err := r.ApplyCreateChange(ctx, obj, createChange)
+			container, ok := loggercontext.FromContext(ctx)
+			if ok {
+				container.KeyVals["function"] = "GetCurrentState"
+				defer delete(container.KeyVals, "function")
+			}
+			currentState, err = r.GetCurrentState(ctx, obj)
 			if err != nil {
 				return microerror.Mask(err)
 			}
 		}
 
-		if canceledcontext.IsCanceled(ctx) {
-			return nil
-		}
-		deleteChange, ok := patch.getDeleteChange()
-		if ok {
-			err := r.ApplyDeleteChange(ctx, obj, deleteChange)
+		var desiredState interface{}
+		{
+			if canceledcontext.IsCanceled(ctx) {
+				return nil
+			}
+
+			container, ok := loggercontext.FromContext(ctx)
+			if ok {
+				container.KeyVals["function"] = "GetDesiredState"
+				defer delete(container.KeyVals, "function")
+			}
+			desiredState, err = r.GetDesiredState(ctx, obj)
 			if err != nil {
 				return microerror.Mask(err)
 			}
 		}
 
-		if canceledcontext.IsCanceled(ctx) {
-			return nil
-		}
-		updateChange, ok := patch.getUpdateChange()
-		if ok {
-			err := r.ApplyUpdateChange(ctx, obj, updateChange)
+		var patch *Patch
+		{
+			if canceledcontext.IsCanceled(ctx) {
+				return nil
+			}
+
+			container, ok := loggercontext.FromContext(ctx)
+			if ok {
+				container.KeyVals["function"] = "NewDeletePatch"
+				defer delete(container.KeyVals, "function")
+			}
+			patch, err = r.NewDeletePatch(ctx, obj, currentState, desiredState)
 			if err != nil {
 				return microerror.Mask(err)
 			}
+
+			if patch == nil {
+				return microerror.Maskf(executionFailedError, "patch must not be nil")
+			}
 		}
 
+		{
+			if canceledcontext.IsCanceled(ctx) {
+				return nil
+			}
+
+			createChange, ok := patch.getCreateChange()
+			if ok {
+				container, ok := loggercontext.FromContext(ctx)
+				if ok {
+					container.KeyVals["function"] = "ApplyCreateChange"
+					defer delete(container.KeyVals, "function")
+				}
+				err := r.ApplyCreateChange(ctx, obj, createChange)
+				if err != nil {
+					return microerror.Mask(err)
+				}
+			}
+		}
+
+		{
+			if canceledcontext.IsCanceled(ctx) {
+				return nil
+			}
+
+			deleteChange, ok := patch.getDeleteChange()
+			if ok {
+				container, ok := loggercontext.FromContext(ctx)
+				if ok {
+					container.KeyVals["function"] = "ApplyDeleteChange"
+					defer delete(container.KeyVals, "function")
+				}
+				err := r.ApplyDeleteChange(ctx, obj, deleteChange)
+				if err != nil {
+					return microerror.Mask(err)
+				}
+			}
+		}
+
+		{
+			if canceledcontext.IsCanceled(ctx) {
+				return nil
+			}
+
+			updateChange, ok := patch.getUpdateChange()
+			if ok {
+				container, ok := loggercontext.FromContext(ctx)
+				if ok {
+					container.KeyVals["function"] = "ApplyUpdateChange"
+					defer delete(container.KeyVals, "function")
+				}
+				err := r.ApplyUpdateChange(ctx, obj, updateChange)
+				if err != nil {
+					return microerror.Mask(err)
+				}
+			}
+		}
 	}
 
 	return nil
@@ -438,67 +487,117 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 	}
 
 	for _, r := range resources {
-		// Create the patch.
+		var err error
 
-		if canceledcontext.IsCanceled(ctx) {
-			return nil
-		}
-		currentState, err := r.GetCurrentState(ctx, obj)
-		if err != nil {
-			return microerror.Mask(err)
-		}
+		var currentState interface{}
+		{
+			if canceledcontext.IsCanceled(ctx) {
+				return nil
+			}
 
-		if canceledcontext.IsCanceled(ctx) {
-			return nil
-		}
-		desiredState, err := r.GetDesiredState(ctx, obj)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-
-		if canceledcontext.IsCanceled(ctx) {
-			return nil
-		}
-		patch, err := r.NewUpdatePatch(ctx, obj, currentState, desiredState)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-		if patch == nil {
-			return microerror.Maskf(executionFailedError, "patch must not be nil")
-		}
-
-		// Apply the patch.
-
-		if canceledcontext.IsCanceled(ctx) {
-			return nil
-		}
-		createState, ok := patch.getCreateChange()
-		if ok {
-			err := r.ApplyCreateChange(ctx, obj, createState)
+			container, ok := loggercontext.FromContext(ctx)
+			if ok {
+				container.KeyVals["function"] = "GetCurrentState"
+				defer delete(container.KeyVals, "function")
+			}
+			currentState, err = r.GetCurrentState(ctx, obj)
 			if err != nil {
 				return microerror.Mask(err)
 			}
 		}
 
-		if canceledcontext.IsCanceled(ctx) {
-			return nil
-		}
-		deleteState, ok := patch.getDeleteChange()
-		if ok {
-			err := r.ApplyDeleteChange(ctx, obj, deleteState)
+		var desiredState interface{}
+		{
+			if canceledcontext.IsCanceled(ctx) {
+				return nil
+			}
+
+			container, ok := loggercontext.FromContext(ctx)
+			if ok {
+				container.KeyVals["function"] = "GetDesiredState"
+				defer delete(container.KeyVals, "function")
+			}
+			desiredState, err = r.GetDesiredState(ctx, obj)
 			if err != nil {
 				return microerror.Mask(err)
 			}
 		}
 
-		if canceledcontext.IsCanceled(ctx) {
-			return nil
-		}
-		updateState, ok := patch.getUpdateChange()
-		if ok {
-			err := r.ApplyUpdateChange(ctx, obj, updateState)
+		var patch *Patch
+		{
+			if canceledcontext.IsCanceled(ctx) {
+				return nil
+			}
+
+			container, ok := loggercontext.FromContext(ctx)
+			if ok {
+				container.KeyVals["function"] = "NewUpdatePatch"
+				defer delete(container.KeyVals, "function")
+			}
+			patch, err = r.NewUpdatePatch(ctx, obj, currentState, desiredState)
 			if err != nil {
 				return microerror.Mask(err)
+			}
+
+			if patch == nil {
+				return microerror.Maskf(executionFailedError, "patch must not be nil")
+			}
+		}
+
+		{
+			if canceledcontext.IsCanceled(ctx) {
+				return nil
+			}
+
+			createState, ok := patch.getCreateChange()
+			if ok {
+				container, ok := loggercontext.FromContext(ctx)
+				if ok {
+					container.KeyVals["function"] = "ApplyCreateChange"
+					defer delete(container.KeyVals, "function")
+				}
+				err := r.ApplyCreateChange(ctx, obj, createState)
+				if err != nil {
+					return microerror.Mask(err)
+				}
+			}
+		}
+
+		{
+			if canceledcontext.IsCanceled(ctx) {
+				return nil
+			}
+
+			deleteState, ok := patch.getDeleteChange()
+			if ok {
+				container, ok := loggercontext.FromContext(ctx)
+				if ok {
+					container.KeyVals["function"] = "ApplyDeleteChange"
+					defer delete(container.KeyVals, "function")
+				}
+				err := r.ApplyDeleteChange(ctx, obj, deleteState)
+				if err != nil {
+					return microerror.Mask(err)
+				}
+			}
+		}
+
+		{
+			if canceledcontext.IsCanceled(ctx) {
+				return nil
+			}
+
+			updateState, ok := patch.getUpdateChange()
+			if ok {
+				container, ok := loggercontext.FromContext(ctx)
+				if ok {
+					container.KeyVals["function"] = "ApplyUpdateChange"
+					defer delete(container.KeyVals, "function")
+				}
+				err := r.ApplyUpdateChange(ctx, obj, updateState)
+				if err != nil {
+					return microerror.Mask(err)
+				}
 			}
 		}
 	}
