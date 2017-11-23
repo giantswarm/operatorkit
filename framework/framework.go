@@ -12,6 +12,7 @@ import (
 	"github.com/giantswarm/micrologger"
 	"github.com/giantswarm/micrologger/loggermeta"
 	"github.com/prometheus/client_golang/prometheus"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 
@@ -93,11 +94,38 @@ func New(config Config) (*Framework, error) {
 		return nil, microerror.Maskf(invalidConfigError, "config.ResourceRouter must not be empty")
 	}
 
+	initCtxFunc := func(ctx context.Context, obj interface{}) (context.Context, error) {
+		ctx = canceledcontext.NewContext(ctx, make(chan struct{}))
+
+		if config.InitCtxFunc != nil {
+			var err error
+			ctx, err = config.InitCtxFunc(ctx, obj)
+			if err != nil {
+				return nil, microerror.Maskf(err, "initializing context")
+			}
+		}
+
+		accessor, err := meta.Accessor(obj)
+		if err != nil {
+			config.Logger.Log("warning", fmt.Sprintf("cannot create accessor for object %#v", obj))
+		} else {
+			meta, ok := loggermeta.FromContext(ctx)
+			if !ok {
+				meta = loggermeta.New()
+			}
+			meta.KeyVals["object"] = accessor.GetSelfLink()
+
+			ctx = loggermeta.NewContext(ctx, meta)
+		}
+
+		return ctx, nil
+	}
+
 	f := &Framework{
 		// Dependencies.
 		backOffFactory: config.BackOffFactory,
 		informer:       config.Informer,
-		initCtxFunc:    config.InitCtxFunc,
+		initCtxFunc:    initCtxFunc,
 		logger:         config.Logger,
 		resourceRouter: config.ResourceRouter,
 		tpr:            config.TPR,
@@ -121,15 +149,10 @@ func (f *Framework) AddFunc(obj interface{}) {
 	defer f.mutex.Unlock()
 
 	ctx := context.Background()
-	ctx = canceledcontext.NewContext(ctx, make(chan struct{}))
-
-	if f.initCtxFunc != nil {
-		var err error
-		ctx, err = f.initCtxFunc(ctx, obj)
-		if err != nil {
-			f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "create")
-			return
-		}
+	ctx, err := f.initCtxFunc(ctx, obj)
+	if err != nil {
+		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "create")
+		return
 	}
 
 	rs, err := f.resourceRouter(ctx, obj)
@@ -185,15 +208,10 @@ func (f *Framework) DeleteFunc(obj interface{}) {
 	defer f.mutex.Unlock()
 
 	ctx := context.Background()
-	ctx = canceledcontext.NewContext(ctx, make(chan struct{}))
-
-	if f.initCtxFunc != nil {
-		var err error
-		ctx, err = f.initCtxFunc(ctx, obj)
-		if err != nil {
-			f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "delete")
-			return
-		}
+	ctx, err := f.initCtxFunc(ctx, obj)
+	if err != nil {
+		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "delete")
+		return
 	}
 
 	rs, err := f.resourceRouter(ctx, obj)
@@ -239,15 +257,10 @@ func (f *Framework) UpdateFunc(oldObj, newObj interface{}) {
 	defer f.mutex.Unlock()
 
 	ctx := context.Background()
-	ctx = canceledcontext.NewContext(ctx, make(chan struct{}))
-
-	if f.initCtxFunc != nil {
-		var err error
-		ctx, err = f.initCtxFunc(ctx, obj)
-		if err != nil {
-			f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "update")
-			return
-		}
+	ctx, err := f.initCtxFunc(ctx, obj)
+	if err != nil {
+		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "update")
+		return
 	}
 
 	rs, err := f.resourceRouter(ctx, obj)

@@ -17,3 +17,10 @@ var invalidConfigError = microerror.New("invalid config")
 func IsInvalidConfig(err error) bool {
 	return microerror.Cause(err) == invalidConfigError
 }
+
+var wrongTypeError = microerror.New("wrong type")
+
+// IsWrongTypeError asserts wrongTypeError.
+func IsWrongTypeError(err error) bool {
+	return microerror.Cause(err) == wrongTypeError
+}
