@@ -321,10 +321,10 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 				return nil
 			}
 
-			container, ok := loggermeta.FromContext(ctx)
+			meta, ok := loggermeta.FromContext(ctx)
 			if ok {
-				container.KeyVals["function"] = "GetCurrentState"
-				defer delete(container.KeyVals, "function")
+				meta.KeyVals["function"] = "GetCurrentState"
+				defer delete(meta.KeyVals, "function")
 			}
 			currentState, err = r.GetCurrentState(ctx, obj)
 			if err != nil {
@@ -338,10 +338,10 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 				return nil
 			}
 
-			container, ok := loggermeta.FromContext(ctx)
+			meta, ok := loggermeta.FromContext(ctx)
 			if ok {
-				container.KeyVals["function"] = "GetDesiredState"
-				defer delete(container.KeyVals, "function")
+				meta.KeyVals["function"] = "GetDesiredState"
+				defer delete(meta.KeyVals, "function")
 			}
 			desiredState, err = r.GetDesiredState(ctx, obj)
 			if err != nil {
@@ -355,10 +355,10 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 				return nil
 			}
 
-			container, ok := loggermeta.FromContext(ctx)
+			meta, ok := loggermeta.FromContext(ctx)
 			if ok {
-				container.KeyVals["function"] = "NewDeletePatch"
-				defer delete(container.KeyVals, "function")
+				meta.KeyVals["function"] = "NewDeletePatch"
+				defer delete(meta.KeyVals, "function")
 			}
 			patch, err = r.NewDeletePatch(ctx, obj, currentState, desiredState)
 			if err != nil {
@@ -377,10 +377,10 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 
 			createChange, ok := patch.getCreateChange()
 			if ok {
-				container, ok := loggermeta.FromContext(ctx)
+				meta, ok := loggermeta.FromContext(ctx)
 				if ok {
-					container.KeyVals["function"] = "ApplyCreateChange"
-					defer delete(container.KeyVals, "function")
+					meta.KeyVals["function"] = "ApplyCreateChange"
+					defer delete(meta.KeyVals, "function")
 				}
 				err := r.ApplyCreateChange(ctx, obj, createChange)
 				if err != nil {
@@ -396,10 +396,10 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 
 			deleteChange, ok := patch.getDeleteChange()
 			if ok {
-				container, ok := loggermeta.FromContext(ctx)
+				meta, ok := loggermeta.FromContext(ctx)
 				if ok {
-					container.KeyVals["function"] = "ApplyDeleteChange"
-					defer delete(container.KeyVals, "function")
+					meta.KeyVals["function"] = "ApplyDeleteChange"
+					defer delete(meta.KeyVals, "function")
 				}
 				err := r.ApplyDeleteChange(ctx, obj, deleteChange)
 				if err != nil {
@@ -415,10 +415,10 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 
 			updateChange, ok := patch.getUpdateChange()
 			if ok {
-				container, ok := loggermeta.FromContext(ctx)
+				meta, ok := loggermeta.FromContext(ctx)
 				if ok {
-					container.KeyVals["function"] = "ApplyUpdateChange"
-					defer delete(container.KeyVals, "function")
+					meta.KeyVals["function"] = "ApplyUpdateChange"
+					defer delete(meta.KeyVals, "function")
 				}
 				err := r.ApplyUpdateChange(ctx, obj, updateChange)
 				if err != nil {
@@ -495,10 +495,10 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 				return nil
 			}
 
-			container, ok := loggermeta.FromContext(ctx)
+			meta, ok := loggermeta.FromContext(ctx)
 			if ok {
-				container.KeyVals["function"] = "GetCurrentState"
-				defer delete(container.KeyVals, "function")
+				meta.KeyVals["function"] = "GetCurrentState"
+				defer delete(meta.KeyVals, "function")
 			}
 			currentState, err = r.GetCurrentState(ctx, obj)
 			if err != nil {
@@ -512,10 +512,10 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 				return nil
 			}
 
-			container, ok := loggermeta.FromContext(ctx)
+			meta, ok := loggermeta.FromContext(ctx)
 			if ok {
-				container.KeyVals["function"] = "GetDesiredState"
-				defer delete(container.KeyVals, "function")
+				meta.KeyVals["function"] = "GetDesiredState"
+				defer delete(meta.KeyVals, "function")
 			}
 			desiredState, err = r.GetDesiredState(ctx, obj)
 			if err != nil {
@@ -529,10 +529,10 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 				return nil
 			}
 
-			container, ok := loggermeta.FromContext(ctx)
+			meta, ok := loggermeta.FromContext(ctx)
 			if ok {
-				container.KeyVals["function"] = "NewUpdatePatch"
-				defer delete(container.KeyVals, "function")
+				meta.KeyVals["function"] = "NewUpdatePatch"
+				defer delete(meta.KeyVals, "function")
 			}
 			patch, err = r.NewUpdatePatch(ctx, obj, currentState, desiredState)
 			if err != nil {
@@ -551,10 +551,10 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 
 			createState, ok := patch.getCreateChange()
 			if ok {
-				container, ok := loggermeta.FromContext(ctx)
+				meta, ok := loggermeta.FromContext(ctx)
 				if ok {
-					container.KeyVals["function"] = "ApplyCreateChange"
-					defer delete(container.KeyVals, "function")
+					meta.KeyVals["function"] = "ApplyCreateChange"
+					defer delete(meta.KeyVals, "function")
 				}
 				err := r.ApplyCreateChange(ctx, obj, createState)
 				if err != nil {
@@ -570,10 +570,10 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 
 			deleteState, ok := patch.getDeleteChange()
 			if ok {
-				container, ok := loggermeta.FromContext(ctx)
+				meta, ok := loggermeta.FromContext(ctx)
 				if ok {
-					container.KeyVals["function"] = "ApplyDeleteChange"
-					defer delete(container.KeyVals, "function")
+					meta.KeyVals["function"] = "ApplyDeleteChange"
+					defer delete(meta.KeyVals, "function")
 				}
 				err := r.ApplyDeleteChange(ctx, obj, deleteState)
 				if err != nil {
@@ -589,10 +589,10 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 
 			updateState, ok := patch.getUpdateChange()
 			if ok {
-				container, ok := loggermeta.FromContext(ctx)
+				meta, ok := loggermeta.FromContext(ctx)
 				if ok {
-					container.KeyVals["function"] = "ApplyUpdateChange"
-					defer delete(container.KeyVals, "function")
+					meta.KeyVals["function"] = "ApplyUpdateChange"
+					defer delete(meta.KeyVals, "function")
 				}
 				err := r.ApplyUpdateChange(ctx, obj, updateState)
 				if err != nil {
