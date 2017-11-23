@@ -6,10 +6,77 @@ import (
 	"testing"
 
 	"github.com/cenk/backoff"
+	"github.com/giantswarm/micrologger/loggermeta"
 	"github.com/giantswarm/micrologger/microloggertest"
 	"github.com/giantswarm/operatorkit/informer/informertest"
 	"github.com/giantswarm/operatorkit/tpr/tprtest"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/client-go/pkg/api/v1"
 )
+
+func Test_Framework_InitCtxFunc(t *testing.T) {
+	testCases := []struct {
+		Object                   interface{}
+		InitCtxFunc              func(ctx context.Context, obj interface{}) (context.Context, error)
+		ExpectedLoggerMetaSet    bool
+		ExpectedLoggerMetaObject string
+	}{
+		{
+			Object: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					SelfLink: "/api/v1/namespace/default/pods/test-pod",
+				},
+			},
+			ExpectedLoggerMetaSet:    true,
+			ExpectedLoggerMetaObject: "/api/v1/namespace/default/pods/test-pod",
+		},
+		{
+			Object:                nil,
+			ExpectedLoggerMetaSet: false,
+		},
+		{
+			Object:                "non-runtime-object",
+			ExpectedLoggerMetaSet: false,
+		},
+	}
+	for i, tc := range testCases {
+		r := &testInitCtxFuncResource{}
+
+		var f *Framework
+		{
+			c := DefaultConfig()
+
+			c.BackOffFactory = func() backoff.BackOff { return &backoff.StopBackOff{} }
+			c.Informer = informertest.New()
+			c.InitCtxFunc = tc.InitCtxFunc
+			c.Logger = microloggertest.New()
+			c.ResourceRouter = DefaultResourceRouter([]Resource{
+				r,
+			})
+			c.TPR = tprtest.New()
+
+			var err error
+			f, err = New(c)
+			if err != nil {
+				t.Fatal("expected", nil, "got", err)
+			}
+		}
+
+		ctx, err := f.initCtxFunc(context.Background(), tc.Object)
+		if err != nil {
+			t.Fatal("test", i+1, "expected", nil, "got", err)
+		}
+
+		meta, ok := loggermeta.FromContext(ctx)
+		if tc.ExpectedLoggerMetaSet != ok {
+			t.Fatal("test", i+1, "expected", tc.ExpectedLoggerMetaSet, "got", ok)
+		}
+
+		if ok && (tc.ExpectedLoggerMetaObject != meta.KeyVals["object"]) {
+			t.Fatal("test", i+1, "expected", tc.ExpectedLoggerMetaObject, "got", meta.KeyVals["object"])
+		}
+	}
+}
 
 func Test_Framework_InitCtxFunc_AddFunc(t *testing.T) {
 	testCases := []struct {
