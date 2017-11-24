@@ -42,6 +42,4 @@ var (
 func init() {
 	prometheus.MustRegister(watcherCloseCounter)
 	prometheus.MustRegister(watchEventCounter)
-
-	watchEventCounter.WithLabelValues("init")
 }

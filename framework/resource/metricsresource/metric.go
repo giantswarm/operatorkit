@@ -43,7 +43,4 @@ func init() {
 	prometheus.MustRegister(operationCounter)
 	prometheus.MustRegister(operationErrorCounter)
 	prometheus.MustRegister(operationHistogram)
-
-	operationCounter.WithLabelValues("init", "init", "init")
-	operationErrorCounter.WithLabelValues("init", "init", "init")
 }
