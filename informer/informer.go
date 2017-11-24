@@ -148,21 +148,23 @@ func (i *Informer) Watch(ctx context.Context) (chan watch.Event, chan watch.Even
 				case watch.Added:
 					err := i.cacheAndSendIfNotExists(event, updateChan)
 					if err != nil {
+						watchEventCounter.WithLabelValues("error").Inc()
 						errChan <- microerror.Mask(err)
 					}
 				case watch.Deleted:
 					err := i.uncacheAndSend(event, deleteChan)
 					if err != nil {
+						watchEventCounter.WithLabelValues("error").Inc()
 						errChan <- microerror.Mask(err)
 					}
 				case watch.Modified:
 					err := i.cacheAndSend(event, deleteChan, updateChan)
 					if err != nil {
+						watchEventCounter.WithLabelValues("error").Inc()
 						errChan <- microerror.Mask(err)
 					}
 				default:
 					watchEventCounter.WithLabelValues("error").Inc()
-
 					errChan <- microerror.Maskf(invalidEventError, "%#v", event)
 				}
 			}
@@ -176,6 +178,7 @@ func (i *Informer) Watch(ctx context.Context) (chan watch.Event, chan watch.Even
 		{
 			err := i.fillCache(ctx, eventChan)
 			if err != nil {
+				watchEventCounter.WithLabelValues("error").Inc()
 				errChan <- microerror.Mask(err)
 			}
 			close(i.initializer)
@@ -196,6 +199,7 @@ func (i *Informer) Watch(ctx context.Context) (chan watch.Event, chan watch.Even
 						default:
 							err := i.streamEvents(ctx, eventChan)
 							if err != nil {
+								watchEventCounter.WithLabelValues("error").Inc()
 								errChan <- microerror.Mask(err)
 							}
 						}
@@ -352,6 +356,7 @@ func (i *Informer) sendCachedEvents(ctx context.Context, deleteChan, updateChan 
 		default:
 			m, err := meta.Accessor(e.Object)
 			if err != nil {
+				watchEventCounter.WithLabelValues("error").Inc()
 				errChan <- microerror.Mask(err)
 			} else {
 				t := m.GetDeletionTimestamp()
