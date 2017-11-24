@@ -5,17 +5,18 @@ import (
 )
 
 var (
-	frameworkHistogram = prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Namespace: "operatorkit",
-			Subsystem: "framework",
-			Name:      "event",
-			Help:      "Histogram for events within the operatorkit framework.",
+	frameworkEventSummary = prometheus.NewSummaryVec(
+		prometheus.SummaryOpts{
+			Namespace:  "operatorkit",
+			Subsystem:  "framework",
+			Name:       "event",
+			Help:       "Summary for events within the operatorkit framework.",
+			Objectives: map[float64]float64{},
 		},
 		[]string{"event"},
 	)
 )
 
 func init() {
-	prometheus.MustRegister(frameworkHistogram)
+	prometheus.MustRegister(frameworkEventSummary)
 }
