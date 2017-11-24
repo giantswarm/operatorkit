@@ -32,7 +32,7 @@ var (
 		prometheus.HistogramOpts{
 			Namespace: PrometheusNamespace,
 			Subsystem: PrometheusSubsystem,
-			Name:      "operation_duration",
+			Name:      "operation",
 			Help:      "Time taken to process a single reconciliation operation.",
 		},
 		[]string{"service", "resource", "operation"},
