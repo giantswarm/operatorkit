@@ -161,6 +161,8 @@ func (i *Informer) Watch(ctx context.Context) (chan watch.Event, chan watch.Even
 						errChan <- microerror.Mask(err)
 					}
 				default:
+					watchEventCounter.WithLabelValues("error").Inc()
+
 					errChan <- microerror.Maskf(invalidEventError, "%#v", event)
 				}
 			}
@@ -240,8 +242,10 @@ func (i *Informer) cacheAndSend(event watch.Event, deleteChan, updateChan chan w
 	}
 	t := m.GetDeletionTimestamp()
 	if t == nil {
+		watchEventCounter.WithLabelValues("update").Inc()
 		updateChan <- event
 	} else {
+		watchEventCounter.WithLabelValues("delete").Inc()
 		deleteChan <- event
 	}
 
@@ -269,6 +273,7 @@ func (i *Informer) cacheAndSendIfNotExists(event watch.Event, updateChan chan wa
 
 	_, ok := i.cache.Load(k)
 	if !ok && i.isCachedFilled() {
+		watchEventCounter.WithLabelValues("create").Inc()
 		updateChan <- event
 	}
 
@@ -329,7 +334,11 @@ func (i *Informer) sendCachedEvents(ctx context.Context, deleteChan, updateChan 
 	// the first event object after the configured resync period.
 	var useRateWait bool
 
+	var count int
+
 	i.cache.Range(func(k, v interface{}) bool {
+		count++
+
 		e := v.(watch.Event)
 
 		if useRateWait && i.rateWait != 0 {
@@ -347,8 +356,10 @@ func (i *Informer) sendCachedEvents(ctx context.Context, deleteChan, updateChan 
 			} else {
 				t := m.GetDeletionTimestamp()
 				if t == nil {
+					watchEventCounter.WithLabelValues("update").Inc()
 					updateChan <- e
 				} else {
+					watchEventCounter.WithLabelValues("delete").Inc()
 					deleteChan <- e
 				}
 			}
@@ -356,6 +367,8 @@ func (i *Informer) sendCachedEvents(ctx context.Context, deleteChan, updateChan 
 
 		return true
 	})
+
+	cacheSizeGauge.Set(float64(count))
 }
 
 // streamEvents creates a new watcher and sends event objects the watcher
@@ -379,6 +392,7 @@ func (i *Informer) streamEvents(ctx context.Context, eventChan chan watch.Event)
 			if ok {
 				eventChan <- event
 			} else {
+				watcherCloseCounter.Inc()
 				return nil
 			}
 		}
@@ -388,6 +402,7 @@ func (i *Informer) streamEvents(ctx context.Context, eventChan chan watch.Event)
 // uncacheAndSend sends the received event to the provided delete channel and
 // removes the event object from the internal informer cache.
 func (i *Informer) uncacheAndSend(event watch.Event, deleteChan chan watch.Event) error {
+	watchEventCounter.WithLabelValues("delete").Inc()
 	deleteChan <- event
 
 	k, err := cache.MetaNamespaceKeyFunc(event.Object)
