@@ -1,12 +1,10 @@
 hash: 14f39052e4af8f278465730a1f238e28dfb8dfd3644a46de0ba256d4ac4438fc
-updated: 2017-11-23T09:53:24.306422314+01:00
+updated: 2017-11-27T12:47:21.28573406+01:00
 imports:
 - name: github.com/beorn7/perks
   version: 3ac7bf7a47d159a033b107610db8a1b6575507a4
   subpackages:
   - quantile
-- name: github.com/cenk/backoff
-  version: 61ba96c4d1002f22e06acb8e34a7650611125a63
 - name: github.com/cenkalti/backoff
   version: 61153c768f31ee5f130071d08fc82b85208528de
 - name: github.com/davecgh/go-spew
