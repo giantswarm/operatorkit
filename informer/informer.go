@@ -30,11 +30,11 @@ import (
 
 const (
 	// DefaultRateWait is the default value for the RateWait setting. See Config
-	// for more information.
-	DefaultRateWait = 0 * time.Second
+	// for more information. 1 second to take some pressure from the API.
+	DefaultRateWait = 1 * time.Second
 	// DefaultResyncPeriod is the default value for the ResyncPeriod setting. See
 	// Config for more information.
-	DefaultResyncPeriod = 1 * time.Minute
+	DefaultResyncPeriod = 5 * time.Minute
 )
 
 // Config represents the configuration used to create a new Informer.
