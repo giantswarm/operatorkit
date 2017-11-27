@@ -9,32 +9,34 @@ const (
 	PrometheusSubsystem = "informer"
 )
 
-var cacheSizeGauge = prometheus.NewGauge(
-	prometheus.GaugeOpts{
-		Namespace: PrometheusNamespace,
-		Subsystem: PrometheusSubsystem,
-		Name:      "cache_size",
-		Help:      "A gauge metric expressing the number of events being cached in memory.",
-	},
-)
+var (
+	cacheSizeGauge = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Namespace: PrometheusNamespace,
+			Subsystem: PrometheusSubsystem,
+			Name:      "cache_size",
+			Help:      "A gauge metric expressing the number of events being cached in memory.",
+		},
+	)
 
-var watcherCloseCounter = prometheus.NewCounter(
-	prometheus.CounterOpts{
-		Namespace: PrometheusNamespace,
-		Subsystem: PrometheusSubsystem,
-		Name:      "watcher_close_total",
-		Help:      "A counter metric expressing the number of events when the watcher's watch got closed.",
-	},
-)
+	watcherCloseCounter = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Namespace: PrometheusNamespace,
+			Subsystem: PrometheusSubsystem,
+			Name:      "watcher_close_total",
+			Help:      "A counter metric expressing the number of events when the watcher's watch got closed.",
+		},
+	)
 
-var watchEventCounter = prometheus.NewCounterVec(
-	prometheus.CounterOpts{
-		Namespace: PrometheusNamespace,
-		Subsystem: PrometheusSubsystem,
-		Name:      "watch_event_total",
-		Help:      "A counter metric expressing the number of event kinds happening.",
-	},
-	[]string{"kind"},
+	watchEventCounter = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: PrometheusNamespace,
+			Subsystem: PrometheusSubsystem,
+			Name:      "watch_event_total",
+			Help:      "A counter metric expressing the number of event kinds happening.",
+		},
+		[]string{"kind"},
+	)
 )
 
 func init() {
