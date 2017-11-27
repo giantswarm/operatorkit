@@ -1,7 +1,7 @@
 package framework
 
 import (
-	"github.com/cenk/backoff"
+	"github.com/cenkalti/backoff"
 )
 
 func DefaultBackOffFactory() func() backoff.BackOff {
