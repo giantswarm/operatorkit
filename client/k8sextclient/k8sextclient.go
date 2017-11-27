@@ -18,9 +18,18 @@ const (
 
 // TLSClientConfig contains settings to enable transport layer security.
 type TLSClientConfig struct {
-	CAFile  string
+	// CAFile is the CA certificate for the cluster.
+	CAFile string
+	// CrtFile is the TLS client certificate.
 	CrtFile string
+	// KeyFile is the key for the TLS client certificate.
 	KeyFile string
+	// CAData holds PEM-encoded bytes. CAData takes precedence over CAFile.
+	CAData []byte
+	// CrtData holds PEM-encoded bytes. CrtData takes precedence over CrtFile.
+	CrtData []byte
+	// KeyData holds PEM-encoded bytes. KeyData takes precedence over KeyFile.
+	KeyData []byte
 }
 
 // Config contains the common attributes to create a Kubernetes Clientset.
@@ -88,6 +97,9 @@ func New(config Config) (apiextensionsclient.Interface, error) {
 				CertFile: config.TLS.CrtFile,
 				KeyFile:  config.TLS.KeyFile,
 				CAFile:   config.TLS.CAFile,
+				CertData: config.TLS.CrtData,
+				KeyData:  config.TLS.KeyData,
+				CAData:   config.TLS.CAData,
 			},
 		}
 	}
