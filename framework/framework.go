@@ -21,10 +21,6 @@ import (
 	"github.com/giantswarm/operatorkit/tpr"
 )
 
-const (
-	resourceRetries uint64 = 3
-)
-
 // Config represents the configuration used to create a new operator framework.
 type Config struct {
 	// Dependencies.
@@ -68,7 +64,9 @@ func DefaultConfig() Config {
 
 		// Settings.
 		BackOffFactory: func() backoff.BackOff {
-			return backoff.WithMaxTries(backoff.NewExponentialBackOff(), resourceRetries)
+			b := backoff.NewExponentialBackOff()
+			b.MaxElapsedTime = 0
+			return backoff.WithMaxTries(b, 7)
 		},
 		InitCtxFunc: func(ctx context.Context, obj interface{}) (context.Context, error) {
 			return ctx, nil
