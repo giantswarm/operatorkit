@@ -6,7 +6,6 @@ import (
 	"github.com/cenkalti/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-	"github.com/giantswarm/operatorkit/crd"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -14,16 +13,12 @@ import (
 )
 
 type Config struct {
-	// Dependencies.
-
 	K8sExtClient apiextensionsclient.Interface
 	Logger       micrologger.Logger
 }
 
 func DefaultConfig() Config {
 	return Config{
-		// Dependencies.
-
 		K8sExtClient: nil,
 		Logger:       nil,
 	}
@@ -35,7 +30,6 @@ type CRDClient struct {
 }
 
 func New(config Config) (*CRDClient, error) {
-	// Dependencies.
 	if config.K8sExtClient == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.K8sExtClient must not be empty")
 	}
@@ -53,8 +47,8 @@ func New(config Config) (*CRDClient, error) {
 
 // Ensure ensures CRD exists, it is active (aka. established) and does not have
 // conflicting names.
-func (c *CRDClient) Ensure(ctx context.Context, customResource *crd.CRD, backOff backoff.BackOff) error {
-	_, err := c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Create(customResource.NewResource())
+func (c *CRDClient) Ensure(ctx context.Context, customResource *apiextensionsv1beta1.CustomResourceDefinition, backOff backoff.BackOff) error {
+	_, err := c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Create(customResource)
 	if errors.IsAlreadyExists(err) {
 		// Fall trough. We need to check CRD status.
 	} else if err != nil {
@@ -62,7 +56,7 @@ func (c *CRDClient) Ensure(ctx context.Context, customResource *crd.CRD, backOff
 	}
 
 	operation := func() error {
-		manifest, err := c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Get(customResource.Name(), metav1.GetOptions{})
+		manifest, err := c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Get(customResource.Name, metav1.GetOptions{})
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -85,7 +79,7 @@ func (c *CRDClient) Ensure(ctx context.Context, customResource *crd.CRD, backOff
 
 	err = backoff.Retry(operation, backOff)
 	if err != nil {
-		deleteErr := c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(customResource.Name(), nil)
+		deleteErr := c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(customResource.Name, nil)
 		if deleteErr != nil {
 			return microerror.Mask(deleteErr)
 		}

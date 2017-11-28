@@ -12,12 +12,12 @@ import (
 	"github.com/giantswarm/micrologger"
 	"github.com/giantswarm/micrologger/loggermeta"
 	"github.com/prometheus/client_golang/prometheus"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 
 	"github.com/giantswarm/operatorkit/client/k8scrdclient"
-	"github.com/giantswarm/operatorkit/crd"
 	"github.com/giantswarm/operatorkit/framework/context/canceledcontext"
 	"github.com/giantswarm/operatorkit/informer"
 	"github.com/giantswarm/operatorkit/tpr"
@@ -27,7 +27,7 @@ import (
 type Config struct {
 	// Dependencies.
 
-	CRD       *crd.CRD
+	CRD       *apiextensionsv1beta1.CustomResourceDefinition
 	CRDClient *k8scrdclient.CRDClient
 	Informer  informer.Interface
 	// InitCtxFunc is to prepare the given context for a single reconciliation
@@ -82,7 +82,7 @@ func DefaultConfig() Config {
 
 type Framework struct {
 	// Dependencies.
-	crd            *crd.CRD
+	crd            *apiextensionsv1beta1.CustomResourceDefinition
 	crdClient      *k8scrdclient.CRDClient
 	informer       informer.Interface
 	logger         micrologger.Logger
