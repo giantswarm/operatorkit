@@ -16,6 +16,8 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 
+	"github.com/giantswarm/operatorkit/client/k8scrdclient"
+	"github.com/giantswarm/operatorkit/crd"
 	"github.com/giantswarm/operatorkit/framework/context/canceledcontext"
 	"github.com/giantswarm/operatorkit/informer"
 	"github.com/giantswarm/operatorkit/tpr"
@@ -25,7 +27,9 @@ import (
 type Config struct {
 	// Dependencies.
 
-	Informer informer.Interface
+	CRD       *crd.CRD
+	CRDClient *k8scrdclient.CRDClient
+	Informer  informer.Interface
 	// InitCtxFunc is to prepare the given context for a single reconciliation
 	// loop. Operators can implement common context packages to enable
 	// communication between resources. These context packages can be set up
@@ -57,6 +61,8 @@ type Config struct {
 func DefaultConfig() Config {
 	return Config{
 		// Dependencies.
+		CRD:            nil,
+		CRDClient:      nil,
 		Informer:       nil,
 		Logger:         nil,
 		ResourceRouter: nil,
@@ -76,6 +82,8 @@ func DefaultConfig() Config {
 
 type Framework struct {
 	// Dependencies.
+	crd            *crd.CRD
+	crdClient      *k8scrdclient.CRDClient
 	informer       informer.Interface
 	logger         micrologger.Logger
 	resourceRouter func(ctx context.Context, obj interface{}) ([]Resource, error)
@@ -93,6 +101,9 @@ type Framework struct {
 // New creates a new configured operator framework.
 func New(config Config) (*Framework, error) {
 	// Dependencies.
+	if config.CRD != nil && config.CRDClient == nil || config.CRD == nil && config.CRDClient != nil {
+		return nil, microerror.Maskf(invalidConfigError, "config.CRD and config.CRDClient must not be empty when either given")
+	}
 	if config.Informer == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Informer must not be empty")
 	}
@@ -137,6 +148,8 @@ func New(config Config) (*Framework, error) {
 
 	f := &Framework{
 		// Dependencies.
+		crd:            config.CRD,
+		crdClient:      config.CRDClient,
 		informer:       config.Informer,
 		logger:         config.Logger,
 		resourceRouter: config.ResourceRouter,
@@ -650,10 +663,23 @@ func (f *Framework) bootWithError(ctx context.Context) error {
 		f.tpr.CollectMetrics(context.TODO())
 	}
 
+	if f.crd != nil {
+		f.logger.LogCtx(ctx, "debug", "ensuring custom resource definition exists")
+
+		err := f.crdClient.Ensure(ctx, f.crd, f.backOffFactory())
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
+		f.logger.LogCtx(ctx, "debug", "ensured custom resource definition")
+
+		// TODO collect metrics
+	}
+
 	f.logger.LogCtx(ctx, "debug", "starting list/watch")
 
-	deleteChan, updateChan, errChan := f.informer.Watch(context.TODO())
-	f.ProcessEvents(context.TODO(), deleteChan, updateChan, errChan)
+	deleteChan, updateChan, errChan := f.informer.Watch(ctx)
+	f.ProcessEvents(ctx, deleteChan, updateChan, errChan)
 
 	return nil
 }
