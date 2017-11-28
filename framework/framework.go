@@ -16,8 +16,8 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 
+	"github.com/giantswarm/operatorkit/client/k8scrdclient"
 	"github.com/giantswarm/operatorkit/crd"
-	"github.com/giantswarm/operatorkit/crdclient"
 	"github.com/giantswarm/operatorkit/framework/context/canceledcontext"
 	"github.com/giantswarm/operatorkit/informer"
 	"github.com/giantswarm/operatorkit/tpr"
@@ -28,7 +28,7 @@ type Config struct {
 	// Dependencies.
 
 	CRD       *crd.CRD
-	CRDClient *crdclient.CRDClient
+	CRDClient *k8scrdclient.CRDClient
 	Informer  informer.Interface
 	// InitCtxFunc is to prepare the given context for a single reconciliation
 	// loop. Operators can implement common context packages to enable
@@ -83,7 +83,7 @@ func DefaultConfig() Config {
 type Framework struct {
 	// Dependencies.
 	crd            *crd.CRD
-	crdClient      *crdclient.CRDClient
+	crdClient      *k8scrdclient.CRDClient
 	informer       informer.Interface
 	logger         micrologger.Logger
 	resourceRouter func(ctx context.Context, obj interface{}) ([]Resource, error)
