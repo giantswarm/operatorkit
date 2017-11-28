@@ -1,4 +1,4 @@
-package crdclient
+package k8scrdclient
 
 import (
 	"github.com/giantswarm/microerror"
