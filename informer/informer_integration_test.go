@@ -66,6 +66,14 @@ type Test struct {
 	Spec              TestSpec `json:"spec"`
 }
 
+func (t *Test) DeepCopyObject() runtime.Object {
+	return &Test{
+		TypeMeta:   t.TypeMeta,
+		ObjectMeta: *t.ObjectMeta.DeepCopy(),
+		Spec:       t.Spec,
+	}
+}
+
 type TestSpec struct {
 	ID string `json:"id" yaml:"id"`
 }
@@ -74,6 +82,19 @@ type TestList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 	Items           []Test `json:"items"`
+}
+
+func (t *TestList) DeepCopyObject() runtime.Object {
+	itemsCopy := make([]Test, len(t.Items))
+	for i, item := range t.Items {
+		itemsCopy[i] = item
+	}
+
+	return &TestList{
+		TypeMeta: t.TypeMeta,
+		ListMeta: *t.ListMeta.DeepCopy(),
+		Items:    itemsCopy,
+	}
 }
 
 func init() {
