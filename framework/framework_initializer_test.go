@@ -9,8 +9,8 @@ import (
 	"github.com/giantswarm/micrologger/loggermeta"
 	"github.com/giantswarm/micrologger/microloggertest"
 	"github.com/giantswarm/operatorkit/informer/informertest"
+	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	corev1 "k8s.io/client-go/pkg/api/v1"
 )
 
 func Test_Framework_InitCtxFunc(t *testing.T) {
@@ -20,7 +20,7 @@ func Test_Framework_InitCtxFunc(t *testing.T) {
 		ExpectedLoggerMetaObject string
 	}{
 		{
-			Object: &corev1.Pod{
+			Object: &apiv1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					SelfLink: "/api/v1/namespace/default/pods/test-pod",
 				},

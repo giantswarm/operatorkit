@@ -9,11 +9,11 @@ import:
 - package: github.com/prometheus/client_golang
   version: master
 - package: k8s.io/apiextensions-apiserver
-  version: release-1.7
+  version: kubernetes-1.8.2
 - package: k8s.io/apimachinery
-  version: release-1.7
+  version: kubernetes-1.8.2
 - package: k8s.io/client-go
-  version: v4.0.0
+  version: kubernetes-1.8.2
 testImport:
 - package: github.com/stretchr/testify
   version: v1.1.4
