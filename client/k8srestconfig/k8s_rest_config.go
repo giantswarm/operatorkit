@@ -28,7 +28,7 @@
 //			c.TLS.CrtFile = config.Viper.GetString(config.Flag.Service.Kubernetes.TLS.CrtFile)
 //			c.TLS.KeyFile = config.Viper.GetString(config.Flag.Service.Kubernetes.TLS.KeyFile)
 //
-//			restConfig, err = k8sclient.New(c)
+//			restConfig, err = k8srestconfig.New(c)
 //			if err != nil {
 //				return microerror.Mask(err)
 //			}
@@ -44,11 +44,12 @@
 //			return micorerror.Mask(err)
 //		}
 //
-//		gsClient, err = gsclient.NewForConfig(restConfig)
+//		gsClient, err := gsclient.NewForConfig(restConfig)
 //		if err != nil {
 //			return microerror.Mask(err)
 //		}
 //	}
+//
 package k8srestconfig
 
 import (
