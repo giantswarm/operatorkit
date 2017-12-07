@@ -1,3 +1,4 @@
+// Package k8sextclient is deprecated.
 package k8sextclient
 
 import (

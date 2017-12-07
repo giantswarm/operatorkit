@@ -1,3 +1,4 @@
+// Package k8sclient is deprecated.
 package k8sclient
 
 import (
