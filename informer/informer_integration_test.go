@@ -20,30 +20,30 @@ package informer
 */
 
 import (
-	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os/exec"
 	"os/user"
 	"path"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/cenkalti/backoff"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 
 	"github.com/giantswarm/micrologger/microloggertest"
-	"github.com/giantswarm/operatorkit/client/k8scrdclient"
-	"github.com/giantswarm/operatorkit/client/k8sextclient"
+	"github.com/giantswarm/operatorkit/client/k8srestconfig"
+)
+
+const (
+	namespace = "informer-integration-test"
 )
 
 var (
@@ -53,11 +53,7 @@ var (
 	crtFile string
 	keyFile string
 
-	newCRD            *apiextensionsv1beta1.CustomResourceDefinition
-	newCRDClient      *k8scrdclient.CRDClient
-	newK8sExtClient   apiextensionsclient.Interface
-	newInformer       *Informer
-	newWatcherFactory WatcherFactory
+	k8sClient kubernetes.Interface
 )
 
 type Test struct {
@@ -125,8 +121,9 @@ func init() {
 		flag.StringVar(&keyFile, "integration.key", homePath(".minikube/apiserver.key"), "Key file path.")
 	}
 
+	var restConfig *rest.Config
 	{
-		c := k8sextclient.DefaultConfig()
+		c := k8srestconfig.DefaultConfig()
 
 		c.Logger = microloggertest.New()
 
@@ -136,59 +133,22 @@ func init() {
 		c.TLS.CrtFile = crtFile
 		c.TLS.KeyFile = keyFile
 
-		newK8sExtClient, err = k8sextclient.New(c)
+		restConfig, err = k8srestconfig.New(c)
 		if err != nil {
 			panic(fmt.Sprintf("%#v", err))
 		}
 	}
 
-	{
-		c := k8scrdclient.DefaultConfig()
-
-		c.Logger = microloggertest.New()
-		c.K8sExtClient = newK8sExtClient
-
-		newCRDClient, err = k8scrdclient.New(c)
-		if err != nil {
-			panic(fmt.Sprintf("%#v", err))
-		}
-	}
-
-	{
-		newCRD = &apiextensionsv1beta1.CustomResourceDefinition{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: apiextensionsv1beta1.SchemeGroupVersion.String(),
-				Kind:       "CustomResourceDefinition",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "tests.foo.giantswarm.io",
-			},
-			Spec: apiextensionsv1beta1.CustomResourceDefinitionSpec{
-				Group:   "foo.giantswarm.io",
-				Scope:   "Cluster",
-				Version: "v1alpha1",
-				Names: apiextensionsv1beta1.CustomResourceDefinitionNames{
-					Kind:     "Test",
-					Plural:   "tests",
-					Singular: "test",
-				},
-			},
-		}
-	}
-
-	{
-		zeroObjectFactory := &ZeroObjectFactoryFuncs{
-			NewObjectFunc:     func() runtime.Object { return &Test{} },
-			NewObjectListFunc: func() runtime.Object { return &TestList{} },
-		}
-		newWatcherFactory = NewWatcherFactory(newK8sExtClient.Discovery().RESTClient(), filepath.Join("apis", "foo.giantswarm.io", "v1alpha1", "watch", "tests"), zeroObjectFactory)
+	k8sClient, err = kubernetes.NewForConfig(restConfig)
+	if err != nil {
+		panic(fmt.Sprintf("%#v", err))
 	}
 }
 
 func testNewInformer(t *testing.T, rateWait, resyncPeriod time.Duration) *Informer {
 	c := DefaultConfig()
 
-	c.WatcherFactory = newWatcherFactory
+	c.Watcher = k8sClient.CoreV1().ConfigMaps(namespace)
 
 	c.RateWait = rateWait
 	c.ResyncPeriod = resyncPeriod
@@ -217,37 +177,27 @@ func testAssertCROWithID(t *testing.T, e watch.Event, IDs ...string) {
 	t.Fatalf("expected one of %#v got %#v", IDs, name)
 }
 
-func testCreateCRO(t *testing.T, ID string) {
-	p := filepath.Join("apis", "foo.giantswarm.io", "v1alpha1", "tests")
-
-	o := &Test{
+func testCreateObj(t *testing.T, ID string) {
+	cm := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "foo.giantswarm.io/v1alpha1",
-			Kind:       "Test",
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: ID,
+			Name:      ID,
+			Namespace: namespace,
 		},
-		Spec: TestSpec{
-			ID: ID,
-		},
+		Data: map[string]string{},
 	}
 
-	b, err := json.Marshal(o)
-	if err != nil {
-		t.Fatalf("expected %#v got %#v", nil, err)
-	}
-
-	err = newK8sExtClient.Discovery().RESTClient().Post().AbsPath(p).Body(b).Do().Error()
+	_, err := k8sClient.CoreV1().ConfigMaps(namespace).Create(cm)
 	if err != nil {
 		t.Fatalf("expected %#v got %#v", nil, err)
 	}
 }
 
-func testDeleteCRO(t *testing.T, ID string) {
-	p := filepath.Join("apis", "foo.giantswarm.io", "v1alpha1", "tests", ID)
-
-	err := newK8sExtClient.Discovery().RESTClient().Delete().AbsPath(p).Do().Error()
+func testDeleteObj(t *testing.T, ID string) {
+	err := k8sClient.CoreV1().ConfigMaps(namespace).Delete(ID, nil)
 	if err != nil {
 		t.Fatalf("expected %#v got %#v", nil, err)
 	}
@@ -256,14 +206,25 @@ func testDeleteCRO(t *testing.T, ID string) {
 func testSetup(t *testing.T) {
 	testTeardown(t)
 
-	err := newCRDClient.Ensure(context.TODO(), newCRD, backoff.NewExponentialBackOff())
+	ns := &corev1.Namespace{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Namespace",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: namespace,
+		},
+		Spec: corev1.NamespaceSpec{},
+	}
+
+	_, err := k8sClient.CoreV1().Namespaces().Create(ns)
 	if err != nil {
 		t.Fatalf("expected %#v got %#v", nil, err)
 	}
 }
 
 func testTeardown(t *testing.T) {
-	err := newK8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(newCRD.Name, nil)
+	err := k8sClient.CoreV1().Namespaces().Delete(namespace, nil)
 	if errors.IsNotFound(err) {
 		// fall though
 	} else if err != nil {

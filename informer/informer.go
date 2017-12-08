@@ -24,6 +24,7 @@ import (
 
 	"github.com/giantswarm/microerror"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 )
@@ -41,10 +42,12 @@ const (
 type Config struct {
 	// Dependencies.
 
-	WatcherFactory WatcherFactory
+	Watcher Watcher
 
 	// Settings.
 
+	// ListOptions to be passed to Watcher.Watch.
+	ListOptions metav1.ListOptions
 	// RateWait provides configuration for some kind of rate limitting. The
 	// informer watch provides events via the update channel every ResyncPeriod.
 	// This triggers the release of update events. RateWait is the time to wait
@@ -59,9 +62,10 @@ type Config struct {
 func DefaultConfig() Config {
 	return Config{
 		// Dependencies.
-		WatcherFactory: nil,
+		Watcher: nil,
 
 		// Settings.
+		ListOptions:  metav1.ListOptions{},
 		RateWait:     DefaultRateWait,
 		ResyncPeriod: DefaultResyncPeriod,
 	}
@@ -71,13 +75,14 @@ func DefaultConfig() Config {
 // in a deterministic way.
 type Informer struct {
 	// Dependencies.
-	watcherFactory WatcherFactory
+	watcher Watcher
 
 	// Internals.
 	cache       *sync.Map
 	initializer chan struct{}
 
 	// Settings.
+	listOptions  metav1.ListOptions
 	rateWait     time.Duration
 	resyncPeriod time.Duration
 }
@@ -85,8 +90,8 @@ type Informer struct {
 // New creates a new Informer.
 func New(config Config) (*Informer, error) {
 	// Dependencies.
-	if config.WatcherFactory == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.WatcherFactory must not be empty")
+	if config.Watcher == nil {
+		return nil, microerror.Maskf(invalidConfigError, "config.Watcher must not be empty")
 	}
 
 	// Settings.
@@ -96,13 +101,14 @@ func New(config Config) (*Informer, error) {
 
 	newInformer := &Informer{
 		// Settings.
-		watcherFactory: config.WatcherFactory,
+		watcher: config.Watcher,
 
 		// Internals.
 		cache:       &sync.Map{},
 		initializer: make(chan struct{}),
 
 		// Settings.
+		listOptions:  config.ListOptions,
 		rateWait:     config.RateWait,
 		resyncPeriod: config.ResyncPeriod,
 	}
@@ -290,7 +296,7 @@ func (i *Informer) cacheAndSendIfNotExists(event watch.Event, updateChan chan wa
 // initialization. As soon as the watcher does not receive any event objects
 // anymore, the cache is filled and the usual event watching process can begin.
 func (i *Informer) fillCache(ctx context.Context, eventChan chan watch.Event) error {
-	watcher, err := i.watcherFactory()
+	watcher, err := i.watcher.Watch(i.listOptions)
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -382,7 +388,7 @@ func (i *Informer) sendCachedEvents(ctx context.Context, deleteChan, updateChan 
 // canceled via the done channel of the provided context, streamEvents returns
 // and stops blocking.
 func (i *Informer) streamEvents(ctx context.Context, eventChan chan watch.Event) error {
-	watcher, err := i.watcherFactory()
+	watcher, err := i.watcher.Watch(i.listOptions)
 	if err != nil {
 		return microerror.Mask(err)
 	}
