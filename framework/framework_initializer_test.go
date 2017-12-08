@@ -9,9 +9,8 @@ import (
 	"github.com/giantswarm/micrologger/loggermeta"
 	"github.com/giantswarm/micrologger/microloggertest"
 	"github.com/giantswarm/operatorkit/informer/informertest"
-	"github.com/giantswarm/operatorkit/tpr/tprtest"
+	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	corev1 "k8s.io/client-go/pkg/api/v1"
 )
 
 func Test_Framework_InitCtxFunc(t *testing.T) {
@@ -21,7 +20,7 @@ func Test_Framework_InitCtxFunc(t *testing.T) {
 		ExpectedLoggerMetaObject string
 	}{
 		{
-			Object: &corev1.Pod{
+			Object: &apiv1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					SelfLink: "/api/v1/namespace/default/pods/test-pod",
 				},
@@ -51,7 +50,6 @@ func Test_Framework_InitCtxFunc(t *testing.T) {
 			c.ResourceRouter = DefaultResourceRouter([]Resource{
 				r,
 			})
-			c.TPR = tprtest.New()
 
 			var err error
 			f, err = New(c)
@@ -120,7 +118,6 @@ func Test_Framework_InitCtxFunc_AddFunc(t *testing.T) {
 			c.ResourceRouter = DefaultResourceRouter([]Resource{
 				r,
 			})
-			c.TPR = tprtest.New()
 
 			var err error
 			f, err = New(c)
@@ -181,7 +178,6 @@ func Test_Framework_InitCtxFunc_DeleteFunc(t *testing.T) {
 			c.ResourceRouter = DefaultResourceRouter([]Resource{
 				r,
 			})
-			c.TPR = tprtest.New()
 
 			var err error
 			f, err = New(c)
@@ -242,7 +238,6 @@ func Test_Framework_InitCtxFunc_UpdateFunc(t *testing.T) {
 			c.ResourceRouter = DefaultResourceRouter([]Resource{
 				r,
 			})
-			c.TPR = tprtest.New()
 
 			var err error
 			f, err = New(c)
