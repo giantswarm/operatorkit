@@ -26,7 +26,7 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 	// We create a custom object before starting the informer watch. This causes
 	// the informer to fill the cache and to initially sent cached events to the
 	// delete and update channels provided by the watch.
-	testCreateCRO(t, objectIDOne)
+	testCreateObj(t, objectIDOne)
 
 	// When there is a runtime object in the API we start the watch.
 	deleteChan, updateChan, errChan := newInformer.Watch(ctx)
@@ -64,7 +64,7 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 
 	// We create another runtime object. This should be received immediately.
 	{
-		testCreateCRO(t, objectIDTwo)
+		testCreateObj(t, objectIDTwo)
 
 		start := time.Now()
 
@@ -124,7 +124,7 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 	// Now we delete a runtime object. This event is expected to be received
 	// immediately.
 	{
-		testDeleteCRO(t, objectIDOne)
+		testDeleteObj(t, objectIDOne)
 
 		start := time.Now()
 
