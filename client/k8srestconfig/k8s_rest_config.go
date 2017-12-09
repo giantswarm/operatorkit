@@ -1,7 +1,7 @@
 // Package k8srestconfig provides interface to create client-go rest config
 // which can be used to construct various clients.
 //
-// Example useage:
+// Example usage:
 //
 //	import (
 //		"k8s.io/client-go/kubernetes"
@@ -13,7 +13,7 @@
 //		"github.com/giantswarm/microerror"
 //	)
 //
-//	func f() error {
+//	func f(config Config) error {
 //		var err error
 //
 //		var restConfig *rest.Config
