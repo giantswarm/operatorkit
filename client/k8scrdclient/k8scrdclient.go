@@ -94,7 +94,7 @@ func (c *CRDClient) EnsureCreation(ctx context.Context, customResource *apiexten
 func (c *CRDClient) EnsureDeletion(ctx context.Context, customResource *apiextensionsv1beta1.CustomResourceDefinition, backOff backoff.BackOff) error {
 	operation := func() error {
 		err := c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(customResource.Name, nil)
-		if errors.IsAlreadyExists(err) {
+		if errors.IsNotFound(err) {
 			// Fall trough. We reached our goal.
 		} else if err != nil {
 			return microerror.Mask(err)
