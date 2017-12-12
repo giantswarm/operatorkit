@@ -50,7 +50,7 @@ type Resource interface {
 	// compute the desired state of a system.
 	GetDesiredState(ctx context.Context, obj interface{}) (interface{}, error)
 
-	// NewUpdatePatch is callend upon observed custom object change. It receives
+	// NewUpdatePatch is called upon observed custom object change. It receives
 	// the observed custom object, the current state as provided by
 	// GetCurrentState and the desired state as provided by
 	// GetDesiredState. NewUpdatePatch analyses the current and desired
