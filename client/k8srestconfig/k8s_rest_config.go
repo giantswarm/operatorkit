@@ -9,7 +9,7 @@
 //		apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 //
 //		"github.com/giantswarm/operatorkit/client/k8srestconfig"
-//		gsclient "github.com/giantswarm/apiextensions/pkg/clientset/versioned"
+//		"github.com/giantswarm/apiextensions/pkg/clientset/versioned"
 //		"github.com/giantswarm/microerror"
 //	)
 //
@@ -44,7 +44,7 @@
 //			return micorerror.Mask(err)
 //		}
 //
-//		gsClient, err := gsclient.NewForConfig(restConfig)
+//		g8sClient, err := versioned.NewForConfig(restConfig)
 //		if err != nil {
 //			return microerror.Mask(err)
 //		}
