@@ -45,9 +45,9 @@ func New(config Config) (*CRDClient, error) {
 	return crdClient, nil
 }
 
-// Ensure ensures CRD exists, it is active (aka. established) and does not have
-// conflicting names.
-func (c *CRDClient) Ensure(ctx context.Context, customResource *apiextensionsv1beta1.CustomResourceDefinition, backOff backoff.BackOff) error {
+// EnsureCreated ensures the given CRD exists, is active (aka. established) and
+// does not have conflicting names.
+func (c *CRDClient) EnsureCreated(ctx context.Context, customResource *apiextensionsv1beta1.CustomResourceDefinition, backOff backoff.BackOff) error {
 	_, err := c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Create(customResource)
 	if errors.IsAlreadyExists(err) {
 		// Fall trough. We need to check CRD status.
@@ -84,6 +84,27 @@ func (c *CRDClient) Ensure(ctx context.Context, customResource *apiextensionsv1b
 			return microerror.Mask(deleteErr)
 		}
 
+		return microerror.Mask(err)
+	}
+
+	return nil
+}
+
+// EnsureDeleted ensures the given CRD does not exist.
+func (c *CRDClient) EnsureDeleted(ctx context.Context, customResource *apiextensionsv1beta1.CustomResourceDefinition, backOff backoff.BackOff) error {
+	operation := func() error {
+		err := c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(customResource.Name, nil)
+		if errors.IsNotFound(err) {
+			// Fall trough. We reached our goal.
+		} else if err != nil {
+			return microerror.Mask(err)
+		}
+
+		return nil
+	}
+
+	err := backoff.Retry(operation, backOff)
+	if err != nil {
 		return microerror.Mask(err)
 	}
 

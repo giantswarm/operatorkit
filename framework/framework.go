@@ -666,7 +666,7 @@ func (f *Framework) bootWithError(ctx context.Context) error {
 	if f.crd != nil {
 		f.logger.LogCtx(ctx, "debug", "ensuring custom resource definition exists")
 
-		err := f.crdClient.Ensure(ctx, f.crd, f.backOffFactory())
+		err := f.crdClient.EnsureCreated(ctx, f.crd, f.backOffFactory())
 		if err != nil {
 			return microerror.Mask(err)
 		}
