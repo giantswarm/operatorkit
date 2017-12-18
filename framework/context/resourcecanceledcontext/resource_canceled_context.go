@@ -1,6 +1,6 @@
-// Package canceledcontext stores and accesses the canceled in
+// Package resourcecanceledcontext stores and accesses the canceled in
 // context.Context.
-package canceledcontext
+package resourcecanceledcontext
 
 import (
 	"context"
@@ -11,8 +11,8 @@ import (
 type key string
 
 // canceledKey is the key for canceled values in context.Context.
-// Clients use canceledcontext.NewContext and
-// canceledcontext.FromContext instead of using this key directly.
+// Clients use resourcecanceledcontext.NewContext and
+// resourcecanceledcontext.FromContext instead of using this key directly.
 var canceledKey key = "canceled"
 
 // NewContext returns a new context.Context that carries value v.

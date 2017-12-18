@@ -18,7 +18,8 @@ import (
 	"k8s.io/client-go/tools/cache"
 
 	"github.com/giantswarm/operatorkit/client/k8scrdclient"
-	"github.com/giantswarm/operatorkit/framework/context/canceledcontext"
+	"github.com/giantswarm/operatorkit/framework/context/reconciliationcanceledcontext"
+	"github.com/giantswarm/operatorkit/framework/context/resourcecanceledcontext"
 	"github.com/giantswarm/operatorkit/informer"
 )
 
@@ -114,7 +115,8 @@ func New(config Config) (*Framework, error) {
 	}
 
 	initCtxFunc := func(ctx context.Context, obj interface{}) (context.Context, error) {
-		ctx = canceledcontext.NewContext(ctx, make(chan struct{}))
+		ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
+		ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 
 		ctx, err := config.InitCtxFunc(ctx, obj)
 		if err != nil {
@@ -349,8 +351,12 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 
 		var currentState interface{}
 		{
-			if canceledcontext.IsCanceled(ctx) {
+			if reconciliationcanceledcontext.IsCanceled(ctx) {
 				return nil
+			}
+			if resourcecanceledcontext.IsCanceled(ctx) {
+				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
+				continue
 			}
 
 			meta, ok := loggermeta.FromContext(ctx)
@@ -366,8 +372,12 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 
 		var desiredState interface{}
 		{
-			if canceledcontext.IsCanceled(ctx) {
+			if reconciliationcanceledcontext.IsCanceled(ctx) {
 				return nil
+			}
+			if resourcecanceledcontext.IsCanceled(ctx) {
+				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
+				continue
 			}
 
 			meta, ok := loggermeta.FromContext(ctx)
@@ -383,8 +393,12 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 
 		var patch *Patch
 		{
-			if canceledcontext.IsCanceled(ctx) {
+			if reconciliationcanceledcontext.IsCanceled(ctx) {
 				return nil
+			}
+			if resourcecanceledcontext.IsCanceled(ctx) {
+				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
+				continue
 			}
 
 			meta, ok := loggermeta.FromContext(ctx)
@@ -403,8 +417,12 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 		}
 
 		{
-			if canceledcontext.IsCanceled(ctx) {
+			if reconciliationcanceledcontext.IsCanceled(ctx) {
 				return nil
+			}
+			if resourcecanceledcontext.IsCanceled(ctx) {
+				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
+				continue
 			}
 
 			createChange, ok := patch.getCreateChange()
@@ -422,8 +440,12 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 		}
 
 		{
-			if canceledcontext.IsCanceled(ctx) {
+			if reconciliationcanceledcontext.IsCanceled(ctx) {
 				return nil
+			}
+			if resourcecanceledcontext.IsCanceled(ctx) {
+				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
+				continue
 			}
 
 			deleteChange, ok := patch.getDeleteChange()
@@ -441,8 +463,12 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 		}
 
 		{
-			if canceledcontext.IsCanceled(ctx) {
+			if reconciliationcanceledcontext.IsCanceled(ctx) {
 				return nil
+			}
+			if resourcecanceledcontext.IsCanceled(ctx) {
+				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
+				continue
 			}
 
 			updateChange, ok := patch.getUpdateChange()
@@ -523,8 +549,12 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 
 		var currentState interface{}
 		{
-			if canceledcontext.IsCanceled(ctx) {
+			if reconciliationcanceledcontext.IsCanceled(ctx) {
 				return nil
+			}
+			if resourcecanceledcontext.IsCanceled(ctx) {
+				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
+				continue
 			}
 
 			meta, ok := loggermeta.FromContext(ctx)
@@ -540,8 +570,12 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 
 		var desiredState interface{}
 		{
-			if canceledcontext.IsCanceled(ctx) {
+			if reconciliationcanceledcontext.IsCanceled(ctx) {
 				return nil
+			}
+			if resourcecanceledcontext.IsCanceled(ctx) {
+				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
+				continue
 			}
 
 			meta, ok := loggermeta.FromContext(ctx)
@@ -557,8 +591,12 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 
 		var patch *Patch
 		{
-			if canceledcontext.IsCanceled(ctx) {
+			if reconciliationcanceledcontext.IsCanceled(ctx) {
 				return nil
+			}
+			if resourcecanceledcontext.IsCanceled(ctx) {
+				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
+				continue
 			}
 
 			meta, ok := loggermeta.FromContext(ctx)
@@ -577,8 +615,12 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 		}
 
 		{
-			if canceledcontext.IsCanceled(ctx) {
+			if reconciliationcanceledcontext.IsCanceled(ctx) {
 				return nil
+			}
+			if resourcecanceledcontext.IsCanceled(ctx) {
+				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
+				continue
 			}
 
 			createState, ok := patch.getCreateChange()
@@ -596,8 +638,12 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 		}
 
 		{
-			if canceledcontext.IsCanceled(ctx) {
+			if reconciliationcanceledcontext.IsCanceled(ctx) {
 				return nil
+			}
+			if resourcecanceledcontext.IsCanceled(ctx) {
+				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
+				continue
 			}
 
 			deleteState, ok := patch.getDeleteChange()
@@ -615,8 +661,12 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 		}
 
 		{
-			if canceledcontext.IsCanceled(ctx) {
+			if reconciliationcanceledcontext.IsCanceled(ctx) {
 				return nil
+			}
+			if resourcecanceledcontext.IsCanceled(ctx) {
+				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
+				continue
 			}
 
 			updateState, ok := patch.getUpdateChange()
