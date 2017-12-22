@@ -20,6 +20,8 @@ import (
 	"github.com/giantswarm/operatorkit/client/k8scrdclient"
 	"github.com/giantswarm/operatorkit/framework/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/framework/context/resourcecanceledcontext"
+	"github.com/giantswarm/operatorkit/framework/context/updateallowedcontext"
+	"github.com/giantswarm/operatorkit/framework/context/updatenecessarycontext"
 	"github.com/giantswarm/operatorkit/informer"
 )
 
@@ -117,6 +119,8 @@ func New(config Config) (*Framework, error) {
 	initCtxFunc := func(ctx context.Context, obj interface{}) (context.Context, error) {
 		ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
 		ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
+		ctx = updateallowedcontext.NewContext(ctx, make(chan struct{}))
+		ctx = updatenecessarycontext.NewContext(ctx, make(chan struct{}))
 
 		ctx, err := config.InitCtxFunc(ctx, obj)
 		if err != nil {
