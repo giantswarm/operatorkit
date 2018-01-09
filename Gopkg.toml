@@ -17,9 +17,12 @@
 #   source = "github.com/myfork/project2"
 #
 # [[override]]
-#  name = "github.com/x/y"
-#  version = "2.4.0"
+#   name = "github.com/x/y"
+#   version = "2.4.0"
 
+required = [
+  "k8s.io/api/core/v1"
+]
 
 [[constraint]]
   name = "github.com/cenkalti/backoff"
