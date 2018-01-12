@@ -1,3 +1,0 @@
-package: github.com/giantswarm/microkit
-import:
-- package: github.com/juju/errgo
