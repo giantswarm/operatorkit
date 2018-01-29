@@ -13,15 +13,12 @@ import (
 	"github.com/giantswarm/micrologger/loggermeta"
 	"github.com/prometheus/client_golang/prometheus"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 
 	"github.com/giantswarm/operatorkit/client/k8scrdclient"
 	"github.com/giantswarm/operatorkit/framework/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/framework/context/resourcecanceledcontext"
-	"github.com/giantswarm/operatorkit/framework/context/updateallowedcontext"
-	"github.com/giantswarm/operatorkit/framework/context/updatenecessarycontext"
 	"github.com/giantswarm/operatorkit/informer"
 )
 
@@ -32,21 +29,18 @@ type Config struct {
 	CRD       *apiextensionsv1beta1.CustomResourceDefinition
 	CRDClient *k8scrdclient.CRDClient
 	Informer  informer.Interface
-	// InitCtxFunc is to prepare the given context for a single reconciliation
-	// loop. Operators can implement common context packages to enable
-	// communication between resources. These context packages can be set up
-	// within the context initializer function. InitCtxFunc receives the custom
-	// object being reconciled as second argument. Information provided by the
-	// custom object can be used to initialize the context.
-	InitCtxFunc func(ctx context.Context, obj interface{}) (context.Context, error)
-	Logger      micrologger.Logger
-	// ResourceRouter is to decide which resources to execute. Each custom object
-	// being reconciled is executed against a list of resources. Since custom
-	// objects may differ in version and/or structure the resource router enables
-	// custom inspection before each reconciliation loop. That way whole resources
-	// can be versioned and different resources can be executed depending on the
-	// custom object being reconciled.
-	ResourceRouter func(ctx context.Context, obj interface{}) ([]Resource, error)
+	Logger    micrologger.Logger
+	// ResourceRouterSet determines which resource router to use on reconciliation
+	// based on its configured version bundle version. A resource router is to
+	// decide which resources to execute. It also provides a specific function to
+	// initialize the request context for a reconciliation loop. That way each
+	// custom object being reconciled is executed against a list of resources.
+	// Since custom objects may differ in version and/or structure the resource
+	// router enables custom inspection before each reconciliation loop. That way
+	// the complete list of resources being executed for the received custom
+	// object can be versioned and different resources can be executed depending
+	// on the custom object being reconciled.
+	ResourceRouterSet *ResourceRouterSet
 
 	// Settings.
 	BackOffFactory func() backoff.BackOff
@@ -57,11 +51,11 @@ type Config struct {
 func DefaultConfig() Config {
 	return Config{
 		// Dependencies.
-		CRD:            nil,
-		CRDClient:      nil,
-		Informer:       nil,
-		Logger:         nil,
-		ResourceRouter: nil,
+		CRD:               nil,
+		CRDClient:         nil,
+		Informer:          nil,
+		Logger:            nil,
+		ResourceRouterSet: nil,
 
 		// Settings.
 		BackOffFactory: func() backoff.BackOff {
@@ -69,23 +63,19 @@ func DefaultConfig() Config {
 			b.MaxElapsedTime = 0
 			return backoff.WithMaxTries(b, 7)
 		},
-		InitCtxFunc: func(ctx context.Context, obj interface{}) (context.Context, error) {
-			return ctx, nil
-		},
 	}
 }
 
 type Framework struct {
 	// Dependencies.
-	crd            *apiextensionsv1beta1.CustomResourceDefinition
-	crdClient      *k8scrdclient.CRDClient
-	informer       informer.Interface
-	logger         micrologger.Logger
-	resourceRouter func(ctx context.Context, obj interface{}) ([]Resource, error)
+	crd               *apiextensionsv1beta1.CustomResourceDefinition
+	crdClient         *k8scrdclient.CRDClient
+	informer          informer.Interface
+	logger            micrologger.Logger
+	resourceRouterSet *ResourceRouterSet
 
 	// Settings.
 	backOffFactory func() backoff.BackOff
-	initCtxFunc    func(ctx context.Context, obj interface{}) (context.Context, error)
 
 	// Internals.
 	bootOnce sync.Once
@@ -104,56 +94,25 @@ func New(config Config) (*Framework, error) {
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
 	}
-	if config.ResourceRouter == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.ResourceRouter must not be empty")
+	if config.ResourceRouterSet == nil {
+		return nil, microerror.Maskf(invalidConfigError, "config.VersionedResourceRouter must not be empty")
 	}
 
 	// Settings.
 	if config.BackOffFactory == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.BackOffFactory must not be empty")
 	}
-	if config.InitCtxFunc == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.InitCtxFunc must not be empty")
-	}
-
-	initCtxFunc := func(ctx context.Context, obj interface{}) (context.Context, error) {
-		ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
-		ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
-		ctx = updateallowedcontext.NewContext(ctx, make(chan struct{}))
-		ctx = updatenecessarycontext.NewContext(ctx, make(chan struct{}))
-
-		ctx, err := config.InitCtxFunc(ctx, obj)
-		if err != nil {
-			return nil, microerror.Maskf(err, "initializing context")
-		}
-
-		accessor, err := meta.Accessor(obj)
-		if err != nil {
-			config.Logger.Log("warning", fmt.Sprintf("cannot create accessor for object %#v", obj))
-		} else {
-			meta, ok := loggermeta.FromContext(ctx)
-			if !ok {
-				meta = loggermeta.New()
-			}
-			meta.KeyVals["object"] = accessor.GetSelfLink()
-
-			ctx = loggermeta.NewContext(ctx, meta)
-		}
-
-		return ctx, nil
-	}
 
 	f := &Framework{
 		// Dependencies.
-		crd:            config.CRD,
-		crdClient:      config.CRDClient,
-		informer:       config.Informer,
-		logger:         config.Logger,
-		resourceRouter: config.ResourceRouter,
+		crd:               config.CRD,
+		crdClient:         config.CRDClient,
+		informer:          config.Informer,
+		logger:            config.Logger,
+		resourceRouterSet: config.ResourceRouterSet,
 
 		// Settings.
 		backOffFactory: config.BackOffFactory,
-		initCtxFunc:    initCtxFunc,
 
 		// Internals.
 		bootOnce: sync.Once{},
@@ -174,13 +133,20 @@ func (f *Framework) AddFunc(obj interface{}) {
 	defer f.mutex.Unlock()
 
 	ctx := context.Background()
-	ctx, err := f.initCtxFunc(ctx, obj)
+
+	resourceRouter, err := f.resourceRouterSet.VersionedResourceRouter(obj)
 	if err != nil {
 		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "create")
 		return
 	}
 
-	rs, err := f.resourceRouter(ctx, obj)
+	ctx, err = resourceRouter.CtxFunc()(ctx, obj)
+	if err != nil {
+		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "create")
+		return
+	}
+
+	rs, err := resourceRouter.ResourceFunc()(ctx, obj)
 	if err != nil {
 		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "create")
 		return
@@ -233,13 +199,20 @@ func (f *Framework) DeleteFunc(obj interface{}) {
 	defer f.mutex.Unlock()
 
 	ctx := context.Background()
-	ctx, err := f.initCtxFunc(ctx, obj)
+
+	resourceRouter, err := f.resourceRouterSet.VersionedResourceRouter(obj)
 	if err != nil {
 		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "delete")
 		return
 	}
 
-	rs, err := f.resourceRouter(ctx, obj)
+	ctx, err = resourceRouter.CtxFunc()(ctx, obj)
+	if err != nil {
+		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "delete")
+		return
+	}
+
+	rs, err := resourceRouter.ResourceFunc()(ctx, obj)
 	if err != nil {
 		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "delete")
 		return
@@ -282,13 +255,20 @@ func (f *Framework) UpdateFunc(oldObj, newObj interface{}) {
 	defer f.mutex.Unlock()
 
 	ctx := context.Background()
-	ctx, err := f.initCtxFunc(ctx, obj)
+
+	resourceRouter, err := f.resourceRouterSet.VersionedResourceRouter(obj)
 	if err != nil {
 		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "update")
 		return
 	}
 
-	rs, err := f.resourceRouter(ctx, obj)
+	ctx, err = resourceRouter.CtxFunc()(ctx, obj)
+	if err != nil {
+		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "update")
+		return
+	}
+
+	rs, err := resourceRouter.ResourceFunc()(ctx, obj)
 	if err != nil {
 		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "update")
 		return

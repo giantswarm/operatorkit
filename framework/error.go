@@ -4,6 +4,13 @@ import (
 	"github.com/giantswarm/microerror"
 )
 
+var customObjectVersionNotFoundError = microerror.New("custom object version not found")
+
+// IsCustomObjectVersionNotFound asserts customObjectVersionNotFoundError.
+func IsCustomObjectVersionNotFound(err error) bool {
+	return microerror.Cause(err) == customObjectVersionNotFoundError
+}
+
 var executionFailedError = microerror.New("execution failed")
 
 // IsExecutionFailed asserts executionFailedError.
