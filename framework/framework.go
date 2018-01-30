@@ -132,29 +132,21 @@ func (f *Framework) AddFunc(obj interface{}) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
-	ctx := context.Background()
-
 	resourceSet, err := f.resourceRouter.ResourceSet(obj)
 	if err != nil {
-		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "create")
+		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "create")
 		return
 	}
 
-	ctx, err = resourceSet.CtxFunc()(ctx, obj)
+	ctx, err := resourceSet.InitCtx(context.Background(), obj)
 	if err != nil {
-		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "create")
-		return
-	}
-
-	rs, err := resourceSet.ResourceFunc()(ctx, obj)
-	if err != nil {
-		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "create")
+		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "create")
 		return
 	}
 
 	f.logger.LogCtx(ctx, "action", "start", "component", "operatorkit", "function", "ProcessCreate")
 
-	err = ProcessCreate(ctx, obj, rs)
+	err = ProcessCreate(ctx, obj, resourceSet.Resources())
 	if err != nil {
 		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "create")
 		return
@@ -198,29 +190,21 @@ func (f *Framework) DeleteFunc(obj interface{}) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
-	ctx := context.Background()
-
 	resourceSet, err := f.resourceRouter.ResourceSet(obj)
 	if err != nil {
-		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "delete")
+		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "delete")
 		return
 	}
 
-	ctx, err = resourceSet.CtxFunc()(ctx, obj)
+	ctx, err := resourceSet.InitCtx(context.Background(), obj)
 	if err != nil {
-		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "delete")
-		return
-	}
-
-	rs, err := resourceSet.ResourceFunc()(ctx, obj)
-	if err != nil {
-		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "delete")
+		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "delete")
 		return
 	}
 
 	f.logger.LogCtx(ctx, "action", "start", "component", "operatorkit", "function", "ProcessDelete")
 
-	err = ProcessDelete(ctx, obj, rs)
+	err = ProcessDelete(ctx, obj, resourceSet.Resources())
 	if err != nil {
 		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "delete")
 		return
@@ -254,29 +238,21 @@ func (f *Framework) UpdateFunc(oldObj, newObj interface{}) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
-	ctx := context.Background()
-
 	resourceSet, err := f.resourceRouter.ResourceSet(obj)
 	if err != nil {
-		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "update")
+		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "update")
 		return
 	}
 
-	ctx, err = resourceSet.CtxFunc()(ctx, obj)
+	ctx, err := resourceSet.InitCtx(context.Background(), obj)
 	if err != nil {
-		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "update")
-		return
-	}
-
-	rs, err := resourceSet.ResourceFunc()(ctx, obj)
-	if err != nil {
-		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "update")
+		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "update")
 		return
 	}
 
 	f.logger.LogCtx(ctx, "action", "start", "component", "operatorkit", "function", "ProcessUpdate")
 
-	err = ProcessUpdate(ctx, obj, rs)
+	err = ProcessUpdate(ctx, obj, resourceSet.Resources())
 	if err != nil {
 		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "update")
 		return
