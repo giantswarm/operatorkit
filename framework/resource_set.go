@@ -25,8 +25,11 @@ type ResourceSetConfig struct {
 	// initializer function. InitCtx receives the runtime object being reconciled
 	// as second argument. Information provided by the runtime object can be used
 	// to initialize the context.
-	InitCtx   func(ctx context.Context, obj interface{}) (context.Context, error)
-	Logger    micrologger.Logger
+	InitCtx func(ctx context.Context, obj interface{}) (context.Context, error)
+	// Logger is a usual micrologger instance to emit log messages, if any.
+	Logger micrologger.Logger
+	// Resources is the list of framework resources being executed on runtime
+	// object reconciliation if Handles returns true when asked by the framework.
 	Resources []Resource
 }
 
