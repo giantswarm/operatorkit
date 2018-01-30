@@ -13,15 +13,12 @@ import (
 	"github.com/giantswarm/micrologger/loggermeta"
 	"github.com/prometheus/client_golang/prometheus"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 
 	"github.com/giantswarm/operatorkit/client/k8scrdclient"
 	"github.com/giantswarm/operatorkit/framework/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/framework/context/resourcecanceledcontext"
-	"github.com/giantswarm/operatorkit/framework/context/updateallowedcontext"
-	"github.com/giantswarm/operatorkit/framework/context/updatenecessarycontext"
 	"github.com/giantswarm/operatorkit/informer"
 )
 
@@ -32,21 +29,19 @@ type Config struct {
 	CRD       *apiextensionsv1beta1.CustomResourceDefinition
 	CRDClient *k8scrdclient.CRDClient
 	Informer  informer.Interface
-	// InitCtxFunc is to prepare the given context for a single reconciliation
-	// loop. Operators can implement common context packages to enable
-	// communication between resources. These context packages can be set up
-	// within the context initializer function. InitCtxFunc receives the custom
-	// object being reconciled as second argument. Information provided by the
-	// custom object can be used to initialize the context.
-	InitCtxFunc func(ctx context.Context, obj interface{}) (context.Context, error)
-	Logger      micrologger.Logger
-	// ResourceRouter is to decide which resources to execute. Each custom object
-	// being reconciled is executed against a list of resources. Since custom
-	// objects may differ in version and/or structure the resource router enables
-	// custom inspection before each reconciliation loop. That way whole resources
-	// can be versioned and different resources can be executed depending on the
-	// custom object being reconciled.
-	ResourceRouter func(ctx context.Context, obj interface{}) ([]Resource, error)
+	Logger    micrologger.Logger
+	// ResourceRouter determines which resource set to use on reconciliation based
+	// on its own implementation. A resource router is to decide which resource
+	// set to execute. A resource set provides a specific function to initialize
+	// the request context and a list of resources to be executed for a
+	// reconciliation loop. That way each runtime object being reconciled is
+	// executed against a desired list of resources. Since runtime objects may
+	// differ in version and/or structure the resource router enables custom
+	// inspection before each reconciliation loop. That way the complete list of
+	// resources being executed for the received runtime object can be versioned
+	// and different resources can be executed depending on the runtime object
+	// being reconciled.
+	ResourceRouter *ResourceRouter
 
 	// Settings.
 	BackOffFactory func() backoff.BackOff
@@ -69,9 +64,6 @@ func DefaultConfig() Config {
 			b.MaxElapsedTime = 0
 			return backoff.WithMaxTries(b, 7)
 		},
-		InitCtxFunc: func(ctx context.Context, obj interface{}) (context.Context, error) {
-			return ctx, nil
-		},
 	}
 }
 
@@ -81,11 +73,10 @@ type Framework struct {
 	crdClient      *k8scrdclient.CRDClient
 	informer       informer.Interface
 	logger         micrologger.Logger
-	resourceRouter func(ctx context.Context, obj interface{}) ([]Resource, error)
+	resourceRouter *ResourceRouter
 
 	// Settings.
 	backOffFactory func() backoff.BackOff
-	initCtxFunc    func(ctx context.Context, obj interface{}) (context.Context, error)
 
 	// Internals.
 	bootOnce sync.Once
@@ -112,36 +103,6 @@ func New(config Config) (*Framework, error) {
 	if config.BackOffFactory == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.BackOffFactory must not be empty")
 	}
-	if config.InitCtxFunc == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.InitCtxFunc must not be empty")
-	}
-
-	initCtxFunc := func(ctx context.Context, obj interface{}) (context.Context, error) {
-		ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
-		ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
-		ctx = updateallowedcontext.NewContext(ctx, make(chan struct{}))
-		ctx = updatenecessarycontext.NewContext(ctx, make(chan struct{}))
-
-		ctx, err := config.InitCtxFunc(ctx, obj)
-		if err != nil {
-			return nil, microerror.Maskf(err, "initializing context")
-		}
-
-		accessor, err := meta.Accessor(obj)
-		if err != nil {
-			config.Logger.Log("warning", fmt.Sprintf("cannot create accessor for object %#v", obj))
-		} else {
-			meta, ok := loggermeta.FromContext(ctx)
-			if !ok {
-				meta = loggermeta.New()
-			}
-			meta.KeyVals["object"] = accessor.GetSelfLink()
-
-			ctx = loggermeta.NewContext(ctx, meta)
-		}
-
-		return ctx, nil
-	}
 
 	f := &Framework{
 		// Dependencies.
@@ -153,7 +114,6 @@ func New(config Config) (*Framework, error) {
 
 		// Settings.
 		backOffFactory: config.BackOffFactory,
-		initCtxFunc:    initCtxFunc,
 
 		// Internals.
 		bootOnce: sync.Once{},
@@ -173,22 +133,21 @@ func (f *Framework) AddFunc(obj interface{}) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
-	ctx := context.Background()
-	ctx, err := f.initCtxFunc(ctx, obj)
+	resourceSet, err := f.resourceRouter.ResourceSet(obj)
 	if err != nil {
-		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "create")
+		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "create")
 		return
 	}
 
-	rs, err := f.resourceRouter(ctx, obj)
+	ctx, err := resourceSet.InitCtx(context.Background(), obj)
 	if err != nil {
-		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "create")
+		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "create")
 		return
 	}
 
 	f.logger.LogCtx(ctx, "action", "start", "component", "operatorkit", "function", "ProcessCreate")
 
-	err = ProcessCreate(ctx, obj, rs)
+	err = ProcessCreate(ctx, obj, resourceSet.Resources())
 	if err != nil {
 		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "create")
 		return
@@ -232,22 +191,21 @@ func (f *Framework) DeleteFunc(obj interface{}) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
-	ctx := context.Background()
-	ctx, err := f.initCtxFunc(ctx, obj)
+	resourceSet, err := f.resourceRouter.ResourceSet(obj)
 	if err != nil {
-		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "delete")
+		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "delete")
 		return
 	}
 
-	rs, err := f.resourceRouter(ctx, obj)
+	ctx, err := resourceSet.InitCtx(context.Background(), obj)
 	if err != nil {
-		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "delete")
+		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "delete")
 		return
 	}
 
 	f.logger.LogCtx(ctx, "action", "start", "component", "operatorkit", "function", "ProcessDelete")
 
-	err = ProcessDelete(ctx, obj, rs)
+	err = ProcessDelete(ctx, obj, resourceSet.Resources())
 	if err != nil {
 		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "delete")
 		return
@@ -281,22 +239,21 @@ func (f *Framework) UpdateFunc(oldObj, newObj interface{}) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
-	ctx := context.Background()
-	ctx, err := f.initCtxFunc(ctx, obj)
+	resourceSet, err := f.resourceRouter.ResourceSet(obj)
 	if err != nil {
-		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "update")
+		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "update")
 		return
 	}
 
-	rs, err := f.resourceRouter(ctx, obj)
+	ctx, err := resourceSet.InitCtx(context.Background(), obj)
 	if err != nil {
-		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "update")
+		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "update")
 		return
 	}
 
 	f.logger.LogCtx(ctx, "action", "start", "component", "operatorkit", "function", "ProcessUpdate")
 
-	err = ProcessUpdate(ctx, obj, rs)
+	err = ProcessUpdate(ctx, obj, resourceSet.Resources())
 	if err != nil {
 		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "update")
 		return
