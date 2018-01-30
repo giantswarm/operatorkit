@@ -30,16 +30,17 @@ type Config struct {
 	CRDClient *k8scrdclient.CRDClient
 	Informer  informer.Interface
 	Logger    micrologger.Logger
-	// ResourceRouter determines which resource router to use on reconciliation
-	// based on its configured version bundle version. A resource router is to
-	// decide which resources to execute. It also provides a specific function to
-	// initialize the request context for a reconciliation loop. That way each
-	// custom object being reconciled is executed against a list of resources.
-	// Since custom objects may differ in version and/or structure the resource
-	// router enables custom inspection before each reconciliation loop. That way
-	// the complete list of resources being executed for the received custom
-	// object can be versioned and different resources can be executed depending
-	// on the custom object being reconciled.
+	// ResourceRouter determines which resource set to use on reconciliation based
+	// on its own implementation. A resource router is to decide which resource
+	// set to execute. A resource set provides a specific function to initialize
+	// the request context and a list of resources to be executed for a
+	// reconciliation loop. That way each runtime object being reconciled is
+	// executed against a desired list of resources. Since runtime objects may
+	// differ in version and/or structure the resource router enables custom
+	// inspection before each reconciliation loop. That way the complete list of
+	// resources being executed for the received runtime object can be versioned
+	// and different resources can be executed depending on the runtime object
+	// being reconciled.
 	ResourceRouter *ResourceRouter
 
 	// Settings.
