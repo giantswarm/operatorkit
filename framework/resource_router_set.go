@@ -30,13 +30,7 @@ func (r *ResourceRouterSet) VersionedResourceRouter(obj interface{}) (*ResourceR
 	var found []*ResourceRouter
 
 	for _, router := range r.resourceRouters {
-		v, err := router.CustomObjectVersionFunc()(obj)
-		if IsCustomObjectVersionNotFound(err) {
-			continue
-		} else if err != nil {
-			return nil, microerror.Mask(err)
-		}
-		if router.VersionBundleVersion() == v {
+		if router.Handles(obj) {
 			found = append(found, router)
 		}
 	}

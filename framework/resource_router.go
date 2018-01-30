@@ -16,11 +16,10 @@ import (
 )
 
 type ResourceRouterConfig struct {
-	CustomObjectVersionFunc func(obj interface{}) (string, error)
-	CtxFunc                 func(ctx context.Context, obj interface{}) (context.Context, error)
-	Logger                  micrologger.Logger
-	ResourceFunc            func(ctx context.Context, obj interface{}) ([]Resource, error)
-	VersionBundleVersion    string
+	CtxFunc      func(ctx context.Context, obj interface{}) (context.Context, error)
+	Handles      func(obj interface{}) bool
+	Logger       micrologger.Logger
+	ResourceFunc func(ctx context.Context, obj interface{}) ([]Resource, error)
 }
 
 func DefaultResourceRouterResourceFunc(rs []Resource) func(ctx context.Context, obj interface{}) ([]Resource, error) {
@@ -30,25 +29,21 @@ func DefaultResourceRouterResourceFunc(rs []Resource) func(ctx context.Context, 
 }
 
 type ResourceRouter struct {
-	ctxFunc                 func(ctx context.Context, obj interface{}) (context.Context, error)
-	customObjectVersionFunc func(obj interface{}) (string, error)
-	logger                  micrologger.Logger
-	resourceFunc            func(ctx context.Context, obj interface{}) ([]Resource, error)
-	versionBundleVersion    string
+	ctxFunc      func(ctx context.Context, obj interface{}) (context.Context, error)
+	handles      func(obj interface{}) bool
+	logger       micrologger.Logger
+	resourceFunc func(ctx context.Context, obj interface{}) ([]Resource, error)
 }
 
 func NewResourceRouter(c ResourceRouterConfig) (*ResourceRouter, error) {
 	if c.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Logger must not be empty", c)
 	}
-	if c.CustomObjectVersionFunc == nil {
-		return nil, microerror.Maskf(invalidConfigError, "%T.CustomObjectVersionFunc must not be empty", c)
+	if c.Handles == nil {
+		return nil, microerror.Maskf(invalidConfigError, "%T.Handles must not be empty", c)
 	}
 	if c.ResourceFunc == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.ResourceFunc must not be empty", c)
-	}
-	if c.VersionBundleVersion == "" {
-		return nil, microerror.Maskf(invalidConfigError, "%T.VersionBundleVersion must not be empty", c)
 	}
 
 	if c.CtxFunc == nil {
@@ -58,11 +53,10 @@ func NewResourceRouter(c ResourceRouterConfig) (*ResourceRouter, error) {
 	}
 
 	r := &ResourceRouter{
-		ctxFunc:                 c.CtxFunc,
-		customObjectVersionFunc: c.CustomObjectVersionFunc,
-		logger:                  c.Logger,
-		resourceFunc:            c.ResourceFunc,
-		versionBundleVersion:    c.VersionBundleVersion,
+		ctxFunc:      c.CtxFunc,
+		handles:      c.Handles,
+		logger:       c.Logger,
+		resourceFunc: c.ResourceFunc,
 	}
 
 	return r, nil
@@ -97,14 +91,10 @@ func (r *ResourceRouter) CtxFunc() func(ctx context.Context, obj interface{}) (c
 	}
 }
 
-func (r *ResourceRouter) CustomObjectVersionFunc() func(obj interface{}) (string, error) {
-	return r.customObjectVersionFunc
+func (r *ResourceRouter) Handles(obj interface{}) bool {
+	return r.handles(obj)
 }
 
 func (r *ResourceRouter) ResourceFunc() func(ctx context.Context, obj interface{}) ([]Resource, error) {
 	return r.resourceFunc
-}
-
-func (r *ResourceRouter) VersionBundleVersion() string {
-	return r.versionBundleVersion
 }
