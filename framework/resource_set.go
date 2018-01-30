@@ -18,7 +18,13 @@ import (
 type ResourceSetConfig struct {
 	// Handles determines if this resource set handles the reconciliation of the
 	// object.
-	Handles   func(obj interface{}) bool
+	Handles func(obj interface{}) bool
+	// InitCtx is to prepare the given context for a single reconciliation loop.
+	// Operators can implement common context packages to enable communication
+	// between resources. These context packages can be set up within this context
+	// initializer function. InitCtx receives the runtime object being reconciled
+	// as second argument. Information provided by the runtime object can be used
+	// to initialize the context.
 	InitCtx   func(ctx context.Context, obj interface{}) (context.Context, error)
 	Logger    micrologger.Logger
 	Resources []Resource
