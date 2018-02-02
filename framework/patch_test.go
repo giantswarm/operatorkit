@@ -8,7 +8,6 @@ import (
 func Test_Framework_ResourcePatchNoPanic(t *testing.T) {
 	testCases := []struct {
 		ProcessMethod func(ctx context.Context, obj interface{}, rs []Resource) error
-		Ctx           context.Context
 		Resources     []Resource
 		ErrorMatcher  func(err error) bool
 	}{
@@ -16,7 +15,6 @@ func Test_Framework_ResourcePatchNoPanic(t *testing.T) {
 		// provided.
 		{
 			ProcessMethod: ProcessDelete,
-			Ctx:           context.TODO(),
 			Resources:     nil,
 			ErrorMatcher:  IsExecutionFailed,
 		},
@@ -25,7 +23,6 @@ func Test_Framework_ResourcePatchNoPanic(t *testing.T) {
 		// the expected order.
 		{
 			ProcessMethod: ProcessDelete,
-			Ctx:           context.TODO(),
 			Resources: []Resource{
 				&testPatchResource{},
 			},
@@ -36,7 +33,6 @@ func Test_Framework_ResourcePatchNoPanic(t *testing.T) {
 		// the expected order.
 		{
 			ProcessMethod: ProcessDelete,
-			Ctx:           context.TODO(),
 			Resources: []Resource{
 				&testPatchResource{},
 				&testPatchResource{},
@@ -48,7 +44,6 @@ func Test_Framework_ResourcePatchNoPanic(t *testing.T) {
 		// provided.
 		{
 			ProcessMethod: ProcessDelete,
-			Ctx:           context.TODO(),
 			Resources:     nil,
 			ErrorMatcher:  IsExecutionFailed,
 		},
@@ -57,7 +52,6 @@ func Test_Framework_ResourcePatchNoPanic(t *testing.T) {
 		// the expected order.
 		{
 			ProcessMethod: ProcessDelete,
-			Ctx:           context.TODO(),
 			Resources: []Resource{
 				&testPatchResource{},
 			},
@@ -68,7 +62,6 @@ func Test_Framework_ResourcePatchNoPanic(t *testing.T) {
 		// the expected order.
 		{
 			ProcessMethod: ProcessDelete,
-			Ctx:           context.TODO(),
 			Resources: []Resource{
 				&testPatchResource{},
 				&testPatchResource{},
@@ -78,7 +71,7 @@ func Test_Framework_ResourcePatchNoPanic(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		err := tc.ProcessMethod(tc.Ctx, nil, tc.Resources)
+		err := tc.ProcessMethod(context.TODO(), nil, tc.Resources)
 		if err != nil {
 			if tc.ErrorMatcher == nil {
 				t.Fatal("test", i+1, "expected", nil, "got", err)
