@@ -24,7 +24,7 @@ func Test_Framework_ResourcePatchNoPanic(t *testing.T) {
 		{
 			ProcessMethod: ProcessDelete,
 			Resources: []Resource{
-				&testPatchResource{},
+				&testResourcePatchNoPanic{},
 			},
 			ErrorMatcher: nil,
 		},
@@ -34,8 +34,8 @@ func Test_Framework_ResourcePatchNoPanic(t *testing.T) {
 		{
 			ProcessMethod: ProcessDelete,
 			Resources: []Resource{
-				&testPatchResource{},
-				&testPatchResource{},
+				&testResourcePatchNoPanic{},
+				&testResourcePatchNoPanic{},
 			},
 			ErrorMatcher: nil,
 		},
@@ -53,7 +53,7 @@ func Test_Framework_ResourcePatchNoPanic(t *testing.T) {
 		{
 			ProcessMethod: ProcessDelete,
 			Resources: []Resource{
-				&testPatchResource{},
+				&testResourcePatchNoPanic{},
 			},
 			ErrorMatcher: nil,
 		},
@@ -63,8 +63,8 @@ func Test_Framework_ResourcePatchNoPanic(t *testing.T) {
 		{
 			ProcessMethod: ProcessDelete,
 			Resources: []Resource{
-				&testPatchResource{},
-				&testPatchResource{},
+				&testResourcePatchNoPanic{},
+				&testResourcePatchNoPanic{},
 			},
 			ErrorMatcher: nil,
 		},
@@ -82,46 +82,46 @@ func Test_Framework_ResourcePatchNoPanic(t *testing.T) {
 	}
 }
 
-type testPatchResource struct {
+type testResourcePatchNoPanic struct {
 	SetupPatchFunc func(p *Patch)
 }
 
-func (r *testPatchResource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
+func (r *testResourcePatchNoPanic) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
 	return nil, nil
 }
 
-func (r *testPatchResource) GetDesiredState(ctx context.Context, obj interface{}) (interface{}, error) {
+func (r *testResourcePatchNoPanic) GetDesiredState(ctx context.Context, obj interface{}) (interface{}, error) {
 	return nil, nil
 }
 
 // NewUpdatePatch returns nil for the *Patch return value, thus making sure the
 // resource reconciliation does still work and e.g. not panic.
-func (r *testPatchResource) NewUpdatePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*Patch, error) {
+func (r *testResourcePatchNoPanic) NewUpdatePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*Patch, error) {
 	return nil, nil
 }
 
 // NewDeletePatch returns nil for the *Patch return value, thus making sure the
 // resource reconciliation does still work and e.g. not panic.
-func (r *testPatchResource) NewDeletePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*Patch, error) {
+func (r *testResourcePatchNoPanic) NewDeletePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*Patch, error) {
 	return nil, nil
 }
 
-func (r *testPatchResource) Name() string {
-	return "testPatchResource"
+func (r *testResourcePatchNoPanic) Name() string {
+	return "testResourcePatchNoPanic"
 }
 
-func (r *testPatchResource) ApplyCreateChange(ctx context.Context, obj, createState interface{}) error {
+func (r *testResourcePatchNoPanic) ApplyCreateChange(ctx context.Context, obj, createState interface{}) error {
 	return nil
 }
 
-func (r *testPatchResource) ApplyDeleteChange(ctx context.Context, obj, deleteState interface{}) error {
+func (r *testResourcePatchNoPanic) ApplyDeleteChange(ctx context.Context, obj, deleteState interface{}) error {
 	return nil
 }
 
-func (r *testPatchResource) ApplyUpdateChange(ctx context.Context, obj, updateState interface{}) error {
+func (r *testResourcePatchNoPanic) ApplyUpdateChange(ctx context.Context, obj, updateState interface{}) error {
 	return nil
 }
 
-func (r *testPatchResource) Underlying() Resource {
+func (r *testResourcePatchNoPanic) Underlying() Resource {
 	return r
 }
