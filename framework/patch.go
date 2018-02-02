@@ -24,6 +24,18 @@ func NewPatch() *Patch {
 	}
 }
 
+func (p *Patch) SetCreateChange(create interface{}) {
+	p.data[patchCreate] = create
+}
+
+func (p *Patch) SetDeleteChange(delete interface{}) {
+	p.data[patchDelete] = delete
+}
+
+func (p *Patch) SetUpdateChange(update interface{}) {
+	p.data[patchUpdate] = update
+}
+
 func (p *Patch) getCreateChange() (interface{}, bool) {
 	create, ok := p.data[patchCreate]
 	return create, ok
@@ -37,7 +49,3 @@ func (p *Patch) getUpdateChange() (interface{}, bool) {
 	update, ok := p.data[patchUpdate]
 	return update, ok
 }
-
-func (p *Patch) SetCreateChange(create interface{}) { p.data[patchCreate] = create }
-func (p *Patch) SetDeleteChange(delete interface{}) { p.data[patchDelete] = delete }
-func (p *Patch) SetUpdateChange(update interface{}) { p.data[patchUpdate] = update }
