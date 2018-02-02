@@ -81,7 +81,6 @@ func Test_Framework_Resource_PatchNoPanic(t *testing.T) {
 }
 
 type testResourcePatchNoPanic struct {
-	SetupPatchFunc func(p *Patch)
 }
 
 func (r *testResourcePatchNoPanic) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
