@@ -74,9 +74,9 @@ func Test_Framework_ResourcePatchNoPanic(t *testing.T) {
 		err := tc.ProcessMethod(context.TODO(), nil, tc.Resources)
 		if err != nil {
 			if tc.ErrorMatcher == nil {
-				t.Fatal("test", i+1, "expected", nil, "got", err)
+				t.Fatal("test", i, "expected", nil, "got", err)
 			} else if !tc.ErrorMatcher(err) {
-				t.Fatal("test", i+1, "expected", true, "got", false)
+				t.Fatal("test", i, "expected", true, "got", false)
 			}
 		}
 	}
