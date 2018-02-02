@@ -19,8 +19,8 @@ func Test_Framework_Resource_PatchNoPanic(t *testing.T) {
 			ErrorMatcher:  IsExecutionFailed,
 		},
 
-		// Test 1 ensures ProcessDelete executes the steps of a single resource in
-		// the expected order.
+		// Test 1 ensures ProcessDelete does not panic when executing a single
+		// resource.
 		{
 			ProcessMethod: ProcessDelete,
 			Resources: []Resource{
@@ -29,8 +29,7 @@ func Test_Framework_Resource_PatchNoPanic(t *testing.T) {
 			ErrorMatcher: nil,
 		},
 
-		// Test 2 ensures ProcessDelete executes the steps of multile resources in
-		// the expected order.
+		// Test 2 ensures ProcessDelete does not panic when executing two resources.
 		{
 			ProcessMethod: ProcessDelete,
 			Resources: []Resource{
@@ -40,28 +39,27 @@ func Test_Framework_Resource_PatchNoPanic(t *testing.T) {
 			ErrorMatcher: nil,
 		},
 
-		// Test 3 ensures ProcessDelete returns an error in case no resources are
+		// Test 0 ensures ProcessUpdate returns an error in case no resources are
 		// provided.
 		{
-			ProcessMethod: ProcessDelete,
+			ProcessMethod: ProcessUpdate,
 			Resources:     nil,
 			ErrorMatcher:  IsExecutionFailed,
 		},
 
-		// Test 4 ensures ProcessDelete executes the steps of a single resource in
-		// the expected order.
+		// Test 1 ensures ProcessUpdate does not panic when executing a single
+		// resource.
 		{
-			ProcessMethod: ProcessDelete,
+			ProcessMethod: ProcessUpdate,
 			Resources: []Resource{
 				&testResourcePatchNoPanic{},
 			},
 			ErrorMatcher: nil,
 		},
 
-		// Test 5 ensures ProcessDelete executes the steps of multile resources in
-		// the expected order.
+		// Test 2 ensures ProcessUpdate does not panic when executing two resources.
 		{
-			ProcessMethod: ProcessDelete,
+			ProcessMethod: ProcessUpdate,
 			Resources: []Resource{
 				&testResourcePatchNoPanic{},
 				&testResourcePatchNoPanic{},
