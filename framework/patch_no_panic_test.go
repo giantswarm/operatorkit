@@ -39,7 +39,7 @@ func Test_Framework_Resource_PatchNoPanic(t *testing.T) {
 			ErrorMatcher: nil,
 		},
 
-		// Test 0 ensures ProcessUpdate returns an error in case no resources are
+		// Test 3 ensures ProcessUpdate returns an error in case no resources are
 		// provided.
 		{
 			ProcessMethod: ProcessUpdate,
@@ -47,7 +47,7 @@ func Test_Framework_Resource_PatchNoPanic(t *testing.T) {
 			ErrorMatcher:  IsExecutionFailed,
 		},
 
-		// Test 1 ensures ProcessUpdate does not panic when executing a single
+		// Test 4 ensures ProcessUpdate does not panic when executing a single
 		// resource.
 		{
 			ProcessMethod: ProcessUpdate,
@@ -57,7 +57,7 @@ func Test_Framework_Resource_PatchNoPanic(t *testing.T) {
 			ErrorMatcher: nil,
 		},
 
-		// Test 2 ensures ProcessUpdate does not panic when executing two resources.
+		// Test 5 ensures ProcessUpdate does not panic when executing two resources.
 		{
 			ProcessMethod: ProcessUpdate,
 			Resources: []Resource{
