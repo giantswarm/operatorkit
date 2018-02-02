@@ -45,6 +45,7 @@ func (p *Patch) getDeleteChange() (interface{}, bool) {
 	delete, ok := p.data[patchDelete]
 	return delete, ok
 }
+
 func (p *Patch) getUpdateChange() (interface{}, bool) {
 	update, ok := p.data[patchUpdate]
 	return update, ok
