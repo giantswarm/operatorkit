@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func Test_Framework_ResourcePatchNoPanic(t *testing.T) {
+func Test_Framework_Resource_PatchNoPanic(t *testing.T) {
 	testCases := []struct {
 		ProcessMethod func(ctx context.Context, obj interface{}, rs []Resource) error
 		Resources     []Resource
