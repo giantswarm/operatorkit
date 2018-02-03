@@ -110,6 +110,9 @@ func NewCRUDResource(config CRUDResourceConfig) (*CRUDResource, error) {
 	if config.Ops.Name() == "" {
 		return nil, microerror.Maskf(invalidConfigError, "config.Ops.Name() must not be empty")
 	}
+	if config.Ops.Underlying() == nil {
+		return nil, microerror.Maskf(invalidConfigError, "config.Ops.Underlying() must not be empty")
+	}
 
 	r := &CRUDResource{
 		ops: config.Ops,
