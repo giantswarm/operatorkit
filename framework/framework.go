@@ -269,10 +269,6 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 			if err != nil {
 				return microerror.Mask(err)
 			}
-
-			if patch == nil {
-				return microerror.Maskf(executionFailedError, "patch must not be nil")
-			}
 		}
 
 		{
@@ -284,39 +280,18 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 				continue
 			}
 
-			createChange, ok := patch.getCreateChange()
-			if ok {
-				meta, ok := loggermeta.FromContext(ctx)
+			if patch != nil {
+				createChange, ok := patch.getCreateChange()
 				if ok {
-					meta.KeyVals["function"] = "ApplyCreateChange"
-					defer delete(meta.KeyVals, "function")
-				}
-				err := r.ApplyCreateChange(ctx, obj, createChange)
-				if err != nil {
-					return microerror.Mask(err)
-				}
-			}
-		}
-
-		{
-			if reconciliationcanceledcontext.IsCanceled(ctx) {
-				return nil
-			}
-			if resourcecanceledcontext.IsCanceled(ctx) {
-				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
-				continue
-			}
-
-			deleteChange, ok := patch.getDeleteChange()
-			if ok {
-				meta, ok := loggermeta.FromContext(ctx)
-				if ok {
-					meta.KeyVals["function"] = "ApplyDeleteChange"
-					defer delete(meta.KeyVals, "function")
-				}
-				err := r.ApplyDeleteChange(ctx, obj, deleteChange)
-				if err != nil {
-					return microerror.Mask(err)
+					meta, ok := loggermeta.FromContext(ctx)
+					if ok {
+						meta.KeyVals["function"] = "ApplyCreateChange"
+						defer delete(meta.KeyVals, "function")
+					}
+					err := r.ApplyCreateChange(ctx, obj, createChange)
+					if err != nil {
+						return microerror.Mask(err)
+					}
 				}
 			}
 		}
@@ -330,16 +305,43 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 				continue
 			}
 
-			updateChange, ok := patch.getUpdateChange()
-			if ok {
-				meta, ok := loggermeta.FromContext(ctx)
+			if patch != nil {
+				deleteChange, ok := patch.getDeleteChange()
 				if ok {
-					meta.KeyVals["function"] = "ApplyUpdateChange"
-					defer delete(meta.KeyVals, "function")
+					meta, ok := loggermeta.FromContext(ctx)
+					if ok {
+						meta.KeyVals["function"] = "ApplyDeleteChange"
+						defer delete(meta.KeyVals, "function")
+					}
+					err := r.ApplyDeleteChange(ctx, obj, deleteChange)
+					if err != nil {
+						return microerror.Mask(err)
+					}
 				}
-				err := r.ApplyUpdateChange(ctx, obj, updateChange)
-				if err != nil {
-					return microerror.Mask(err)
+			}
+		}
+
+		{
+			if reconciliationcanceledcontext.IsCanceled(ctx) {
+				return nil
+			}
+			if resourcecanceledcontext.IsCanceled(ctx) {
+				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
+				continue
+			}
+
+			if patch != nil {
+				updateChange, ok := patch.getUpdateChange()
+				if ok {
+					meta, ok := loggermeta.FromContext(ctx)
+					if ok {
+						meta.KeyVals["function"] = "ApplyUpdateChange"
+						defer delete(meta.KeyVals, "function")
+					}
+					err := r.ApplyUpdateChange(ctx, obj, updateChange)
+					if err != nil {
+						return microerror.Mask(err)
+					}
 				}
 			}
 		}
@@ -467,10 +469,6 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 			if err != nil {
 				return microerror.Mask(err)
 			}
-
-			if patch == nil {
-				return microerror.Maskf(executionFailedError, "patch must not be nil")
-			}
 		}
 
 		{
@@ -482,39 +480,18 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 				continue
 			}
 
-			createState, ok := patch.getCreateChange()
-			if ok {
-				meta, ok := loggermeta.FromContext(ctx)
+			if patch != nil {
+				createState, ok := patch.getCreateChange()
 				if ok {
-					meta.KeyVals["function"] = "ApplyCreateChange"
-					defer delete(meta.KeyVals, "function")
-				}
-				err := r.ApplyCreateChange(ctx, obj, createState)
-				if err != nil {
-					return microerror.Mask(err)
-				}
-			}
-		}
-
-		{
-			if reconciliationcanceledcontext.IsCanceled(ctx) {
-				return nil
-			}
-			if resourcecanceledcontext.IsCanceled(ctx) {
-				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
-				continue
-			}
-
-			deleteState, ok := patch.getDeleteChange()
-			if ok {
-				meta, ok := loggermeta.FromContext(ctx)
-				if ok {
-					meta.KeyVals["function"] = "ApplyDeleteChange"
-					defer delete(meta.KeyVals, "function")
-				}
-				err := r.ApplyDeleteChange(ctx, obj, deleteState)
-				if err != nil {
-					return microerror.Mask(err)
+					meta, ok := loggermeta.FromContext(ctx)
+					if ok {
+						meta.KeyVals["function"] = "ApplyCreateChange"
+						defer delete(meta.KeyVals, "function")
+					}
+					err := r.ApplyCreateChange(ctx, obj, createState)
+					if err != nil {
+						return microerror.Mask(err)
+					}
 				}
 			}
 		}
@@ -528,16 +505,43 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 				continue
 			}
 
-			updateState, ok := patch.getUpdateChange()
-			if ok {
-				meta, ok := loggermeta.FromContext(ctx)
+			if patch != nil {
+				deleteState, ok := patch.getDeleteChange()
 				if ok {
-					meta.KeyVals["function"] = "ApplyUpdateChange"
-					defer delete(meta.KeyVals, "function")
+					meta, ok := loggermeta.FromContext(ctx)
+					if ok {
+						meta.KeyVals["function"] = "ApplyDeleteChange"
+						defer delete(meta.KeyVals, "function")
+					}
+					err := r.ApplyDeleteChange(ctx, obj, deleteState)
+					if err != nil {
+						return microerror.Mask(err)
+					}
 				}
-				err := r.ApplyUpdateChange(ctx, obj, updateState)
-				if err != nil {
-					return microerror.Mask(err)
+			}
+		}
+
+		{
+			if reconciliationcanceledcontext.IsCanceled(ctx) {
+				return nil
+			}
+			if resourcecanceledcontext.IsCanceled(ctx) {
+				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
+				continue
+			}
+
+			if patch != nil {
+				updateState, ok := patch.getUpdateChange()
+				if ok {
+					meta, ok := loggermeta.FromContext(ctx)
+					if ok {
+						meta.KeyVals["function"] = "ApplyUpdateChange"
+						defer delete(meta.KeyVals, "function")
+					}
+					err := r.ApplyUpdateChange(ctx, obj, updateState)
+					if err != nil {
+						return microerror.Mask(err)
+					}
 				}
 			}
 		}
