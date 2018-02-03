@@ -414,6 +414,7 @@ func (r *CRUDResource) Name() string {
 	return r.name
 }
 
-func (r *CRUDResource) Underlying() Resource {
-	return r
-}
+// TODO uncomment when Resource interface is redefined.
+//func (r *CRUDResource) Underlying() Resource {
+//	return r
+//}
