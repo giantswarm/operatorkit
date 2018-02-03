@@ -14,7 +14,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/tools/cache"
 
 	"github.com/giantswarm/operatorkit/client/k8scrdclient"
 	"github.com/giantswarm/operatorkit/framework/context/reconciliationcanceledcontext"
@@ -92,39 +91,6 @@ func New(config Config) (*Framework, error) {
 	return f, nil
 }
 
-// AddFunc executes the framework's ProcessCreate function.
-func (f *Framework) AddFunc(obj interface{}) {
-	// AddFunc/DeleteFunc/UpdateFunc is synchronized to make sure only one
-	// of them is executed at a time. AddFunc/DeleteFunc/UpdateFunc is not
-	// thread safe. This is important because the source of truth for an
-	// operator are the reconciled resources. In case we would run the
-	// operator logic in parallel, we would run into race conditions.
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	resourceSet, err := f.resourceRouter.ResourceSet(obj)
-	if err != nil {
-		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "create")
-		return
-	}
-
-	ctx, err := resourceSet.InitCtx(context.Background(), obj)
-	if err != nil {
-		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "create")
-		return
-	}
-
-	f.logger.LogCtx(ctx, "action", "start", "component", "operatorkit", "function", "ProcessCreate")
-
-	err = ProcessCreate(ctx, obj, resourceSet.Resources())
-	if err != nil {
-		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "create")
-		return
-	}
-
-	f.logger.LogCtx(ctx, "action", "end", "component", "operatorkit", "function", "ProcessCreate")
-}
-
 func (f *Framework) Boot() {
 	ctx := context.TODO()
 
@@ -152,11 +118,11 @@ func (f *Framework) Boot() {
 
 // DeleteFunc executes the framework's ProcessDelete function.
 func (f *Framework) DeleteFunc(obj interface{}) {
-	// AddFunc/DeleteFunc/UpdateFunc is synchronized to make sure only one
-	// of them is executed at a time. AddFunc/DeleteFunc/UpdateFunc is not
-	// thread safe. This is important because the source of truth for an
-	// operator are the reconciled resources. In case we would run the
-	// operator logic in parallel, we would run into race conditions.
+	// DeleteFunc/UpdateFunc is synchronized to make sure only one of them is
+	// executed at a time. DeleteFunc/UpdateFunc is not thread safe. This is
+	// important because the source of truth for an operator are the reconciled
+	// resources. In case we would run the operator logic in parallel, we would
+	// run into race conditions.
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -183,28 +149,15 @@ func (f *Framework) DeleteFunc(obj interface{}) {
 	f.logger.LogCtx(ctx, "action", "end", "component", "operatorkit", "function", "ProcessDelete")
 }
 
-// NewCacheResourceEventHandler returns the framework's event handler for the
-// k8s client's cache informer implementation. The event handler has functions
-// registered for the k8s client's add, delete and update events.
-func (f *Framework) NewCacheResourceEventHandler() *cache.ResourceEventHandlerFuncs {
-	newHandler := &cache.ResourceEventHandlerFuncs{
-		AddFunc:    f.AddFunc,
-		DeleteFunc: f.DeleteFunc,
-		UpdateFunc: f.UpdateFunc,
-	}
-
-	return newHandler
-}
-
 // UpdateFunc executes the framework's ProcessUpdate function.
 func (f *Framework) UpdateFunc(oldObj, newObj interface{}) {
 	obj := newObj
 
-	// AddFunc/DeleteFunc/UpdateFunc is synchronized to make sure only one
-	// of them is executed at a time. AddFunc/DeleteFunc/UpdateFunc is not
-	// thread safe. This is important because the source of truth for an
-	// operator are the reconciled resources. In case we would run the
-	// operator logic in parallel, we would run into race conditions.
+	// DeleteFunc/UpdateFunc is synchronized to make sure only one of them is
+	// executed at a time. DeleteFunc/UpdateFunc is not thread safe. This is
+	// important because the source of truth for an operator are the reconciled
+	// resources. In case we would run the operator logic in parallel, we would
+	// run into race conditions.
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -229,30 +182,6 @@ func (f *Framework) UpdateFunc(oldObj, newObj interface{}) {
 	}
 
 	f.logger.LogCtx(ctx, "action", "end", "component", "operatorkit", "function", "ProcessUpdate")
-}
-
-// ProcessCreate is a drop-in for an informer's AddFunc. It receives the custom
-// object observed during custom resource watches and anything that implements
-// Resource. ProcessCreate takes care about all necessary reconciliation logic
-// for create events.
-//
-//     func addFunc(obj interface{}) {
-//         err := f.ProcessCreate(obj, resources)
-//         if err != nil {
-//             // error handling here
-//         }
-//     }
-//
-//     newResourceEventHandler := &cache.ResourceEventHandlerFuncs{
-//         AddFunc:    addFunc,
-//     }
-//
-func ProcessCreate(ctx context.Context, obj interface{}, resources []Resource) error {
-	err := ProcessUpdate(ctx, obj, resources)
-	if err != nil {
-		return microerror.Mask(err)
-	}
-	return nil
 }
 
 // ProcessDelete is a drop-in for an informer's DeleteFunc. It receives the
