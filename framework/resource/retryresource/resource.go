@@ -17,42 +17,21 @@ const (
 	Name = "retry"
 )
 
-// Config represents the configuration used to create a new retry resource.
 type Config struct {
-	// Dependencies.
-	BackOff  backoff.BackOff
 	Logger   micrologger.Logger
 	Resource framework.Resource
+
+	BackOff backoff.BackOff
 }
 
-// DefaultConfig provides a default configuration to create a new retry resource
-// by best effort.
-func DefaultConfig() Config {
-	var err error
+type Resource struct {
+	logger   micrologger.Logger
+	resource framework.Resource
 
-	var newLogger micrologger.Logger
-	{
-		config := micrologger.DefaultConfig()
-		newLogger, err = micrologger.New(config)
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	return Config{
-		// Dependencies.
-		BackOff:  backoff.NewExponentialBackOff(),
-		Logger:   newLogger,
-		Resource: nil,
-	}
+	backOff backoff.BackOff
 }
 
-// New creates a new configured retry resource.
 func New(config Config) (*Resource, error) {
-	// Dependencies.
-	if config.BackOff == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.BackOff must not be empty")
-	}
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
 	}
@@ -60,23 +39,20 @@ func New(config Config) (*Resource, error) {
 		return nil, microerror.Maskf(invalidConfigError, "config.Resource must not be empty")
 	}
 
-	newResource := &Resource{
-		// Dependencies.
-		backOff: config.BackOff,
+	if config.BackOff == nil {
+		config.BackOff = backoff.NewExponentialBackOff()
+	}
+
+	r := &Resource{
 		logger: config.Logger.With(
 			"underlyingResource", config.Resource.Underlying().Name(),
 		),
 		resource: config.Resource,
+
+		backOff: config.BackOff,
 	}
 
-	return newResource, nil
-}
-
-type Resource struct {
-	// Dependencies.
-	backOff  backoff.BackOff
-	logger   micrologger.Logger
-	resource framework.Resource
+	return r, nil
 }
 
 func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {

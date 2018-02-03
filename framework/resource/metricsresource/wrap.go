@@ -6,20 +6,8 @@ import (
 	"github.com/giantswarm/operatorkit/framework"
 )
 
-// WrapConfig is the configuration used to wrap resources with metrics
-// resources.
 type WrapConfig struct {
-	// Settings.
 	Name string
-}
-
-// DefaultWrapConfig provides a default configuration to wrap resource with
-// metrics resources. by best effort.
-func DefaultWrapConfig() WrapConfig {
-	return WrapConfig{
-		// Settings.
-		Name: "",
-	}
 }
 
 // Wrap wraps each given resource with a metrics resource and returns the list
@@ -28,13 +16,13 @@ func Wrap(resources []framework.Resource, config WrapConfig) ([]framework.Resour
 	var wrapped []framework.Resource
 
 	for _, r := range resources {
-		resourceConfig := DefaultConfig()
+		c := Config{
+			Resource: r,
 
-		resourceConfig.Resource = r
+			Name: config.Name,
+		}
 
-		resourceConfig.Name = config.Name
-
-		prometheusResource, err := New(resourceConfig)
+		prometheusResource, err := New(c)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}

@@ -14,12 +14,8 @@ const (
 	Name = "metrics"
 )
 
-// Config represents the configuration used to create a new metrics resource.
 type Config struct {
-	// Dependencies.
 	Resource framework.Resource
-
-	// Settings.
 
 	// Name is name of the service using the reconciler framework. This may be the
 	// name of the executing operator or controller. The service name will be used
@@ -27,43 +23,24 @@ type Config struct {
 	Name string
 }
 
-// DefaultConfig provides a default configuration to create a new metrics
-// resource by best effort.
-func DefaultConfig() Config {
-	return Config{
-		// Dependencies.
-		Resource: nil,
-
-		// Settings.
-		Name: "",
-	}
-}
-
 type Resource struct {
-	// Dependencies.
 	resource framework.Resource
 
-	// Settings.
 	name string
 }
 
-// New creates a new configured metrics resource.
 func New(config Config) (*Resource, error) {
-	// Dependencies.
 	if config.Resource == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Resource must not be empty")
 	}
 
-	// Settings.
 	if config.Name == "" {
 		return nil, microerror.Maskf(invalidConfigError, "config.Name must not be empty")
 	}
 
 	newResource := &Resource{
-		// Dependencies.
 		resource: config.Resource,
 
-		// Settings.
 		name: toCamelCase(config.Name),
 	}
 

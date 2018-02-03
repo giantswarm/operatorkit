@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/cenkalti/backoff"
+	"github.com/giantswarm/micrologger/microloggertest"
 	"github.com/giantswarm/operatorkit/framework"
 )
 
@@ -75,20 +76,22 @@ func Test_RetryResource_ProcessDelete_ResourceOrder_RetryOnError(t *testing.T) {
 			return &backoff.ZeroBackOff{}
 		}
 
-		config := DefaultWrapConfig()
-		config.BackOffFactory = bf
-		wrapped, err := Wrap(rs, config)
+		c := WrapConfig{
+			Logger:         microloggertest.New(),
+			BackOffFactory: bf,
+		}
+		wrapped, err := Wrap(rs, c)
 		if err != nil {
-			t.Fatal("test", i+1, "expected", nil, "got", err)
+			t.Fatal("test", i, "expected", nil, "got", err)
 		}
 
 		err = framework.ProcessDelete(context.TODO(), nil, wrapped)
 		if err != nil {
-			t.Fatal("test", i+1, "expected", nil, "got", err)
+			t.Fatal("test", i, "expected", nil, "got", err)
 		}
 
 		if !reflect.DeepEqual(tc.ExpectedMethodOrder, tr.Order) {
-			t.Fatal("test", i+1, "expected", tc.ExpectedMethodOrder, "got", tr.Order)
+			t.Fatal("test", i, "expected", tc.ExpectedMethodOrder, "got", tr.Order)
 		}
 	}
 }
@@ -105,9 +108,11 @@ func Test_RetryResource_ProcessDelete_ResourceOrder(t *testing.T) {
 		return &backoff.ZeroBackOff{}
 	}
 
-	config := DefaultWrapConfig()
-	config.BackOffFactory = bf
-	wrapped, err := Wrap(rs, config)
+	c := WrapConfig{
+		Logger:         microloggertest.New(),
+		BackOffFactory: bf,
+	}
+	wrapped, err := Wrap(rs, c)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -195,20 +200,22 @@ func Test_RetryResource_ProcessUpdate_ResourceOrder_RetryOnError(t *testing.T) {
 			return &backoff.ZeroBackOff{}
 		}
 
-		config := DefaultWrapConfig()
-		config.BackOffFactory = bf
-		wrapped, err := Wrap(rs, config)
+		c := WrapConfig{
+			Logger:         microloggertest.New(),
+			BackOffFactory: bf,
+		}
+		wrapped, err := Wrap(rs, c)
 		if err != nil {
-			t.Fatal("test", i+1, "expected", nil, "got", err)
+			t.Fatal("test", i, "expected", nil, "got", err)
 		}
 
 		err = framework.ProcessUpdate(context.TODO(), nil, wrapped)
 		if err != nil {
-			t.Fatal("test", i+1, "expected", nil, "got", err)
+			t.Fatal("test", i, "expected", nil, "got", err)
 		}
 
 		if !reflect.DeepEqual(tc.ExpectedMethodOrder, tr.Order) {
-			t.Fatal("test", i+1, "expected", tc.ExpectedMethodOrder, "got", tr.Order)
+			t.Fatal("test", i, "expected", tc.ExpectedMethodOrder, "got", tr.Order)
 		}
 	}
 }
@@ -225,9 +232,11 @@ func Test_RetryResource_ProcessUpdate_ResourceOrder(t *testing.T) {
 		return &backoff.ZeroBackOff{}
 	}
 
-	config := DefaultWrapConfig()
-	config.BackOffFactory = bf
-	wrapped, err := Wrap(rs, config)
+	c := WrapConfig{
+		Logger:         microloggertest.New(),
+		BackOffFactory: bf,
+	}
+	wrapped, err := Wrap(rs, c)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
