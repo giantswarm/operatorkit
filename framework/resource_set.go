@@ -33,12 +33,6 @@ type ResourceSetConfig struct {
 	Resources []Resource
 }
 
-func DefaultResourceSetResourceFunc(rs []Resource) func(ctx context.Context, obj interface{}) ([]Resource, error) {
-	return func(ctx context.Context, obj interface{}) ([]Resource, error) {
-		return rs, nil
-	}
-}
-
 type ResourceSet struct {
 	handles   func(obj interface{}) bool
 	initCtx   func(ctx context.Context, obj interface{}) (context.Context, error)

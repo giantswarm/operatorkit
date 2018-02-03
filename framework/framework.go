@@ -23,8 +23,6 @@ import (
 
 // Config represents the configuration used to create a new operator framework.
 type Config struct {
-	// Dependencies.
-
 	CRD       *apiextensionsv1beta1.CustomResourceDefinition
 	CRDClient *k8scrdclient.CRDClient
 	Informer  informer.Interface
@@ -42,49 +40,24 @@ type Config struct {
 	// being reconciled.
 	ResourceRouter *ResourceRouter
 
-	// Settings.
 	BackOffFactory func() backoff.BackOff
 }
 
-// DefaultConfig provides a default configuration to create a new operator
-// framework by best effort.
-func DefaultConfig() Config {
-	return Config{
-		// Dependencies.
-		CRD:            nil,
-		CRDClient:      nil,
-		Informer:       nil,
-		Logger:         nil,
-		ResourceRouter: nil,
-
-		// Settings.
-		BackOffFactory: func() backoff.BackOff {
-			b := backoff.NewExponentialBackOff()
-			b.MaxElapsedTime = 0
-			return backoff.WithMaxTries(b, 7)
-		},
-	}
-}
-
 type Framework struct {
-	// Dependencies.
 	crd            *apiextensionsv1beta1.CustomResourceDefinition
 	crdClient      *k8scrdclient.CRDClient
 	informer       informer.Interface
 	logger         micrologger.Logger
 	resourceRouter *ResourceRouter
 
-	// Settings.
-	backOffFactory func() backoff.BackOff
-
-	// Internals.
 	bootOnce sync.Once
 	mutex    sync.Mutex
+
+	backOffFactory func() backoff.BackOff
 }
 
 // New creates a new configured operator framework.
 func New(config Config) (*Framework, error) {
-	// Dependencies.
 	if config.CRD != nil && config.CRDClient == nil || config.CRD == nil && config.CRDClient != nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.CRD and config.CRDClient must not be empty when either given")
 	}
@@ -98,25 +71,21 @@ func New(config Config) (*Framework, error) {
 		return nil, microerror.Maskf(invalidConfigError, "config.ResourceRouter must not be empty")
 	}
 
-	// Settings.
 	if config.BackOffFactory == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.BackOffFactory must not be empty")
+		config.BackOffFactory = DefaultBackOffFactory()
 	}
 
 	f := &Framework{
-		// Dependencies.
 		crd:            config.CRD,
 		crdClient:      config.CRDClient,
 		informer:       config.Informer,
 		logger:         config.Logger,
 		resourceRouter: config.ResourceRouter,
 
-		// Settings.
-		backOffFactory: config.BackOffFactory,
-
-		// Internals.
 		bootOnce: sync.Once{},
 		mutex:    sync.Mutex{},
+
+		backOffFactory: config.BackOffFactory,
 	}
 
 	return f, nil
