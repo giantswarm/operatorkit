@@ -106,7 +106,7 @@ type CRUDResourceConfig struct {
 // Besides that is implements various context features defined in subpackages
 // of the context package.
 type CRUDResource struct {
-	ops CRUDResourceOps
+	CRUDResourceOps
 }
 
 func NewCRUDResource(config CRUDResourceConfig) (*CRUDResource, error) {
@@ -121,7 +121,7 @@ func NewCRUDResource(config CRUDResourceConfig) (*CRUDResource, error) {
 	}
 
 	r := &CRUDResource{
-		ops: config.Ops,
+		CRUDResourceOps: config.Ops,
 	}
 
 	return r, nil
@@ -145,7 +145,7 @@ func (r *CRUDResource) EnsureCreated(ctx context.Context, obj interface{}) error
 			meta.KeyVals["function"] = "GetCurrentState"
 			defer delete(meta.KeyVals, "function")
 		}
-		currentState, err = r.ops.GetCurrentState(ctx, obj)
+		currentState, err = r.GetCurrentState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -166,7 +166,7 @@ func (r *CRUDResource) EnsureCreated(ctx context.Context, obj interface{}) error
 			meta.KeyVals["function"] = "GetDesiredState"
 			defer delete(meta.KeyVals, "function")
 		}
-		desiredState, err = r.ops.GetDesiredState(ctx, obj)
+		desiredState, err = r.GetDesiredState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -187,7 +187,7 @@ func (r *CRUDResource) EnsureCreated(ctx context.Context, obj interface{}) error
 			meta.KeyVals["function"] = "NewUpdatePatch"
 			defer delete(meta.KeyVals, "function")
 		}
-		patch, err = r.ops.NewUpdatePatch(ctx, obj, currentState, desiredState)
+		patch, err = r.NewUpdatePatch(ctx, obj, currentState, desiredState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -210,7 +210,7 @@ func (r *CRUDResource) EnsureCreated(ctx context.Context, obj interface{}) error
 					meta.KeyVals["function"] = "ApplyCreateChange"
 					defer delete(meta.KeyVals, "function")
 				}
-				err := r.ops.ApplyCreateChange(ctx, obj, createState)
+				err := r.ApplyCreateChange(ctx, obj, createState)
 				if err != nil {
 					return microerror.Mask(err)
 				}
@@ -235,7 +235,7 @@ func (r *CRUDResource) EnsureCreated(ctx context.Context, obj interface{}) error
 					meta.KeyVals["function"] = "ApplyDeleteChange"
 					defer delete(meta.KeyVals, "function")
 				}
-				err := r.ops.ApplyDeleteChange(ctx, obj, deleteState)
+				err := r.ApplyDeleteChange(ctx, obj, deleteState)
 				if err != nil {
 					return microerror.Mask(err)
 				}
@@ -260,7 +260,7 @@ func (r *CRUDResource) EnsureCreated(ctx context.Context, obj interface{}) error
 					meta.KeyVals["function"] = "ApplyUpdateChange"
 					defer delete(meta.KeyVals, "function")
 				}
-				err := r.ops.ApplyUpdateChange(ctx, obj, updateState)
+				err := r.ApplyUpdateChange(ctx, obj, updateState)
 				if err != nil {
 					return microerror.Mask(err)
 				}
@@ -289,7 +289,7 @@ func (r *CRUDResource) EnsureDeleted(ctx context.Context, obj interface{}) error
 			meta.KeyVals["function"] = "GetCurrentState"
 			defer delete(meta.KeyVals, "function")
 		}
-		currentState, err = r.ops.GetCurrentState(ctx, obj)
+		currentState, err = r.GetCurrentState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -310,7 +310,7 @@ func (r *CRUDResource) EnsureDeleted(ctx context.Context, obj interface{}) error
 			meta.KeyVals["function"] = "GetDesiredState"
 			defer delete(meta.KeyVals, "function")
 		}
-		desiredState, err = r.ops.GetDesiredState(ctx, obj)
+		desiredState, err = r.GetDesiredState(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -331,7 +331,7 @@ func (r *CRUDResource) EnsureDeleted(ctx context.Context, obj interface{}) error
 			meta.KeyVals["function"] = "NewDeletePatch"
 			defer delete(meta.KeyVals, "function")
 		}
-		patch, err = r.ops.NewDeletePatch(ctx, obj, currentState, desiredState)
+		patch, err = r.NewDeletePatch(ctx, obj, currentState, desiredState)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -354,7 +354,7 @@ func (r *CRUDResource) EnsureDeleted(ctx context.Context, obj interface{}) error
 					meta.KeyVals["function"] = "ApplyCreateChange"
 					defer delete(meta.KeyVals, "function")
 				}
-				err := r.ops.ApplyCreateChange(ctx, obj, createChange)
+				err := r.ApplyCreateChange(ctx, obj, createChange)
 				if err != nil {
 					return microerror.Mask(err)
 				}
@@ -379,7 +379,7 @@ func (r *CRUDResource) EnsureDeleted(ctx context.Context, obj interface{}) error
 					meta.KeyVals["function"] = "ApplyDeleteChange"
 					defer delete(meta.KeyVals, "function")
 				}
-				err := r.ops.ApplyDeleteChange(ctx, obj, deleteChange)
+				err := r.ApplyDeleteChange(ctx, obj, deleteChange)
 				if err != nil {
 					return microerror.Mask(err)
 				}
@@ -404,7 +404,7 @@ func (r *CRUDResource) EnsureDeleted(ctx context.Context, obj interface{}) error
 					meta.KeyVals["function"] = "ApplyUpdateChange"
 					defer delete(meta.KeyVals, "function")
 				}
-				err := r.ops.ApplyUpdateChange(ctx, obj, updateChange)
+				err := r.ApplyUpdateChange(ctx, obj, updateChange)
 				if err != nil {
 					return microerror.Mask(err)
 				}
@@ -416,10 +416,10 @@ func (r *CRUDResource) EnsureDeleted(ctx context.Context, obj interface{}) error
 }
 
 func (r *CRUDResource) Name() string {
-	return r.ops.Name()
+	return r.Name()
 }
 
 // TODO uncomment when Resource interface is redefined.
 //func (r *CRUDResource) Underlying() Resource {
-//	return r.ops.Underlying()
+//	return r.Underlying()
 //}
