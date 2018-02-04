@@ -14,6 +14,14 @@ import (
 // a guideline for an easier way to follow the rather complex intentions of
 // operators in general.
 type CRUDResourceOps interface {
+	// Name returns the resource's name used for identification.
+	Name() string
+	// Underlying returns the underlying CRUDResourceOps wrapped by this
+	// instance. In case this instance is not a wrapper Underlying should
+	// return this instance. This allows nested wrapping. In combination
+	// with Name, Underlying can be used for proper identification.
+	Underlying() Resource
+
 	// GetCurrentState receives the custom object observed during custom
 	// resource watches. Its purpose is to return the current state of the
 	// resources being managed by the operator. This can e.g. be some
@@ -92,8 +100,6 @@ type CRUDResourceConfig struct {
 	// Ops is a set of operations used by CRUDResource to implement the
 	// Resource interface.
 	Ops CRUDResourceOps
-
-	Name string
 }
 
 // CRUDResource allows implementing complex CRUD Resrouces in structured way.
@@ -101,22 +107,21 @@ type CRUDResourceConfig struct {
 // of the context package.
 type CRUDResource struct {
 	ops CRUDResourceOps
-
-	name string
 }
 
 func NewCRUDResource(config CRUDResourceConfig) (*CRUDResource, error) {
 	if config.Ops == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Ops must not be empty")
 	}
-	if config.Name == "" {
-		return nil, microerror.Maskf(invalidConfigError, "config.Name must not be empty")
+	if config.Ops.Name() == "" {
+		return nil, microerror.Maskf(invalidConfigError, "config.Ops.Name() must not be empty")
+	}
+	if config.Ops.Underlying() == nil {
+		return nil, microerror.Maskf(invalidConfigError, "config.Ops.Underlying() must not be empty")
 	}
 
 	r := &CRUDResource{
 		ops: config.Ops,
-
-		name: config.Name,
 	}
 
 	return r, nil
@@ -411,10 +416,10 @@ func (r *CRUDResource) EnsureDeleted(ctx context.Context, obj interface{}) error
 }
 
 func (r *CRUDResource) Name() string {
-	return r.name
+	return r.ops.Name()
 }
 
 // TODO uncomment when Resource interface is redefined.
 //func (r *CRUDResource) Underlying() Resource {
-//	return r
+//	return r.ops.Underlying()
 //}
