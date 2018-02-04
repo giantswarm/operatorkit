@@ -18,10 +18,10 @@ func Test_Wrapper(t *testing.T) {
 	var _ internal.Wrapper = &Resource{}
 }
 
-// Test_RetryResource_ProcessDelete_ResourceOrder_RetryOnError ensures the
+// Test_RetryCRUDResource_ProcessDelete_ResourceOrder_RetryOnError ensures the
 // resource's methods are executed as expected when retrying the deletion
 // process.
-func Test_RetryResource_ProcessDelete_ResourceOrder_RetryOnError(t *testing.T) {
+func Test_RetryCRUDResource_ProcessDelete_ResourceOrder_RetryOnError(t *testing.T) {
 	testCases := []struct {
 		ErrorCount          int
 		ErrorMethod         string
@@ -71,7 +71,7 @@ func Test_RetryResource_ProcessDelete_ResourceOrder_RetryOnError(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		tr := &testResource{
+		tr := &testCRUDResource{
 			Error:       fmt.Errorf("test error"),
 			ErrorCount:  tc.ErrorCount,
 			ErrorMethod: tc.ErrorMethod,
@@ -103,11 +103,11 @@ func Test_RetryResource_ProcessDelete_ResourceOrder_RetryOnError(t *testing.T) {
 	}
 }
 
-// Test_RetryResource_ProcessDelete_ResourceOrder ensures the resource's methods
+// Test_RetryCRUDResource_ProcessDelete_ResourceOrder ensures the resource's methods
 // are executed as expected when deleting resources using the wrapping retry
 // resource.
-func Test_RetryResource_ProcessDelete_ResourceOrder(t *testing.T) {
-	tr := &testResource{}
+func Test_RetryCRUDResource_ProcessDelete_ResourceOrder(t *testing.T) {
+	tr := &testCRUDResource{}
 	rs := []framework.Resource{
 		tr,
 	}
@@ -142,10 +142,10 @@ func Test_RetryResource_ProcessDelete_ResourceOrder(t *testing.T) {
 	}
 }
 
-// Test_RetryResource_ProcessUpdate_ResourceOrder_RetryOnError ensures the
+// Test_RetryCRUDResource_ProcessUpdate_ResourceOrder_RetryOnError ensures the
 // resource's methods are executed as expected when retrying the update
 // process.
-func Test_RetryResource_ProcessUpdate_ResourceOrder_RetryOnError(t *testing.T) {
+func Test_RetryCRUDResource_ProcessUpdate_ResourceOrder_RetryOnError(t *testing.T) {
 	testCases := []struct {
 		ErrorCount          int
 		ErrorMethod         string
@@ -195,7 +195,7 @@ func Test_RetryResource_ProcessUpdate_ResourceOrder_RetryOnError(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		tr := &testResource{
+		tr := &testCRUDResource{
 			Error:       fmt.Errorf("test error"),
 			ErrorCount:  tc.ErrorCount,
 			ErrorMethod: tc.ErrorMethod,
@@ -227,11 +227,11 @@ func Test_RetryResource_ProcessUpdate_ResourceOrder_RetryOnError(t *testing.T) {
 	}
 }
 
-// Test_RetryResource_ProcessUpdate_ResourceOrder ensures the resource's methods
+// Test_RetryCRUDResource_ProcessUpdate_ResourceOrder ensures the resource's methods
 // are executed as expected when updating resources using the wrapping retry
 // resource.
-func Test_RetryResource_ProcessUpdate_ResourceOrder(t *testing.T) {
-	tr := &testResource{}
+func Test_RetryCRUDResource_ProcessUpdate_ResourceOrder(t *testing.T) {
+	tr := &testCRUDResource{}
 	rs := []framework.Resource{
 		tr,
 	}
@@ -266,7 +266,7 @@ func Test_RetryResource_ProcessUpdate_ResourceOrder(t *testing.T) {
 	}
 }
 
-type testResource struct {
+type testCRUDResource struct {
 	Error       error
 	ErrorCount  int
 	ErrorMethod string
@@ -275,7 +275,7 @@ type testResource struct {
 	errorCount int
 }
 
-func (r *testResource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
+func (r *testCRUDResource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
 	m := "GetCurrentState"
 	r.Order = append(r.Order, m)
 
@@ -286,7 +286,7 @@ func (r *testResource) GetCurrentState(ctx context.Context, obj interface{}) (in
 	return nil, nil
 }
 
-func (r *testResource) GetDesiredState(ctx context.Context, obj interface{}) (interface{}, error) {
+func (r *testCRUDResource) GetDesiredState(ctx context.Context, obj interface{}) (interface{}, error) {
 	m := "GetDesiredState"
 	r.Order = append(r.Order, m)
 
@@ -297,7 +297,7 @@ func (r *testResource) GetDesiredState(ctx context.Context, obj interface{}) (in
 	return nil, nil
 }
 
-func (r *testResource) NewUpdatePatch(ctx context.Context, obj, cur, des interface{}) (*framework.Patch, error) {
+func (r *testCRUDResource) NewUpdatePatch(ctx context.Context, obj, cur, des interface{}) (*framework.Patch, error) {
 	m := "NewUpdatePatch"
 	r.Order = append(r.Order, m)
 
@@ -308,7 +308,7 @@ func (r *testResource) NewUpdatePatch(ctx context.Context, obj, cur, des interfa
 	return p, nil
 }
 
-func (r *testResource) NewDeletePatch(ctx context.Context, obj, cur, des interface{}) (*framework.Patch, error) {
+func (r *testCRUDResource) NewDeletePatch(ctx context.Context, obj, cur, des interface{}) (*framework.Patch, error) {
 	m := "NewDeletePatch"
 	r.Order = append(r.Order, m)
 
@@ -319,11 +319,11 @@ func (r *testResource) NewDeletePatch(ctx context.Context, obj, cur, des interfa
 	return p, nil
 }
 
-func (r *testResource) Name() string {
+func (r *testCRUDResource) Name() string {
 	return "testResource"
 }
 
-func (r *testResource) ApplyCreateChange(ctx context.Context, obj, createState interface{}) error {
+func (r *testCRUDResource) ApplyCreateChange(ctx context.Context, obj, createState interface{}) error {
 	m := "ApplyCreatePatch"
 	r.Order = append(r.Order, m)
 
@@ -334,7 +334,7 @@ func (r *testResource) ApplyCreateChange(ctx context.Context, obj, createState i
 	return nil
 }
 
-func (r *testResource) ApplyDeleteChange(ctx context.Context, obj, deleteState interface{}) error {
+func (r *testCRUDResource) ApplyDeleteChange(ctx context.Context, obj, deleteState interface{}) error {
 	m := "ApplyDeletePatch"
 	r.Order = append(r.Order, m)
 
@@ -345,7 +345,7 @@ func (r *testResource) ApplyDeleteChange(ctx context.Context, obj, deleteState i
 	return nil
 }
 
-func (r *testResource) ApplyUpdateChange(ctx context.Context, obj, updateState interface{}) error {
+func (r *testCRUDResource) ApplyUpdateChange(ctx context.Context, obj, updateState interface{}) error {
 	m := "ApplyUpdatePatch"
 	r.Order = append(r.Order, m)
 
