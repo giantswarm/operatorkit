@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/giantswarm/microerror"
+	"github.com/giantswarm/micrologger"
 	"github.com/giantswarm/micrologger/loggermeta"
 	"github.com/giantswarm/operatorkit/framework/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/framework/context/resourcecanceledcontext"
@@ -97,6 +98,7 @@ type CRUDResourceOps interface {
 }
 
 type CRUDResourceConfig struct {
+	Logger micrologger.Logger
 	// Ops is a set of operations used by CRUDResource to implement the
 	// Resource interface.
 	Ops CRUDResourceOps
@@ -107,9 +109,14 @@ type CRUDResourceConfig struct {
 // of the context package.
 type CRUDResource struct {
 	CRUDResourceOps
+
+	logger micrologger.Logger
 }
 
 func NewCRUDResource(config CRUDResourceConfig) (*CRUDResource, error) {
+	if config.Logger == nil {
+		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
+	}
 	if config.Ops == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Ops must not be empty")
 	}
@@ -122,6 +129,8 @@ func NewCRUDResource(config CRUDResourceConfig) (*CRUDResource, error) {
 
 	r := &CRUDResource{
 		CRUDResourceOps: config.Ops,
+
+		logger: config.Logger,
 	}
 
 	return r, nil
