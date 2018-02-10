@@ -6,7 +6,14 @@ import (
 	"testing"
 
 	"github.com/giantswarm/operatorkit/framework"
+	"github.com/giantswarm/operatorkit/framework/resource/internal"
 )
+
+func Test_Wrapper(t *testing.T) {
+	// This won't compile if the *Resource doesn't implement Wrapper
+	// interface.
+	var _ internal.Wrapper = &Resource{}
+}
 
 // Test_MetricsResource_ProcessDelete_ResourceOrder ensures the resource's
 // methods are executed as expected when deleting resources using the wrapping
@@ -141,8 +148,4 @@ func (r *testResource) ApplyUpdateChange(ctx context.Context, obj, updateState i
 	r.Order = append(r.Order, m)
 
 	return nil
-}
-
-func (r *testResource) Underlying() framework.Resource {
-	return r
 }

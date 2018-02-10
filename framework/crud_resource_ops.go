@@ -7,14 +7,6 @@ import "context"
 // a guideline for an easier way to follow the rather complex intentions of
 // operators in general.
 type CRUDResourceOps interface {
-	// Name returns the resource's name used for identification.
-	Name() string
-	// Underlying returns the underlying CRUDResourceOps wrapped by this
-	// instance. In case this instance is not a wrapper Underlying should
-	// return this instance. This allows nested wrapping. In combination
-	// with Name, Underlying can be used for proper identification.
-	Underlying() Resource
-
 	// GetCurrentState receives the custom object observed during custom
 	// resource watches. Its purpose is to return the current state of the
 	// resources being managed by the operator. This can e.g. be some

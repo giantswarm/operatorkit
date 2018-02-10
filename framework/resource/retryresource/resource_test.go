@@ -9,7 +9,14 @@ import (
 	"github.com/cenkalti/backoff"
 	"github.com/giantswarm/micrologger/microloggertest"
 	"github.com/giantswarm/operatorkit/framework"
+	"github.com/giantswarm/operatorkit/framework/resource/internal"
 )
+
+func Test_Wrapper(t *testing.T) {
+	// This won't compile if the *Resource doesn't implement Wrapper
+	// interface.
+	var _ internal.Wrapper = &Resource{}
+}
 
 // Test_RetryResource_ProcessDelete_ResourceOrder_RetryOnError ensures the
 // resource's methods are executed as expected when retrying the deletion
@@ -347,10 +354,6 @@ func (r *testResource) ApplyUpdateChange(ctx context.Context, obj, updateState i
 	}
 
 	return nil
-}
-
-func (r *testResource) Underlying() framework.Resource {
-	return r
 }
 
 func (r *testResource) returnErrorFor(errorMethod string) bool {
