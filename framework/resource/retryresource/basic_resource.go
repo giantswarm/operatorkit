@@ -13,7 +13,7 @@ import (
 
 type basicResourceConfig struct {
 	Logger micrologger.Logger
-	//Resource framework.Resource
+	// TODO make Resource framework.Resource
 	Resource interface {
 		Name() string
 		Underlying() framework.Resource
@@ -109,6 +109,10 @@ func (r *basicResource) EnsureDeleted(ctx context.Context, obj interface{}) erro
 	}
 
 	return nil
+}
+
+func (r *basicResource) Name() string {
+	return r.resource.Name()
 }
 
 func (r *basicResource) Underlying() framework.Resource {

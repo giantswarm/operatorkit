@@ -29,13 +29,13 @@ func Wrap(resources []framework.Resource, config WrapConfig) ([]framework.Resour
 	var wrapped []framework.Resource
 
 	for _, r := range resources {
-		c := crudResourceConfig{
+		c := crudResourceOpsConfig{
 			BackOff:  config.BackOffFactory(),
 			Logger:   config.Logger,
 			Resource: r,
 		}
 
-		retryResource, err := newCRUDResource(c)
+		retryResource, err := newCRUDResourceOps(c)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}

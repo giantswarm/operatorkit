@@ -39,19 +39,17 @@ func New(config Config) (framework.Resource, error) {
 	if ok {
 		c := crudResourceConfig{
 			Logger:   config.Logger,
-			Resource: crudResource.CRUDResourceOps,
+			Resource: crudResource,
 
 			BackOff: config.BackOff,
 		}
 
-		wrappedOps, err := newCRUDResource(c)
+		r, err := newCRUDResource(c)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
 
-		crudResource.CRUDResourceOps = wrappedOps
-
-		return crudResource, nil
+		return r, nil
 	} else {
 		// TODO uncomment when new Resource interface is created.
 		//c := basicResourceConfig{
@@ -70,14 +68,14 @@ func New(config Config) (framework.Resource, error) {
 	}
 
 	// TODO remove code below when new Resource interface is created.
-	c := crudResourceConfig{
+	c := crudResourceOpsConfig{
 		Logger:   config.Logger,
 		Resource: config.Resource,
 
 		BackOff: config.BackOff,
 	}
 
-	r, err := newCRUDResource(c)
+	r, err := newCRUDResourceOps(c)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}

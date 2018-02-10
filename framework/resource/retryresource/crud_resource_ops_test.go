@@ -18,10 +18,10 @@ func Test_Wrapper(t *testing.T) {
 	var _ internal.Wrapper = &Resource{}
 }
 
-// Test_RetryCRUDResource_ProcessDelete_ResourceOrder_RetryOnError ensures the
+// Test_RetryCRUDResourceOps_ProcessDelete_ResourceOrder_RetryOnError ensures the
 // resource's methods are executed as expected when retrying the deletion
 // process.
-func Test_RetryCRUDResource_ProcessDelete_ResourceOrder_RetryOnError(t *testing.T) {
+func Test_RetryCRUDResourceOps_ProcessDelete_ResourceOrder_RetryOnError(t *testing.T) {
 	testCases := []struct {
 		ErrorCount          int
 		ErrorMethod         string
@@ -103,10 +103,10 @@ func Test_RetryCRUDResource_ProcessDelete_ResourceOrder_RetryOnError(t *testing.
 	}
 }
 
-// Test_RetryCRUDResource_ProcessDelete_ResourceOrder ensures the resource's methods
+// Test_RetryCRUDResourceOps_ProcessDelete_ResourceOrder ensures the resource's methods
 // are executed as expected when deleting resources using the wrapping retry
 // resource.
-func Test_RetryCRUDResource_ProcessDelete_ResourceOrder(t *testing.T) {
+func Test_RetryCRUDResourceOps_ProcessDelete_ResourceOrder(t *testing.T) {
 	tr := &testCRUDResource{}
 	rs := []framework.Resource{
 		tr,
@@ -142,10 +142,10 @@ func Test_RetryCRUDResource_ProcessDelete_ResourceOrder(t *testing.T) {
 	}
 }
 
-// Test_RetryCRUDResource_ProcessUpdate_ResourceOrder_RetryOnError ensures the
+// Test_RetryCRUDResourceOps_ProcessUpdate_ResourceOrder_RetryOnError ensures the
 // resource's methods are executed as expected when retrying the update
 // process.
-func Test_RetryCRUDResource_ProcessUpdate_ResourceOrder_RetryOnError(t *testing.T) {
+func Test_RetryCRUDResourceOps_ProcessUpdate_ResourceOrder_RetryOnError(t *testing.T) {
 	testCases := []struct {
 		ErrorCount          int
 		ErrorMethod         string
@@ -227,10 +227,10 @@ func Test_RetryCRUDResource_ProcessUpdate_ResourceOrder_RetryOnError(t *testing.
 	}
 }
 
-// Test_RetryCRUDResource_ProcessUpdate_ResourceOrder ensures the resource's methods
+// Test_RetryCRUDResourceOps_ProcessUpdate_ResourceOrder ensures the resource's methods
 // are executed as expected when updating resources using the wrapping retry
 // resource.
-func Test_RetryCRUDResource_ProcessUpdate_ResourceOrder(t *testing.T) {
+func Test_RetryCRUDResourceOps_ProcessUpdate_ResourceOrder(t *testing.T) {
 	tr := &testCRUDResource{}
 	rs := []framework.Resource{
 		tr,
@@ -319,10 +319,6 @@ func (r *testCRUDResource) NewDeletePatch(ctx context.Context, obj, cur, des int
 	return p, nil
 }
 
-func (r *testCRUDResource) Name() string {
-	return "testResource"
-}
-
 func (r *testCRUDResource) ApplyCreateChange(ctx context.Context, obj, createState interface{}) error {
 	m := "ApplyCreatePatch"
 	r.Order = append(r.Order, m)
@@ -356,7 +352,7 @@ func (r *testCRUDResource) ApplyUpdateChange(ctx context.Context, obj, updateSta
 	return nil
 }
 
-func (r *testResource) returnErrorFor(errorMethod string) bool {
+func (r *testCRUDResource) returnErrorFor(errorMethod string) bool {
 	ok := r.Error != nil && r.ErrorCount > r.errorCount && r.ErrorMethod == errorMethod
 
 	if ok {
