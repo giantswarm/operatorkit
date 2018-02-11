@@ -7,6 +7,9 @@ import "context"
 // a guideline for an easier way to follow the rather complex intentions of
 // operators in general.
 type CRUDResourceOps interface {
+	// Name returns the resource's name used for identification.
+	Name() string
+
 	// GetCurrentState receives the custom object observed during custom
 	// resource watches. Its purpose is to return the current state of the
 	// resources being managed by the operator. This can e.g. be some

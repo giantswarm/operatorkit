@@ -8,10 +8,11 @@ import (
 	"github.com/cenkalti/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-	"github.com/giantswarm/operatorkit/framework"
+
+	"github.com/giantswarm/operatorkit/framework/resource/internal/framework"
 )
 
-type basicResourceConfig struct {
+type resourceWrapperConfig struct {
 	Logger micrologger.Logger
 	// TODO make Resource framework.Resource
 	Resource interface {
@@ -25,7 +26,7 @@ type basicResourceConfig struct {
 	BackOff backoff.BackOff
 }
 
-type basicResource struct {
+type resourceWrapper struct {
 	logger micrologger.Logger
 	//resource framework.Resource
 	resource interface {
@@ -39,7 +40,7 @@ type basicResource struct {
 	backOff backoff.BackOff
 }
 
-func newBasicResource(config basicResourceConfig) (*basicResource, error) {
+func newResourceWrapper(config resourceWrapperConfig) (*resourceWrapper, error) {
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
 	}
@@ -51,9 +52,10 @@ func newBasicResource(config basicResourceConfig) (*basicResource, error) {
 		config.BackOff = backoff.NewExponentialBackOff()
 	}
 
-	r := &basicResource{
+	r := &resourceWrapper{
 		logger: config.Logger.With(
-			"underlyingResource", config.Resource.Underlying().Name(),
+		// TODO Uncomment when Resource interface is updated.
+		//"underlyingResource", internal.Underlying(config.Resource).Name(),
 		),
 		resource: config.Resource,
 
@@ -63,7 +65,7 @@ func newBasicResource(config basicResourceConfig) (*basicResource, error) {
 	return r, nil
 }
 
-func (r *basicResource) EnsureCreated(ctx context.Context, obj interface{}) error {
+func (r *resourceWrapper) EnsureCreated(ctx context.Context, obj interface{}) error {
 	var err error
 
 	o := func() error {
@@ -87,7 +89,7 @@ func (r *basicResource) EnsureCreated(ctx context.Context, obj interface{}) erro
 	return nil
 }
 
-func (r *basicResource) EnsureDeleted(ctx context.Context, obj interface{}) error {
+func (r *resourceWrapper) EnsureDeleted(ctx context.Context, obj interface{}) error {
 	var err error
 
 	o := func() error {
@@ -111,10 +113,11 @@ func (r *basicResource) EnsureDeleted(ctx context.Context, obj interface{}) erro
 	return nil
 }
 
-func (r *basicResource) Name() string {
+func (r *resourceWrapper) Name() string {
 	return r.resource.Name()
 }
 
-func (r *basicResource) Underlying() framework.Resource {
-	return r.resource.Underlying()
+// Wrapped implements internal.Wrapper interface.
+func (r *resourceWrapper) Wrapped() framework.Resource {
+	return r.resource
 }

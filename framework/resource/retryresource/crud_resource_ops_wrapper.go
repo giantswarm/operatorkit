@@ -1,0 +1,221 @@
+package retryresource
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/cenkalti/backoff"
+	"github.com/giantswarm/microerror"
+	"github.com/giantswarm/micrologger"
+
+	"github.com/giantswarm/operatorkit/framework"
+)
+
+type crudResourceOpsWrapperConfig struct {
+	Logger micrologger.Logger
+	Ops    framework.CRUDResourceOps
+
+	BackOff backoff.BackOff
+}
+
+type crudResourceWrapperOps struct {
+	logger     micrologger.Logger
+	underlying framework.CRUDResourceOps
+
+	backOff backoff.BackOff
+}
+
+func newCRUDResourceWrapperOps(config crudResourceOpsWrapperConfig) (*crudResourceWrapperOps, error) {
+	if config.Logger == nil {
+		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
+	}
+	if config.Ops == nil {
+		return nil, microerror.Maskf(invalidConfigError, "config.Ops must not be empty")
+	}
+
+	if config.BackOff == nil {
+		config.BackOff = backoff.NewExponentialBackOff()
+	}
+
+	o := &crudResourceWrapperOps{
+		logger: config.Logger.With(
+			"underlyingResource", config.Ops.Name(),
+		),
+		underlying: config.Ops,
+
+		backOff: config.BackOff,
+	}
+
+	return o, nil
+}
+
+func (o *crudResourceWrapperOps) Name() string {
+	return o.underlying.Name()
+}
+
+func (o *crudResourceWrapperOps) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
+	var err error
+
+	var v interface{}
+	op := func() error {
+		v, err = o.underlying.GetCurrentState(ctx, obj)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
+		return nil
+	}
+
+	n := func(err error, dur time.Duration) {
+		o.logger.LogCtx(ctx, "warning", fmt.Sprintf("retrying 'GetCurrentState' due to error (%s)", err.Error()))
+	}
+
+	err = backoff.RetryNotify(op, o.backOff, n)
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
+	return v, nil
+}
+
+func (o *crudResourceWrapperOps) GetDesiredState(ctx context.Context, obj interface{}) (interface{}, error) {
+	var err error
+
+	var v interface{}
+	op := func() error {
+		v, err = o.underlying.GetDesiredState(ctx, obj)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
+		return nil
+	}
+
+	n := func(err error, dur time.Duration) {
+		o.logger.LogCtx(ctx, "warning", fmt.Sprintf("retrying 'GetDesiredState' due to error (%s)", err.Error()))
+	}
+
+	err = backoff.RetryNotify(op, o.backOff, n)
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
+	return v, nil
+}
+
+func (o *crudResourceWrapperOps) NewUpdatePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*framework.Patch, error) {
+	var err error
+
+	var v *framework.Patch
+	op := func() error {
+		v, err = o.underlying.NewUpdatePatch(ctx, obj, currentState, desiredState)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
+		return nil
+	}
+
+	n := func(err error, dur time.Duration) {
+		o.logger.LogCtx(ctx, "warning", fmt.Sprintf("retrying 'NewUpdatePatch' due to error (%s)", err.Error()))
+	}
+
+	err = backoff.RetryNotify(op, o.backOff, n)
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
+	return v, nil
+}
+
+func (o *crudResourceWrapperOps) NewDeletePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*framework.Patch, error) {
+	var err error
+
+	var v *framework.Patch
+	op := func() error {
+		v, err = o.underlying.NewDeletePatch(ctx, obj, currentState, desiredState)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
+		return nil
+	}
+
+	n := func(err error, dur time.Duration) {
+		o.logger.LogCtx(ctx, "warning", fmt.Sprintf("retrying 'NewDeletePatch' due to error (%s)", err.Error()))
+	}
+
+	err = backoff.RetryNotify(op, o.backOff, n)
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
+	return v, nil
+}
+
+func (o *crudResourceWrapperOps) ApplyCreateChange(ctx context.Context, obj, createState interface{}) error {
+	op := func() error {
+		err := o.underlying.ApplyCreateChange(ctx, obj, createState)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
+		return nil
+	}
+
+	n := func(err error, dur time.Duration) {
+		o.logger.LogCtx(ctx, "warning", fmt.Sprintf("retrying 'ApplyCreatePatch' due to error (%s)", err.Error()))
+	}
+
+	err := backoff.RetryNotify(op, o.backOff, n)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	return nil
+}
+
+func (o *crudResourceWrapperOps) ApplyDeleteChange(ctx context.Context, obj, deleteState interface{}) error {
+	op := func() error {
+		err := o.underlying.ApplyDeleteChange(ctx, obj, deleteState)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
+		return nil
+	}
+
+	n := func(err error, dur time.Duration) {
+		o.logger.LogCtx(ctx, "warning", fmt.Sprintf("retrying 'ApplyDeletePatch' due to error (%s)", err.Error()))
+	}
+
+	err := backoff.RetryNotify(op, o.backOff, n)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	return nil
+}
+
+func (o *crudResourceWrapperOps) ApplyUpdateChange(ctx context.Context, obj, updateState interface{}) error {
+	op := func() error {
+		err := o.underlying.ApplyUpdateChange(ctx, obj, updateState)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
+		return nil
+	}
+
+	n := func(err error, dur time.Duration) {
+		o.logger.LogCtx(ctx, "warning", fmt.Sprintf("retrying 'ApplyUpdatePatch' due to error (%s)", err.Error()))
+	}
+
+	err := backoff.RetryNotify(op, o.backOff, n)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	return nil
+}

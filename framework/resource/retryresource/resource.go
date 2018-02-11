@@ -4,7 +4,8 @@ import (
 	"github.com/cenkalti/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-	"github.com/giantswarm/operatorkit/framework"
+
+	"github.com/giantswarm/operatorkit/framework/resource/internal/framework"
 )
 
 type Config struct {
@@ -33,52 +34,33 @@ func New(config Config) (framework.Resource, error) {
 		config.BackOff = backoff.NewExponentialBackOff()
 	}
 
-	// If the resource is instance of *framework.CRUDResource we wrap it
-	// with a crudResource otherwise we wrap with basicResource.
-	crudResource, ok := config.Resource.Underlying().(*framework.CRUDResource)
-	if ok {
-		c := crudResourceConfig{
-			Logger:   config.Logger,
-			Resource: crudResource,
+	var err error
+	var r framework.Resource
 
-			BackOff: config.BackOff,
-		}
-
-		r, err := newCRUDResource(c)
-		if err != nil {
-			return nil, microerror.Mask(err)
-		}
-
-		return r, nil
+	// CRUD resource special case.
+	r, err = newCRUDResourceWrapper(config)
+	if isIncompatibleUnderlyingResource(err) {
+		// Fall trough. Try wrap with next wrapper.
+	} else if err != nil {
+		return nil, microerror.Mask(err)
 	} else {
-		// TODO uncomment when new Resource interface is created.
-		//c := basicResourceConfig{
-		//	Logger:   config.Logger,
-		//	Resource: config.Resource,
-		//
-		//	BackOff: config.BackOff,
-		//}
-		//
-		//r, err := newBasicResource(c)
-		//if err != nil {
-		//	return nil, microerror.Mask(err)
-		//}
-		//
-		//return r, nil
+		return r, nil
 	}
 
-	// TODO remove code below when new Resource interface is created.
-	c := crudResourceOpsConfig{
-		Logger:   config.Logger,
-		Resource: config.Resource,
+	// Direct resource implmementation.
+	// TODO Uncomment when new framework.Resource interface is created.
+	//r, err = newResourceWrapper(config)
+	//if err != nil {
+	//	return nil, microerror.Mask(err)
+	//}
+	//
+	//return r, nil
 
-		BackOff: config.BackOff,
-	}
-
-	r, err := newCRUDResourceOps(c)
+	// TODO Remove code below when new framework.Resource interface is created.
+	r, err = newCRUDResourceWrapper(config)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
 
-	return v, nil
+	return r, nil
 }

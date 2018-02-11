@@ -120,7 +120,7 @@ func (r *Resource) NewDeletePatch(ctx context.Context, obj, currentState, desire
 }
 
 func (r *Resource) Name() string {
-	return r.Underlying().Name()
+	return internal.OldUnderlying(r).Name()
 }
 
 func (r *Resource) ApplyCreateChange(ctx context.Context, obj, createState interface{}) error {
@@ -181,13 +181,5 @@ func (r *Resource) ApplyUpdateChange(ctx context.Context, obj, updateState inter
 }
 
 func (r *Resource) Underlying() framework.Resource {
-	underlying := r.resource
-	for {
-		wrapper, ok := underlying.(internal.Wrapper)
-		if ok {
-			underlying = wrapper.Underlying()
-		} else {
-			return underlying
-		}
-	}
+	return internal.OldUnderlying(r.resource)
 }

@@ -12,7 +12,7 @@ import (
 func Test_Wrapper(t *testing.T) {
 	// This won't compile if the *Resource doesn't implement Wrapper
 	// interface.
-	var _ internal.Wrapper = &Resource{}
+	var _ internal.OldWrapper = &Resource{}
 }
 
 // Test_MetricsResource_ProcessDelete_ResourceOrder ensures the resource's
