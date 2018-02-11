@@ -38,6 +38,7 @@ func NewCRUDResource(config CRUDResourceConfig) (*CRUDResource, error) {
 	if config.Ops == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Ops must not be empty")
 	}
+
 	if config.Name == "" {
 		return nil, microerror.Maskf(invalidConfigError, "config.Name must not be empty")
 	}
