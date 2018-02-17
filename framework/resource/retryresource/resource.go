@@ -15,13 +15,6 @@ type Config struct {
 	BackOff backoff.BackOff
 }
 
-type Resource struct {
-	logger   micrologger.Logger
-	resource framework.Resource
-
-	backOff backoff.BackOff
-}
-
 func New(config Config) (framework.Resource, error) {
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
