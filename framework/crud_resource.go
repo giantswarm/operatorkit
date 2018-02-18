@@ -49,13 +49,16 @@ func NewCRUDResource(config CRUDResourceConfig) (*CRUDResource, error) {
 func (r *CRUDResource) EnsureCreated(ctx context.Context, obj interface{}) error {
 	var err error
 
+	ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
+	// Garbage collect. TODO use bool to not have to do so.
+	defer resourcecanceledcontext.SetCanceled(ctx)
+
 	var currentState interface{}
 	{
 		if reconciliationcanceledcontext.IsCanceled(ctx) {
 			return nil
 		}
 		if resourcecanceledcontext.IsCanceled(ctx) {
-			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 			return nil
 		}
 
@@ -76,7 +79,6 @@ func (r *CRUDResource) EnsureCreated(ctx context.Context, obj interface{}) error
 			return nil
 		}
 		if resourcecanceledcontext.IsCanceled(ctx) {
-			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 			return nil
 		}
 
@@ -97,7 +99,6 @@ func (r *CRUDResource) EnsureCreated(ctx context.Context, obj interface{}) error
 			return nil
 		}
 		if resourcecanceledcontext.IsCanceled(ctx) {
-			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 			return nil
 		}
 
@@ -117,7 +118,6 @@ func (r *CRUDResource) EnsureCreated(ctx context.Context, obj interface{}) error
 			return nil
 		}
 		if resourcecanceledcontext.IsCanceled(ctx) {
-			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 			return nil
 		}
 
@@ -142,7 +142,6 @@ func (r *CRUDResource) EnsureCreated(ctx context.Context, obj interface{}) error
 			return nil
 		}
 		if resourcecanceledcontext.IsCanceled(ctx) {
-			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 			return nil
 		}
 
@@ -167,7 +166,6 @@ func (r *CRUDResource) EnsureCreated(ctx context.Context, obj interface{}) error
 			return nil
 		}
 		if resourcecanceledcontext.IsCanceled(ctx) {
-			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 			return nil
 		}
 
@@ -193,13 +191,16 @@ func (r *CRUDResource) EnsureCreated(ctx context.Context, obj interface{}) error
 func (r *CRUDResource) EnsureDeleted(ctx context.Context, obj interface{}) error {
 	var err error
 
+	ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
+	// Garbage collect. TODO use bool to not have to do so.
+	defer resourcecanceledcontext.SetCanceled(ctx)
+
 	var currentState interface{}
 	{
 		if reconciliationcanceledcontext.IsCanceled(ctx) {
 			return nil
 		}
 		if resourcecanceledcontext.IsCanceled(ctx) {
-			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 			return nil
 		}
 
@@ -220,7 +221,6 @@ func (r *CRUDResource) EnsureDeleted(ctx context.Context, obj interface{}) error
 			return nil
 		}
 		if resourcecanceledcontext.IsCanceled(ctx) {
-			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 			return nil
 		}
 
@@ -241,7 +241,6 @@ func (r *CRUDResource) EnsureDeleted(ctx context.Context, obj interface{}) error
 			return nil
 		}
 		if resourcecanceledcontext.IsCanceled(ctx) {
-			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 			return nil
 		}
 
@@ -261,7 +260,6 @@ func (r *CRUDResource) EnsureDeleted(ctx context.Context, obj interface{}) error
 			return nil
 		}
 		if resourcecanceledcontext.IsCanceled(ctx) {
-			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 			return nil
 		}
 
@@ -286,7 +284,6 @@ func (r *CRUDResource) EnsureDeleted(ctx context.Context, obj interface{}) error
 			return nil
 		}
 		if resourcecanceledcontext.IsCanceled(ctx) {
-			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 			return nil
 		}
 
@@ -311,7 +308,6 @@ func (r *CRUDResource) EnsureDeleted(ctx context.Context, obj interface{}) error
 			return nil
 		}
 		if resourcecanceledcontext.IsCanceled(ctx) {
-			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 			return nil
 		}
 
