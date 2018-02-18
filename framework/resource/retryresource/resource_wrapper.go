@@ -15,27 +15,14 @@ import (
 type resourceWrapperConfig struct {
 	Logger micrologger.Logger
 	// TODO make Resource framework.Resource
-	Resource interface {
-		Name() string
-		Underlying() framework.Resource
-
-		EnsureCreated(ctx context.Context, obj interface{}) error
-		EnsureDeleted(ctx context.Context, obj interface{}) error
-	}
+	Resource framework.Resource
 
 	BackOff backoff.BackOff
 }
 
 type resourceWrapper struct {
-	logger micrologger.Logger
-	//resource framework.Resource
-	resource interface {
-		Name() string
-		Underlying() framework.Resource
-
-		EnsureCreated(ctx context.Context, obj interface{}) error
-		EnsureDeleted(ctx context.Context, obj interface{}) error
-	}
+	logger   micrologger.Logger
+	resource framework.Resource
 
 	backOff backoff.BackOff
 }
