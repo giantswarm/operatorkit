@@ -68,7 +68,7 @@ func (o *crudResourceWrapperOps) GetCurrentState(ctx context.Context, obj interf
 	}
 
 	n := func(err error, dur time.Duration) {
-		o.logger.LogCtx(ctx, "warning", fmt.Sprintf("retrying 'GetCurrentState' due to error (%s)", err.Error()))
+		o.logger.LogCtx(ctx, "function", "GetCurrentState", "level", "warning", "message", "retrying due to error", "stack", fmt.Sprintf("%#v", err))
 	}
 
 	err = backoff.RetryNotify(op, o.backOff, n)
@@ -93,7 +93,7 @@ func (o *crudResourceWrapperOps) GetDesiredState(ctx context.Context, obj interf
 	}
 
 	n := func(err error, dur time.Duration) {
-		o.logger.LogCtx(ctx, "warning", fmt.Sprintf("retrying 'GetDesiredState' due to error (%s)", err.Error()))
+		o.logger.LogCtx(ctx, "function", "GetDesiredState", "level", "warning", "message", "retrying due to error", "stack", fmt.Sprintf("%#v", err))
 	}
 
 	err = backoff.RetryNotify(op, o.backOff, n)
@@ -118,7 +118,7 @@ func (o *crudResourceWrapperOps) NewUpdatePatch(ctx context.Context, obj, curren
 	}
 
 	n := func(err error, dur time.Duration) {
-		o.logger.LogCtx(ctx, "warning", fmt.Sprintf("retrying 'NewUpdatePatch' due to error (%s)", err.Error()))
+		o.logger.LogCtx(ctx, "function", "NewUpdatePatch", "level", "warning", "message", "retrying due to error", "stack", fmt.Sprintf("%#v", err))
 	}
 
 	err = backoff.RetryNotify(op, o.backOff, n)
@@ -143,7 +143,7 @@ func (o *crudResourceWrapperOps) NewDeletePatch(ctx context.Context, obj, curren
 	}
 
 	n := func(err error, dur time.Duration) {
-		o.logger.LogCtx(ctx, "warning", fmt.Sprintf("retrying 'NewDeletePatch' due to error (%s)", err.Error()))
+		o.logger.LogCtx(ctx, "function", "NewDeletePatch", "level", "warning", "message", "retrying due to error", "stack", fmt.Sprintf("%#v", err))
 	}
 
 	err = backoff.RetryNotify(op, o.backOff, n)
@@ -165,7 +165,7 @@ func (o *crudResourceWrapperOps) ApplyCreateChange(ctx context.Context, obj, cre
 	}
 
 	n := func(err error, dur time.Duration) {
-		o.logger.LogCtx(ctx, "warning", fmt.Sprintf("retrying 'ApplyCreatePatch' due to error (%s)", err.Error()))
+		o.logger.LogCtx(ctx, "function", "ApplyCreateChange", "level", "warning", "message", "retrying due to error", "stack", fmt.Sprintf("%#v", err))
 	}
 
 	err := backoff.RetryNotify(op, o.backOff, n)
@@ -187,7 +187,7 @@ func (o *crudResourceWrapperOps) ApplyDeleteChange(ctx context.Context, obj, del
 	}
 
 	n := func(err error, dur time.Duration) {
-		o.logger.LogCtx(ctx, "warning", fmt.Sprintf("retrying 'ApplyDeletePatch' due to error (%s)", err.Error()))
+		o.logger.LogCtx(ctx, "function", "ApplyDeleteChange", "level", "warning", "message", "retrying due to error", "stack", fmt.Sprintf("%#v", err))
 	}
 
 	err := backoff.RetryNotify(op, o.backOff, n)
@@ -209,7 +209,7 @@ func (o *crudResourceWrapperOps) ApplyUpdateChange(ctx context.Context, obj, upd
 	}
 
 	n := func(err error, dur time.Duration) {
-		o.logger.LogCtx(ctx, "warning", fmt.Sprintf("retrying 'ApplyUpdatePatch' due to error (%s)", err.Error()))
+		o.logger.LogCtx(ctx, "function", "ApplyUpdateChange", "level", "warning", "message", "retrying due to error", "stack", fmt.Sprintf("%#v", err))
 	}
 
 	err := backoff.RetryNotify(op, o.backOff, n)
