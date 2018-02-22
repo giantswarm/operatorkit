@@ -10,7 +10,6 @@ import (
 	"github.com/giantswarm/micrologger"
 
 	"github.com/giantswarm/operatorkit/framework"
-	"github.com/giantswarm/operatorkit/framework/resource/internal"
 )
 
 type Config struct {
@@ -222,13 +221,5 @@ func (r *Resource) ApplyUpdateChange(ctx context.Context, obj, updateState inter
 }
 
 func (r *Resource) Underlying() framework.Resource {
-	underlying := r.resource
-	for {
-		wrapper, ok := underlying.(internal.Wrapper)
-		if ok {
-			underlying = wrapper.Underlying()
-		} else {
-			return underlying
-		}
-	}
+	return r.resource
 }
