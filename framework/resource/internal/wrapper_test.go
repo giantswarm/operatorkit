@@ -81,7 +81,8 @@ func Test_Underlying_NonWrapped(t *testing.T) {
 	}
 }
 
-// Test_Underlying_Loop tests if Underlying panics when there is a loop.
+// Test_Underlying_Loop tests if Underlying returns an error when there is
+// an infinite loop.
 func Test_Underlying_Loop(t *testing.T) {
 	testCases := []struct {
 		ResourceFunc func() framework.Resource
