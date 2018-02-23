@@ -22,6 +22,8 @@ type Config struct {
 type Resource struct {
 	resource framework.Resource
 
+	serviceName string
+
 	name string
 }
 
@@ -29,25 +31,34 @@ func New(config Config) (*Resource, error) {
 	if config.Resource == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Resource must not be empty")
 	}
-	if _, err := internal.Underlying(config.Resource); err != nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.Resource must unwrap without loops: %s", err)
-	}
 
 	if config.Name == "" {
 		return nil, microerror.Maskf(invalidConfigError, "config.Name must not be empty")
 	}
 
+	var name string
+	{
+		u, err := internal.Underlying(config.Resource)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+
+		name = u.Name()
+	}
+
 	newResource := &Resource{
 		resource: config.Resource,
 
-		name: toCamelCase(config.Name),
+		serviceName: toCamelCase(config.Name),
+
+		name: name,
 	}
 
 	return newResource, nil
 }
 
 func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
-	sl := r.name
+	sl := r.serviceName
 	rl := r.resource.Name()
 	ol := "GetCurrentState"
 
@@ -66,7 +77,7 @@ func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interf
 }
 
 func (r *Resource) GetDesiredState(ctx context.Context, obj interface{}) (interface{}, error) {
-	sl := r.name
+	sl := r.serviceName
 	rl := r.resource.Name()
 	ol := "GetDesiredState"
 
@@ -85,7 +96,7 @@ func (r *Resource) GetDesiredState(ctx context.Context, obj interface{}) (interf
 }
 
 func (r *Resource) NewUpdatePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*framework.Patch, error) {
-	sl := r.name
+	sl := r.serviceName
 	rl := r.resource.Name()
 	ol := "NewUpdatePatch"
 
@@ -104,7 +115,7 @@ func (r *Resource) NewUpdatePatch(ctx context.Context, obj, currentState, desire
 }
 
 func (r *Resource) NewDeletePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*framework.Patch, error) {
-	sl := r.name
+	sl := r.serviceName
 	rl := r.resource.Name()
 	ol := "NewDeletePatch"
 
@@ -123,11 +134,11 @@ func (r *Resource) NewDeletePatch(ctx context.Context, obj, currentState, desire
 }
 
 func (r *Resource) Name() string {
-	return internal.Must(internal.Underlying(r)).Name()
+	return r.serviceName
 }
 
 func (r *Resource) ApplyCreateChange(ctx context.Context, obj, createState interface{}) error {
-	sl := r.name
+	sl := r.serviceName
 	rl := r.resource.Name()
 	ol := "ApplyCreatePatch"
 
@@ -146,7 +157,7 @@ func (r *Resource) ApplyCreateChange(ctx context.Context, obj, createState inter
 }
 
 func (r *Resource) ApplyDeleteChange(ctx context.Context, obj, deleteState interface{}) error {
-	sl := r.name
+	sl := r.serviceName
 	rl := r.resource.Name()
 	ol := "ApplyDeletePatch"
 
@@ -165,7 +176,7 @@ func (r *Resource) ApplyDeleteChange(ctx context.Context, obj, deleteState inter
 }
 
 func (r *Resource) ApplyUpdateChange(ctx context.Context, obj, updateState interface{}) error {
-	sl := r.name
+	sl := r.serviceName
 	rl := r.resource.Name()
 	ol := "ApplyUpdatePatch"
 

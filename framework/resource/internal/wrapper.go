@@ -27,16 +27,3 @@ func Underlying(r framework.Resource) (framework.Resource, error) {
 		}
 	}
 }
-
-// Must is a helper that wraps a call to a function returning
-// (framework.Resource, error) and panics if the error is non-nil. It is
-// intended hor use in variable initializations such as
-//
-//	var u = internal.Must(internal.Underlying(r))
-//
-func Must(r framework.Resource, err error) framework.Resource {
-	if err != nil {
-		panic(err)
-	}
-	return r
-}

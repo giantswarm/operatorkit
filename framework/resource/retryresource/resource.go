@@ -25,6 +25,8 @@ type Resource struct {
 	resource framework.Resource
 
 	backOff backoff.BackOff
+
+	name string
 }
 
 func New(config Config) (*Resource, error) {
@@ -34,12 +36,19 @@ func New(config Config) (*Resource, error) {
 	if config.Resource == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Resource must not be empty")
 	}
-	if _, err := internal.Underlying(config.Resource); err != nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.Resource must unwrap without loops: %s", err)
-	}
 
 	if config.BackOff == nil {
 		config.BackOff = backoff.NewExponentialBackOff()
+	}
+
+	var name string
+	{
+		u, err := internal.Underlying(config.Resource)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+
+		name = u.Name()
 	}
 
 	r := &Resource{
@@ -49,6 +58,8 @@ func New(config Config) (*Resource, error) {
 		resource: config.Resource,
 
 		backOff: config.BackOff,
+
+		name: name,
 	}
 
 	return r, nil
@@ -155,7 +166,7 @@ func (r *Resource) NewDeletePatch(ctx context.Context, obj, currentState, desire
 }
 
 func (r *Resource) Name() string {
-	return internal.Must(internal.Underlying(r)).Name()
+	return r.name
 }
 
 func (r *Resource) ApplyCreateChange(ctx context.Context, obj, createState interface{}) error {
