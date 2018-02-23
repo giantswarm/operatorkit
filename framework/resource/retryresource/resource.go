@@ -10,6 +10,7 @@ import (
 	"github.com/giantswarm/micrologger"
 
 	"github.com/giantswarm/operatorkit/framework"
+	"github.com/giantswarm/operatorkit/framework/resource/internal"
 )
 
 type Config struct {
@@ -24,6 +25,8 @@ type Resource struct {
 	resource framework.Resource
 
 	backOff backoff.BackOff
+
+	name string
 }
 
 func New(config Config) (*Resource, error) {
@@ -38,6 +41,16 @@ func New(config Config) (*Resource, error) {
 		config.BackOff = backoff.NewExponentialBackOff()
 	}
 
+	var name string
+	{
+		u, err := internal.Underlying(config.Resource)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+
+		name = u.Name()
+	}
+
 	r := &Resource{
 		logger: config.Logger.With(
 			"underlyingResource", config.Resource.Name(),
@@ -45,6 +58,8 @@ func New(config Config) (*Resource, error) {
 		resource: config.Resource,
 
 		backOff: config.BackOff,
+
+		name: name,
 	}
 
 	return r, nil
@@ -151,7 +166,7 @@ func (r *Resource) NewDeletePatch(ctx context.Context, obj, currentState, desire
 }
 
 func (r *Resource) Name() string {
-	return r.Underlying().Name()
+	return r.name
 }
 
 func (r *Resource) ApplyCreateChange(ctx context.Context, obj, createState interface{}) error {
@@ -220,6 +235,6 @@ func (r *Resource) ApplyUpdateChange(ctx context.Context, obj, updateState inter
 	return nil
 }
 
-func (r *Resource) Underlying() framework.Resource {
+func (r *Resource) Wrapped() framework.Resource {
 	return r.resource
 }
