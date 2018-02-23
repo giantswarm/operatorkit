@@ -118,7 +118,3 @@ func (r *testResourcePatchNoPanic) ApplyDeleteChange(ctx context.Context, obj, d
 func (r *testResourcePatchNoPanic) ApplyUpdateChange(ctx context.Context, obj, updateState interface{}) error {
 	return nil
 }
-
-func (r *testResourcePatchNoPanic) Underlying() Resource {
-	return r
-}

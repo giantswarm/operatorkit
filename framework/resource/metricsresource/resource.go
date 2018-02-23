@@ -7,6 +7,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/giantswarm/operatorkit/framework"
+	"github.com/giantswarm/operatorkit/framework/resource/internal"
 )
 
 type Config struct {
@@ -27,6 +28,9 @@ type Resource struct {
 func New(config Config) (*Resource, error) {
 	if config.Resource == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Resource must not be empty")
+	}
+	if _, err := internal.Underlying(config.Resource); err != nil {
+		return nil, microerror.Maskf(invalidConfigError, "config.Resource must unwrap without loops: %s", err)
 	}
 
 	if config.Name == "" {
@@ -119,7 +123,7 @@ func (r *Resource) NewDeletePatch(ctx context.Context, obj, currentState, desire
 }
 
 func (r *Resource) Name() string {
-	return r.Underlying().Name()
+	return internal.Must(internal.Underlying(r)).Name()
 }
 
 func (r *Resource) ApplyCreateChange(ctx context.Context, obj, createState interface{}) error {
@@ -179,6 +183,6 @@ func (r *Resource) ApplyUpdateChange(ctx context.Context, obj, updateState inter
 	return nil
 }
 
-func (r *Resource) Underlying() framework.Resource {
+func (r *Resource) Wrapped() framework.Resource {
 	return r.resource
 }

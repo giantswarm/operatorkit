@@ -343,8 +343,3 @@ func (r *CRUDResource) EnsureDeleted(ctx context.Context, obj interface{}) error
 func (r *CRUDResource) Name() string {
 	return r.name
 }
-
-// TODO uncomment when Resource interface is redefined.
-//func (r *CRUDResource) Underlying() Resource {
-//	return r
-//}
