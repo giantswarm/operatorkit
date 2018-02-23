@@ -16,6 +16,10 @@ type key string
 var canceledKey key = "canceled"
 
 // NewContext returns a new context.Context that carries value v.
+//
+// NOTE: This value is set at every resource reconciliation loop inside
+// CRUDResource, the user should not call this function when using
+// CRUDResource.
 func NewContext(ctx context.Context, v chan struct{}) context.Context {
 	if v == nil {
 		return ctx
@@ -35,9 +39,9 @@ func FromContext(ctx context.Context) (chan struct{}, bool) {
 // present.
 //
 // NOTE that the canceled channel, if any found, is only used to be closed to
-// signal cancelation. It is not guaranteed that the channel is buffered or read
+// signal cancellation. It is not guaranteed that the channel is buffered or read
 // from. Clients must not write to it. Otherwise the canceled channel will block
-// eventually. It is safe to signal cancelation via SetCanceled.
+// eventually. It is safe to signal cancellation via SetCanceled.
 func IsCanceled(ctx context.Context) bool {
 	canceled, canceledExists := FromContext(ctx)
 	if canceledExists {
@@ -52,7 +56,7 @@ func IsCanceled(ctx context.Context) bool {
 	return false
 }
 
-// SetCanceled is a safe way to signal cancelation.
+// SetCanceled is a safe way to signal cancellation.
 func SetCanceled(ctx context.Context) {
 	canceled, canceledExists := FromContext(ctx)
 	if canceledExists && !IsCanceled(ctx) {

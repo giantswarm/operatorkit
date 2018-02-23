@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 
 	"github.com/giantswarm/operatorkit/client/k8scrdclient"
+	"github.com/giantswarm/operatorkit/framework/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/informer"
 )
 
@@ -254,10 +255,18 @@ func processDelete(ctx context.Context, obj interface{}, resources []Resource) e
 		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}
 
+	ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
+	// Garbage collect. TODO use bool to not have to do so.
+	defer reconciliationcanceledcontext.SetCanceled(ctx)
+
 	for _, r := range resources {
-		err := r.EnsureCreated(ctx, obj)
+		err := r.EnsureDeleted(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
+		}
+
+		if reconciliationcanceledcontext.IsCanceled(ctx) {
+			return nil
 		}
 	}
 
@@ -290,10 +299,18 @@ func processUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}
 
+	ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
+	// Garbage collect. TODO use bool to not have to do so.
+	defer reconciliationcanceledcontext.SetCanceled(ctx)
+
 	for _, r := range resources {
 		err := r.EnsureCreated(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
+		}
+
+		if reconciliationcanceledcontext.IsCanceled(ctx) {
+			return nil
 		}
 	}
 

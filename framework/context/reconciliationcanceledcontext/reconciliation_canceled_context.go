@@ -16,6 +16,9 @@ type key string
 var canceledKey key = "canceled"
 
 // NewContext returns a new context.Context that carries value v.
+//
+// NOTE: This value is set at every reconciliation loop inside the framework,
+// the framework user should not call this function.
 func NewContext(ctx context.Context, v chan struct{}) context.Context {
 	if v == nil {
 		return ctx

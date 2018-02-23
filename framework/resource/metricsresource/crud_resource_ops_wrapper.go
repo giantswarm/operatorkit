@@ -7,7 +7,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/giantswarm/operatorkit/framework"
-	"github.com/giantswarm/operatorkit/framework/resource/internal"
 )
 
 type crudResourceOpsWrapperConfig struct {
@@ -117,7 +116,7 @@ func (o *crudResourceWrapperOps) NewDeletePatch(ctx context.Context, obj, curren
 }
 
 func (o *crudResourceWrapperOps) Name() string {
-	return internal.OldUnderlying(o).Name()
+	return o.underlying.Name()
 }
 
 func (o *crudResourceWrapperOps) ApplyCreateChange(ctx context.Context, obj, createState interface{}) error {
