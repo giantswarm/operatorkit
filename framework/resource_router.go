@@ -37,10 +37,10 @@ func (r *ResourceRouter) ResourceSet(obj interface{}) (*ResourceSet, error) {
 	}
 
 	if len(found) == 0 {
-		return nil, microerror.Maskf(executionFailedError, "could not find any resource router")
+		return nil, microerror.Maskf(executionFailedError, "could not find handling resource set")
 	}
 	if len(found) > 1 {
-		return nil, microerror.Maskf(executionFailedError, "multiple resource routers not allowed")
+		return nil, microerror.Maskf(executionFailedError, "multiple handling resource sets found")
 	}
 
 	return found[0], nil
