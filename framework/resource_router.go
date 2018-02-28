@@ -60,7 +60,7 @@ func (r *ResourceRouter) ResourceSet(obj interface{}) (*ResourceSet, error) {
 			r.logger.Log("level", "debug", "message", "no resource set for reconciled object", "object", accessor.GetSelfLink())
 		}
 
-		return nil, microerror.Mask(noResourceRouterError)
+		return nil, microerror.Mask(noResourceSetError)
 	}
 	if len(found) > 1 {
 		return nil, microerror.Maskf(executionFailedError, "multiple handling resource sets found; only single allowed")

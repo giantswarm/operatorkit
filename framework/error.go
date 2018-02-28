@@ -18,9 +18,9 @@ func IsInvalidConfig(err error) bool {
 	return microerror.Cause(err) == invalidConfigError
 }
 
-var noResourceRouterError = microerror.New("no resource router")
+var noResourceSetError = microerror.New("no resource set")
 
-// IsNoResourceRouter asserts noResourceRouterError.
-func IsNoResourceRouter(err error) bool {
-	return microerror.Cause(err) == noResourceRouterError
+// IsNoResourceSet asserts noResourceSetError.
+func IsNoResourceSet(err error) bool {
+	return microerror.Cause(err) == noResourceSetError
 }
