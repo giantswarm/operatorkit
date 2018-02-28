@@ -127,7 +127,11 @@ func (f *Framework) DeleteFunc(obj interface{}) {
 	defer f.mutex.Unlock()
 
 	resourceSet, err := f.resourceRouter.ResourceSet(obj)
-	if err != nil {
+	if IsNoResourceRouter(err) {
+		// In case there is no resource router available to handle the reconciled
+		// runtime object, we stop here.
+		return
+	} else if err != nil {
 		f.logger.Log("event", "delete", "function", "DeleteFunc", "level", "error", "message", "stop framework reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
@@ -158,7 +162,11 @@ func (f *Framework) UpdateFunc(oldObj, newObj interface{}) {
 	defer f.mutex.Unlock()
 
 	resourceSet, err := f.resourceRouter.ResourceSet(obj)
-	if err != nil {
+	if IsNoResourceRouter(err) {
+		// In case there is no resource router available to handle the reconciled
+		// runtime object, we stop here.
+		return
+	} else if err != nil {
 		f.logger.Log("event", "update", "function", "UpdateFunc", "level", "error", "message", "stop framework reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
