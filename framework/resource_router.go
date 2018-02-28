@@ -1,9 +1,11 @@
 package framework
 
 import (
+	"fmt"
+
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-	"k8s.io/client-go/tools/cache"
+	"k8s.io/apimachinery/pkg/api/meta"
 )
 
 type ResourceRouterConfig struct {
@@ -51,11 +53,12 @@ func (r *ResourceRouter) ResourceSet(obj interface{}) (*ResourceSet, error) {
 	}
 
 	if len(found) == 0 {
-		k, err := cache.MetaNamespaceKeyFunc(obj)
+		accessor, err := meta.Accessor(obj)
 		if err != nil {
-			return nil, microerror.Mask(err)
+			r.logger.Log("function", "ResourceSet", "level", "warning", "message", "cannot create accessor for object", "object", fmt.Sprintf("%#v", obj), "stack", fmt.Sprintf("%#v", err))
+		} else {
+			r.logger.Log("level", "debug", "message", "no resource set for reconciled object", "object", accessor.GetSelfLink())
 		}
-		r.logger.Log("level", "debug", "message", "no resource set for reconciled object", "key", k)
 	}
 	if len(found) > 1 {
 		return nil, microerror.Maskf(executionFailedError, "multiple handling resource sets found; only single allowed")
