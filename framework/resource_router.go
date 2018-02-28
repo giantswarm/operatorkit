@@ -2,22 +2,34 @@ package framework
 
 import (
 	"github.com/giantswarm/microerror"
+	"github.com/giantswarm/micrologger"
+	"k8s.io/client-go/tools/cache"
 )
 
 type ResourceRouterConfig struct {
+	Logger micrologger.Logger
+
 	ResourceSets []*ResourceSet
 }
 
 type ResourceRouter struct {
+	logger micrologger.Logger
+
 	resourceSets []*ResourceSet
 }
 
 func NewResourceRouter(c ResourceRouterConfig) (*ResourceRouter, error) {
+	if c.Logger == nil {
+		return nil, microerror.Maskf(invalidConfigError, "%T.Logger must not be empty", c)
+	}
+
 	if len(c.ResourceSets) == 0 {
 		return nil, microerror.Maskf(invalidConfigError, "%T.ResourceSets must not be empty", c)
 	}
 
 	r := &ResourceRouter{
+		logger: c.Logger,
+
 		resourceSets: c.ResourceSets,
 	}
 
@@ -38,6 +50,13 @@ func (r *ResourceRouter) ResourceSet(obj interface{}) (*ResourceSet, error) {
 		}
 	}
 
+	if len(found) == 0 {
+		k, err := cache.MetaNamespaceKeyFunc(obj)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+		r.logger.Log("level", "debug", "message", "no resource set for reconciled object", "key", k)
+	}
 	if len(found) > 1 {
 		return nil, microerror.Maskf(executionFailedError, "multiple handling resource sets found; only single allowed")
 	}
