@@ -17,3 +17,10 @@ var invalidConfigError = microerror.New("invalid config")
 func IsInvalidConfig(err error) bool {
 	return microerror.Cause(err) == invalidConfigError
 }
+
+var noResourceRouterError = microerror.New("no resource router")
+
+// IsNoResourceRouter asserts noResourceRouterError.
+func IsNoResourceRouter(err error) bool {
+	return microerror.Cause(err) == noResourceRouterError
+}
