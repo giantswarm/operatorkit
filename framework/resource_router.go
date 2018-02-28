@@ -25,8 +25,10 @@ func NewResourceRouter(c ResourceRouterConfig) (*ResourceRouter, error) {
 }
 
 // ResourceSet tries to lookup the appropriate resource set based on the
-// received runtime object. There must be exactly one result, otherwise
-// ResourceSet returns an error.
+// received runtime object. There might be not any resource set for an observed
+// runtime object if an operator uses multiple frameworks for reconciliations.
+// There must not be multiple resource sets per observed runtime object though.
+// If this is the case, ResourceSet returns an error.
 func (r *ResourceRouter) ResourceSet(obj interface{}) (*ResourceSet, error) {
 	var found []*ResourceSet
 
@@ -36,9 +38,6 @@ func (r *ResourceRouter) ResourceSet(obj interface{}) (*ResourceSet, error) {
 		}
 	}
 
-	if len(found) == 0 {
-		return nil, microerror.Maskf(executionFailedError, "handling resource set not found")
-	}
 	if len(found) > 1 {
 		return nil, microerror.Maskf(executionFailedError, "multiple handling resource sets found; only single allowed")
 	}
