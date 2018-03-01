@@ -207,7 +207,3 @@ func (r *testResourcePatchDispatchChange) ApplyUpdateChange(ctx context.Context,
 
 	return nil
 }
-
-func (r *testResourcePatchDispatchChange) Underlying() Resource {
-	return r
-}

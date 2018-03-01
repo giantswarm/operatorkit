@@ -892,10 +892,6 @@ func (r *testResource) ApplyUpdateChange(ctx context.Context, obj, updateState i
 	return nil
 }
 
-func (r *testResource) Underlying() Resource {
-	return r
-}
-
 func (r *testResource) returnErrorFor(errorMethod string) bool {
 	ok := r.Error != nil && r.ErrorCount > r.errorCount && r.ErrorMethod == errorMethod
 

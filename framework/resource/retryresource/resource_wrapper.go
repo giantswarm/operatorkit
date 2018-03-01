@@ -9,6 +9,7 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 
+	"github.com/giantswarm/operatorkit/framework/resource/internal"
 	"github.com/giantswarm/operatorkit/framework/resource/internal/framework"
 )
 
@@ -25,6 +26,8 @@ type resourceWrapper struct {
 	resource framework.Resource
 
 	backOff backoff.BackOff
+
+	name string
 }
 
 func newResourceWrapper(config resourceWrapperConfig) (*resourceWrapper, error) {
@@ -39,14 +42,25 @@ func newResourceWrapper(config resourceWrapperConfig) (*resourceWrapper, error) 
 		config.BackOff = backoff.NewExponentialBackOff()
 	}
 
+	var name string
+	{
+		u, err := internal.Underlying(config.Resource)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+
+		name = u.Name()
+	}
+
 	r := &resourceWrapper{
 		logger: config.Logger.With(
-		// TODO Uncomment when Resource interface is updated.
-		//"underlyingResource", internal.Underlying(config.Resource).Name(),
+			"underlyingResource", name,
 		),
 		resource: config.Resource,
 
 		backOff: config.BackOff,
+
+		name: name,
 	}
 
 	return r, nil
@@ -65,7 +79,7 @@ func (r *resourceWrapper) EnsureCreated(ctx context.Context, obj interface{}) er
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.LogCtx(ctx, "warning", fmt.Sprintf("retrying 'EnsureCreated' due to error (%s)", err.Error()))
+		r.logger.LogCtx(ctx, "function", "EnsureCreated", "level", "warning", "message", "retrying due to error", "stack", fmt.Sprintf("%#v", err))
 	}
 
 	err = backoff.RetryNotify(o, r.backOff, n)
@@ -89,7 +103,7 @@ func (r *resourceWrapper) EnsureDeleted(ctx context.Context, obj interface{}) er
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.LogCtx(ctx, "warning", fmt.Sprintf("retrying 'EnsureDeleted' due to error (%s)", err.Error()))
+		r.logger.LogCtx(ctx, "function", "EnsureDeleted", "level", "warning", "message", "retrying due to error", "stack", fmt.Sprintf("%#v", err))
 	}
 
 	err = backoff.RetryNotify(o, r.backOff, n)
@@ -101,7 +115,7 @@ func (r *resourceWrapper) EnsureDeleted(ctx context.Context, obj interface{}) er
 }
 
 func (r *resourceWrapper) Name() string {
-	return r.resource.Name()
+	return r.name
 }
 
 // Wrapped implements internal.Wrapper interface.
