@@ -79,7 +79,7 @@ func (r *resourceWrapper) EnsureCreated(ctx context.Context, obj interface{}) er
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.LogCtx(ctx, "warning", fmt.Sprintf("retrying 'EnsureCreated' due to error (%s)", err.Error()))
+		r.logger.LogCtx(ctx, "function", "EnsureCreated", "level", "warning", "message", "retrying due to error", "stack", fmt.Sprintf("%#v", err))
 	}
 
 	err = backoff.RetryNotify(o, r.backOff, n)
@@ -103,7 +103,7 @@ func (r *resourceWrapper) EnsureDeleted(ctx context.Context, obj interface{}) er
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.LogCtx(ctx, "warning", fmt.Sprintf("retrying 'EnsureDeleted' due to error (%s)", err.Error()))
+		r.logger.LogCtx(ctx, "function", "EnsureDeleted", "level", "warning", "message", "retrying due to error", "stack", fmt.Sprintf("%#v", err))
 	}
 
 	err = backoff.RetryNotify(o, r.backOff, n)
