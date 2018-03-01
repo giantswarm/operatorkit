@@ -7,7 +7,7 @@ import (
 
 	originalframework "github.com/giantswarm/operatorkit/framework"
 	"github.com/giantswarm/operatorkit/framework/resource/internal"
-	"github.com/giantswarm/operatorkit/framework/resource/internal/framework"
+	"github.com/giantswarm/operatorkit/framework"
 )
 
 // crudResourceWrapper is a specialized wrapper which wraps

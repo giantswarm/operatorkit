@@ -10,14 +10,12 @@ import (
 	"github.com/cenkalti/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-	"github.com/giantswarm/micrologger/loggermeta"
 	"github.com/prometheus/client_golang/prometheus"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/watch"
 
 	"github.com/giantswarm/operatorkit/client/k8scrdclient"
 	"github.com/giantswarm/operatorkit/framework/context/reconciliationcanceledcontext"
-	"github.com/giantswarm/operatorkit/framework/context/resourcecanceledcontext"
 	"github.com/giantswarm/operatorkit/informer"
 )
 
@@ -205,145 +203,17 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}
 
+	ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
+	defer reconciliationcanceledcontext.SetCanceled(ctx)
+
 	for _, r := range resources {
-		var err error
-
-		var currentState interface{}
-		{
-			if reconciliationcanceledcontext.IsCanceled(ctx) {
-				return nil
-			}
-			if resourcecanceledcontext.IsCanceled(ctx) {
-				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
-				continue
-			}
-
-			meta, ok := loggermeta.FromContext(ctx)
-			if ok {
-				meta.KeyVals["function"] = "GetCurrentState"
-				defer delete(meta.KeyVals, "function")
-			}
-			currentState, err = r.GetCurrentState(ctx, obj)
-			if err != nil {
-				return microerror.Mask(err)
-			}
+		err := r.EnsureDeleted(ctx, obj)
+		if err != nil {
+			return microerror.Mask(err)
 		}
 
-		var desiredState interface{}
-		{
-			if reconciliationcanceledcontext.IsCanceled(ctx) {
-				return nil
-			}
-			if resourcecanceledcontext.IsCanceled(ctx) {
-				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
-				continue
-			}
-
-			meta, ok := loggermeta.FromContext(ctx)
-			if ok {
-				meta.KeyVals["function"] = "GetDesiredState"
-				defer delete(meta.KeyVals, "function")
-			}
-			desiredState, err = r.GetDesiredState(ctx, obj)
-			if err != nil {
-				return microerror.Mask(err)
-			}
-		}
-
-		var patch *Patch
-		{
-			if reconciliationcanceledcontext.IsCanceled(ctx) {
-				return nil
-			}
-			if resourcecanceledcontext.IsCanceled(ctx) {
-				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
-				continue
-			}
-
-			meta, ok := loggermeta.FromContext(ctx)
-			if ok {
-				meta.KeyVals["function"] = "NewDeletePatch"
-				defer delete(meta.KeyVals, "function")
-			}
-			patch, err = r.NewDeletePatch(ctx, obj, currentState, desiredState)
-			if err != nil {
-				return microerror.Mask(err)
-			}
-		}
-
-		{
-			if reconciliationcanceledcontext.IsCanceled(ctx) {
-				return nil
-			}
-			if resourcecanceledcontext.IsCanceled(ctx) {
-				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
-				continue
-			}
-
-			if patch != nil {
-				createChange, ok := patch.getCreateChange()
-				if ok {
-					meta, ok := loggermeta.FromContext(ctx)
-					if ok {
-						meta.KeyVals["function"] = "ApplyCreateChange"
-						defer delete(meta.KeyVals, "function")
-					}
-					err := r.ApplyCreateChange(ctx, obj, createChange)
-					if err != nil {
-						return microerror.Mask(err)
-					}
-				}
-			}
-		}
-
-		{
-			if reconciliationcanceledcontext.IsCanceled(ctx) {
-				return nil
-			}
-			if resourcecanceledcontext.IsCanceled(ctx) {
-				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
-				continue
-			}
-
-			if patch != nil {
-				deleteChange, ok := patch.getDeleteChange()
-				if ok {
-					meta, ok := loggermeta.FromContext(ctx)
-					if ok {
-						meta.KeyVals["function"] = "ApplyDeleteChange"
-						defer delete(meta.KeyVals, "function")
-					}
-					err := r.ApplyDeleteChange(ctx, obj, deleteChange)
-					if err != nil {
-						return microerror.Mask(err)
-					}
-				}
-			}
-		}
-
-		{
-			if reconciliationcanceledcontext.IsCanceled(ctx) {
-				return nil
-			}
-			if resourcecanceledcontext.IsCanceled(ctx) {
-				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
-				continue
-			}
-
-			if patch != nil {
-				updateChange, ok := patch.getUpdateChange()
-				if ok {
-					meta, ok := loggermeta.FromContext(ctx)
-					if ok {
-						meta.KeyVals["function"] = "ApplyUpdateChange"
-						defer delete(meta.KeyVals, "function")
-					}
-					err := r.ApplyUpdateChange(ctx, obj, updateChange)
-					if err != nil {
-						return microerror.Mask(err)
-					}
-				}
-			}
+		if reconciliationcanceledcontext.IsCanceled(ctx) {
+			return nil
 		}
 	}
 
@@ -405,145 +275,17 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}
 
+	ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
+	defer reconciliationcanceledcontext.SetCanceled(ctx)
+
 	for _, r := range resources {
-		var err error
-
-		var currentState interface{}
-		{
-			if reconciliationcanceledcontext.IsCanceled(ctx) {
-				return nil
-			}
-			if resourcecanceledcontext.IsCanceled(ctx) {
-				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
-				continue
-			}
-
-			meta, ok := loggermeta.FromContext(ctx)
-			if ok {
-				meta.KeyVals["function"] = "GetCurrentState"
-				defer delete(meta.KeyVals, "function")
-			}
-			currentState, err = r.GetCurrentState(ctx, obj)
-			if err != nil {
-				return microerror.Mask(err)
-			}
+		err := r.EnsureCreated(ctx, obj)
+		if err != nil {
+			return microerror.Mask(err)
 		}
 
-		var desiredState interface{}
-		{
-			if reconciliationcanceledcontext.IsCanceled(ctx) {
-				return nil
-			}
-			if resourcecanceledcontext.IsCanceled(ctx) {
-				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
-				continue
-			}
-
-			meta, ok := loggermeta.FromContext(ctx)
-			if ok {
-				meta.KeyVals["function"] = "GetDesiredState"
-				defer delete(meta.KeyVals, "function")
-			}
-			desiredState, err = r.GetDesiredState(ctx, obj)
-			if err != nil {
-				return microerror.Mask(err)
-			}
-		}
-
-		var patch *Patch
-		{
-			if reconciliationcanceledcontext.IsCanceled(ctx) {
-				return nil
-			}
-			if resourcecanceledcontext.IsCanceled(ctx) {
-				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
-				continue
-			}
-
-			meta, ok := loggermeta.FromContext(ctx)
-			if ok {
-				meta.KeyVals["function"] = "NewUpdatePatch"
-				defer delete(meta.KeyVals, "function")
-			}
-			patch, err = r.NewUpdatePatch(ctx, obj, currentState, desiredState)
-			if err != nil {
-				return microerror.Mask(err)
-			}
-		}
-
-		{
-			if reconciliationcanceledcontext.IsCanceled(ctx) {
-				return nil
-			}
-			if resourcecanceledcontext.IsCanceled(ctx) {
-				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
-				continue
-			}
-
-			if patch != nil {
-				createState, ok := patch.getCreateChange()
-				if ok {
-					meta, ok := loggermeta.FromContext(ctx)
-					if ok {
-						meta.KeyVals["function"] = "ApplyCreateChange"
-						defer delete(meta.KeyVals, "function")
-					}
-					err := r.ApplyCreateChange(ctx, obj, createState)
-					if err != nil {
-						return microerror.Mask(err)
-					}
-				}
-			}
-		}
-
-		{
-			if reconciliationcanceledcontext.IsCanceled(ctx) {
-				return nil
-			}
-			if resourcecanceledcontext.IsCanceled(ctx) {
-				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
-				continue
-			}
-
-			if patch != nil {
-				deleteState, ok := patch.getDeleteChange()
-				if ok {
-					meta, ok := loggermeta.FromContext(ctx)
-					if ok {
-						meta.KeyVals["function"] = "ApplyDeleteChange"
-						defer delete(meta.KeyVals, "function")
-					}
-					err := r.ApplyDeleteChange(ctx, obj, deleteState)
-					if err != nil {
-						return microerror.Mask(err)
-					}
-				}
-			}
-		}
-
-		{
-			if reconciliationcanceledcontext.IsCanceled(ctx) {
-				return nil
-			}
-			if resourcecanceledcontext.IsCanceled(ctx) {
-				ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
-				continue
-			}
-
-			if patch != nil {
-				updateState, ok := patch.getUpdateChange()
-				if ok {
-					meta, ok := loggermeta.FromContext(ctx)
-					if ok {
-						meta.KeyVals["function"] = "ApplyUpdateChange"
-						defer delete(meta.KeyVals, "function")
-					}
-					err := r.ApplyUpdateChange(ctx, obj, updateState)
-					if err != nil {
-						return microerror.Mask(err)
-					}
-				}
-			}
+		if reconciliationcanceledcontext.IsCanceled(ctx) {
+			return nil
 		}
 	}
 

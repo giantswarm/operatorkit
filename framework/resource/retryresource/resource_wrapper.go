@@ -10,7 +10,7 @@ import (
 	"github.com/giantswarm/micrologger"
 
 	"github.com/giantswarm/operatorkit/framework/resource/internal"
-	"github.com/giantswarm/operatorkit/framework/resource/internal/framework"
+	"github.com/giantswarm/operatorkit/framework"
 )
 
 type resourceWrapper struct {
