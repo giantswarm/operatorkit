@@ -9,19 +9,13 @@ import (
 	"github.com/giantswarm/operatorkit/framework/resource/internal/framework"
 )
 
-type resourceWrapperConfig struct {
-	Resource framework.Resource
-
-	Name string
-}
-
 type resourceWrapper struct {
 	resource framework.Resource
 
 	name string
 }
 
-func newResourceWrapper(config resourceWrapperConfig) (*resourceWrapper, error) {
+func newResourceWrapper(config Config) (*resourceWrapper, error) {
 	if config.Resource == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Resource must not be empty")
 	}

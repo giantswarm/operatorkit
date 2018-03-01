@@ -7,19 +7,20 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/giantswarm/operatorkit/framework"
-	"github.com/giantswarm/operatorkit/framework/resource/internal"
 )
 
 type crudResourceOpsWrapperConfig struct {
 	Ops framework.CRUDResourceOps
 
-	Name string
+	ServiceName  string
+	ResourceName string
 }
 
 type crudResourceWrapperOps struct {
 	underlying framework.CRUDResourceOps
 
-	name string
+	serviceName  string
+	resourceName string
 }
 
 func newCRUDResourceWrapperOps(config crudResourceOpsWrapperConfig) (*crudResourceWrapperOps, error) {
@@ -27,22 +28,26 @@ func newCRUDResourceWrapperOps(config crudResourceOpsWrapperConfig) (*crudResour
 		return nil, microerror.Maskf(invalidConfigError, "config.Ops must not be empty")
 	}
 
-	if config.Name == "" {
-		return nil, microerror.Maskf(invalidConfigError, "config.Name must not be empty")
+	if config.ServiceName == "" {
+		return nil, microerror.Maskf(invalidConfigError, "config.ServiceName must not be empty")
+	}
+	if config.ResourceName == "" {
+		return nil, microerror.Maskf(invalidConfigError, "config.ResourceName must not be empty")
 	}
 
 	o := &crudResourceWrapperOps{
 		underlying: config.Ops,
 
-		name: toCamelCase(config.Name),
+		serviceName:  toCamelCase(config.ServiceName),
+		resourceName: config.ResourceName,
 	}
 
 	return o, nil
 }
 
 func (o *crudResourceWrapperOps) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
-	sl := o.name
-	rl := o.underlying.Name()
+	sl := o.serviceName
+	rl := o.resourceName
 	ol := "GetCurrentState"
 
 	operationCounter.WithLabelValues(sl, rl, ol).Inc()
@@ -60,8 +65,8 @@ func (o *crudResourceWrapperOps) GetCurrentState(ctx context.Context, obj interf
 }
 
 func (o *crudResourceWrapperOps) GetDesiredState(ctx context.Context, obj interface{}) (interface{}, error) {
-	sl := o.name
-	rl := o.underlying.Name()
+	sl := o.serviceName
+	rl := o.resourceName
 	ol := "GetDesiredState"
 
 	operationCounter.WithLabelValues(sl, rl, ol).Inc()
@@ -79,8 +84,8 @@ func (o *crudResourceWrapperOps) GetDesiredState(ctx context.Context, obj interf
 }
 
 func (o *crudResourceWrapperOps) NewUpdatePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*framework.Patch, error) {
-	sl := o.name
-	rl := o.underlying.Name()
+	sl := o.serviceName
+	rl := o.resourceName
 	ol := "NewUpdatePatch"
 
 	operationCounter.WithLabelValues(sl, rl, ol).Inc()
@@ -98,8 +103,8 @@ func (o *crudResourceWrapperOps) NewUpdatePatch(ctx context.Context, obj, curren
 }
 
 func (o *crudResourceWrapperOps) NewDeletePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*framework.Patch, error) {
-	sl := o.name
-	rl := o.underlying.Name()
+	sl := o.serviceName
+	rl := o.resourceName
 	ol := "NewDeletePatch"
 
 	operationCounter.WithLabelValues(sl, rl, ol).Inc()
@@ -117,12 +122,12 @@ func (o *crudResourceWrapperOps) NewDeletePatch(ctx context.Context, obj, curren
 }
 
 func (o *crudResourceWrapperOps) Name() string {
-	return internal.OldUnderlying(o).Name()
+	return o.resourceName
 }
 
 func (o *crudResourceWrapperOps) ApplyCreateChange(ctx context.Context, obj, createState interface{}) error {
-	sl := o.name
-	rl := o.underlying.Name()
+	sl := o.serviceName
+	rl := o.resourceName
 	ol := "ApplyCreatePatch"
 
 	operationCounter.WithLabelValues(sl, rl, ol).Inc()
@@ -140,8 +145,8 @@ func (o *crudResourceWrapperOps) ApplyCreateChange(ctx context.Context, obj, cre
 }
 
 func (o *crudResourceWrapperOps) ApplyDeleteChange(ctx context.Context, obj, deleteState interface{}) error {
-	sl := o.name
-	rl := o.underlying.Name()
+	sl := o.serviceName
+	rl := o.resourceName
 	ol := "ApplyDeletePatch"
 
 	operationCounter.WithLabelValues(sl, rl, ol).Inc()
@@ -159,8 +164,8 @@ func (o *crudResourceWrapperOps) ApplyDeleteChange(ctx context.Context, obj, del
 }
 
 func (o *crudResourceWrapperOps) ApplyUpdateChange(ctx context.Context, obj, updateState interface{}) error {
-	sl := o.name
-	rl := o.underlying.Name()
+	sl := o.serviceName
+	rl := o.resourceName
 	ol := "ApplyUpdatePatch"
 
 	operationCounter.WithLabelValues(sl, rl, ol).Inc()

@@ -28,15 +28,21 @@ func newCRUDResourceWrapper(config Config) (*crudResourceWrapper, error) {
 	// Wrap underlying resource Ops with retry logic. Underlying resource
 	// is a pointer so we can modify it in place.
 	{
-		underlying, ok := internal.Underlying(config.Resource).(*originalframework.CRUDResource)
+		underlying, err := internal.Underlying(config.Resource)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+
+		underlyingCRUD, ok := underlying.(*originalframework.CRUDResource)
 		if !ok {
-			return nil, microerror.Maskf(incompatibleUnderlyingResourceError, "expected %T", underlying)
+			return nil, microerror.Maskf(incompatibleUnderlyingResourceError, "expected %T", underlyingCRUD)
 		}
 
 		c := crudResourceOpsWrapperConfig{
-			Ops: underlying.CRUDResourceOps,
+			Ops: underlyingCRUD.CRUDResourceOps,
 
-			Name: config.Name,
+			ServiceName:  config.Name,
+			ResourceName: config.Resource.Name(),
 		}
 
 		wrappedOps, err := newCRUDResourceWrapperOps(c)
@@ -44,7 +50,7 @@ func newCRUDResourceWrapper(config Config) (*crudResourceWrapper, error) {
 			return nil, microerror.Mask(err)
 		}
 
-		underlying.CRUDResourceOps = wrappedOps
+		underlyingCRUD.CRUDResourceOps = wrappedOps
 	}
 
 	r := &crudResourceWrapper{
