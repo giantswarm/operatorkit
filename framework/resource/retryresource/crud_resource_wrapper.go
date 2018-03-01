@@ -19,8 +19,6 @@ type crudResourceWrapper struct {
 	resource framework.Resource
 
 	backOff backoff.BackOff
-
-	name string
 }
 
 func newCRUDResourceWrapper(config Config) (*crudResourceWrapper, error) {
@@ -33,16 +31,6 @@ func newCRUDResourceWrapper(config Config) (*crudResourceWrapper, error) {
 
 	if config.BackOff == nil {
 		config.BackOff = backoff.NewExponentialBackOff()
-	}
-
-	var name string
-	{
-		u, err := internal.Underlying(config.Resource)
-		if err != nil {
-			return nil, microerror.Mask(err)
-		}
-
-		name = u.Name()
 	}
 
 	// Wrap underlying resource Ops with retry logic. Underlying resource
@@ -75,13 +63,11 @@ func newCRUDResourceWrapper(config Config) (*crudResourceWrapper, error) {
 
 	r := &crudResourceWrapper{
 		logger: config.Logger.With(
-			"underlyingResource", name,
+			"underlyingResource", config.Resource.Name(),
 		),
 		resource: config.Resource,
 
 		backOff: config.BackOff,
-
-		name: name,
 	}
 
 	return r, nil
@@ -110,7 +96,7 @@ func (r *crudResourceWrapper) EnsureDeleted(ctx context.Context, obj interface{}
 }
 
 func (r *crudResourceWrapper) Name() string {
-	return r.name
+	return r.resource.Name()
 }
 
 // Wrapped implements internal.Wrapper interface.

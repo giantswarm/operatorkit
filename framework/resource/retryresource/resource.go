@@ -41,16 +41,7 @@ func New(config Config) (framework.Resource, error) {
 	}
 
 	// Direct resource implmementation.
-	// TODO Uncomment when new framework.Resource interface is created.
-	//r, err = newResourceWrapper(config)
-	//if err != nil {
-	//	return nil, microerror.Mask(err)
-	//}
-	//
-	//return r, nil
-
-	// TODO Remove code below when new framework.Resource interface is created.
-	r, err = newCRUDResourceWrapper(config)
+	r, err = newResourceWrapper(config)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}

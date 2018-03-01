@@ -13,14 +13,6 @@ import (
 	"github.com/giantswarm/operatorkit/framework/resource/internal/framework"
 )
 
-type resourceWrapperConfig struct {
-	Logger micrologger.Logger
-	// TODO make Resource framework.Resource
-	Resource framework.Resource
-
-	BackOff backoff.BackOff
-}
-
 type resourceWrapper struct {
 	logger   micrologger.Logger
 	resource framework.Resource
@@ -30,7 +22,7 @@ type resourceWrapper struct {
 	name string
 }
 
-func newResourceWrapper(config resourceWrapperConfig) (*resourceWrapper, error) {
+func newResourceWrapper(config Config) (*resourceWrapper, error) {
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
 	}
