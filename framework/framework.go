@@ -203,9 +203,6 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}
 
-	ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
-	defer reconciliationcanceledcontext.SetCanceled(ctx)
-
 	for _, r := range resources {
 		err := r.EnsureDeleted(ctx, obj)
 		if err != nil {
@@ -274,9 +271,6 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 	if len(resources) == 0 {
 		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}
-
-	ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
-	defer reconciliationcanceledcontext.SetCanceled(ctx)
 
 	for _, r := range resources {
 		err := r.EnsureCreated(ctx, obj)
