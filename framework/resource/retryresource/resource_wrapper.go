@@ -9,6 +9,7 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 
+	"github.com/giantswarm/operatorkit/framework/resource/internal"
 	"github.com/giantswarm/operatorkit/framework/resource/internal/framework"
 )
 
@@ -25,6 +26,8 @@ type resourceWrapper struct {
 	resource framework.Resource
 
 	backOff backoff.BackOff
+
+	name string
 }
 
 func newResourceWrapper(config resourceWrapperConfig) (*resourceWrapper, error) {
@@ -39,14 +42,25 @@ func newResourceWrapper(config resourceWrapperConfig) (*resourceWrapper, error) 
 		config.BackOff = backoff.NewExponentialBackOff()
 	}
 
+	var name string
+	{
+		u, err := internal.Underlying(config.Resource)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+
+		name = u.Name()
+	}
+
 	r := &resourceWrapper{
 		logger: config.Logger.With(
-		// TODO Uncomment when Resource interface is updated.
-		//"underlyingResource", internal.Underlying(config.Resource).Name(),
+			"underlyingResource", name,
 		),
 		resource: config.Resource,
 
 		backOff: config.BackOff,
+
+		name: name,
 	}
 
 	return r, nil
@@ -101,7 +115,7 @@ func (r *resourceWrapper) EnsureDeleted(ctx context.Context, obj interface{}) er
 }
 
 func (r *resourceWrapper) Name() string {
-	return r.resource.Name()
+	return r.name
 }
 
 // Wrapped implements internal.Wrapper interface.

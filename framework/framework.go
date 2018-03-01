@@ -105,12 +105,12 @@ func (f *Framework) Boot() {
 		}
 
 		notifier := func(err error, d time.Duration) {
-			f.logger.LogCtx(ctx, "warning", fmt.Sprintf("retrying operator boot due to error: %#v", microerror.Mask(err)))
+			f.logger.LogCtx(ctx, "function", "Boot", "level", "warning", "message", "retrying framework boot due to error", "stack", fmt.Sprintf("%#v", err))
 		}
 
 		err := backoff.RetryNotify(operation, f.backOffFactory(), notifier)
 		if err != nil {
-			f.logger.LogCtx(ctx, "error", fmt.Sprintf("stop operator boot retries due to too many errors: %#v", microerror.Mask(err)))
+			f.logger.LogCtx(ctx, "function", "Boot", "level", "error", "message", "stop framework boot retries due to too many errors", "stack", fmt.Sprintf("%#v", err))
 			os.Exit(1)
 		}
 	})
@@ -127,26 +127,26 @@ func (f *Framework) DeleteFunc(obj interface{}) {
 	defer f.mutex.Unlock()
 
 	resourceSet, err := f.resourceRouter.ResourceSet(obj)
-	if err != nil {
-		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "delete")
+	if IsNoResourceSet(err) {
+		// In case the resource router is not able to find any resource set to
+		// handle the reconciled runtime object, we stop here.
+		return
+	} else if err != nil {
+		f.logger.Log("event", "delete", "function", "DeleteFunc", "level", "error", "message", "stop framework reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
 
 	ctx, err := resourceSet.InitCtx(context.Background(), obj)
 	if err != nil {
-		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "delete")
+		f.logger.Log("event", "delete", "function", "DeleteFunc", "level", "error", "message", "stop framework reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
-
-	f.logger.LogCtx(ctx, "action", "start", "component", "operatorkit", "function", "ProcessDelete")
 
 	err = ProcessDelete(ctx, obj, resourceSet.Resources())
 	if err != nil {
-		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "delete")
+		f.logger.LogCtx(ctx, "event", "delete", "function", "DeleteFunc", "level", "error", "message", "stop framework reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
-
-	f.logger.LogCtx(ctx, "action", "end", "component", "operatorkit", "function", "ProcessDelete")
 }
 
 // UpdateFunc executes the framework's ProcessUpdate function.
@@ -162,26 +162,26 @@ func (f *Framework) UpdateFunc(oldObj, newObj interface{}) {
 	defer f.mutex.Unlock()
 
 	resourceSet, err := f.resourceRouter.ResourceSet(obj)
-	if err != nil {
-		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "update")
+	if IsNoResourceSet(err) {
+		// In case the resource router is not able to find any resource set to
+		// handle the reconciled runtime object, we stop here.
+		return
+	} else if err != nil {
+		f.logger.Log("event", "update", "function", "UpdateFunc", "level", "error", "message", "stop framework reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
 
 	ctx, err := resourceSet.InitCtx(context.Background(), obj)
 	if err != nil {
-		f.logger.Log("error", fmt.Sprintf("%#v", err), "event", "update")
+		f.logger.LogCtx(ctx, "event", "update", "function", "UpdateFunc", "level", "error", "message", "stop framework reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
-
-	f.logger.LogCtx(ctx, "action", "start", "component", "operatorkit", "function", "ProcessUpdate")
 
 	err = ProcessUpdate(ctx, obj, resourceSet.Resources())
 	if err != nil {
-		f.logger.LogCtx(ctx, "error", fmt.Sprintf("%#v", err), "event", "update")
+		f.logger.LogCtx(ctx, "event", "update", "function", "UpdateFunc", "level", "error", "message", "stop framework reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
-
-	f.logger.LogCtx(ctx, "action", "end", "component", "operatorkit", "function", "ProcessUpdate")
 }
 
 // ProcessDelete is a drop-in for an informer's DeleteFunc. It receives the
@@ -373,12 +373,12 @@ func (f *Framework) ProcessEvents(ctx context.Context, deleteChan chan watch.Eve
 	}
 
 	notifier := func(err error, d time.Duration) {
-		f.logger.LogCtx(ctx, "warning", fmt.Sprintf("retrying operator event processing due to error: %#v", microerror.Mask(err)))
+		f.logger.LogCtx(ctx, "function", "ProcessEvents", "level", "warning", "message", "retrying framework event processing due to error", "stack", fmt.Sprintf("%#v", err))
 	}
 
 	err := backoff.RetryNotify(operation, f.backOffFactory(), notifier)
 	if err != nil {
-		f.logger.LogCtx(ctx, "error", fmt.Sprintf("stop operator event processing retries due to too many errors: %#v", microerror.Mask(err)))
+		f.logger.LogCtx(ctx, "function", "ProcessEvents", "level", "error", "message", "stop framework event processing retries due to too many errors", "stack", fmt.Sprintf("%#v", err))
 		os.Exit(1)
 	}
 }
@@ -552,19 +552,19 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 
 func (f *Framework) bootWithError(ctx context.Context) error {
 	if f.crd != nil {
-		f.logger.LogCtx(ctx, "debug", "ensuring custom resource definition exists")
+		f.logger.LogCtx(ctx, "function", "bootWithError", "level", "debug", "message", "ensuring custom resource definition exists")
 
 		err := f.crdClient.EnsureCreated(ctx, f.crd, f.backOffFactory())
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
-		f.logger.LogCtx(ctx, "debug", "ensured custom resource definition")
+		f.logger.LogCtx(ctx, "function", "bootWithError", "level", "debug", "message", "ensured custom resource definition exists")
 
 		// TODO collect metrics
 	}
 
-	f.logger.LogCtx(ctx, "debug", "starting list/watch")
+	f.logger.LogCtx(ctx, "function", "bootWithError", "level", "debug", "message", "starting list-watch")
 
 	deleteChan, updateChan, errChan := f.informer.Watch(ctx)
 	f.ProcessEvents(ctx, deleteChan, updateChan, errChan)

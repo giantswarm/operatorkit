@@ -19,6 +19,8 @@ type crudResourceWrapper struct {
 	resource framework.Resource
 
 	backOff backoff.BackOff
+
+	name string
 }
 
 func newCRUDResourceWrapper(config Config) (*crudResourceWrapper, error) {
@@ -33,17 +35,32 @@ func newCRUDResourceWrapper(config Config) (*crudResourceWrapper, error) {
 		config.BackOff = backoff.NewExponentialBackOff()
 	}
 
+	var name string
+	{
+		u, err := internal.Underlying(config.Resource)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+
+		name = u.Name()
+	}
+
 	// Wrap underlying resource Ops with retry logic. Underlying resource
 	// is a pointer so we can modify it in place.
 	{
-		underlying, ok := internal.Underlying(config.Resource).(*originalframework.CRUDResource)
+		underlying, err := internal.Underlying(config.Resource)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+
+		underlyingCRUD, ok := underlying.(*originalframework.CRUDResource)
 		if !ok {
-			return nil, microerror.Maskf(incompatibleUnderlyingResourceError, "expected %T", underlying)
+			return nil, microerror.Maskf(incompatibleUnderlyingResourceError, "expected %T", underlyingCRUD)
 		}
 
 		c := crudResourceOpsWrapperConfig{
 			Logger: config.Logger,
-			Ops:    underlying.CRUDResourceOps,
+			Ops:    underlyingCRUD.CRUDResourceOps,
 
 			BackOff: config.BackOff,
 		}
@@ -53,16 +70,18 @@ func newCRUDResourceWrapper(config Config) (*crudResourceWrapper, error) {
 			return nil, microerror.Mask(err)
 		}
 
-		underlying.CRUDResourceOps = wrappedOps
+		underlyingCRUD.CRUDResourceOps = wrappedOps
 	}
 
 	r := &crudResourceWrapper{
 		logger: config.Logger.With(
-			"underlyingResource", internal.Underlying(config.Resource).Name(),
+			"underlyingResource", name,
 		),
 		resource: config.Resource,
 
 		backOff: config.BackOff,
+
+		name: name,
 	}
 
 	return r, nil
@@ -91,7 +110,7 @@ func (r *crudResourceWrapper) EnsureDeleted(ctx context.Context, obj interface{}
 }
 
 func (r *crudResourceWrapper) Name() string {
-	return r.resource.Name()
+	return r.name
 }
 
 // Wrapped implements internal.Wrapper interface.
