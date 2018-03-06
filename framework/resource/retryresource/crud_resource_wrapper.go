@@ -7,9 +7,8 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 
-	originalframework "github.com/giantswarm/operatorkit/framework"
+	"github.com/giantswarm/operatorkit/framework"
 	"github.com/giantswarm/operatorkit/framework/resource/internal"
-	"github.com/giantswarm/operatorkit/framework/resource/internal/framework"
 )
 
 // crudResourceWrapper is a specialized wrapper which wraps
@@ -41,7 +40,7 @@ func newCRUDResourceWrapper(config Config) (*crudResourceWrapper, error) {
 			return nil, microerror.Mask(err)
 		}
 
-		underlyingCRUD, ok := underlying.(*originalframework.CRUDResource)
+		underlyingCRUD, ok := underlying.(*framework.CRUDResource)
 		if !ok {
 			return nil, microerror.Maskf(incompatibleUnderlyingResourceError, "expected %T", underlyingCRUD)
 		}

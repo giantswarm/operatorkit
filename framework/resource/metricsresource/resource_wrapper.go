@@ -6,7 +6,7 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/giantswarm/operatorkit/framework/resource/internal/framework"
+	"github.com/giantswarm/operatorkit/framework"
 )
 
 type resourceWrapper struct {

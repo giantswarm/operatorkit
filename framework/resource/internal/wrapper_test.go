@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/giantswarm/operatorkit/framework/resource/internal/framework"
+	"github.com/giantswarm/operatorkit/framework"
 )
 
 // Test_Underlying_Wrapped tests resource unwrapping by Underlying.
