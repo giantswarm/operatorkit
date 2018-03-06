@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/giantswarm/operatorkit/framework"
+	"github.com/giantswarm/operatorkit/framework/resource/internal/framework"
 )
 
 // Test_Underlying_Wrapped tests resource unwrapping by Underlying.
@@ -144,31 +144,11 @@ func (r *testNoopResource) Name() string {
 	return "testNoopResource"
 }
 
-func (r *testNoopResource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
-	return nil, nil
-}
-
-func (r *testNoopResource) GetDesiredState(ctx context.Context, obj interface{}) (interface{}, error) {
-	return nil, nil
-}
-
-func (r *testNoopResource) NewUpdatePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*framework.Patch, error) {
-	return nil, nil
-}
-
-func (r *testNoopResource) NewDeletePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*framework.Patch, error) {
-	return nil, nil
-}
-
-func (r *testNoopResource) ApplyCreateChange(ctx context.Context, obj, createChange interface{}) error {
+func (r *testNoopResource) EnsureCreated(ctx context.Context, obj interface{}) error {
 	return nil
 }
 
-func (r *testNoopResource) ApplyDeleteChange(ctx context.Context, obj, deleteChange interface{}) error {
-	return nil
-}
-
-func (r *testNoopResource) ApplyUpdateChange(ctx context.Context, obj, updateChange interface{}) error {
+func (r *testNoopResource) EnsureDeleted(ctx context.Context, obj interface{}) error {
 	return nil
 }
 
@@ -184,30 +164,10 @@ func (r *testWrappingResource) Name() string {
 	return "testWrappingResource"
 }
 
-func (r *testWrappingResource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
-	return nil, nil
-}
-
-func (r *testWrappingResource) GetDesiredState(ctx context.Context, obj interface{}) (interface{}, error) {
-	return nil, nil
-}
-
-func (r *testWrappingResource) NewUpdatePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*framework.Patch, error) {
-	return nil, nil
-}
-
-func (r *testWrappingResource) NewDeletePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*framework.Patch, error) {
-	return nil, nil
-}
-
-func (r *testWrappingResource) ApplyCreateChange(ctx context.Context, obj, createChange interface{}) error {
+func (r *testWrappingResource) EnsureCreated(ctx context.Context, obj interface{}) error {
 	return nil
 }
 
-func (r *testWrappingResource) ApplyDeleteChange(ctx context.Context, obj, deleteChange interface{}) error {
-	return nil
-}
-
-func (r *testWrappingResource) ApplyUpdateChange(ctx context.Context, obj, updateChange interface{}) error {
+func (r *testWrappingResource) EnsureDeleted(ctx context.Context, obj interface{}) error {
 	return nil
 }

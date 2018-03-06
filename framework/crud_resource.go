@@ -15,9 +15,6 @@ type CRUDResourceConfig struct {
 	// Ops is a set of operations used by CRUDResource to implement the
 	// Resource interface.
 	Ops CRUDResourceOps
-
-	// Name is the resource's name used for identification.
-	Name string
 }
 
 // CRUDResource allows implementing complex CRUD Resrouces in structured way.
@@ -27,8 +24,6 @@ type CRUDResource struct {
 	CRUDResourceOps
 
 	logger micrologger.Logger
-
-	name string
 }
 
 func NewCRUDResource(config CRUDResourceConfig) (*CRUDResource, error) {
@@ -38,9 +33,8 @@ func NewCRUDResource(config CRUDResourceConfig) (*CRUDResource, error) {
 	if config.Ops == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Ops must not be empty")
 	}
-
-	if config.Name == "" {
-		return nil, microerror.Maskf(invalidConfigError, "config.Name must not be empty")
+	if config.Ops.Name() == "" {
+		return nil, microerror.Maskf(invalidConfigError, "config.Ops.Name() must not be empty")
 	}
 
 	r := &CRUDResource{
@@ -338,8 +332,4 @@ func (r *CRUDResource) EnsureDeleted(ctx context.Context, obj interface{}) error
 	}
 
 	return nil
-}
-
-func (r *CRUDResource) Name() string {
-	return r.name
 }

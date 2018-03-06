@@ -38,7 +38,7 @@ func New(config Config) (*Resource, error) {
 
 	var name string
 	{
-		u, err := internal.Underlying(config.Resource)
+		u, err := internal.OldUnderlying(config.Resource)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
@@ -46,7 +46,7 @@ func New(config Config) (*Resource, error) {
 		name = u.Name()
 	}
 
-	newResource := &Resource{
+	r := &Resource{
 		resource: config.Resource,
 
 		serviceName: toCamelCase(config.Name),
@@ -54,7 +54,7 @@ func New(config Config) (*Resource, error) {
 		name: name,
 	}
 
-	return newResource, nil
+	return r, nil
 }
 
 func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
@@ -134,7 +134,7 @@ func (r *Resource) NewDeletePatch(ctx context.Context, obj, currentState, desire
 }
 
 func (r *Resource) Name() string {
-	return r.serviceName
+	return r.name
 }
 
 func (r *Resource) ApplyCreateChange(ctx context.Context, obj, createState interface{}) error {
