@@ -3,7 +3,7 @@ package metricsresource
 import (
 	"github.com/giantswarm/microerror"
 
-	"github.com/giantswarm/operatorkit/framework"
+	"github.com/giantswarm/operatorkit/framework/resource/internal/framework"
 )
 
 type WrapConfig struct {
