@@ -10,7 +10,7 @@ import (
 	"github.com/cenkalti/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-	"github.com/giantswarm/micrologger/loggercontext"
+	"github.com/giantswarm/micrologger/loggermeta"
 	"github.com/prometheus/client_golang/prometheus"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -322,21 +322,21 @@ func (f *Framework) bootWithError(ctx context.Context) error {
 }
 
 func setLoggerCtxValue(ctx context.Context, key, value string) context.Context {
-	c, ok := loggercontext.FromContext(ctx)
+	m, ok := loggermeta.FromContext(ctx)
 	if !ok {
-		c = loggercontext.NewContainer()
+		m = loggermeta.New()
 	}
-	c.KeyVals[key] = value
+	m.KeyVals[key] = value
 
-	return loggercontext.NewContext(ctx, c)
+	return loggermeta.NewContext(ctx, m)
 }
 
 func unsetLoggerCtxValue(ctx context.Context, key string) context.Context {
-	c, ok := loggercontext.FromContext(ctx)
+	m, ok := loggermeta.FromContext(ctx)
 	if !ok {
-		c = loggercontext.NewContainer()
+		m = loggermeta.New()
 	}
-	delete(c.KeyVals, key)
+	delete(m.KeyVals, key)
 
-	return loggercontext.NewContext(ctx, c)
+	return loggermeta.NewContext(ctx, m)
 }
