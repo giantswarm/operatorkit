@@ -10,6 +10,7 @@ import (
 	"github.com/cenkalti/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
+	"github.com/giantswarm/micrologger/loggercontext"
 	"github.com/prometheus/client_golang/prometheus"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -17,6 +18,10 @@ import (
 	"github.com/giantswarm/operatorkit/client/k8scrdclient"
 	"github.com/giantswarm/operatorkit/framework/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/informer"
+)
+
+const (
+	loggerResourceKey = "resource"
 )
 
 // Config represents the configuration used to create a new operator framework.
@@ -203,7 +208,11 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}
 
+	defer unsetLoggerCtxValue(ctx, loggerResourceKey)
+
 	for _, r := range resources {
+		ctx = setLoggerCtxValue(ctx, loggerResourceKey, r.Name())
+
 		err := r.EnsureDeleted(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
@@ -272,7 +281,11 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}
 
+	defer unsetLoggerCtxValue(ctx, loggerResourceKey)
+
 	for _, r := range resources {
+		ctx = setLoggerCtxValue(ctx, loggerResourceKey, r.Name())
+
 		err := r.EnsureCreated(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
@@ -306,4 +319,24 @@ func (f *Framework) bootWithError(ctx context.Context) error {
 	f.ProcessEvents(ctx, deleteChan, updateChan, errChan)
 
 	return nil
+}
+
+func setLoggerCtxValue(ctx context.Context, key, value string) context.Context {
+	c, ok := loggercontext.FromContext(ctx)
+	if !ok {
+		c = loggercontext.NewContainer()
+	}
+	c.KeyVals[key] = value
+
+	return loggercontext.NewContext(ctx, c)
+}
+
+func unsetLoggerCtxValue(ctx context.Context, key string) context.Context {
+	c, ok := loggercontext.FromContext(ctx)
+	if !ok {
+		c = loggercontext.NewContainer()
+	}
+	delete(c.KeyVals, key)
+
+	return loggercontext.NewContext(ctx, c)
 }
