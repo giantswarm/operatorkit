@@ -66,7 +66,7 @@
     "loggermeta",
     "microloggertest"
   ]
-  revision = "216e9191d90f55723bfc0e93801af96e6b80eb12"
+  revision = "379c14c9508f2a9e69c7458e7e4d5444103c3abe"
 
 [[projects]]
   name = "github.com/go-kit/kit"
