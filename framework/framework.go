@@ -152,6 +152,39 @@ func (f *Framework) DeleteFunc(obj interface{}) {
 	}
 }
 
+// ProcessEvents takes the event channels created by the operatorkit informer
+// and executes the framework's event functions accordingly.
+func (f *Framework) ProcessEvents(ctx context.Context, deleteChan chan watch.Event, updateChan chan watch.Event, errChan chan error) {
+	operation := func() error {
+		for {
+			select {
+			case e := <-deleteChan:
+				t := prometheus.NewTimer(frameworkHistogram.WithLabelValues("delete"))
+				f.DeleteFunc(e.Object)
+				t.ObserveDuration()
+			case e := <-updateChan:
+				t := prometheus.NewTimer(frameworkHistogram.WithLabelValues("update"))
+				f.UpdateFunc(nil, e.Object)
+				t.ObserveDuration()
+			case err := <-errChan:
+				return microerror.Mask(err)
+			case <-ctx.Done():
+				return nil
+			}
+		}
+	}
+
+	notifier := func(err error, d time.Duration) {
+		f.logger.LogCtx(ctx, "function", "ProcessEvents", "level", "warning", "message", "retrying framework event processing due to error", "stack", fmt.Sprintf("%#v", err))
+	}
+
+	err := backoff.RetryNotify(operation, f.backOffFactory(), notifier)
+	if err != nil {
+		f.logger.LogCtx(ctx, "function", "ProcessEvents", "level", "error", "message", "stop framework event processing retries due to too many errors", "stack", fmt.Sprintf("%#v", err))
+		os.Exit(1)
+	}
+}
+
 // UpdateFunc executes the framework's ProcessUpdate function.
 func (f *Framework) UpdateFunc(oldObj, newObj interface{}) {
 	obj := newObj
@@ -184,39 +217,6 @@ func (f *Framework) UpdateFunc(oldObj, newObj interface{}) {
 	if err != nil {
 		f.logger.LogCtx(ctx, "event", "update", "function", "UpdateFunc", "level", "error", "message", "stop framework reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
-	}
-}
-
-// ProcessEvents takes the event channels created by the operatorkit informer
-// and executes the framework's event functions accordingly.
-func (f *Framework) ProcessEvents(ctx context.Context, deleteChan chan watch.Event, updateChan chan watch.Event, errChan chan error) {
-	operation := func() error {
-		for {
-			select {
-			case e := <-deleteChan:
-				t := prometheus.NewTimer(frameworkHistogram.WithLabelValues("delete"))
-				f.DeleteFunc(e.Object)
-				t.ObserveDuration()
-			case e := <-updateChan:
-				t := prometheus.NewTimer(frameworkHistogram.WithLabelValues("update"))
-				f.UpdateFunc(nil, e.Object)
-				t.ObserveDuration()
-			case err := <-errChan:
-				return microerror.Mask(err)
-			case <-ctx.Done():
-				return nil
-			}
-		}
-	}
-
-	notifier := func(err error, d time.Duration) {
-		f.logger.LogCtx(ctx, "function", "ProcessEvents", "level", "warning", "message", "retrying framework event processing due to error", "stack", fmt.Sprintf("%#v", err))
-	}
-
-	err := backoff.RetryNotify(operation, f.backOffFactory(), notifier)
-	if err != nil {
-		f.logger.LogCtx(ctx, "function", "ProcessEvents", "level", "error", "message", "stop framework event processing retries due to too many errors", "stack", fmt.Sprintf("%#v", err))
-		os.Exit(1)
 	}
 }
 
