@@ -152,6 +152,39 @@ func (f *Framework) DeleteFunc(obj interface{}) {
 	}
 }
 
+// ProcessEvents takes the event channels created by the operatorkit informer
+// and executes the framework's event functions accordingly.
+func (f *Framework) ProcessEvents(ctx context.Context, deleteChan chan watch.Event, updateChan chan watch.Event, errChan chan error) {
+	operation := func() error {
+		for {
+			select {
+			case e := <-deleteChan:
+				t := prometheus.NewTimer(frameworkHistogram.WithLabelValues("delete"))
+				f.DeleteFunc(e.Object)
+				t.ObserveDuration()
+			case e := <-updateChan:
+				t := prometheus.NewTimer(frameworkHistogram.WithLabelValues("update"))
+				f.UpdateFunc(nil, e.Object)
+				t.ObserveDuration()
+			case err := <-errChan:
+				return microerror.Mask(err)
+			case <-ctx.Done():
+				return nil
+			}
+		}
+	}
+
+	notifier := func(err error, d time.Duration) {
+		f.logger.LogCtx(ctx, "function", "ProcessEvents", "level", "warning", "message", "retrying framework event processing due to error", "stack", fmt.Sprintf("%#v", err))
+	}
+
+	err := backoff.RetryNotify(operation, f.backOffFactory(), notifier)
+	if err != nil {
+		f.logger.LogCtx(ctx, "function", "ProcessEvents", "level", "error", "message", "stop framework event processing retries due to too many errors", "stack", fmt.Sprintf("%#v", err))
+		os.Exit(1)
+	}
+}
+
 // UpdateFunc executes the framework's ProcessUpdate function.
 func (f *Framework) UpdateFunc(oldObj, newObj interface{}) {
 	obj := newObj
@@ -185,6 +218,28 @@ func (f *Framework) UpdateFunc(oldObj, newObj interface{}) {
 		f.logger.LogCtx(ctx, "event", "update", "function", "UpdateFunc", "level", "error", "message", "stop framework reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
+}
+
+func (f *Framework) bootWithError(ctx context.Context) error {
+	if f.crd != nil {
+		f.logger.LogCtx(ctx, "function", "bootWithError", "level", "debug", "message", "ensuring custom resource definition exists")
+
+		err := f.crdClient.EnsureCreated(ctx, f.crd, f.backOffFactory())
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
+		f.logger.LogCtx(ctx, "function", "bootWithError", "level", "debug", "message", "ensured custom resource definition exists")
+
+		// TODO collect metrics
+	}
+
+	f.logger.LogCtx(ctx, "function", "bootWithError", "level", "debug", "message", "starting list-watch")
+
+	deleteChan, updateChan, errChan := f.informer.Watch(ctx)
+	f.ProcessEvents(ctx, deleteChan, updateChan, errChan)
+
+	return nil
 }
 
 // ProcessDelete is a drop-in for an informer's DeleteFunc. It receives the
@@ -226,39 +281,6 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 	return nil
 }
 
-// ProcessEvents takes the event channels created by the operatorkit informer
-// and executes the framework's event functions accordingly.
-func (f *Framework) ProcessEvents(ctx context.Context, deleteChan chan watch.Event, updateChan chan watch.Event, errChan chan error) {
-	operation := func() error {
-		for {
-			select {
-			case e := <-deleteChan:
-				t := prometheus.NewTimer(frameworkHistogram.WithLabelValues("delete"))
-				f.DeleteFunc(e.Object)
-				t.ObserveDuration()
-			case e := <-updateChan:
-				t := prometheus.NewTimer(frameworkHistogram.WithLabelValues("update"))
-				f.UpdateFunc(nil, e.Object)
-				t.ObserveDuration()
-			case err := <-errChan:
-				return microerror.Mask(err)
-			case <-ctx.Done():
-				return nil
-			}
-		}
-	}
-
-	notifier := func(err error, d time.Duration) {
-		f.logger.LogCtx(ctx, "function", "ProcessEvents", "level", "warning", "message", "retrying framework event processing due to error", "stack", fmt.Sprintf("%#v", err))
-	}
-
-	err := backoff.RetryNotify(operation, f.backOffFactory(), notifier)
-	if err != nil {
-		f.logger.LogCtx(ctx, "function", "ProcessEvents", "level", "error", "message", "stop framework event processing retries due to too many errors", "stack", fmt.Sprintf("%#v", err))
-		os.Exit(1)
-	}
-}
-
 // ProcessUpdate is a drop-in for an informer's UpdateFunc. It receives the new
 // custom object observed during custom resource watches and anything that
 // implements Resource. ProcessUpdate takes care about all necessary
@@ -295,28 +317,6 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 			return nil
 		}
 	}
-
-	return nil
-}
-
-func (f *Framework) bootWithError(ctx context.Context) error {
-	if f.crd != nil {
-		f.logger.LogCtx(ctx, "function", "bootWithError", "level", "debug", "message", "ensuring custom resource definition exists")
-
-		err := f.crdClient.EnsureCreated(ctx, f.crd, f.backOffFactory())
-		if err != nil {
-			return microerror.Mask(err)
-		}
-
-		f.logger.LogCtx(ctx, "function", "bootWithError", "level", "debug", "message", "ensured custom resource definition exists")
-
-		// TODO collect metrics
-	}
-
-	f.logger.LogCtx(ctx, "function", "bootWithError", "level", "debug", "message", "starting list-watch")
-
-	deleteChan, updateChan, errChan := f.informer.Watch(ctx)
-	f.ProcessEvents(ctx, deleteChan, updateChan, errChan)
 
 	return nil
 }
