@@ -150,6 +150,12 @@ func (f *Framework) DeleteFunc(obj interface{}) {
 		f.logger.LogCtx(ctx, "event", "delete", "function", "DeleteFunc", "level", "error", "message", "stop framework reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
+
+	err = f.removeFinalizer(obj)
+	if err != nil {
+		f.logger.Log("event", "delete", "function", "DeleteFunc", "level", "error", "message", "stop framework reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		return
+	}
 }
 
 // UpdateFunc executes the framework's ProcessUpdate function.
@@ -163,6 +169,16 @@ func (f *Framework) UpdateFunc(oldObj, newObj interface{}) {
 	// run into race conditions.
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
+
+	ok, err := f.addFinalizer(obj)
+	if err != nil {
+		f.logger.Log("event", "update", "function", "UpdateFunc", "level", "error", "message", "stop framework reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		return
+	}
+	if ok {
+		f.logger.Log("event", "update", "function", "UpdateFunc", "level", "debug", "message", "stop framework reconciliation, finalizer added")
+		return
+	}
 
 	resourceSet, err := f.resourceRouter.ResourceSet(obj)
 	if IsNoResourceSet(err) {
