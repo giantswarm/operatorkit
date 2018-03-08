@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
@@ -25,8 +24,11 @@ func (f *Framework) addFinalizer(obj interface{}) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	if accessor.GetDeletionTimestamp() != nil {
+		return true, nil // object has been marked for deletion, we should ignore it.
+	}
 	if containsFinalizer(accessor.GetFinalizers(), finalizerName) {
-		return false, nil // resource already has the finalizer.
+		return false, nil // object already has the finalizer.
 	}
 
 	c, err := rest.RESTClientFor(&rest.Config{})
@@ -38,9 +40,7 @@ func (f *Framework) addFinalizer(obj interface{}) (bool, error) {
 		AbsPath(accessor.GetSelfLink()).
 		Body(patch).
 		Do()
-	if errors.IsForbidden(res.Error()) {
-		return true, nil // we tried to add the finalizer again after removing it.
-	} else if res.Error() != nil {
+	if res.Error() != nil {
 		return false, res.Error()
 	}
 
