@@ -83,14 +83,14 @@ func New(config Config) (apiextensionsclient.Interface, error) {
 
 	var restConfig *rest.Config
 	if config.InCluster {
-		config.Logger.Log("debug", "creating in-cluster config")
+		config.Logger.Log("level", "debug", "message", "creating in-cluster config")
 
 		restConfig, err = rest.InClusterConfig()
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
 	} else {
-		config.Logger.Log("debug", "creating out-cluster config")
+		config.Logger.Log("level", "debug", "message", "creating out-cluster config")
 
 		restConfig = &rest.Config{
 			Host: config.Address,
