@@ -153,7 +153,7 @@ func (f *Framework) DeleteFunc(obj interface{}) {
 
 	err = f.removeFinalizer(obj)
 	if err != nil {
-		f.logger.Log("event", "delete", "function", "DeleteFunc", "level", "error", "message", "stop framework reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		f.logger.LogCtx(ctx, "event", "delete", "function", "DeleteFunc", "level", "error", "message", "stop framework reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
 }
@@ -209,7 +209,9 @@ func (f *Framework) UpdateFunc(oldObj, newObj interface{}) {
 		return
 	}
 	if ok {
-		f.logger.Log("event", "update", "function", "UpdateFunc", "level", "debug", "message", "stop framework reconciliation, finalizer added")
+		// A finalizer was added, this causes a new update event, so we stop
+		// reconciling here and will pick up the new event.
+		f.logger.Log("event", "update", "function", "UpdateFunc", "level", "debug", "message", "stop framework reconciliation due to finalizer added")
 		return
 	}
 

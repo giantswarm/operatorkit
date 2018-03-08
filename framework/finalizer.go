@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/giantswarm/microerror"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
@@ -22,7 +23,7 @@ type patchSpec struct {
 func (f *Framework) addFinalizer(obj interface{}) (bool, error) {
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
-		return false, err
+		return false, microerror.Mask(err)
 	}
 	if accessor.GetDeletionTimestamp() != nil {
 		return true, nil // object has been marked for deletion, we should ignore it.
@@ -33,15 +34,12 @@ func (f *Framework) addFinalizer(obj interface{}) (bool, error) {
 
 	c, err := rest.RESTClientFor(&rest.Config{})
 	if err != nil {
-		return false, err
+		return false, microerror.Mask(err)
 	}
 	patch := fmt.Sprintf(`{"op":"add","value":%q,"path":"/metadata/finalizers/1"}`, finalizerName)
-	res := c.Patch(types.JSONPatchType).
-		AbsPath(accessor.GetSelfLink()).
-		Body(patch).
-		Do()
+	res := c.Patch(types.JSONPatchType).AbsPath(accessor.GetSelfLink()).Body(patch).Do()
 	if res.Error() != nil {
-		return false, res.Error()
+		return false, microerror.Mask(res.Error())
 	}
 
 	return true, nil
@@ -50,14 +48,14 @@ func (f *Framework) addFinalizer(obj interface{}) (bool, error) {
 func (f *Framework) removeFinalizer(obj interface{}) error {
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
-		return err
+		return microerror.Mask(err)
 	}
 	if !containsFinalizer(accessor.GetFinalizers(), finalizerName) {
 		return nil // resource has no finalizer, probably migration.
 	}
 	c, err := rest.RESTClientFor(&rest.Config{})
 	if err != nil {
-		return err
+		return microerror.Mask(err)
 	}
 
 	patch := patchSpec{
@@ -67,14 +65,11 @@ func (f *Framework) removeFinalizer(obj interface{}) error {
 	}
 	p, err := json.Marshal(patch)
 	if err != nil {
-		return err
+		return microerror.Mask(err)
 	}
-	res := c.Patch(types.JSONPatchType).
-		AbsPath(accessor.GetSelfLink()).
-		Body(p).
-		Do()
+	res := c.Patch(types.JSONPatchType).AbsPath(accessor.GetSelfLink()).Body(p).Do()
 	if res.Error() != nil {
-		return res.Error()
+		return microerror.Mask(res.Error())
 	}
 	return nil
 }
