@@ -151,7 +151,7 @@ func (f *Framework) DeleteFunc(obj interface{}) {
 		return
 	}
 
-	err = f.removeFinalizer(obj)
+	err = f.removeFinalizer(ctx, obj)
 	if err != nil {
 		f.logger.LogCtx(ctx, "event", "delete", "function", "DeleteFunc", "level", "error", "message", "stop framework reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return

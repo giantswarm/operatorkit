@@ -1,6 +1,7 @@
 package framework
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -45,13 +46,14 @@ func (f *Framework) addFinalizer(obj interface{}) (bool, error) {
 	return true, nil
 }
 
-func (f *Framework) removeFinalizer(obj interface{}) error {
+func (f *Framework) removeFinalizer(ctx context.Context, obj interface{}) error {
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
 		return microerror.Mask(err)
 	}
 	if !containsFinalizer(accessor.GetFinalizers(), finalizerName) {
-		return nil // resource has no finalizer, probably migration.
+		f.logger.LogCtx(ctx, "function", "removeFinalizer", "level", "warning", "message", "object is missing a finalizer")
+		return nil // object has no finalizer, probably migration.
 	}
 	c, err := rest.RESTClientFor(&rest.Config{})
 	if err != nil {
