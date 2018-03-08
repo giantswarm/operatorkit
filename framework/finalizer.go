@@ -12,13 +12,13 @@ import (
 )
 
 const (
-	finalizerName = "operatorkit.giantswarm.io"
+	finalizerPrefix = "operatorkit.giantswarm.io"
 )
 
 type patchSpec struct {
-	Op    string   `json:"op"`
-	Path  string   `json:"path"`
-	Value []string `json:"value"`
+	Op    string      `json:"op"`
+	Path  string      `json:"path"`
+	Value interface{} `json:"value"`
 }
 
 func (f *Framework) addFinalizer(obj interface{}) (bool, error) {
@@ -29,6 +29,7 @@ func (f *Framework) addFinalizer(obj interface{}) (bool, error) {
 	if accessor.GetDeletionTimestamp() != nil {
 		return true, nil // object has been marked for deletion, we should ignore it.
 	}
+	finalizerName := getFinalizerName(f.name)
 	if containsFinalizer(accessor.GetFinalizers(), finalizerName) {
 		return false, nil // object already has the finalizer.
 	}
@@ -37,8 +38,13 @@ func (f *Framework) addFinalizer(obj interface{}) (bool, error) {
 	if err != nil {
 		return false, microerror.Mask(err)
 	}
-	patch := fmt.Sprintf(`{"op":"add","value":%q,"path":"/metadata/finalizers/1"}`, finalizerName)
-	res := c.Patch(types.JSONPatchType).AbsPath(accessor.GetSelfLink()).Body(patch).Do()
+	patch := patchSpec{
+		Op:    "add",
+		Value: finalizerName,
+		Path:  "/metadata/finalizers/-",
+	}
+	p, err := json.Marshal(patch)
+	res := c.Patch(types.JSONPatchType).AbsPath(accessor.GetSelfLink()).Body(p).Do()
 	if res.Error() != nil {
 		return false, microerror.Mask(res.Error())
 	}
@@ -51,6 +57,7 @@ func (f *Framework) removeFinalizer(ctx context.Context, obj interface{}) error 
 	if err != nil {
 		return microerror.Mask(err)
 	}
+	finalizerName := getFinalizerName(f.name)
 	if !containsFinalizer(accessor.GetFinalizers(), finalizerName) {
 		f.logger.LogCtx(ctx, "function", "removeFinalizer", "level", "warning", "message", "object is missing a finalizer")
 		return nil // object has no finalizer, probably migration.
@@ -83,6 +90,10 @@ func containsFinalizer(finalizers []string, finalizer string) bool {
 		}
 	}
 	return false
+}
+
+func getFinalizerName(name string) string {
+	return fmt.Sprintf("%s/%s", finalizerPrefix, name)
 }
 
 func removeFinalizer(finalizers []string, finalizer string) []string {

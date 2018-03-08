@@ -30,6 +30,7 @@ type Config struct {
 	CRDClient *k8scrdclient.CRDClient
 	Informer  informer.Interface
 	Logger    micrologger.Logger
+	Name      string
 	// ResourceRouter determines which resource set to use on reconciliation based
 	// on its own implementation. A resource router is to decide which resource
 	// set to execute. A resource set provides a specific function to initialize
@@ -51,6 +52,7 @@ type Framework struct {
 	crdClient      *k8scrdclient.CRDClient
 	informer       informer.Interface
 	logger         micrologger.Logger
+	name           string
 	resourceRouter *ResourceRouter
 
 	bootOnce sync.Once
@@ -70,6 +72,9 @@ func New(config Config) (*Framework, error) {
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
 	}
+	if config.Name == "" {
+		return nil, microerror.Maskf(invalidConfigError, "config.Name must not be empty")
+	}
 	if config.ResourceRouter == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.ResourceRouter must not be empty")
 	}
@@ -83,6 +88,7 @@ func New(config Config) (*Framework, error) {
 		crdClient:      config.CRDClient,
 		informer:       config.Informer,
 		logger:         config.Logger,
+		name:           config.Name,
 		resourceRouter: config.ResourceRouter,
 
 		bootOnce: sync.Once{},
