@@ -18,15 +18,17 @@
 //
 //		var restConfig *rest.Config
 //		{
-//	 		c := k8srestconfig.DefaultConfig()
+//			c := k8srestconfig.Config{
+//				Logger: config.Logger,
 //
-//			c.Logger = config.Logger
-//
-//			c.Address = config.Viper.GetString(config.Flag.Service.Kubernetes.Address)
-//			c.InCluster = config.Viper.GetBool(config.Flag.Service.Kubernetes.InCluster)
-//			c.TLS.CAFile = config.Viper.GetString(config.Flag.Service.Kubernetes.TLS.CAFile)
-//			c.TLS.CrtFile = config.Viper.GetString(config.Flag.Service.Kubernetes.TLS.CrtFile)
-//			c.TLS.KeyFile = config.Viper.GetString(config.Flag.Service.Kubernetes.TLS.KeyFile)
+//				Address:   config.Viper.GetString(config.Flag.Service.Kubernetes.Address),
+//				InCluster: config.Viper.GetBool(config.Flag.Service.Kubernetes.InCluster),
+//				TLS: TLSClientConfig{
+//					CAFile:  config.Viper.GetString(config.Flag.Service.Kubernetes.TLS.CAFile),
+//					CrtFile: config.Viper.GetString(config.Flag.Service.Kubernetes.TLS.CrtFile),
+//					KeyFile: config.Viper.GetString(config.Flag.Service.Kubernetes.TLS.KeyFile),
+//				},
+//			}
 //
 //			restConfig, err = k8srestconfig.New(c)
 //			if err != nil {
@@ -92,20 +94,6 @@ type Config struct {
 	Address   string
 	InCluster bool
 	TLS       TLSClientConfig
-}
-
-// DefaultConfig provides a default configuration to create a new Kubernetes
-// Clientset by best effort.
-func DefaultConfig() Config {
-	return Config{
-		// Dependencies.
-		Logger: nil,
-
-		// Settings.
-		Address:   "",
-		InCluster: true,
-		TLS:       TLSClientConfig{},
-	}
 }
 
 // New returns a Kubernetes REST configuration for clients.

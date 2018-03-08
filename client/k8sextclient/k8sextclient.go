@@ -44,20 +44,6 @@ type Config struct {
 	TLS       TLSClientConfig
 }
 
-// DefaultConfig provides a default configuration to create a new Kubernetes
-// Clientset by best effort.
-func DefaultConfig() Config {
-	return Config{
-		// Dependencies.
-		Logger: nil,
-
-		// Settings.
-		Address:   "",
-		InCluster: true,
-		TLS:       TLSClientConfig{},
-	}
-}
-
 // New returns a Kubernetes extensions API Clientset with the provided
 // configuration.
 func New(config Config) (apiextensionsclient.Interface, error) {
