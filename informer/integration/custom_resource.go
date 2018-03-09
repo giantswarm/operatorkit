@@ -55,11 +55,6 @@ func (t *CustomResourceList) DeepCopyObject() runtime.Object {
 }
 
 func createCustomResource(ID string) error {
-	k8sClient, err := newK8sClient()
-	if err != nil {
-		return microerror.Mask(err)
-	}
-
 	cm := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -72,7 +67,7 @@ func createCustomResource(ID string) error {
 		Data: map[string]string{},
 	}
 
-	_, err = k8sClient.CoreV1().ConfigMaps(namespace).Create(cm)
+	_, err := k8sClient.CoreV1().ConfigMaps(namespace).Create(cm)
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -81,12 +76,7 @@ func createCustomResource(ID string) error {
 }
 
 func deleteCustomResource(ID string) error {
-	k8sClient, err := newK8sClient()
-	if err != nil {
-		return microerror.Mask(err)
-	}
-
-	err = k8sClient.CoreV1().ConfigMaps(namespace).Delete(ID, nil)
+	err := k8sClient.CoreV1().ConfigMaps(namespace).Delete(ID, nil)
 	if err != nil {
 		return microerror.Mask(err)
 	}

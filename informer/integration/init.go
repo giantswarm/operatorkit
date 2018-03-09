@@ -16,6 +16,19 @@ import (
 	"github.com/giantswarm/operatorkit/informer"
 )
 
+var (
+	err error
+
+	k8sClient kubernetes.Interface
+)
+
+func init() {
+	k8sClient, err = newK8sClient()
+	if err != nil {
+		panic(err)
+	}
+}
+
 func newK8sClient() (kubernetes.Interface, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", harness.DefaultKubeConfig)
 	if err != nil {
@@ -31,11 +44,6 @@ func newK8sClient() (kubernetes.Interface, error) {
 }
 
 func newOperatorkitInformer(rateWait, resyncPeriod time.Duration) (*informer.Informer, error) {
-	k8sClient, err := newK8sClient()
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
-
 	c := informer.Config{
 		Watcher: k8sClient.CoreV1().ConfigMaps(namespace),
 
@@ -54,11 +62,6 @@ func newOperatorkitInformer(rateWait, resyncPeriod time.Duration) (*informer.Inf
 func mustSetup() {
 	mustTeardown()
 
-	k8sClient, err := newK8sClient()
-	if err != nil {
-		panic(err)
-	}
-
 	ns := &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -70,19 +73,14 @@ func mustSetup() {
 		Spec: corev1.NamespaceSpec{},
 	}
 
-	_, err = k8sClient.CoreV1().Namespaces().Create(ns)
+	_, err := k8sClient.CoreV1().Namespaces().Create(ns)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func mustTeardown() {
-	k8sClient, err := newK8sClient()
-	if err != nil {
-		panic(err)
-	}
-
-	err = k8sClient.CoreV1().Namespaces().Delete(namespace, nil)
+	err := k8sClient.CoreV1().Namespaces().Delete(namespace, nil)
 	if errors.IsNotFound(err) {
 		// fall though
 	} else if err != nil {
