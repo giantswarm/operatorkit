@@ -1,6 +1,6 @@
 // +build k8srequired
 
-package informer
+package integration
 
 import (
 	"context"

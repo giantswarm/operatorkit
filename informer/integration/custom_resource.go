@@ -1,9 +1,9 @@
 // +build k8srequired
 
-package informer
+package integration
 
 import (
-	"testing"
+	"fmt"
 
 	"github.com/giantswarm/microerror"
 	corev1 "k8s.io/api/core/v1"
@@ -54,6 +54,46 @@ func (t *CustomResourceList) DeepCopyObject() runtime.Object {
 	}
 }
 
+func createCustomResource(ID string) error {
+	k8sClient, err := newK8sClient()
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	cm := &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ID,
+			Namespace: namespace,
+		},
+		Data: map[string]string{},
+	}
+
+	_, err = k8sClient.CoreV1().ConfigMaps(namespace).Create(cm)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	return nil
+}
+
+func deleteCustomResource(ID string) error {
+	k8sClient, err := newK8sClient()
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	err = k8sClient.CoreV1().ConfigMaps(namespace).Delete(ID, nil)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	return nil
+}
+
 func mustAssertCRWithID(e watch.Event, IDs ...string) {
 	m, err := meta.Accessor(e.Object)
 	if err != nil {
@@ -67,33 +107,5 @@ func mustAssertCRWithID(e watch.Event, IDs ...string) {
 		}
 	}
 
-	panic("expected one of %#v got %#v", IDs, name)
-}
-
-func createCustomResource(t *testing.T, ID string) error {
-	cm := &corev1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "ConfigMap",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      ID,
-			Namespace: namespace,
-		},
-		Data: map[string]string{},
-	}
-
-	_, err := k8sClient.CoreV1().ConfigMaps(namespace).Create(cm)
-	if err != nil {
-		return microerror.Mask(err)
-	}
-
-	return nil
-}
-
-func deleteCustomResource(t *testing.T, ID string) {
-	err := k8sClient.CoreV1().ConfigMaps(namespace).Delete(ID, nil)
-	if err != nil {
-		t.Fatalf("expected %#v got %#v", nil, err)
-	}
+	panic(fmt.Sprintf("expected one of %#v got %#v", IDs, name))
 }

@@ -5,12 +5,14 @@ package integration
 import (
 	"time"
 
+	"github.com/giantswarm/e2e-harness/pkg/harness"
 	"github.com/giantswarm/microerror"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/giantswarm/e2e-harness/pkg/harness"
 	"github.com/giantswarm/operatorkit/informer"
 )
 
@@ -29,14 +31,19 @@ func newK8sClient() (kubernetes.Interface, error) {
 }
 
 func newOperatorkitInformer(rateWait, resyncPeriod time.Duration) (*informer.Informer, error) {
-	c := DefaultConfig()
+	k8sClient, err := newK8sClient()
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
 
-	c.Watcher = k8sClient.CoreV1().ConfigMaps(namespace)
+	c := informer.Config{
+		Watcher: k8sClient.CoreV1().ConfigMaps(namespace),
 
-	c.RateWait = rateWait
-	c.ResyncPeriod = resyncPeriod
+		RateWait:     rateWait,
+		ResyncPeriod: resyncPeriod,
+	}
 
-	operatorkitInformer, err := New(c)
+	operatorkitInformer, err := informer.New(c)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
