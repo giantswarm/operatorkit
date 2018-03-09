@@ -29,6 +29,7 @@ jobs:
         chmod +x ./e2e-harness
     - run: ./e2e-harness localkube
     - run: ./e2e-harness setup --remote=false
+    - run: touch ./operatorkit && chmod a+x ./operatorkit
     - run: ./e2e-harness test --test-dir=informer/integration
     - run:
         command: ./e2e-harness teardown
