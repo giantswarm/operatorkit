@@ -26,6 +26,10 @@
 
 [[constraint]]
   branch = "master"
+  name = "github.com/giantswarm/e2e-harness"
+
+[[constraint]]
+  branch = "master"
   name = "github.com/giantswarm/microerror"
 
 [[constraint]]
