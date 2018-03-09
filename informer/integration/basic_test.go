@@ -20,12 +20,7 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 	timeDelta := time.Millisecond * 100
 	ctx, cancelFunc := context.WithCancel(context.Background())
 
-	k8sClient, err := newK8sClient()
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
-
-	operatorkitInformer, err := newOperatorkitInformer(t, time.Second*2, time.Second*10)
+	operatorkitInformer, err := newOperatorkitInformer(time.Second*2, time.Second*10)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -33,7 +28,7 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 	// We create a custom object before starting the informer watch. This causes
 	// the informer to fill the cache and to initially sent cached events to the
 	// delete and update channels provided by the watch.
-	err := createCustomResource(t, crIDOne)
+	err = createCustomResource(crIDOne)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -74,7 +69,7 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 
 	// We create another runtime object. This should be received immediately.
 	{
-		err := createCustomResource(t, crIDTwo)
+		err := createCustomResource(crIDTwo)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}
@@ -137,7 +132,7 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 	// Now we delete a runtime object. This event is expected to be received
 	// immediately.
 	{
-		err := deleteCustomResource(t, crIDOne)
+		err := deleteCustomResource(crIDOne)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}
