@@ -1,0 +1,5 @@
+TODO
+!vendor/**
+
+.e2e-harness/
+informer/integration/operatorkit-e2e

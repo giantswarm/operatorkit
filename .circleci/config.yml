@@ -15,3 +15,30 @@ jobs:
           if [ "${CIRCLE_BRANCH}" == "master" ]; then
             ./architect deploy
           fi
+
+  e2eTestInformerIntegration:
+    machine: true
+    working_directory: /home/circleci/.go_workspace/src/github.com/giantswarm/operatorkit
+    environment:
+      MINIKUBE_VERSION: v0.25.0
+    steps:
+    - checkout
+
+    - run: |
+        wget -q $(curl -sS https://api.github.com/repos/giantswarm/e2e-harness/releases/latest | grep browser_download_url | head -n 1 | cut -d '"' -f 4)
+        chmod +x ./e2e-harness
+    - run: ./e2e-harness localkube
+    - run: ./e2e-harness setup --remote=false
+    - run: ./e2e-harness test --test-dir=informer/integration
+    - run:
+        command: ./e2e-harness teardown
+        when: always
+
+workflows:
+  version: 2
+  build_e2e:
+    jobs:
+      - build
+      - e2eTestInformerIntegration:
+          requires:
+          - build
