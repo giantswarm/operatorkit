@@ -16,6 +16,10 @@ import (
 	"github.com/giantswarm/operatorkit/informer"
 )
 
+const (
+	namespace = "informer-integration-test"
+)
+
 var (
 	err error
 

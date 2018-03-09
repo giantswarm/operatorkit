@@ -15,8 +15,8 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 	mustSetup()
 	defer mustTeardown()
 
-	crIDOne := "al7qy"
-	crIDTwo := "al8qy"
+	idOne := "al7qy"
+	idTwo := "al8qy"
 	timeDelta := time.Millisecond * 100
 	ctx, cancelFunc := context.WithCancel(context.Background())
 
@@ -28,7 +28,7 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 	// We create a custom object before starting the informer watch. This causes
 	// the informer to fill the cache and to initially sent cached events to the
 	// delete and update channels provided by the watch.
-	err = createCustomResource(crIDOne)
+	err = createConfigMap(idOne)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -63,13 +63,13 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 		case <-deleteChan:
 			t.Fatalf("expected update event got delete event")
 		case e := <-updateChan:
-			mustAssertCRWithID(e, crIDOne)
+			mustAssertWithIDs(e, idOne)
 		}
 	}
 
 	// We create another runtime object. This should be received immediately.
 	{
-		err := createCustomResource(crIDTwo)
+		err := createConfigMap(idTwo)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}
@@ -80,7 +80,7 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 		case <-deleteChan:
 			t.Fatalf("expected update event got delete event")
 		case e := <-updateChan:
-			mustAssertCRWithID(e, crIDTwo)
+			mustAssertWithIDs(e, idTwo)
 		}
 
 		d := time.Since(start)
@@ -100,7 +100,7 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 		case <-deleteChan:
 			t.Fatalf("expected update event got delete event")
 		case e := <-updateChan:
-			mustAssertCRWithID(e, crIDOne, crIDTwo)
+			mustAssertWithIDs(e, idOne, idTwo)
 		}
 
 		d := time.Since(start)
@@ -120,7 +120,7 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 		case <-deleteChan:
 			t.Fatalf("expected update event got delete event")
 		case e := <-updateChan:
-			mustAssertCRWithID(e, crIDOne, crIDTwo)
+			mustAssertWithIDs(e, idOne, idTwo)
 		}
 
 		d := time.Since(start)
@@ -132,7 +132,7 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 	// Now we delete a runtime object. This event is expected to be received
 	// immediately.
 	{
-		err := deleteCustomResource(crIDOne)
+		err := deleteConfigMap(idOne)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}
@@ -141,7 +141,7 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 
 		select {
 		case e := <-deleteChan:
-			mustAssertCRWithID(e, crIDOne)
+			mustAssertWithIDs(e, idOne)
 		case <-updateChan:
 			t.Fatalf("expected delete event got update event")
 		}
@@ -161,7 +161,7 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 		case <-deleteChan:
 			t.Fatalf("expected update event got delete event")
 		case e := <-updateChan:
-			mustAssertCRWithID(e, crIDTwo)
+			mustAssertWithIDs(e, idTwo)
 		}
 
 		d := time.Since(start)
