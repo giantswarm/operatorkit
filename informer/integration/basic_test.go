@@ -1,4 +1,4 @@
-// +build integration
+// +build k8srequired
 
 package informer
 
@@ -12,24 +12,34 @@ import (
 // informer operations. The test verifies the informer is operating as expected
 // when processing basic sequences of creating and deleting runtime objects.
 func Test_Informer_Integration_Basic(t *testing.T) {
-	testSetup(t)
-	defer testTeardown(t)
+	mustSetup()
+	defer mustTeardown()
 
-	const timeDelta = time.Millisecond * 100
-
-	objectIDOne := "al7qy"
-	objectIDTwo := "al8qy"
-
+	crIDOne := "al7qy"
+	crIDTwo := "al8qy"
+	timeDelta := time.Millisecond * 100
 	ctx, cancelFunc := context.WithCancel(context.Background())
-	newInformer := testNewInformer(t, time.Second*2, time.Second*10)
+
+	k8sClient, err := newK8sClient()
+	if err != nil {
+		t.Fatal("expected", nil, "got", err)
+	}
+
+	operatorkitInformer, err := newOperatorkitInformer(t, time.Second*2, time.Second*10)
+	if err != nil {
+		t.Fatal("expected", nil, "got", err)
+	}
 
 	// We create a custom object before starting the informer watch. This causes
 	// the informer to fill the cache and to initially sent cached events to the
 	// delete and update channels provided by the watch.
-	testCreateObj(t, objectIDOne)
+	err := createCustomResource(t, crIDOne)
+	if err != nil {
+		t.Fatal("expected", nil, "got", err)
+	}
 
 	// When there is a runtime object in the API we start the watch.
-	deleteChan, updateChan, errChan := newInformer.Watch(ctx)
+	deleteChan, updateChan, errChan := operatorkitInformer.Watch(ctx)
 
 	// We define a general control goroutine to stop test execution on errors or
 	// after timeouts. The timeout is 25 seconds because of two resync periods,
@@ -58,13 +68,16 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 		case <-deleteChan:
 			t.Fatalf("expected update event got delete event")
 		case e := <-updateChan:
-			testAssertCROWithID(t, e, objectIDOne)
+			mustAssertCRWithID(e, crIDOne)
 		}
 	}
 
 	// We create another runtime object. This should be received immediately.
 	{
-		testCreateObj(t, objectIDTwo)
+		err := createCustomResource(t, crIDTwo)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
+		}
 
 		start := time.Now()
 
@@ -72,7 +85,7 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 		case <-deleteChan:
 			t.Fatalf("expected update event got delete event")
 		case e := <-updateChan:
-			testAssertCROWithID(t, e, objectIDTwo)
+			mustAssertCRWithID(e, crIDTwo)
 		}
 
 		d := time.Since(start)
@@ -92,7 +105,7 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 		case <-deleteChan:
 			t.Fatalf("expected update event got delete event")
 		case e := <-updateChan:
-			testAssertCROWithID(t, e, objectIDOne, objectIDTwo)
+			mustAssertCRWithID(e, crIDOne, crIDTwo)
 		}
 
 		d := time.Since(start)
@@ -112,7 +125,7 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 		case <-deleteChan:
 			t.Fatalf("expected update event got delete event")
 		case e := <-updateChan:
-			testAssertCROWithID(t, e, objectIDOne, objectIDTwo)
+			mustAssertCRWithID(e, crIDOne, crIDTwo)
 		}
 
 		d := time.Since(start)
@@ -124,13 +137,16 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 	// Now we delete a runtime object. This event is expected to be received
 	// immediately.
 	{
-		testDeleteObj(t, objectIDOne)
+		err := deleteCustomResource(t, crIDOne)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
+		}
 
 		start := time.Now()
 
 		select {
 		case e := <-deleteChan:
-			testAssertCROWithID(t, e, objectIDOne)
+			mustAssertCRWithID(e, crIDOne)
 		case <-updateChan:
 			t.Fatalf("expected delete event got update event")
 		}
@@ -150,7 +166,7 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 		case <-deleteChan:
 			t.Fatalf("expected update event got delete event")
 		case e := <-updateChan:
-			testAssertCROWithID(t, e, objectIDTwo)
+			mustAssertCRWithID(e, crIDTwo)
 		}
 
 		d := time.Since(start)
