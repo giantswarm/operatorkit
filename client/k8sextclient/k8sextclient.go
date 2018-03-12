@@ -44,20 +44,6 @@ type Config struct {
 	TLS       TLSClientConfig
 }
 
-// DefaultConfig provides a default configuration to create a new Kubernetes
-// Clientset by best effort.
-func DefaultConfig() Config {
-	return Config{
-		// Dependencies.
-		Logger: nil,
-
-		// Settings.
-		Address:   "",
-		InCluster: true,
-		TLS:       TLSClientConfig{},
-	}
-}
-
 // New returns a Kubernetes extensions API Clientset with the provided
 // configuration.
 func New(config Config) (apiextensionsclient.Interface, error) {
@@ -83,14 +69,14 @@ func New(config Config) (apiextensionsclient.Interface, error) {
 
 	var restConfig *rest.Config
 	if config.InCluster {
-		config.Logger.Log("debug", "creating in-cluster config")
+		config.Logger.Log("level", "debug", "message", "creating in-cluster config")
 
 		restConfig, err = rest.InClusterConfig()
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
 	} else {
-		config.Logger.Log("debug", "creating out-cluster config")
+		config.Logger.Log("level", "debug", "message", "creating out-cluster config")
 
 		restConfig = &rest.Config{
 			Host: config.Address,

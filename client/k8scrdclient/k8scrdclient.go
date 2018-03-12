@@ -17,13 +17,6 @@ type Config struct {
 	Logger       micrologger.Logger
 }
 
-func DefaultConfig() Config {
-	return Config{
-		K8sExtClient: nil,
-		Logger:       nil,
-	}
-}
-
 type CRDClient struct {
 	k8sExtClient apiextensionsclient.Interface
 	logger       micrologger.Logger

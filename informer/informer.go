@@ -40,11 +40,7 @@ const (
 
 // Config represents the configuration used to create a new Informer.
 type Config struct {
-	// Dependencies.
-
 	Watcher Watcher
-
-	// Settings.
 
 	// ListOptions to be passed to Watcher.Watch.
 	ListOptions metav1.ListOptions
@@ -55,20 +51,6 @@ type Config struct {
 	RateWait time.Duration
 	// ResyncPeriod is the time to wait before releasing update events again.
 	ResyncPeriod time.Duration
-}
-
-// DefaultConfig provides a default configuration to create a new by best
-// effort.
-func DefaultConfig() Config {
-	return Config{
-		// Dependencies.
-		Watcher: nil,
-
-		// Settings.
-		ListOptions:  metav1.ListOptions{},
-		RateWait:     DefaultRateWait,
-		ResyncPeriod: DefaultResyncPeriod,
-	}
 }
 
 // Informer implements primitives to watch event objects from the Kubernetes API
@@ -96,7 +78,7 @@ func New(config Config) (*Informer, error) {
 
 	// Settings.
 	if config.ResyncPeriod == 0 {
-		return nil, microerror.Maskf(invalidConfigError, "config.ResyncPeriod must not be empty")
+		config.ResyncPeriod = DefaultResyncPeriod
 	}
 
 	newInformer := &Informer{
