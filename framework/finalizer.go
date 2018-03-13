@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/cenkalti/backoff"
 	"github.com/giantswarm/microerror"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/rest"
 )
 
 const (
@@ -34,19 +34,25 @@ func (f *Framework) addFinalizer(obj interface{}) (bool, error) {
 		return false, nil // object already has the finalizer.
 	}
 
-	c, err := rest.RESTClientFor(&rest.Config{})
-	if err != nil {
-		return false, microerror.Mask(err)
-	}
 	patch := patchSpec{
 		Op:    "add",
 		Value: finalizerName,
 		Path:  "/metadata/finalizers/-",
 	}
 	p, err := json.Marshal(patch)
-	res := c.Patch(types.JSONPatchType).AbsPath(accessor.GetSelfLink()).Body(p).Do()
-	if res.Error() != nil {
-		return false, microerror.Mask(res.Error())
+	if err != nil {
+		return false, microerror.Mask(err)
+	}
+	operation := func() error {
+		res := f.restClient.Patch(types.JSONPatchType).AbsPath(accessor.GetSelfLink()).Body(p).Do()
+		if res.Error() != nil {
+			return microerror.Mask(res.Error())
+		}
+		return nil
+	}
+	err = backoff.Retry(operation, f.backOffFactory())
+	if err != nil {
+		return false, microerror.Mask(err)
 	}
 
 	return true, nil
@@ -62,10 +68,6 @@ func (f *Framework) removeFinalizer(ctx context.Context, obj interface{}) error 
 		f.logger.LogCtx(ctx, "function", "removeFinalizer", "level", "warning", "message", "object is missing a finalizer")
 		return nil // object has no finalizer, probably migration.
 	}
-	c, err := rest.RESTClientFor(&rest.Config{})
-	if err != nil {
-		return microerror.Mask(err)
-	}
 
 	patch := patchSpec{
 		Op:    "replace",
@@ -76,9 +78,16 @@ func (f *Framework) removeFinalizer(ctx context.Context, obj interface{}) error 
 	if err != nil {
 		return microerror.Mask(err)
 	}
-	res := c.Patch(types.JSONPatchType).AbsPath(accessor.GetSelfLink()).Body(p).Do()
-	if res.Error() != nil {
-		return microerror.Mask(res.Error())
+	operation := func() error {
+		res := f.restClient.Patch(types.JSONPatchType).AbsPath(accessor.GetSelfLink()).Body(p).Do()
+		if res.Error() != nil {
+			return microerror.Mask(res.Error())
+		}
+		return nil
+	}
+	err = backoff.Retry(operation, f.backOffFactory())
+	if err != nil {
+		return microerror.Mask(err)
 	}
 	return nil
 }

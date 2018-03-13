@@ -14,6 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/rest"
 
 	"github.com/giantswarm/operatorkit/client/k8scrdclient"
 	"github.com/giantswarm/operatorkit/framework/context/reconciliationcanceledcontext"
@@ -43,6 +44,7 @@ type Config struct {
 	// and different resources can be executed depending on the runtime object
 	// being reconciled.
 	ResourceRouter *ResourceRouter
+	RestClient     rest.Interface
 
 	BackOffFactory func() backoff.BackOff
 }
@@ -54,6 +56,7 @@ type Framework struct {
 	logger         micrologger.Logger
 	name           string
 	resourceRouter *ResourceRouter
+	restClient     rest.Interface
 
 	bootOnce sync.Once
 	mutex    sync.Mutex
@@ -77,6 +80,9 @@ func New(config Config) (*Framework, error) {
 	}
 	if config.ResourceRouter == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.ResourceRouter must not be empty")
+	}
+	if config.RestClient == nil {
+		return nil, microerror.Maskf(invalidConfigError, "config.RestClient must not be empty")
 	}
 
 	if config.BackOffFactory == nil {
