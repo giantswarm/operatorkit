@@ -21,30 +21,20 @@ type patchSpec struct {
 	Value interface{} `json:"value"`
 }
 
-func (f *Framework) addFinalizer(obj interface{}) (bool, error) {
-	accessor, err := meta.Accessor(obj)
+func (f *Framework) addFinalizer(obj interface{}) (stopReconciliation bool, err error) {
+	patch, path, result, err := createAddFinalizerPatch(obj, f.name)
 	if err != nil {
 		return false, microerror.Mask(err)
 	}
-	if accessor.GetDeletionTimestamp() != nil {
-		return true, nil // object has been marked for deletion, we should ignore it.
-	}
-	finalizerName := getFinalizerName(f.name)
-	if containsFinalizer(accessor.GetFinalizers(), finalizerName) {
-		return false, nil // object already has the finalizer.
-	}
-
-	patch := patchSpec{
-		Op:    "add",
-		Value: finalizerName,
-		Path:  "/metadata/finalizers/-",
+	if patch == nil {
+		return result, err
 	}
 	p, err := json.Marshal(patch)
 	if err != nil {
 		return false, microerror.Mask(err)
 	}
 	operation := func() error {
-		res := f.restClient.Patch(types.JSONPatchType).AbsPath(accessor.GetSelfLink()).Body(p).Do()
+		res := f.restClient.Patch(types.JSONPatchType).AbsPath(path).Body(p).Do()
 		if res.Error() != nil {
 			return microerror.Mask(res.Error())
 		}
@@ -58,28 +48,60 @@ func (f *Framework) addFinalizer(obj interface{}) (bool, error) {
 	return true, nil
 }
 
-func (f *Framework) removeFinalizer(ctx context.Context, obj interface{}) error {
+func createAddFinalizerPatch(obj interface{}, operatorName string) (patch *patchSpec, path string, stopReconciliation bool, err error) {
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
-		return microerror.Mask(err)
+		return nil, "", false, microerror.Mask(err)
 	}
-	finalizerName := getFinalizerName(f.name)
-	if !containsFinalizer(accessor.GetFinalizers(), finalizerName) {
-		f.logger.LogCtx(ctx, "function", "removeFinalizer", "level", "warning", "message", "object is missing a finalizer")
-		return nil // object has no finalizer, probably migration.
+	if accessor.GetDeletionTimestamp() != nil {
+		return nil, "", true, nil // object has been marked for deletion, we should ignore it.
+	}
+	finalizerName := getFinalizerName(operatorName)
+	if containsFinalizer(accessor.GetFinalizers(), finalizerName) {
+		return nil, "", false, nil // object already has the finalizer.
 	}
 
-	patch := patchSpec{
+	patch = &patchSpec{
+		Op:    "add",
+		Value: finalizerName,
+		Path:  "/metadata/finalizers/-",
+	}
+	return patch, accessor.GetSelfLink(), true, nil
+}
+
+func createRemoveFinalizerPatch(obj interface{}, operatorName string) (patch *patchSpec, path string, err error) {
+	accessor, err := meta.Accessor(obj)
+	if err != nil {
+		return nil, "", microerror.Mask(err)
+	}
+	finalizerName := getFinalizerName(operatorName)
+	if !containsFinalizer(accessor.GetFinalizers(), finalizerName) {
+		return nil, "", nil // object has no finalizer, probably migration.
+	}
+
+	patch = &patchSpec{
 		Op:    "replace",
 		Value: removeFinalizer(accessor.GetFinalizers(), finalizerName),
 		Path:  "/metadata/finalizers",
+	}
+	return patch, accessor.GetSelfLink(), nil
+}
+
+func (f *Framework) removeFinalizer(ctx context.Context, obj interface{}) error {
+	patch, path, err := createRemoveFinalizerPatch(obj, f.name)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+	if patch == nil {
+		f.logger.LogCtx(ctx, "function", "removeFinalizer", "level", "warning", "message", "object is missing a finalizer")
+		return nil
 	}
 	p, err := json.Marshal(patch)
 	if err != nil {
 		return microerror.Mask(err)
 	}
 	operation := func() error {
-		res := f.restClient.Patch(types.JSONPatchType).AbsPath(accessor.GetSelfLink()).Body(p).Do()
+		res := f.restClient.Patch(types.JSONPatchType).AbsPath(path).Body(p).Do()
 		if res.Error() != nil {
 			return microerror.Mask(res.Error())
 		}
