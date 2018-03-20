@@ -102,15 +102,14 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 			patch, path, cancelReconciliation, err := createAddFinalizerPatch(tc.object, tc.operatorName)
 
 			switch {
-			case err == nil && tc.errorMatcher == nil: // correct; carry on
-			case err != nil && tc.errorMatcher != nil:
-				if !tc.errorMatcher(err) {
-					t.Fatalf("error == %#v, want matching", err)
-				}
+			case err == nil && tc.errorMatcher == nil:
+				// correct; carry on
 			case err != nil && tc.errorMatcher == nil:
 				t.Fatalf("error == %#v, want nil", err)
 			case err == nil && tc.errorMatcher != nil:
 				t.Fatalf("error == nil, want non-nil")
+			case !tc.errorMatcher(err):
+				t.Fatalf("error == %#v, want matching", err)
 			}
 			if !reflect.DeepEqual(patch, tc.expectedPatch) {
 				t.Fatalf("patch == %v, want %v", patch, tc.expectedPatch)
@@ -203,15 +202,14 @@ func Test_createRemoveFinalizerPatch(t *testing.T) {
 			patch, path, err := createRemoveFinalizerPatch(tc.object, tc.operatorName)
 
 			switch {
-			case err == nil && tc.errorMatcher == nil: // correct; carry on
-			case err != nil && tc.errorMatcher != nil:
-				if !tc.errorMatcher(err) {
-					t.Fatalf("error == %#v, want matching", err)
-				}
+			case err == nil && tc.errorMatcher == nil:
+				// correct; carry on
 			case err != nil && tc.errorMatcher == nil:
 				t.Fatalf("error == %#v, want nil", err)
 			case err == nil && tc.errorMatcher != nil:
 				t.Fatalf("error == nil, want non-nil")
+			case !tc.errorMatcher(err):
+				t.Fatalf("error == %#v, want matching", err)
 			}
 			if !reflect.DeepEqual(patch, tc.expectedPatch) {
 				t.Fatalf("patch == %v, want %v", patch, tc.expectedPatch)
