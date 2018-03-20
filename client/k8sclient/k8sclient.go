@@ -45,31 +45,6 @@ type Config struct {
 	TLS       TLSClientConfig
 }
 
-// DefaultConfig provides a default configuration to create a new Kubernetes
-// Clientset by best effort.
-func DefaultConfig() Config {
-	var err error
-
-	var newLogger micrologger.Logger
-	{
-		config := micrologger.DefaultConfig()
-		newLogger, err = micrologger.New(config)
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	return Config{
-		// Dependencies.
-		Logger: newLogger,
-
-		// Settings.
-		Address:   "",
-		InCluster: true,
-		TLS:       TLSClientConfig{},
-	}
-}
-
 // New returns a Kubernetes Clientset with the provided configuration.
 func New(config Config) (kubernetes.Interface, error) {
 	// Dependencies.

@@ -56,7 +56,7 @@
   branch = "master"
   name = "github.com/giantswarm/e2e-harness"
   packages = ["pkg/harness"]
-  revision = "88ee7b0b0f67d2977ea042c76ec4ec0467401ac0"
+  revision = "b6f3fbcebf6ed04a4b6ef62b1fd4d14920cab704"
 
 [[projects]]
   branch = "master"
@@ -72,7 +72,7 @@
     "loggermeta",
     "microloggertest"
   ]
-  revision = "379c14c9508f2a9e69c7458e7e4d5444103c3abe"
+  revision = "2aaea11da0707ebb7f9fbabb07028a37b00efc16"
 
 [[projects]]
   name = "github.com/go-kit/kit"
@@ -198,8 +198,8 @@
 [[projects]]
   name = "github.com/json-iterator/go"
   packages = ["."]
-  revision = "3353055b2a1a5ae1b6a8dfde887a524e7088f3a2"
-  version = "1.1.2"
+  revision = "ca39e5af3ece67bbcda3d0f4f56a8e24d9f2dad4"
+  version = "1.1.3"
 
 [[projects]]
   branch = "master"
@@ -227,7 +227,7 @@
     "jlexer",
     "jwriter"
   ]
-  revision = "4a8a4c12c4d1b0c0a7de630426ce6dcb07141b17"
+  revision = "f594efddfa171111dc4349cd6e78e8f61dc7936f"
 
 [[projects]]
   name = "github.com/matttproud/golang_protobuf_extensions"
@@ -263,7 +263,7 @@
   branch = "master"
   name = "github.com/prometheus/client_golang"
   packages = ["prometheus"]
-  revision = "c3324c1198cf3374996e9d3098edd46a6b55afc9"
+  revision = "d49167c4b9f3c4451707560c5c71471ff5291aaa"
 
 [[projects]]
   branch = "master"
@@ -279,7 +279,7 @@
     "internal/bitbucket.org/ww/goautoneg",
     "model"
   ]
-  revision = "6fb6fce6f8b75884b92e1889c150403fc0872c5e"
+  revision = "e4aa40a9169a88835b849a6efb71e05dc04b88f0"
 
 [[projects]]
   branch = "master"
@@ -290,7 +290,7 @@
     "nfs",
     "xfs"
   ]
-  revision = "1c7ff3de94ae006f58cba483a4c9c6d7c61e1d98"
+  revision = "54d17b57dd7d4a3aa092476596b3f8a933bde349"
 
 [[projects]]
   branch = "master"
@@ -311,7 +311,7 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "c7dcf104e3a7a1417abc0230cb0d5240d764159d"
+  revision = "c3a3ad6d03f7a915c0f7e194b7152974bb73d287"
 
 [[projects]]
   branch = "master"
@@ -323,7 +323,7 @@
     "idna",
     "lex/httplex"
   ]
-  revision = "d0aafc73d5cdc42264b0af071c261abac580695e"
+  revision = "6078986fec03a1dcc236c34816c71b0e05018fda"
 
 [[projects]]
   branch = "master"
@@ -332,7 +332,7 @@
     "unix",
     "windows"
   ]
-  revision = "7dca6fe1f43775aa6d1334576870ff63f978f539"
+  revision = "f8f1a95d4d780e4e1a82ed8289c8806e4dba7733"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -518,6 +518,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "caee6e67f6a98e890345af729fb4e820d82c89129d9af1d7cd258abdae8d0aad"
+  inputs-digest = "24413d30fcde8a41734c8646633c5aeffc4b2a483a88d662f80dfb9e1569778e"
   solver-name = "gps-cdcl"
   solver-version = 1
