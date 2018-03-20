@@ -6,13 +6,16 @@ import (
 	"github.com/giantswarm/e2e-harness/pkg/harness"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-	"github.com/giantswarm/operatorkit/framework"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+
+	"github.com/giantswarm/operatorkit/framework"
+	"github.com/giantswarm/operatorkit/framework/integration/test_resource_set"
+	"github.com/giantswarm/operatorkit/informer"
 )
 
 const (
@@ -32,6 +35,9 @@ func init() {
 		panic(err)
 	}
 	k8sRESTClient, err = newK8sRESTClient()
+	if err != nil {
+		panic(err)
+	}
 }
 
 func newK8sClient() (kubernetes.Interface, error) {
@@ -67,8 +73,57 @@ func newFramework(name string) (*framework.Framework, error) {
 	if err != nil {
 		return nil, err
 	}
-	f := framework.New()
-	return &f
+	var newInformer *informer.Informer
+	{
+		c := informer.Config{
+			Watcher: k8sClient.CoreV1().Pods(namespace),
+		}
+		newInformer, err = informer.New(c)
+		if err != nil {
+			return nil, err
+		}
+	}
+	var resourceSet *framework.ResourceSet
+	{
+		c := testresourceset.ResourceSetConfig{
+			K8sClient: k8sClient,
+			Logger:    logger,
+
+			ProjectName: name,
+		}
+
+		resourceSet, err = testresourceset.NewResourceSet(c)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+	}
+	var resourceRouter *framework.ResourceRouter
+	{
+		c := framework.ResourceRouterConfig{
+			Logger: logger,
+
+			ResourceSets: []*framework.ResourceSet{
+				resourceSet,
+			},
+		}
+
+		resourceRouter, err = framework.NewResourceRouter(c)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+	}
+	cf := framework.Config{
+		Informer:       newInformer,
+		Logger:         logger,
+		RestClient:     k8sRESTClient,
+		Name:           name,
+		ResourceRouter: resourceRouter,
+	}
+	f, err := framework.New(cf)
+	if err != nil {
+		return nil, err
+	}
+	return f, nil
 }
 
 func mustSetup() {

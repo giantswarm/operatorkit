@@ -30,6 +30,7 @@ jobs:
     - run: ./e2e-harness localkube
     - run: ./e2e-harness setup --remote=false
     - run: ./e2e-harness test --test-dir=informer/integration
+    - run: ./e2e-harness test --test-dir=framework/integration
     - run:
         command: ./e2e-harness teardown
         when: always
