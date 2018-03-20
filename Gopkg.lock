@@ -32,15 +32,6 @@
   version = "v1.1.0"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/docker/distribution"
-  packages = [
-    "digestset",
-    "reference"
-  ]
-  revision = "6fca8d6e6713acbdf3f9ca40cf6370fc5ee5ee53"
-
-[[projects]]
   name = "github.com/emicklei/go-restful"
   packages = [
     ".",
@@ -257,12 +248,6 @@
   version = "1.0.0"
 
 [[projects]]
-  name = "github.com/opencontainers/go-digest"
-  packages = ["."]
-  revision = "279bed98673dd5bef374d3b6e4b09e2af76183bf"
-  version = "v1.0.0-rc1"
-
-[[projects]]
   branch = "master"
   name = "github.com/petar/GoLLRB"
   packages = ["llrb"]
@@ -386,7 +371,6 @@
 [[projects]]
   name = "k8s.io/api"
   packages = [
-    "admission/v1alpha1",
     "admissionregistration/v1alpha1",
     "apps/v1beta1",
     "apps/v1beta2",
@@ -402,7 +386,6 @@
     "certificates/v1beta1",
     "core/v1",
     "extensions/v1beta1",
-    "imagepolicy/v1alpha1",
     "networking/v1",
     "policy/v1beta1",
     "rbac/v1",
@@ -435,9 +418,6 @@
     "pkg/api/errors",
     "pkg/api/meta",
     "pkg/api/resource",
-    "pkg/apimachinery",
-    "pkg/apimachinery/announced",
-    "pkg/apimachinery/registered",
     "pkg/apis/meta/internalversion",
     "pkg/apis/meta/v1",
     "pkg/apis/meta/v1/unstructured",
@@ -465,7 +445,6 @@
     "pkg/util/intstr",
     "pkg/util/json",
     "pkg/util/net",
-    "pkg/util/rand",
     "pkg/util/runtime",
     "pkg/util/sets",
     "pkg/util/validation",
@@ -478,17 +457,6 @@
   ]
   revision = "5134afd2c0c91158afac0d8a28bd2177185a3bcc"
   version = "kubernetes-1.8.3"
-
-[[projects]]
-  branch = "master"
-  name = "k8s.io/apiserver"
-  packages = [
-    "pkg/admission",
-    "pkg/apis/apiserver",
-    "pkg/apis/apiserver/v1alpha1",
-    "pkg/authentication/user"
-  ]
-  revision = "f5f5413e42e846aae9d2e75741bfb61e8ff21532"
 
 [[projects]]
   name = "k8s.io/client-go"
@@ -522,7 +490,6 @@
     "kubernetes/typed/storage/v1beta1",
     "pkg/version",
     "rest",
-    "rest/fake",
     "rest/watch",
     "tools/auth",
     "tools/cache",
@@ -548,91 +515,9 @@
   packages = ["pkg/common"]
   revision = "50ae88d24ede7b8bad68e23c805b5d3da5c8abaf"
 
-[[projects]]
-  name = "k8s.io/kubernetes"
-  packages = [
-    "federation/apis/federation",
-    "federation/apis/federation/install",
-    "federation/apis/federation/v1beta1",
-    "pkg/api",
-    "pkg/api/helper",
-    "pkg/api/install",
-    "pkg/api/testapi",
-    "pkg/api/v1",
-    "pkg/api/v1/helper",
-    "pkg/api/v1/helper/qos",
-    "pkg/apis/admission",
-    "pkg/apis/admission/install",
-    "pkg/apis/admission/v1alpha1",
-    "pkg/apis/admissionregistration",
-    "pkg/apis/admissionregistration/install",
-    "pkg/apis/admissionregistration/v1alpha1",
-    "pkg/apis/apps",
-    "pkg/apis/apps/install",
-    "pkg/apis/apps/v1beta1",
-    "pkg/apis/apps/v1beta2",
-    "pkg/apis/authentication",
-    "pkg/apis/authentication/install",
-    "pkg/apis/authentication/v1",
-    "pkg/apis/authentication/v1beta1",
-    "pkg/apis/authorization",
-    "pkg/apis/authorization/install",
-    "pkg/apis/authorization/v1",
-    "pkg/apis/authorization/v1beta1",
-    "pkg/apis/autoscaling",
-    "pkg/apis/autoscaling/install",
-    "pkg/apis/autoscaling/v1",
-    "pkg/apis/autoscaling/v2beta1",
-    "pkg/apis/batch",
-    "pkg/apis/batch/install",
-    "pkg/apis/batch/v1",
-    "pkg/apis/batch/v1beta1",
-    "pkg/apis/batch/v2alpha1",
-    "pkg/apis/certificates",
-    "pkg/apis/certificates/install",
-    "pkg/apis/certificates/v1beta1",
-    "pkg/apis/componentconfig",
-    "pkg/apis/componentconfig/install",
-    "pkg/apis/componentconfig/v1alpha1",
-    "pkg/apis/extensions",
-    "pkg/apis/extensions/install",
-    "pkg/apis/extensions/v1beta1",
-    "pkg/apis/imagepolicy",
-    "pkg/apis/imagepolicy/install",
-    "pkg/apis/imagepolicy/v1alpha1",
-    "pkg/apis/networking",
-    "pkg/apis/networking/install",
-    "pkg/apis/networking/v1",
-    "pkg/apis/policy",
-    "pkg/apis/policy/install",
-    "pkg/apis/policy/v1beta1",
-    "pkg/apis/rbac",
-    "pkg/apis/rbac/install",
-    "pkg/apis/rbac/v1",
-    "pkg/apis/rbac/v1alpha1",
-    "pkg/apis/rbac/v1beta1",
-    "pkg/apis/scheduling",
-    "pkg/apis/scheduling/install",
-    "pkg/apis/scheduling/v1alpha1",
-    "pkg/apis/settings",
-    "pkg/apis/settings/install",
-    "pkg/apis/settings/v1alpha1",
-    "pkg/apis/storage",
-    "pkg/apis/storage/install",
-    "pkg/apis/storage/v1",
-    "pkg/apis/storage/v1beta1",
-    "pkg/kubelet/apis",
-    "pkg/kubelet/qos",
-    "pkg/master/ports",
-    "pkg/util/parsers",
-    "pkg/util/pointer"
-  ]
-  revision = "2f73858c9e6ede659d6828fe5a1862a48034a0fd"
-  version = "v1.8.8"
-
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3fb0085705930b9494620217ccab9a5683bedea9f3028ddd43fe02e6892148c8"
+  inputs-digest = "9e3b2b5ce7f42d094da9bd3c316e874e0f69806051061afabfe5685a0866d989"
   solver-name = "gps-cdcl"
   solver-version = 1
