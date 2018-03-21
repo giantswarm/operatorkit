@@ -55,17 +55,7 @@ func newK8sClient() (kubernetes.Interface, error) {
 }
 
 func newK8sRESTClient() (rest.Interface, error) {
-	config, err := clientcmd.BuildConfigFromFlags("", harness.DefaultKubeConfig)
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
-
-	k8sRESTClient, err := rest.RESTClientFor(config)
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
-
-	return k8sRESTClient, nil
+	return k8sClient.ExtensionsV1beta1().RESTClient(), nil
 }
 
 func newFramework(name string) (*framework.Framework, error) {
