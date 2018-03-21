@@ -14,26 +14,30 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	mustSetup()
 	defer mustTeardown()
 	operatorName := "test-operator"
-	podName := "testpod"
+	configMapName := "test-cm"
 	operatorkitFramework, err := newFramework(operatorName)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
 
-	pod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      podName,
-			Namespace: namespace,
-			SelfLink:  "/some/path",
+	cm := &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
 		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      configMapName,
+			Namespace: namespace,
+		},
+		Data: map[string]string{},
 	}
-	err = createPod(pod)
+	err = createConfigMap(cm)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
-	operatorkitFramework.UpdateFunc(pod, pod)
+	operatorkitFramework.UpdateFunc(cm, cm)
 
-	resultPod, err := getPod(podName)
+	resultConfigMap, err := getConfigMap(configMapName)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -41,8 +45,8 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 		"operatorkit.giantswarm.io/test-operator",
 	}
 
-	if !reflect.DeepEqual(resultPod.GetFinalizers(), expectedFinalizers) {
-		t.Fatalf("finalizers == %v, want %v", resultPod.GetFinalizers(), expectedFinalizers)
+	if !reflect.DeepEqual(resultConfigMap.GetFinalizers(), expectedFinalizers) {
+		t.Fatalf("finalizers == %v, want %v", resultConfigMap.GetFinalizers(), expectedFinalizers)
 	}
 
 }
