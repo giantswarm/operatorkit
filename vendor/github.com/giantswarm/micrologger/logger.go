@@ -3,50 +3,32 @@ package micrologger
 
 import (
 	"context"
-	"fmt"
 	"io"
-	"os"
-	"time"
 
 	kitlog "github.com/go-kit/kit/log"
-	"github.com/go-stack/stack"
 
-	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger/loggermeta"
 )
 
-// Config represents the configuration used to create a new logger.
 type Config struct {
-	// Settings.
 	Caller             kitlog.Valuer
 	IOWriter           io.Writer
 	TimestampFormatter kitlog.Valuer
 }
 
-// DefaultConfig provides a default configuration to create a new logger by best
-// effort.
-func DefaultConfig() Config {
-
-	return Config{
-		// Settings.
-		Caller: func() interface{} {
-			return fmt.Sprintf("%+v", stack.Caller(4))
-		},
-		IOWriter: os.Stdout,
-		TimestampFormatter: func() interface{} {
-			return time.Now().UTC().Format("2006-01-02 15:04:05.000")
-		},
-	}
+type MicroLogger struct {
+	logger kitlog.Logger
 }
 
-// New creates a new configured logger.
-func New(config Config) (Logger, error) {
-	// Settings.
+func New(config Config) (*MicroLogger, error) {
 	if config.Caller == nil {
-		return nil, microerror.Maskf(invalidConfigError, "caller must not be empty")
+		config.Caller = DefaultCaller
 	}
 	if config.TimestampFormatter == nil {
-		return nil, microerror.Maskf(invalidConfigError, "timestamp formatter must not be empty")
+		config.TimestampFormatter = DefaultTimestampFormatter
+	}
+	if config.IOWriter == nil {
+		config.IOWriter = DefaultIOWriter
 	}
 
 	kitLogger := kitlog.NewJSONLogger(kitlog.NewSyncWriter(config.IOWriter))
@@ -56,25 +38,21 @@ func New(config Config) (Logger, error) {
 		"time", config.TimestampFormatter,
 	)
 
-	newLogger := &logger{
-		Logger: kitLogger,
+	l := &MicroLogger{
+		logger: kitLogger,
 	}
 
-	return newLogger, nil
+	return l, nil
 }
 
-type logger struct {
-	Logger kitlog.Logger
+func (l *MicroLogger) Log(keyVals ...interface{}) error {
+	return l.logger.Log(keyVals...)
 }
 
-func (l *logger) Log(keyVals ...interface{}) error {
-	return l.Logger.Log(keyVals...)
-}
-
-func (l *logger) LogCtx(ctx context.Context, keyVals ...interface{}) error {
+func (l *MicroLogger) LogCtx(ctx context.Context, keyVals ...interface{}) error {
 	meta, ok := loggermeta.FromContext(ctx)
 	if !ok {
-		return l.Logger.Log(keyVals...)
+		return l.logger.Log(keyVals...)
 	}
 
 	var newKeyVals []interface{}
@@ -87,11 +65,11 @@ func (l *logger) LogCtx(ctx context.Context, keyVals ...interface{}) error {
 		}
 	}
 
-	return l.Logger.Log(newKeyVals...)
+	return l.logger.Log(newKeyVals...)
 }
 
-func (l *logger) With(keyVals ...interface{}) Logger {
-	return &logger{
-		Logger: kitlog.With(l.Logger, keyVals...),
+func (l *MicroLogger) With(keyVals ...interface{}) Logger {
+	return &MicroLogger{
+		logger: kitlog.With(l.logger, keyVals...),
 	}
 }

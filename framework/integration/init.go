@@ -54,7 +54,7 @@ func newK8sClient() (kubernetes.Interface, error) {
 func newFramework(name string) (*framework.Framework, error) {
 	logger, err := micrologger.New(micrologger.Config{})
 	if err != nil {
-		return nil, err
+		return nil, microerror.Mask(err)
 	}
 	var newInformer *informer.Informer
 	{
@@ -63,7 +63,7 @@ func newFramework(name string) (*framework.Framework, error) {
 		}
 		newInformer, err = informer.New(c)
 		if err != nil {
-			return nil, err
+			return nil, microerror.Mask(err)
 		}
 	}
 	var resourceSet *framework.ResourceSet
@@ -104,7 +104,7 @@ func newFramework(name string) (*framework.Framework, error) {
 	}
 	f, err := framework.New(cf)
 	if err != nil {
-		return nil, err
+		return nil, microerror.Mask(err)
 	}
 	return f, nil
 }
