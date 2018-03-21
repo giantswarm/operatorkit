@@ -3,3 +3,4 @@ TODO
 
 .e2e-harness/
 informer/integration/operatorkit-e2e
+framework/integration/operatorkit-e2e

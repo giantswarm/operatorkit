@@ -29,7 +29,7 @@ func (f *Framework) addFinalizer(obj interface{}) (stopReconciliation bool, err 
 	if patch == nil {
 		return result, err
 	}
-	p, err := json.Marshal(patch)
+	p, err := json.Marshal(*patch)
 	if err != nil {
 		return false, microerror.Mask(err)
 	}
