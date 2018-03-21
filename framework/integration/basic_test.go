@@ -31,11 +31,11 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 		},
 		Data: map[string]string{},
 	}
-	err = createConfigMap(cm)
+	createdConfigMap, err := createConfigMap(cm)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
-	operatorkitFramework.UpdateFunc(cm, cm)
+	operatorkitFramework.UpdateFunc(createdConfigMap, createdConfigMap)
 
 	resultConfigMap, err := getConfigMap(configMapName)
 	if err != nil {

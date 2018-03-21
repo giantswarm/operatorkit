@@ -42,5 +42,5 @@ func (r *Resource) EnsureDeleted(ctx context.Context, obj interface{}) error {
 }
 
 func (r *Resource) Name() string {
-	return ""
+	return "testresource"
 }

@@ -34,10 +34,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	k8sRESTClient, err = newK8sRESTClient()
-	if err != nil {
-		panic(err)
-	}
+	k8sRESTClient = k8sClient.CoreV1().RESTClient()
 }
 
 func newK8sClient() (kubernetes.Interface, error) {
@@ -54,12 +51,8 @@ func newK8sClient() (kubernetes.Interface, error) {
 	return k8sClient, nil
 }
 
-func newK8sRESTClient() (rest.Interface, error) {
-	return k8sClient.CoreV1().RESTClient(), nil
-}
-
 func newFramework(name string) (*framework.Framework, error) {
-	logger, err := micrologger.New(micrologger.DefaultConfig())
+	logger, err := micrologger.New(micrologger.Config{})
 	if err != nil {
 		return nil, err
 	}

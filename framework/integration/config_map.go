@@ -8,13 +8,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func createConfigMap(configMap *corev1.ConfigMap) error {
-	_, err := k8sClient.CoreV1().ConfigMaps(namespace).Create(configMap)
+func createConfigMap(configMap *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+	createConfigMap, err := k8sClient.CoreV1().ConfigMaps(namespace).Create(configMap)
 	if err != nil {
-		return microerror.Mask(err)
+		return nil, microerror.Mask(err)
 	}
 
-	return nil
+	return createConfigMap, nil
 }
 
 func getConfigMap(name string) (*corev1.ConfigMap, error) {
