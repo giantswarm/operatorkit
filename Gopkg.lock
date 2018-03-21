@@ -227,7 +227,7 @@
     "jlexer",
     "jwriter"
   ]
-  revision = "517203d186eb343d3df4068565cc0446b450d2c4"
+  revision = "f594efddfa171111dc4349cd6e78e8f61dc7936f"
 
 [[projects]]
   name = "github.com/matttproud/golang_protobuf_extensions"
@@ -311,7 +311,7 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "80db560fac1fb3e6ac81dbc7f8ae4c061f5257bd"
+  revision = "c3a3ad6d03f7a915c0f7e194b7152974bb73d287"
 
 [[projects]]
   branch = "master"
@@ -332,7 +332,7 @@
     "unix",
     "windows"
   ]
-  revision = "641605214e7dab930817f68e2fef560efbb033e5"
+  revision = "f8f1a95d4d780e4e1a82ed8289c8806e4dba7733"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -518,6 +518,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9e3b2b5ce7f42d094da9bd3c316e874e0f69806051061afabfe5685a0866d989"
+  inputs-digest = "24413d30fcde8a41734c8646633c5aeffc4b2a483a88d662f80dfb9e1569778e"
   solver-name = "gps-cdcl"
   solver-version = 1
