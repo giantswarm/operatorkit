@@ -55,7 +55,7 @@ func newK8sClient() (kubernetes.Interface, error) {
 }
 
 func newK8sRESTClient() (rest.Interface, error) {
-	return k8sClient.ExtensionsV1beta1().RESTClient(), nil
+	return k8sClient.CoreV1().RESTClient(), nil
 }
 
 func newFramework(name string) (*framework.Framework, error) {

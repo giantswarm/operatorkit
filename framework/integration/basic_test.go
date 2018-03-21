@@ -14,7 +14,7 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	mustSetup()
 	defer mustTeardown()
 	operatorName := "test-operator"
-	podName := "TestPod"
+	podName := "testpod"
 	operatorkitFramework, err := newFramework(operatorName)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
