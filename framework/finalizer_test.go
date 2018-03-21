@@ -14,7 +14,7 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 		object                       *apiv1.Pod
 		operatorName                 string
 		expectedCancelReconciliation bool
-		expectedPatch                *patchSpec
+		expectedPatch                []patchSpec
 		expectedPath                 string
 		errorMatcher                 func(error) bool
 	}{
@@ -29,10 +29,17 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 			},
 			operatorName:                 "test-operator",
 			expectedCancelReconciliation: true,
-			expectedPatch: &patchSpec{
-				Op:    "add",
-				Path:  "/metadata/finalizers/-",
-				Value: "operatorkit.giantswarm.io/test-operator",
+			expectedPatch: []patchSpec{
+				{
+					Op:    "add",
+					Path:  "/metadata/finalizers",
+					Value: []string{},
+				},
+				{
+					Op:    "add",
+					Path:  "/metadata/finalizers/-",
+					Value: "operatorkit.giantswarm.io/test-operator",
+				},
 			},
 			expectedPath: "/some/path",
 			errorMatcher: nil,
@@ -86,10 +93,12 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 			},
 			operatorName:                 "test-operator",
 			expectedCancelReconciliation: true,
-			expectedPatch: &patchSpec{
-				Op:    "add",
-				Path:  "/metadata/finalizers/-",
-				Value: "operatorkit.giantswarm.io/test-operator",
+			expectedPatch: []patchSpec{
+				{
+					Op:    "add",
+					Path:  "/metadata/finalizers/-",
+					Value: "operatorkit.giantswarm.io/test-operator",
+				},
 			},
 			expectedPath: "/some/path",
 			errorMatcher: nil,
@@ -129,7 +138,7 @@ func Test_createRemoveFinalizerPatch(t *testing.T) {
 		name          string
 		object        *apiv1.Pod
 		operatorName  string
-		expectedPatch *patchSpec
+		expectedPatch []patchSpec
 		expectedPath  string
 		errorMatcher  func(error) bool
 	}{
@@ -160,10 +169,12 @@ func Test_createRemoveFinalizerPatch(t *testing.T) {
 				},
 			},
 			operatorName: "test-operator",
-			expectedPatch: &patchSpec{
-				Op:    "replace",
-				Path:  "/metadata/finalizers",
-				Value: []string{},
+			expectedPatch: []patchSpec{
+				{
+					Op:    "replace",
+					Path:  "/metadata/finalizers",
+					Value: []string{},
+				},
 			},
 			expectedPath: "/some/path",
 			errorMatcher: nil,
@@ -183,12 +194,14 @@ func Test_createRemoveFinalizerPatch(t *testing.T) {
 				},
 			},
 			operatorName: "test-operator",
-			expectedPatch: &patchSpec{
-				Op:   "replace",
-				Path: "/metadata/finalizers",
-				Value: []string{
-					"operatorkit.giantswarm.io/123-operator",
-					"operatorkit.giantswarm.io/other-operator",
+			expectedPatch: []patchSpec{
+				{
+					Op:   "replace",
+					Path: "/metadata/finalizers",
+					Value: []string{
+						"operatorkit.giantswarm.io/123-operator",
+						"operatorkit.giantswarm.io/other-operator",
+					},
 				},
 			},
 			expectedPath: "/some/path",

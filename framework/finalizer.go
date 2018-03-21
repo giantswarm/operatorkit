@@ -29,7 +29,7 @@ func (f *Framework) addFinalizer(obj interface{}) (stopReconciliation bool, err 
 	if patch == nil {
 		return result, err
 	}
-	p, err := json.Marshal(*patch)
+	p, err := json.Marshal(patch)
 	if err != nil {
 		return false, microerror.Mask(err)
 	}
@@ -48,7 +48,7 @@ func (f *Framework) addFinalizer(obj interface{}) (stopReconciliation bool, err 
 	return true, nil
 }
 
-func createAddFinalizerPatch(obj interface{}, operatorName string) (patch *patchSpec, path string, stopReconciliation bool, err error) {
+func createAddFinalizerPatch(obj interface{}, operatorName string) (patch []patchSpec, path string, stopReconciliation bool, err error) {
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
 		return nil, "", false, microerror.Mask(err)
@@ -60,16 +60,26 @@ func createAddFinalizerPatch(obj interface{}, operatorName string) (patch *patch
 	if containsFinalizer(accessor.GetFinalizers(), finalizerName) {
 		return nil, "", false, nil // object already has the finalizer.
 	}
+	patch = []patchSpec{}
+	if len(accessor.GetFinalizers()) == 0 {
+		createPatch := patchSpec{
+			Op:    "add",
+			Value: []string{},
+			Path:  "/metadata/finalizers",
+		}
+		patch = append(patch, createPatch)
+	}
 
-	patch = &patchSpec{
+	addPatch := patchSpec{
 		Op:    "add",
 		Value: finalizerName,
 		Path:  "/metadata/finalizers/-",
 	}
+	patch = append(patch, addPatch)
 	return patch, accessor.GetSelfLink(), true, nil
 }
 
-func createRemoveFinalizerPatch(obj interface{}, operatorName string) (patch *patchSpec, path string, err error) {
+func createRemoveFinalizerPatch(obj interface{}, operatorName string) (patch []patchSpec, path string, err error) {
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
 		return nil, "", microerror.Mask(err)
@@ -78,12 +88,13 @@ func createRemoveFinalizerPatch(obj interface{}, operatorName string) (patch *pa
 	if !containsFinalizer(accessor.GetFinalizers(), finalizerName) {
 		return nil, "", nil // object has no finalizer, probably migration.
 	}
-
-	patch = &patchSpec{
+	patch = []patchSpec{}
+	deletePatch := patchSpec{
 		Op:    "replace",
 		Value: removeFinalizer(accessor.GetFinalizers(), finalizerName),
 		Path:  "/metadata/finalizers",
 	}
+	patch = append(patch, deletePatch)
 	return patch, accessor.GetSelfLink(), nil
 }
 

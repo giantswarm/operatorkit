@@ -3,7 +3,6 @@
 package integration
 
 import (
-	"github.com/giantswarm/microerror"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -11,7 +10,7 @@ import (
 func createConfigMap(configMap *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 	createConfigMap, err := k8sClient.CoreV1().ConfigMaps(namespace).Create(configMap)
 	if err != nil {
-		return nil, microerror.Mask(err)
+		return nil, err
 	}
 
 	return createConfigMap, nil
@@ -20,16 +19,16 @@ func createConfigMap(configMap *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 func getConfigMap(name string) (*corev1.ConfigMap, error) {
 	configMap, err := k8sClient.CoreV1().ConfigMaps(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
-		return nil, microerror.Mask(err)
+		return nil, err
 	}
 
 	return configMap, nil
 }
 
-func deleteConfigMap(ID string) error {
-	err := k8sClient.CoreV1().ConfigMaps(namespace).Delete(ID, nil)
+func deleteConfigMap(name string) error {
+	err := k8sClient.CoreV1().ConfigMaps(namespace).Delete(name, nil)
 	if err != nil {
-		return microerror.Mask(err)
+		return err
 	}
 
 	return nil
