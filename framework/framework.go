@@ -96,6 +96,7 @@ func New(config Config) (*Framework, error) {
 		logger:         config.Logger,
 		name:           config.Name,
 		resourceRouter: config.ResourceRouter,
+		restClient:     config.RestClient,
 
 		bootOnce: sync.Once{},
 		mutex:    sync.Mutex{},
