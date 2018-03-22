@@ -14,7 +14,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/giantswarm/operatorkit/framework"
-	"github.com/giantswarm/operatorkit/framework/integration/test_resource_set"
+	"github.com/giantswarm/operatorkit/framework/integration/testresourceset"
 	"github.com/giantswarm/operatorkit/informer"
 )
 

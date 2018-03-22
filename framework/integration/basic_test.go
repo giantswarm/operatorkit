@@ -73,6 +73,11 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 		t.Fatalf("DeletionTimestamp == nil, want non-nil")
 	}
 
+	// We verify, that our finalizer is still set.
+	if !reflect.DeepEqual(resultConfigMap.GetFinalizers(), expectedFinalizers) {
+		t.Fatalf("finalizers == %v, want %v", resultConfigMap.GetFinalizers(), expectedFinalizers)
+	}
+
 	// We directly pass the configmap to DeleteFunc to remove the finalizer.
 	operatorkitFramework.DeleteFunc(resultConfigMap)
 

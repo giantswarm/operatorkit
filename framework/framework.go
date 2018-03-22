@@ -46,7 +46,10 @@ type Config struct {
 	RestClient     rest.Interface
 
 	BackOffFactory func() backoff.BackOff
-	Name           string
+	// Name is the name which the framework uses on finalizers for resources.
+	// The name used should be unique in the kubernetes cluster, to ensure that
+	// two operators which handle the same resource add two distinct finalizers.
+	Name string
 }
 
 type Framework struct {

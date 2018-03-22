@@ -8,7 +8,7 @@ import (
 	"github.com/giantswarm/operatorkit/framework"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/giantswarm/operatorkit/framework/integration/test_resource_set/test_resource"
+	"github.com/giantswarm/operatorkit/framework/integration/testresourceset/testresource"
 )
 
 type ResourceSetConfig struct {
