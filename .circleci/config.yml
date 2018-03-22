@@ -19,8 +19,6 @@ jobs:
   e2eTestInformerIntegration:
     machine: true
     working_directory: /home/circleci/.go_workspace/src/github.com/giantswarm/operatorkit
-    environment:
-      MINIKUBE_VERSION: v0.25.0
     steps:
     - checkout
 
@@ -33,11 +31,10 @@ jobs:
     - run:
         command: ./e2e-harness teardown
         when: always
+
   e2eTestFrameworkIntegration:
     machine: true
     working_directory: /home/circleci/.go_workspace/src/github.com/giantswarm/operatorkit
-    environment:
-      MINIKUBE_VERSION: v0.25.0
     steps:
     - checkout
 

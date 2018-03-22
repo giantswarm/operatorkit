@@ -31,7 +31,6 @@ type Config struct {
 	CRDClient *k8scrdclient.CRDClient
 	Informer  informer.Interface
 	Logger    micrologger.Logger
-	Name      string
 	// ResourceRouter determines which resource set to use on reconciliation based
 	// on its own implementation. A resource router is to decide which resource
 	// set to execute. A resource set provides a specific function to initialize
@@ -47,6 +46,7 @@ type Config struct {
 	RestClient     rest.Interface
 
 	BackOffFactory func() backoff.BackOff
+	Name           string
 }
 
 type Framework struct {
@@ -54,7 +54,6 @@ type Framework struct {
 	crdClient      *k8scrdclient.CRDClient
 	informer       informer.Interface
 	logger         micrologger.Logger
-	name           string
 	resourceRouter *ResourceRouter
 	restClient     rest.Interface
 
@@ -62,6 +61,7 @@ type Framework struct {
 	mutex    sync.Mutex
 
 	backOffFactory func() backoff.BackOff
+	name           string
 }
 
 // New creates a new configured operator framework.

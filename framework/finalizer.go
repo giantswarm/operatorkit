@@ -86,7 +86,12 @@ func createRemoveFinalizerPatch(obj interface{}, operatorName string) (patch []p
 	}
 	finalizerName := getFinalizerName(operatorName)
 	if !containsFinalizer(accessor.GetFinalizers(), finalizerName) {
-		return nil, "", nil // object has no finalizer, probably migration.
+		// object has not finalizer set, this could have two reasons:
+		// 1. We are migrating and an old object never got reconciled before deletion.
+		// 2. The operator wasn't running and our first interaction with the object
+		// is its deletion.
+		// Both cases should not be harmful in general, so we ignore it.
+		return nil, "", nil
 	}
 	patch = []patchSpec{}
 	deletePatch := patchSpec{
