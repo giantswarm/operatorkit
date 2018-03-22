@@ -22,6 +22,7 @@ type patchSpec struct {
 }
 
 func (f *Framework) addFinalizer(obj interface{}) (stopReconciliation bool, err error) {
+	restClient := f.k8sClient.CoreV1().RESTClient()
 	patch, path, result, err := createAddFinalizerPatch(obj, f.name)
 	if err != nil {
 		return false, microerror.Mask(err)
@@ -34,7 +35,7 @@ func (f *Framework) addFinalizer(obj interface{}) (stopReconciliation bool, err 
 		return false, microerror.Mask(err)
 	}
 	operation := func() error {
-		res := f.restClient.Patch(types.JSONPatchType).AbsPath(path).Body(p).Do()
+		res := restClient.Patch(types.JSONPatchType).AbsPath(path).Body(p).Do()
 		if res.Error() != nil {
 			return microerror.Mask(res.Error())
 		}
@@ -104,6 +105,7 @@ func createRemoveFinalizerPatch(obj interface{}, operatorName string) (patch []p
 }
 
 func (f *Framework) removeFinalizer(ctx context.Context, obj interface{}) error {
+	restClient := f.k8sClient.CoreV1().RESTClient()
 	patch, path, err := createRemoveFinalizerPatch(obj, f.name)
 	if err != nil {
 		return microerror.Mask(err)
@@ -117,7 +119,7 @@ func (f *Framework) removeFinalizer(ctx context.Context, obj interface{}) error 
 		return microerror.Mask(err)
 	}
 	operation := func() error {
-		res := f.restClient.Patch(types.JSONPatchType).AbsPath(path).Body(p).Do()
+		res := restClient.Patch(types.JSONPatchType).AbsPath(path).Body(p).Do()
 		if res.Error() != nil {
 			return microerror.Mask(res.Error())
 		}

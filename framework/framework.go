@@ -14,7 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/rest"
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/giantswarm/operatorkit/client/k8scrdclient"
 	"github.com/giantswarm/operatorkit/framework/context/reconciliationcanceledcontext"
@@ -43,7 +43,7 @@ type Config struct {
 	// and different resources can be executed depending on the runtime object
 	// being reconciled.
 	ResourceRouter *ResourceRouter
-	RestClient     rest.Interface
+	K8sClient      kubernetes.Interface
 
 	BackOffFactory func() backoff.BackOff
 	// Name is the name which the framework uses on finalizers for resources.
@@ -56,9 +56,9 @@ type Framework struct {
 	crd            *apiextensionsv1beta1.CustomResourceDefinition
 	crdClient      *k8scrdclient.CRDClient
 	informer       informer.Interface
+	k8sClient      kubernetes.Interface
 	logger         micrologger.Logger
 	resourceRouter *ResourceRouter
-	restClient     rest.Interface
 
 	bootOnce sync.Once
 	mutex    sync.Mutex
@@ -75,6 +75,9 @@ func New(config Config) (*Framework, error) {
 	if config.Informer == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Informer must not be empty")
 	}
+	if config.K8sClient == nil {
+		return nil, microerror.Maskf(invalidConfigError, "config.K8sClient must not be empty")
+	}
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
 	}
@@ -83,9 +86,6 @@ func New(config Config) (*Framework, error) {
 	}
 	if config.ResourceRouter == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.ResourceRouter must not be empty")
-	}
-	if config.RestClient == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.RestClient must not be empty")
 	}
 
 	if config.BackOffFactory == nil {
@@ -96,10 +96,10 @@ func New(config Config) (*Framework, error) {
 		crd:            config.CRD,
 		crdClient:      config.CRDClient,
 		informer:       config.Informer,
+		k8sClient:      config.K8sClient,
 		logger:         config.Logger,
 		name:           config.Name,
 		resourceRouter: config.ResourceRouter,
-		restClient:     config.RestClient,
 
 		bootOnce: sync.Once{},
 		mutex:    sync.Mutex{},

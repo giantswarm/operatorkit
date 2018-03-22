@@ -10,7 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/giantswarm/operatorkit/framework"
@@ -25,8 +24,7 @@ const (
 var (
 	err error
 
-	k8sClient     kubernetes.Interface
-	k8sRESTClient rest.Interface
+	k8sClient kubernetes.Interface
 )
 
 func init() {
@@ -34,7 +32,6 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	k8sRESTClient = k8sClient.CoreV1().RESTClient()
 }
 
 func newK8sClient() (kubernetes.Interface, error) {
@@ -97,10 +94,11 @@ func newFramework(name string) (*framework.Framework, error) {
 	}
 	cf := framework.Config{
 		Informer:       newInformer,
+		K8sClient:      k8sClient,
 		Logger:         logger,
-		RestClient:     k8sRESTClient,
-		Name:           name,
 		ResourceRouter: resourceRouter,
+
+		Name: name,
 	}
 	f, err := framework.New(cf)
 	if err != nil {
