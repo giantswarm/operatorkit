@@ -41,12 +41,6 @@
   version = "v2.6.0"
 
 [[projects]]
-  name = "github.com/emicklei/go-restful-swagger12"
-  packages = ["."]
-  revision = "dcef7f55730566d41eae5db10e7d6981829720f6"
-  version = "1.0.1"
-
-[[projects]]
   name = "github.com/ghodss/yaml"
   packages = ["."]
   revision = "0ca9ea5df5451ffdf184b4428c902747c2c11cd7"
@@ -332,7 +326,7 @@
     "unix",
     "windows"
   ]
-  revision = "f8f1a95d4d780e4e1a82ed8289c8806e4dba7733"
+  revision = "7ceb54c8418b8f9cdf0177b511d5cbb06e9fae39"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -372,6 +366,8 @@
   name = "k8s.io/api"
   packages = [
     "admissionregistration/v1alpha1",
+    "admissionregistration/v1beta1",
+    "apps/v1",
     "apps/v1beta1",
     "apps/v1beta2",
     "authentication/v1",
@@ -385,6 +381,7 @@
     "batch/v2alpha1",
     "certificates/v1beta1",
     "core/v1",
+    "events/v1beta1",
     "extensions/v1beta1",
     "networking/v1",
     "policy/v1beta1",
@@ -394,10 +391,11 @@
     "scheduling/v1alpha1",
     "settings/v1alpha1",
     "storage/v1",
+    "storage/v1alpha1",
     "storage/v1beta1"
   ]
-  revision = "9b9dca205a15b6ce9ef10091f05d60a13fdcf418"
-  version = "kubernetes-1.8.5"
+  revision = "acf347b865f29325eb61f4cd2df11e86e073a5ee"
+  version = "kubernetes-1.9.3"
 
 [[projects]]
   name = "k8s.io/apiextensions-apiserver"
@@ -408,13 +406,12 @@
     "pkg/client/clientset/clientset/scheme",
     "pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
   ]
-  revision = "996a70a27a0dcf53642ca52601b9107cb2ad810a"
-  version = "kubernetes-1.8.4"
+  revision = "f1425805c0335c1f5b23e70f0154747b3df5a16a"
+  version = "kubernetes-1.9.3"
 
 [[projects]]
   name = "k8s.io/apimachinery"
   packages = [
-    "pkg/api/equality",
     "pkg/api/errors",
     "pkg/api/meta",
     "pkg/api/resource",
@@ -424,7 +421,6 @@
     "pkg/apis/meta/v1alpha1",
     "pkg/conversion",
     "pkg/conversion/queryparams",
-    "pkg/conversion/unstructured",
     "pkg/fields",
     "pkg/labels",
     "pkg/runtime",
@@ -455,8 +451,8 @@
     "pkg/watch",
     "third_party/forked/golang/reflect"
   ]
-  revision = "5134afd2c0c91158afac0d8a28bd2177185a3bcc"
-  version = "kubernetes-1.8.3"
+  revision = "19e3f5aa3adca672c153d324e6b7d82ff8935f03"
+  version = "kubernetes-1.9.3"
 
 [[projects]]
   name = "k8s.io/client-go"
@@ -465,6 +461,8 @@
     "kubernetes",
     "kubernetes/scheme",
     "kubernetes/typed/admissionregistration/v1alpha1",
+    "kubernetes/typed/admissionregistration/v1beta1",
+    "kubernetes/typed/apps/v1",
     "kubernetes/typed/apps/v1beta1",
     "kubernetes/typed/apps/v1beta2",
     "kubernetes/typed/authentication/v1",
@@ -478,6 +476,7 @@
     "kubernetes/typed/batch/v2alpha1",
     "kubernetes/typed/certificates/v1beta1",
     "kubernetes/typed/core/v1",
+    "kubernetes/typed/events/v1beta1",
     "kubernetes/typed/extensions/v1beta1",
     "kubernetes/typed/networking/v1",
     "kubernetes/typed/policy/v1beta1",
@@ -487,6 +486,7 @@
     "kubernetes/typed/scheduling/v1alpha1",
     "kubernetes/typed/settings/v1alpha1",
     "kubernetes/typed/storage/v1",
+    "kubernetes/typed/storage/v1alpha1",
     "kubernetes/typed/storage/v1beta1",
     "pkg/version",
     "rest",
@@ -501,13 +501,14 @@
     "tools/pager",
     "tools/reference",
     "transport",
+    "util/buffer",
     "util/cert",
     "util/flowcontrol",
     "util/homedir",
     "util/integer"
   ]
-  revision = "1b75876d45719a84085528ee621939b0c68a4b85"
-  version = "kubernetes-1.8.5"
+  revision = "9389c055a838d4f208b699b3c7c51b70f2368861"
+  version = "kubernetes-1.9.1"
 
 [[projects]]
   branch = "master"
@@ -518,6 +519,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "24413d30fcde8a41734c8646633c5aeffc4b2a483a88d662f80dfb9e1569778e"
+  inputs-digest = "a9cc1fb5d6f8c92d64ba1f0e8ec0121f41f85eaae009ab2ac11bcf131a78de16"
   solver-name = "gps-cdcl"
   solver-version = 1
