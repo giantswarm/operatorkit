@@ -66,10 +66,10 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 			name: "case 2: DeletionTimestamp is already set",
 			object: &apiv1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
+					DeletionTimestamp: getTime(),
 					Name:              "TestPod",
 					Namespace:         "TestNamespace",
 					SelfLink:          "/some/path",
-					DeletionTimestamp: getTime(),
 				},
 			},
 			operatorName:                 "test-operator",
@@ -160,13 +160,13 @@ func Test_createRemoveFinalizerPatch(t *testing.T) {
 			name: "case 1: Finalizer is set correctly",
 			object: &apiv1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "TestPod",
-					Namespace: "TestNamespace",
-					SelfLink:  "/some/path",
+					DeletionTimestamp: getTime(),
 					Finalizers: []string{
 						"operatorkit.giantswarm.io/test-operator",
 					},
-					DeletionTimestamp: getTime(),
+					Name:      "TestPod",
+					Namespace: "TestNamespace",
+					SelfLink:  "/some/path",
 				},
 			},
 			operatorName: "test-operator",
@@ -184,15 +184,15 @@ func Test_createRemoveFinalizerPatch(t *testing.T) {
 			name: "case 2: Mulitple finalizers are set",
 			object: &apiv1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "TestPod",
-					Namespace: "TestNamespace",
-					SelfLink:  "/some/path",
+					DeletionTimestamp: getTime(),
 					Finalizers: []string{
 						"operatorkit.giantswarm.io/123-operator",
 						"operatorkit.giantswarm.io/test-operator",
 						"operatorkit.giantswarm.io/other-operator",
 					},
-					DeletionTimestamp: getTime(),
+					Name:      "TestPod",
+					Namespace: "TestNamespace",
+					SelfLink:  "/some/path",
 				},
 			},
 			operatorName: "test-operator",

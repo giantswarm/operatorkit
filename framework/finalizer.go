@@ -7,6 +7,7 @@ import (
 
 	"github.com/cenkalti/backoff"
 	"github.com/giantswarm/microerror"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -94,10 +95,6 @@ func createRemoveFinalizerPatch(obj interface{}, operatorName string) (patch []p
 		// Both cases should not be harmful in general, so we ignore it.
 		return nil, "", nil
 	}
-	if accessor.GetDeletionTimestamp() == nil {
-		// object has been in an delete event but does not have the timestamp yet.
-		return nil, "", nil
-	}
 	patch = []patchSpec{}
 	deletePatch := patchSpec{
 		Op:    "replace",
@@ -124,7 +121,9 @@ func (f *Framework) removeFinalizer(ctx context.Context, obj interface{}) error 
 	}
 	operation := func() error {
 		res := restClient.Patch(types.JSONPatchType).AbsPath(path).Body(p).Do()
-		if res.Error() != nil {
+		if errors.IsNotFound(res.Error()) {
+			return nil // the object is already gone, nothing to do.
+		} else if res.Error() != nil {
 			return microerror.Mask(res.Error())
 		}
 		return nil
