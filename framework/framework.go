@@ -81,15 +81,15 @@ func New(config Config) (*Framework, error) {
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
 	}
-	if config.Name == "" {
-		return nil, microerror.Maskf(invalidConfigError, "config.Name must not be empty")
-	}
 	if config.ResourceRouter == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.ResourceRouter must not be empty")
 	}
 
 	if config.BackOffFactory == nil {
 		config.BackOffFactory = DefaultBackOffFactory()
+	}
+	if config.Name == "" {
+		return nil, microerror.Maskf(invalidConfigError, "config.Name must not be empty")
 	}
 
 	f := &Framework{
