@@ -98,13 +98,13 @@ func New(config Config) (*Framework, error) {
 		informer:       config.Informer,
 		k8sClient:      config.K8sClient,
 		logger:         config.Logger,
-		name:           config.Name,
 		resourceRouter: config.ResourceRouter,
 
 		bootOnce: sync.Once{},
 		mutex:    sync.Mutex{},
 
 		backOffFactory: config.BackOffFactory,
+		name:           config.Name,
 	}
 
 	return f, nil
