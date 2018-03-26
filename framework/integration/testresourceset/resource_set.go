@@ -8,17 +8,17 @@ import (
 	"github.com/giantswarm/operatorkit/framework"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/giantswarm/operatorkit/framework/integration/testresourceset/testresource"
+	"github.com/giantswarm/operatorkit/framework/integration/testresource"
 )
 
-type ResourceSetConfig struct {
+type Config struct {
 	K8sClient kubernetes.Interface
 	Logger    micrologger.Logger
 
 	ProjectName string
 }
 
-func NewResourceSet(config ResourceSetConfig) (*framework.ResourceSet, error) {
+func New(config Config) (*framework.ResourceSet, error) {
 	var err error
 	var tr framework.Resource
 	{

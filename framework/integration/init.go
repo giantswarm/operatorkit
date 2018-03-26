@@ -65,14 +65,14 @@ func newFramework(name string) (*framework.Framework, error) {
 	}
 	var resourceSet *framework.ResourceSet
 	{
-		c := testresourceset.ResourceSetConfig{
+		c := testresourceset.Config{
 			K8sClient: k8sClient,
 			Logger:    logger,
 
 			ProjectName: name,
 		}
 
-		resourceSet, err = testresourceset.NewResourceSet(c)
+		resourceSet, err = testresourceset.New(c)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
