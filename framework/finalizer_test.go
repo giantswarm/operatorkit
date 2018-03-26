@@ -166,6 +166,7 @@ func Test_createRemoveFinalizerPatch(t *testing.T) {
 					Finalizers: []string{
 						"operatorkit.giantswarm.io/test-operator",
 					},
+					DeletionTimestamp: getTime(),
 				},
 			},
 			operatorName: "test-operator",
@@ -180,7 +181,7 @@ func Test_createRemoveFinalizerPatch(t *testing.T) {
 			errorMatcher: nil,
 		},
 		{
-			name: "case 1: Mulitple finalizers are set",
+			name: "case 2: Mulitple finalizers are set",
 			object: &apiv1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "TestPod",
@@ -191,6 +192,7 @@ func Test_createRemoveFinalizerPatch(t *testing.T) {
 						"operatorkit.giantswarm.io/test-operator",
 						"operatorkit.giantswarm.io/other-operator",
 					},
+					DeletionTimestamp: getTime(),
 				},
 			},
 			operatorName: "test-operator",

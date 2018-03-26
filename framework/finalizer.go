@@ -94,6 +94,10 @@ func createRemoveFinalizerPatch(obj interface{}, operatorName string) (patch []p
 		// Both cases should not be harmful in general, so we ignore it.
 		return nil, "", nil
 	}
+	if accessor.GetDeletionTimestamp() == nil {
+		// object has been in an delete event but does not have the timestamp yet.
+		return nil, "", nil
+	}
 	patch = []patchSpec{}
 	deletePatch := patchSpec{
 		Op:    "replace",
