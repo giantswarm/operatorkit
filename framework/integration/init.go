@@ -17,10 +17,6 @@ import (
 	"github.com/giantswarm/operatorkit/informer"
 )
 
-const (
-	namespace = "finalizer-integration-test"
-)
-
 var (
 	err error
 
@@ -48,13 +44,12 @@ func newK8sClient() (kubernetes.Interface, error) {
 	return k8sClient, nil
 }
 
-func newFramework(name string) (*framework.Framework, error) {
+func newFramework(name, namespace string, newInformer *informer.Informer) (*framework.Framework, error) {
 	logger, err := micrologger.New(micrologger.Config{})
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
-	var newInformer *informer.Informer
-	{
+	if newInformer == nil {
 		c := informer.Config{
 			Watcher: k8sClient.CoreV1().Pods(namespace),
 		}
@@ -107,9 +102,8 @@ func newFramework(name string) (*framework.Framework, error) {
 	return f, nil
 }
 
-func mustSetup() {
-	mustTeardown()
-
+func mustSetup(namespace string) {
+	mustTeardown(namespace)
 	ns := &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -127,7 +121,7 @@ func mustSetup() {
 	}
 }
 
-func mustTeardown() {
+func mustTeardown(namespace string) {
 	err := k8sClient.CoreV1().Namespaces().Delete(namespace, nil)
 	if errors.IsNotFound(err) {
 		// fall though
