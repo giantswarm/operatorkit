@@ -50,6 +50,45 @@ func (f *Framework) addFinalizer(obj interface{}) (stopReconciliation bool, err 
 	return true, nil
 }
 
+func (f *Framework) removeFinalizer(ctx context.Context, obj interface{}) error {
+	restClient := f.k8sClient.CoreV1().RESTClient()
+	patch, path, err := createRemoveFinalizerPatch(obj, f.name)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+	if patch == nil {
+		f.logger.LogCtx(ctx, "function", "removeFinalizer", "level", "warning", "message", "object is missing a finalizer")
+		return nil
+	}
+	p, err := json.Marshal(patch)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+	operation := func() error {
+		res := restClient.Patch(types.JSONPatchType).AbsPath(path).Body(p).Do()
+		if errors.IsNotFound(res.Error()) {
+			return nil // the object is already gone, nothing to do.
+		} else if res.Error() != nil {
+			return microerror.Mask(res.Error())
+		}
+		return nil
+	}
+	err = backoff.Retry(operation, f.backOffFactory())
+	if err != nil {
+		return microerror.Mask(err)
+	}
+	return nil
+}
+
+func containsFinalizer(finalizers []string, finalizer string) bool {
+	for _, f := range finalizers {
+		if f == finalizer {
+			return true
+		}
+	}
+	return false
+}
+
 func createAddFinalizerPatch(obj interface{}, operatorName string) (patch []patchSpec, path string, stopReconciliation bool, err error) {
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
@@ -103,45 +142,6 @@ func createRemoveFinalizerPatch(obj interface{}, operatorName string) (patch []p
 	}
 	patch = append(patch, deletePatch)
 	return patch, accessor.GetSelfLink(), nil
-}
-
-func (f *Framework) removeFinalizer(ctx context.Context, obj interface{}) error {
-	restClient := f.k8sClient.CoreV1().RESTClient()
-	patch, path, err := createRemoveFinalizerPatch(obj, f.name)
-	if err != nil {
-		return microerror.Mask(err)
-	}
-	if patch == nil {
-		f.logger.LogCtx(ctx, "function", "removeFinalizer", "level", "warning", "message", "object is missing a finalizer")
-		return nil
-	}
-	p, err := json.Marshal(patch)
-	if err != nil {
-		return microerror.Mask(err)
-	}
-	operation := func() error {
-		res := restClient.Patch(types.JSONPatchType).AbsPath(path).Body(p).Do()
-		if errors.IsNotFound(res.Error()) {
-			return nil // the object is already gone, nothing to do.
-		} else if res.Error() != nil {
-			return microerror.Mask(res.Error())
-		}
-		return nil
-	}
-	err = backoff.Retry(operation, f.backOffFactory())
-	if err != nil {
-		return microerror.Mask(err)
-	}
-	return nil
-}
-
-func containsFinalizer(finalizers []string, finalizer string) bool {
-	for _, f := range finalizers {
-		if f == finalizer {
-			return true
-		}
-	}
-	return false
 }
 
 func getFinalizerName(name string) string {
