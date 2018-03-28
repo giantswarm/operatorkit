@@ -1,14 +1,14 @@
 // +build k8srequired
 
-package integration
+package client
 
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func createConfigMap(configMap *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-	createConfigMap, err := k8sClient.CoreV1().ConfigMaps(namespace).Create(configMap)
+func CreateConfigMap(configMap *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+	createConfigMap, err := k8sClient.CoreV1().ConfigMaps(configMap.Namespace).Create(configMap)
 	if err != nil {
 		return nil, err
 	}
@@ -16,7 +16,7 @@ func createConfigMap(configMap *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 	return createConfigMap, nil
 }
 
-func getConfigMap(name string) (*corev1.ConfigMap, error) {
+func GetConfigMap(name, namespace string) (*corev1.ConfigMap, error) {
 	configMap, err := k8sClient.CoreV1().ConfigMaps(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -25,7 +25,7 @@ func getConfigMap(name string) (*corev1.ConfigMap, error) {
 	return configMap, nil
 }
 
-func deleteConfigMap(name string) error {
+func DeleteConfigMap(name, namespace string) error {
 	err := k8sClient.CoreV1().ConfigMaps(namespace).Delete(name, nil)
 	if err != nil {
 		return err
