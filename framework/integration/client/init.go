@@ -23,6 +23,13 @@ var (
 	k8sClient kubernetes.Interface
 )
 
+func init() {
+	k8sClient, err = newK8sClient()
+	if err != nil {
+		panic(err)
+	}
+}
+
 func NewFramework(name, namespace string) (*framework.Framework, error) {
 	logger, err := micrologger.New(micrologger.Config{})
 	if err != nil {
@@ -107,13 +114,6 @@ func MustTeardown(namespace string) {
 	if errors.IsNotFound(err) {
 		// fall though
 	} else if err != nil {
-		panic(err)
-	}
-}
-
-func init() {
-	k8sClient, err = newK8sClient()
-	if err != nil {
 		panic(err)
 	}
 }
