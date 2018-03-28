@@ -16,4 +16,6 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	client.MustSetup(testNamespace)
 	defer client.MustTeardown(testNamespace)
 
+	// TODO: Implement the actual test here.
+
 }
