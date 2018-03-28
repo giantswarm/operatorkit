@@ -1,6 +1,6 @@
 // +build k8srequired
 
-package integration
+package client
 
 import (
 	"github.com/giantswarm/e2e-harness/pkg/harness"

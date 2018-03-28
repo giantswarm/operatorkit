@@ -1,14 +1,14 @@
 // +build k8srequired
 
-package integration
+package client
 
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func CreateConfigMap(configMap *corev1.ConfigMap, namespace string) (*corev1.ConfigMap, error) {
-	createConfigMap, err := k8sClient.CoreV1().ConfigMaps(namespace).Create(configMap)
+func CreateConfigMap(configMap *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+	createConfigMap, err := k8sClient.CoreV1().ConfigMaps(configMap.Namespace).Create(configMap)
 	if err != nil {
 		return nil, err
 	}
