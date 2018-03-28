@@ -42,9 +42,9 @@ jobs:
       TEST_DIR: "informer/integration"
     <<: *e2eTest
 
-  e2eTestFrameworkIntegration:
+  e2eTestFrameworkIntegrationBasic:
     environment:
-      TEST_DIR: "framework/integration"
+      TEST_DIR: "framework/integration/test/basic"
     <<: *e2eTest
 
 
@@ -59,6 +59,6 @@ workflows:
           requires:
           - build
 
-      - e2eTestFrameworkIntegration:
+      - e2eTestFrameworkIntegrationBasic:
           requires:
           - build

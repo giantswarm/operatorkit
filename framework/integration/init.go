@@ -23,27 +23,6 @@ var (
 	k8sClient kubernetes.Interface
 )
 
-func init() {
-	k8sClient, err = newK8sClient()
-	if err != nil {
-		panic(err)
-	}
-}
-
-func newK8sClient() (kubernetes.Interface, error) {
-	config, err := clientcmd.BuildConfigFromFlags("", harness.DefaultKubeConfig)
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
-
-	k8sClient, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
-
-	return k8sClient, nil
-}
-
 func NewFramework(name, namespace string) (*framework.Framework, error) {
 	logger, err := micrologger.New(micrologger.Config{})
 	if err != nil {
@@ -130,4 +109,25 @@ func MustTeardown(namespace string) {
 	} else if err != nil {
 		panic(err)
 	}
+}
+
+func init() {
+	k8sClient, err = newK8sClient()
+	if err != nil {
+		panic(err)
+	}
+}
+
+func newK8sClient() (kubernetes.Interface, error) {
+	config, err := clientcmd.BuildConfigFromFlags("", harness.DefaultKubeConfig)
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
+	k8sClient, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
+	return k8sClient, nil
 }

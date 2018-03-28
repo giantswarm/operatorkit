@@ -2,5 +2,5 @@ TODO
 !vendor/**
 
 .e2e-harness/
-informer/integration/test/basic/operatorkit-e2e
-framework/integration/operatorkit-e2e
+informer/integration/operatorkit-e2e
+framework/integration/test/basic/operatorkit-e2e
