@@ -1,10 +1,12 @@
 // +build k8srequired
 
-package integration
+package basic
 
 import (
 	"reflect"
 	"testing"
+
+	"github.com/giantswarm/operatorkit/framework/integration"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -15,15 +17,17 @@ import (
 // operations. The test verifies that finalizers are added and removed as
 // expected. It does not cover correct behavior with reconciliation.
 func Test_Finalizer_Integration_Basic(t *testing.T) {
-	mustSetup()
-	defer mustTeardown()
-
-	operatorName := "test-operator"
 	configMapName := "test-cm"
 	expectedFinalizers := []string{
 		"operatorkit.giantswarm.io/test-operator",
 	}
-	operatorkitFramework, err := newFramework(operatorName)
+	operatorName := "test-operator"
+	testNamespace := "finalizer-integration-basic-test"
+
+	integration.MustSetup(testNamespace)
+	defer integration.MustTeardown(testNamespace)
+
+	operatorkitFramework, err := integration.NewFramework(operatorName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -35,12 +39,12 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      configMapName,
-			Namespace: namespace,
+			Namespace: testNamespace,
 		},
 		Data: map[string]string{},
 	}
 	// We create a configmap which does not have any finalizers.
-	createdConfigMap, err := createConfigMap(cm)
+	createdConfigMap, err := integration.CreateConfigMap(cm, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -48,7 +52,7 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	// We directly pass the configmap to UpdateFunc.
 	operatorkitFramework.UpdateFunc(createdConfigMap, createdConfigMap)
 
-	resultConfigMap, err := getConfigMap(configMapName)
+	resultConfigMap, err := integration.GetConfigMap(configMapName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -59,11 +63,11 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	}
 
 	// We delete out configmap.
-	err = deleteConfigMap(configMapName)
+	err = integration.DeleteConfigMap(configMapName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
-	resultConfigMap, err = getConfigMap(configMapName)
+	resultConfigMap, err = integration.GetConfigMap(configMapName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -82,7 +86,7 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	operatorkitFramework.DeleteFunc(resultConfigMap)
 
 	// We verify that our configmap is completely gone now.
-	_, err = getConfigMap(configMapName)
+	_, err = integration.GetConfigMap(configMapName, testNamespace)
 	if !errors.IsNotFound(err) {
 		t.Fatalf("error == %#v, want NotFound error", err)
 	}
