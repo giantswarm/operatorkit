@@ -40,6 +40,7 @@ var (
 )
 
 func init() {
+	prometheus.MustRegister(cacheSizeGauge)
 	prometheus.MustRegister(watcherCloseCounter)
 	prometheus.MustRegister(watchEventCounter)
 }
