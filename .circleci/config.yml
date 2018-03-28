@@ -1,3 +1,20 @@
+e2eTest: &e2eTest
+  machine: true
+  working_directory: /home/circleci/.go_workspace/src/github.com/giantswarm/operatorkit
+  steps:
+  - checkout
+
+  - run: |
+      wget -q $(curl -sS https://api.github.com/repos/giantswarm/e2e-harness/releases/latest | grep browser_download_url | head -n 1 | cut -d '"' -f 4)
+      chmod +x ./e2e-harness
+  - run: ./e2e-harness localkube
+  - run: ./e2e-harness setup --remote=false
+  - run: ./e2e-harness test --test-dir=${TEST_DIR}
+  - run:
+      command: ./e2e-harness teardown
+      when: always
+
+
 version: 2
 jobs:
   build:
@@ -9,36 +26,39 @@ jobs:
         wget -q $(curl -sS -H "Authorization: token $RELEASE_TOKEN" https://api.github.com/repos/giantswarm/architect/releases/latest | grep browser_download_url | head -n 1 | cut -d '"' -f 4)
         chmod +x ./architect
         ./architect version
+
     - run: ./architect build
+
     - deploy:
         command: |
           if [ "${CIRCLE_BRANCH}" == "master" ]; then
             ./architect deploy
           fi
 
-  e2eTestInformerIntegration:
-    machine: true
-    working_directory: /home/circleci/.go_workspace/src/github.com/giantswarm/operatorkit
-    environment:
-      MINIKUBE_VERSION: v0.25.0
-    steps:
-    - checkout
 
-    - run: |
-        wget -q $(curl -sS https://api.github.com/repos/giantswarm/e2e-harness/releases/latest | grep browser_download_url | head -n 1 | cut -d '"' -f 4)
-        chmod +x ./e2e-harness
-    - run: ./e2e-harness localkube
-    - run: ./e2e-harness setup --remote=false
-    - run: ./e2e-harness test --test-dir=informer/integration
-    - run:
-        command: ./e2e-harness teardown
-        when: always
+
+  e2eTestInformerIntegration:
+    environment:
+      TEST_DIR: "informer/integration"
+    <<: *e2eTest
+
+  e2eTestFrameworkIntegration:
+    environment:
+      TEST_DIR: "framework/integration"
+    <<: *e2eTest
+
+
 
 workflows:
   version: 2
   build_e2e:
     jobs:
       - build
+
       - e2eTestInformerIntegration:
+          requires:
+          - build
+
+      - e2eTestFrameworkIntegration:
           requires:
           - build

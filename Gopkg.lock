@@ -50,7 +50,7 @@
   branch = "master"
   name = "github.com/giantswarm/e2e-harness"
   packages = ["pkg/harness"]
-  revision = "b6f3fbcebf6ed04a4b6ef62b1fd4d14920cab704"
+  revision = "8a1f95276ffb0ab135f90f7d8aca4a3274d86bbb"
 
 [[projects]]
   branch = "master"
