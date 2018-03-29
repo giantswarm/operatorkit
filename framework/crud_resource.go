@@ -55,7 +55,6 @@ func (r *CRUDResource) EnsureCreated(ctx context.Context, obj interface{}) error
 			return nil
 		}
 		if resourcecanceledcontext.IsCanceled(ctx) {
-			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 			return nil
 		}
 
@@ -76,7 +75,6 @@ func (r *CRUDResource) EnsureCreated(ctx context.Context, obj interface{}) error
 			return nil
 		}
 		if resourcecanceledcontext.IsCanceled(ctx) {
-			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 			return nil
 		}
 
@@ -97,7 +95,6 @@ func (r *CRUDResource) EnsureCreated(ctx context.Context, obj interface{}) error
 			return nil
 		}
 		if resourcecanceledcontext.IsCanceled(ctx) {
-			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 			return nil
 		}
 
@@ -117,7 +114,6 @@ func (r *CRUDResource) EnsureCreated(ctx context.Context, obj interface{}) error
 			return nil
 		}
 		if resourcecanceledcontext.IsCanceled(ctx) {
-			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 			return nil
 		}
 
@@ -142,7 +138,6 @@ func (r *CRUDResource) EnsureCreated(ctx context.Context, obj interface{}) error
 			return nil
 		}
 		if resourcecanceledcontext.IsCanceled(ctx) {
-			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 			return nil
 		}
 
@@ -167,7 +162,6 @@ func (r *CRUDResource) EnsureCreated(ctx context.Context, obj interface{}) error
 			return nil
 		}
 		if resourcecanceledcontext.IsCanceled(ctx) {
-			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 			return nil
 		}
 
@@ -199,7 +193,6 @@ func (r *CRUDResource) EnsureDeleted(ctx context.Context, obj interface{}) error
 			return nil
 		}
 		if resourcecanceledcontext.IsCanceled(ctx) {
-			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 			return nil
 		}
 
@@ -220,7 +213,6 @@ func (r *CRUDResource) EnsureDeleted(ctx context.Context, obj interface{}) error
 			return nil
 		}
 		if resourcecanceledcontext.IsCanceled(ctx) {
-			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 			return nil
 		}
 
@@ -241,7 +233,6 @@ func (r *CRUDResource) EnsureDeleted(ctx context.Context, obj interface{}) error
 			return nil
 		}
 		if resourcecanceledcontext.IsCanceled(ctx) {
-			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 			return nil
 		}
 
@@ -261,7 +252,6 @@ func (r *CRUDResource) EnsureDeleted(ctx context.Context, obj interface{}) error
 			return nil
 		}
 		if resourcecanceledcontext.IsCanceled(ctx) {
-			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 			return nil
 		}
 
@@ -286,7 +276,6 @@ func (r *CRUDResource) EnsureDeleted(ctx context.Context, obj interface{}) error
 			return nil
 		}
 		if resourcecanceledcontext.IsCanceled(ctx) {
-			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 			return nil
 		}
 
@@ -311,7 +300,6 @@ func (r *CRUDResource) EnsureDeleted(ctx context.Context, obj interface{}) error
 			return nil
 		}
 		if resourcecanceledcontext.IsCanceled(ctx) {
-			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 			return nil
 		}
 

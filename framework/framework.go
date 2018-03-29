@@ -18,6 +18,7 @@ import (
 
 	"github.com/giantswarm/operatorkit/client/k8scrdclient"
 	"github.com/giantswarm/operatorkit/framework/context/reconciliationcanceledcontext"
+	"github.com/giantswarm/operatorkit/framework/context/resourcecanceledcontext"
 	"github.com/giantswarm/operatorkit/informer"
 )
 
@@ -301,6 +302,7 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 
 	for _, r := range resources {
 		ctx = setLoggerCtxValue(ctx, loggerResourceKey, r.Name())
+		ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 
 		err := r.EnsureDeleted(ctx, obj)
 		if err != nil {
@@ -341,6 +343,7 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 
 	for _, r := range resources {
 		ctx = setLoggerCtxValue(ctx, loggerResourceKey, r.Name())
+		ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 
 		err := r.EnsureCreated(ctx, obj)
 		if err != nil {
