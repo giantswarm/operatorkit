@@ -1,3 +1,5 @@
+// +build k8srequired
+
 package reconciliation
 
 import (
