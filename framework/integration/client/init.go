@@ -3,6 +3,8 @@
 package client
 
 import (
+	"time"
+
 	"github.com/giantswarm/e2e-harness/pkg/harness"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
@@ -38,7 +40,10 @@ func NewFramework(name, namespace string) (*framework.Framework, error) {
 	var newInformer *informer.Informer
 	{
 		c := informer.Config{
-			Watcher: k8sClient.CoreV1().Pods(namespace),
+			Watcher: k8sClient.CoreV1().ConfigMaps(namespace),
+
+			RateWait:     time.Second * 2,
+			ResyncPeriod: time.Second * 10,
 		}
 		newInformer, err = informer.New(c)
 		if err != nil {
