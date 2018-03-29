@@ -47,6 +47,11 @@ jobs:
       TEST_DIR: "framework/integration/test/basic"
     <<: *e2eTest
 
+  e2eTestFrameworkIntegrationReconciliation:
+    environment:
+      TEST_DIR: "framework/integration/test/reconciliation"
+    <<: *e2eTest
+
 
 
 workflows:
@@ -60,5 +65,9 @@ workflows:
           - build
 
       - e2eTestFrameworkIntegrationBasic:
+          requires:
+          - build
+
+      - e2eTestFrameworkIntegrationReconciliation:
           requires:
           - build
