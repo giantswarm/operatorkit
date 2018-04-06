@@ -24,22 +24,49 @@ type patchSpec struct {
 
 func (f *Framework) addFinalizer(obj interface{}) (stopReconciliation bool, err error) {
 	restClient := f.k8sClient.CoreV1().RESTClient()
-	patch, path, result, err := createAddFinalizerPatch(obj, f.name)
+	// We get the accessor of the object which we got passed from the framework.
+	accessor, err := meta.Accessor(obj)
 	if err != nil {
 		return false, microerror.Mask(err)
 	}
-	if patch == nil {
-		return result, err
-	}
-	p, err := json.Marshal(patch)
-	if err != nil {
-		return false, microerror.Mask(err)
-	}
+	path := accessor.GetSelfLink()
+	// Continuing with reconciliation is set as a default here.
+	stopReconciliation = false
+
 	operation := func() error {
-		res := restClient.Patch(types.JSONPatchType).AbsPath(path).Body(p).Do()
-		if res.Error() != nil {
+		// We get an up to date version of our object from k8s.
+		res := restClient.Get().AbsPath(path).Do()
+		// We parse the response from the RESTClient to runtime object.
+		obj, err = res.Get()
+		if err != nil {
+			return microerror.Mask(err)
+		}
+		patch, result, err := createAddFinalizerPatch(obj, f.name)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+		if patch == nil {
+			// patch is empty, nothing to do.
+			// We trust createAddFinalizerPatch with the decision to stop reconciliation.
+			stopReconciliation = result
+			return nil
+		}
+		p, err := json.Marshal(patch)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+		res = restClient.Patch(types.JSONPatchType).AbsPath(path).Body(p).Do()
+		if IsInvalidResourceVersionError(res.Error()) {
+			// We log a warning, this should not be the case. This warning should help
+			// identify race conditions.
+			f.logger.Log("function", "addFinalizer", "level", "warning", "message", "object has out of date ResourceVersion set")
+			return microerror.Mask(res.Error())
+		} else if res.Error() != nil {
 			return microerror.Mask(res.Error())
 		}
+		// The finalizer was added, we should stop reconciliation and wait for the
+		// next update event to come in.
+		stopReconciliation = true
 		return nil
 	}
 	err = backoff.Retry(operation, f.backOffFactory())
@@ -47,7 +74,7 @@ func (f *Framework) addFinalizer(obj interface{}) (stopReconciliation bool, err 
 		return false, microerror.Mask(err)
 	}
 
-	return true, nil
+	return stopReconciliation, nil
 }
 
 func (f *Framework) removeFinalizer(ctx context.Context, obj interface{}) error {
@@ -89,17 +116,17 @@ func containsFinalizer(finalizers []string, finalizer string) bool {
 	return false
 }
 
-func createAddFinalizerPatch(obj interface{}, operatorName string) (patch []patchSpec, path string, stopReconciliation bool, err error) {
+func createAddFinalizerPatch(obj interface{}, operatorName string) (patch []patchSpec, stopReconciliation bool, err error) {
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
-		return nil, "", false, microerror.Mask(err)
+		return nil, false, microerror.Mask(err)
 	}
 	if accessor.GetDeletionTimestamp() != nil {
-		return nil, "", true, nil // object has been marked for deletion, we should ignore it.
+		return nil, true, nil // object has been marked for deletion, we should ignore it.
 	}
 	finalizerName := getFinalizerName(operatorName)
 	if containsFinalizer(accessor.GetFinalizers(), finalizerName) {
-		return nil, "", false, nil // object already has the finalizer.
+		return nil, false, nil // object already has the finalizer.
 	}
 	patch = []patchSpec{}
 	if len(accessor.GetFinalizers()) == 0 {
@@ -125,7 +152,7 @@ func createAddFinalizerPatch(obj interface{}, operatorName string) (patch []patc
 	}
 	patch = append(patch, testResourceVersionPatch)
 
-	return patch, accessor.GetSelfLink(), true, nil
+	return patch, true, nil
 }
 
 func createRemoveFinalizerPatch(obj interface{}, operatorName string) (patch []patchSpec, path string, err error) {

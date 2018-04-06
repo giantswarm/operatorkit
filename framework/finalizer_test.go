@@ -15,7 +15,6 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 		operatorName                 string
 		expectedCancelReconciliation bool
 		expectedPatch                []patchSpec
-		expectedPath                 string
 		errorMatcher                 func(error) bool
 	}{
 		{
@@ -47,7 +46,6 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 					Value: "123",
 				},
 			},
-			expectedPath: "/some/path",
 			errorMatcher: nil,
 		},
 		{
@@ -65,7 +63,6 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 			operatorName:                 "test-operator",
 			expectedCancelReconciliation: false,
 			expectedPatch:                nil,
-			expectedPath:                 "",
 			errorMatcher:                 nil,
 		},
 		{
@@ -81,7 +78,6 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 			operatorName:                 "test-operator",
 			expectedCancelReconciliation: true,
 			expectedPatch:                nil,
-			expectedPath:                 "",
 			errorMatcher:                 nil,
 		},
 		{
@@ -112,7 +108,6 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 					Value: "123",
 				},
 			},
-			expectedPath: "/some/path",
 			errorMatcher: nil,
 		},
 	}
@@ -120,7 +115,7 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			patch, path, cancelReconciliation, err := createAddFinalizerPatch(tc.object, tc.operatorName)
+			patch, cancelReconciliation, err := createAddFinalizerPatch(tc.object, tc.operatorName)
 
 			switch {
 			case err == nil && tc.errorMatcher == nil:
@@ -134,9 +129,6 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 			}
 			if !reflect.DeepEqual(patch, tc.expectedPatch) {
 				t.Fatalf("patch == %v, want %v", patch, tc.expectedPatch)
-			}
-			if path != tc.expectedPath {
-				t.Fatalf("path == %v, want %v", path, tc.expectedPath)
 			}
 			if cancelReconciliation != tc.expectedCancelReconciliation {
 				t.Fatalf("cancelReconciliation == %v, want %v", cancelReconciliation, tc.expectedCancelReconciliation)

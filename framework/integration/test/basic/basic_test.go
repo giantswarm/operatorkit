@@ -66,21 +66,10 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	// ResourceVersion of an object.
 	operatorkitFramework.UpdateFunc(createdConfigMap, createdConfigMap)
 
+	// We run UpdateFunc multiple times on the old object to check for duplicates.
+	operatorkitFramework.UpdateFunc(createdConfigMap, createdConfigMap)
+
 	// We get the current configmap.
-	updatedConfigMap, err := client.GetConfigMap(configMapName, testNamespace)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
-
-	// We verify that no finalizer was added and the ResourceVersion was honored.
-	if len(updatedConfigMap.GetFinalizers()) > 0 {
-		t.Fatalf("finalizers length > 0, want 0")
-	}
-
-	// We directly pass the configmap to UpdateFunc.
-	// Now the ResourceVersion is correct and the finalizer should be added.
-	operatorkitFramework.UpdateFunc(updatedConfigMap, updatedConfigMap)
-
 	resultConfigMap, err := client.GetConfigMap(configMapName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
