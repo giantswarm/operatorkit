@@ -49,8 +49,37 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 		t.Fatal("expected", nil, "got", err)
 	}
 
-	// We directly pass the configmap to UpdateFunc.
+	// We update the configmap with a meanless label to ensure a change in the
+	// ResourceVersion of the ConfigMap.
+	cm.SetLabels(
+		map[string]string{
+			"testlabel": "testlabel",
+		},
+	)
+	_, err = client.UpdateConfigMap(cm)
+	if err != nil {
+		t.Fatal("expected", nil, "got", err)
+	}
+
+	// We directly pass the _old_ configmap to UpdateFunc.
+	// This is expected to fail, we want to make sure that we only use the latest
+	// ResourceVersion of an object.
 	operatorkitFramework.UpdateFunc(createdConfigMap, createdConfigMap)
+
+	// We get the current configmap.
+	updatedConfigMap, err := client.GetConfigMap(configMapName, testNamespace)
+	if err != nil {
+		t.Fatal("expected", nil, "got", err)
+	}
+
+	// We verify that no finalizer was added and the ResourceVersion was honored.
+	if len(updatedConfigMap.GetFinalizers()) > 0 {
+		t.Fatalf("finalizers length > 0, want 0")
+	}
+
+	// We directly pass the configmap to UpdateFunc.
+	// Now the ResourceVersion is correct and the finalizer should be added.
+	operatorkitFramework.UpdateFunc(updatedConfigMap, updatedConfigMap)
 
 	resultConfigMap, err := client.GetConfigMap(configMapName, testNamespace)
 	if err != nil {

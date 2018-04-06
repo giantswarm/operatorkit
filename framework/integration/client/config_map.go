@@ -16,6 +16,15 @@ func CreateConfigMap(configMap *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 	return createConfigMap, nil
 }
 
+func DeleteConfigMap(name, namespace string) error {
+	err := k8sClient.CoreV1().ConfigMaps(namespace).Delete(name, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func GetConfigMap(name, namespace string) (*corev1.ConfigMap, error) {
 	configMap, err := k8sClient.CoreV1().ConfigMaps(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
@@ -25,11 +34,11 @@ func GetConfigMap(name, namespace string) (*corev1.ConfigMap, error) {
 	return configMap, nil
 }
 
-func DeleteConfigMap(name, namespace string) error {
-	err := k8sClient.CoreV1().ConfigMaps(namespace).Delete(name, nil)
+func UpdateConfigMap(configMap *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+	updateConfigMap, err := k8sClient.CoreV1().ConfigMaps(configMap.Namespace).Update(configMap)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return updateConfigMap, nil
 }

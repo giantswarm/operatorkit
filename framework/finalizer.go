@@ -117,6 +117,14 @@ func createAddFinalizerPatch(obj interface{}, operatorName string) (patch []patc
 		Path:  "/metadata/finalizers/-",
 	}
 	patch = append(patch, addPatch)
+
+	testResourceVersionPatch := patchSpec{
+		Op:    "test",
+		Value: accessor.GetResourceVersion(),
+		Path:  "/metadata/resourceVersion",
+	}
+	patch = append(patch, testResourceVersionPatch)
+
 	return patch, accessor.GetSelfLink(), true, nil
 }
 

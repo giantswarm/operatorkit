@@ -22,9 +22,10 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 			name: "case 0: No finalizer is set yet",
 			object: &apiv1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "TestPod",
-					Namespace: "TestNamespace",
-					SelfLink:  "/some/path",
+					Name:            "TestPod",
+					Namespace:       "TestNamespace",
+					ResourceVersion: "123",
+					SelfLink:        "/some/path",
 				},
 			},
 			operatorName:                 "test-operator",
@@ -39,6 +40,11 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 					Op:    "add",
 					Path:  "/metadata/finalizers/-",
 					Value: "operatorkit.giantswarm.io/test-operator",
+				},
+				{
+					Op:    "test",
+					Path:  "/metadata/resourceVersion",
+					Value: "123",
 				},
 			},
 			expectedPath: "/some/path",
@@ -82,9 +88,10 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 			name: "case 3: Other finalizers are already set",
 			object: &apiv1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "TestPod",
-					Namespace: "TestNamespace",
-					SelfLink:  "/some/path",
+					Name:            "TestPod",
+					Namespace:       "TestNamespace",
+					ResourceVersion: "123",
+					SelfLink:        "/some/path",
 					Finalizers: []string{
 						"operatorkit.giantswarm.io/other-operator",
 						"operatorkit.giantswarm.io/123-operator",
@@ -98,6 +105,11 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 					Op:    "add",
 					Path:  "/metadata/finalizers/-",
 					Value: "operatorkit.giantswarm.io/test-operator",
+				},
+				{
+					Op:    "test",
+					Path:  "/metadata/resourceVersion",
+					Value: "123",
 				},
 			},
 			expectedPath: "/some/path",
