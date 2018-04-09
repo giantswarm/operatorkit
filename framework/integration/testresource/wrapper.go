@@ -3,14 +3,10 @@
 package testresource
 
 import (
-	"github.com/giantswarm/micrologger"
-	"github.com/giantswarm/operatorkit/framework"
-	"k8s.io/client-go/kubernetes"
-)
+	"context"
 
-var (
-	createCount = 0
-	deleteCount = 0
+	"github.com/giantswarm/micrologger"
+	"k8s.io/client-go/kubernetes"
 )
 
 type Config struct {
@@ -20,28 +16,53 @@ type Config struct {
 }
 
 type Wrapper struct {
-	Resource framework.Resource
+	k8sClient kubernetes.Interface
+	logger    micrologger.Logger
+
+	createCount int
+	deleteCount int
+	name        string
 }
 
 func New(config Config) (*Wrapper, error) {
-	r := &Resource{
+	w := &Wrapper{
 		k8sClient: config.K8sClient,
 		logger:    config.Logger,
 
-		name: config.Name,
+		createCount: 0,
+		deleteCount: 0,
+		name:        config.Name,
 	}
 
-	tr := &Wrapper{
-		Resource: r,
-	}
-
-	return tr, nil
+	return w, nil
 }
 
-func (r *Wrapper) GetCreateCount() int {
-	return createCount
+func (w *Wrapper) EnsureCreated(ctx context.Context, obj interface{}) error {
+	w.IncrementCreateCount()
+	return nil
 }
 
-func (r *Wrapper) GetDeleteCount() int {
-	return deleteCount
+func (w *Wrapper) EnsureDeleted(ctx context.Context, obj interface{}) error {
+	w.IncrementDeleteCount()
+	return nil
+}
+
+func (w *Wrapper) Name() string {
+	return "testresource"
+}
+
+func (w *Wrapper) GetCreateCount() int {
+	return w.createCount
+}
+
+func (w *Wrapper) GetDeleteCount() int {
+	return w.deleteCount
+}
+
+func (w *Wrapper) IncrementCreateCount() {
+	w.createCount++
+}
+
+func (w *Wrapper) IncrementDeleteCount() {
+	w.deleteCount++
 }

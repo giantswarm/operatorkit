@@ -28,11 +28,10 @@ func New(config Config) (*framework.ResourceSet, error) {
 		{
 			c := testresource.Config{}
 
-			testWrapper, err := testresource.New(c)
+			tr, err = testresource.New(c)
 			if err != nil {
 				return nil, microerror.Mask(err)
 			}
-			tr = testWrapper.Resource
 		}
 
 		resources = []framework.Resource{
