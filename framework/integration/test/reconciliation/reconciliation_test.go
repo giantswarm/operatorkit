@@ -10,7 +10,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/giantswarm/operatorkit/framework"
 	"github.com/giantswarm/operatorkit/framework/integration/client"
+	"github.com/giantswarm/operatorkit/framework/integration/testresource"
 )
 
 // Test_Finalizer_Integration_Reconciliation is a integration test for
@@ -25,7 +27,31 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	client.MustSetup(testNamespace)
 	defer client.MustTeardown(testNamespace)
 
-	operatorkitFramework, err := client.NewFramework(operatorName, testNamespace)
+	var testWrapper testresource.Wrapper
+
+	var tr framework.Resource
+	{
+		c := testresource.Config{}
+
+		testWrapper, err := testresource.New(c)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
+		}
+		tr = testWrapper.Resource
+	}
+
+	resources := []framework.Resource{
+		tr,
+	}
+
+	c := client.Config{
+		Resources: resources,
+
+		Name:      operatorName,
+		Namespace: testNamespace,
+	}
+
+	operatorkitFramework, err := client.NewFramework(c)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -110,6 +136,14 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	// We verify, that our finalizer is still set.
 	if !reflect.DeepEqual(resultConfigMap.GetFinalizers(), expectedFinalizers) {
 		t.Fatalf("finalizers == %v, want %v", resultConfigMap.GetFinalizers(), expectedFinalizers)
+	}
+
+	if testWrapper.GetDeleteCount() != 4 {
+		t.Fatalf("finalizers == %v, want %v", testWrapper.GetDeleteCount(), 4)
+	}
+
+	if testWrapper.GetCreateCount() != 3 {
+		t.Fatalf("finalizers == %v, want %v", testWrapper.GetCreateCount(), 3)
 	}
 
 }
