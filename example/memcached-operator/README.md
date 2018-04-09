@@ -49,5 +49,5 @@ connecting code in this case can look like:
 memcache.New("mycluster0:11211", "mycluster1:11211", "mycluster2:11212")
 ```
 
-[gomemcache]: https://github.com/bradfitz/gomemcache [memcached]:
-https://memcached.org/
+[gomemcache]: https://github.com/bradfitz/gomemcache
+[memcached]: https://memcached.org/
