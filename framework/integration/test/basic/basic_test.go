@@ -62,12 +62,10 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	}
 
 	// We directly pass the _old_ configmap to UpdateFunc.
-	// This is expected to fail, we want to make sure that we only use the latest
-	// ResourceVersion of an object.
-	operatorkitFramework.UpdateFunc(createdConfigMap, createdConfigMap)
+	operatorkitFramework.UpdateFunc(nil, createdConfigMap)
 
 	// We run UpdateFunc multiple times on the old object to check for duplicates.
-	operatorkitFramework.UpdateFunc(createdConfigMap, createdConfigMap)
+	operatorkitFramework.UpdateFunc(nil, createdConfigMap)
 
 	// We get the current configmap.
 	resultConfigMap, err := client.GetConfigMap(configMapName, testNamespace)

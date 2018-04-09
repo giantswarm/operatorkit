@@ -55,14 +55,14 @@ func (f *Framework) addFinalizer(obj interface{}) (stopReconciliation bool, err 
 		if err != nil {
 			return microerror.Mask(err)
 		}
-		res = restClient.Patch(types.JSONPatchType).AbsPath(path).Body(p).Do()
-		if IsInvalidResourceVersionError(res.Error()) {
+		err = restClient.Patch(types.JSONPatchType).AbsPath(path).Body(p).Do().Error()
+		if IsInvalidResourceVersionError(err) {
 			// We log a warning, this should not be the case. This warning should help
 			// identify race conditions.
 			f.logger.Log("function", "addFinalizer", "level", "warning", "message", "object has out of date ResourceVersion set")
-			return microerror.Mask(res.Error())
-		} else if res.Error() != nil {
-			return microerror.Mask(res.Error())
+			return microerror.Mask(err)
+		} else if err != nil {
+			return microerror.Mask(err)
 		}
 		// The finalizer was added, we should stop reconciliation and wait for the
 		// next update event to come in.
