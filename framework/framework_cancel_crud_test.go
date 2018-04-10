@@ -78,7 +78,7 @@ func Test_ProcessDelete_CRUD(t *testing.T) {
 			Resources: []Resource{
 				newTestCRUDResource("r0"),
 				newTestCRUDResource("r1"),
-				newTestCRUDResource("r2").SetReconcilationCancelledAt("GetDesiredState"),
+				newTestCRUDResource("r2").CancelReconciliationAt("GetDesiredState"),
 				newTestCRUDResource("r3"),
 				newTestCRUDResource("r4"),
 			},
@@ -109,7 +109,7 @@ func Test_ProcessDelete_CRUD(t *testing.T) {
 			Resources: []Resource{
 				newTestCRUDResource("r0"),
 				newTestCRUDResource("r1"),
-				newTestCRUDResource("r2").SetReconcilationCancelledAt("GetDesiredState"),
+				newTestCRUDResource("r2").CancelReconciliationAt("GetDesiredState"),
 				newTestCRUDResource("r3"),
 				newTestCRUDResource("r4"),
 			},
@@ -156,9 +156,9 @@ func Test_ProcessDelete_CRUD(t *testing.T) {
 		{
 			Ctx: resourcecanceledcontext.NewContext(context.Background(), make(chan struct{})),
 			Resources: []Resource{
-				newTestCRUDResource("r0").SetResourceCancelledAt("ApplyDeleteChange"),
+				newTestCRUDResource("r0").CancelResourceAt("ApplyDeleteChange"),
 				newTestCRUDResource("r1"),
-				newTestCRUDResource("r2").SetResourceCancelledAt("GetDesiredState"),
+				newTestCRUDResource("r2").CancelResourceAt("GetDesiredState"),
 				newTestCRUDResource("r3"),
 				newTestCRUDResource("r4"),
 			},
@@ -284,7 +284,7 @@ func Test_ProcessUpdate_CRUD(t *testing.T) {
 			Resources: []Resource{
 				newTestCRUDResource("r0"),
 				newTestCRUDResource("r1"),
-				newTestCRUDResource("r2").SetReconcilationCancelledAt("GetDesiredState"),
+				newTestCRUDResource("r2").CancelReconciliationAt("GetDesiredState"),
 				newTestCRUDResource("r3"),
 				newTestCRUDResource("r4"),
 			},
@@ -315,7 +315,7 @@ func Test_ProcessUpdate_CRUD(t *testing.T) {
 			Resources: []Resource{
 				newTestCRUDResource("r0"),
 				newTestCRUDResource("r1"),
-				newTestCRUDResource("r2").SetReconcilationCancelledAt("GetDesiredState"),
+				newTestCRUDResource("r2").CancelReconciliationAt("GetDesiredState"),
 				newTestCRUDResource("r3"),
 				newTestCRUDResource("r4"),
 			},
@@ -362,9 +362,9 @@ func Test_ProcessUpdate_CRUD(t *testing.T) {
 		{
 			Ctx: resourcecanceledcontext.NewContext(context.Background(), make(chan struct{})),
 			Resources: []Resource{
-				newTestCRUDResource("r0").SetResourceCancelledAt("ApplyDeleteChange"),
+				newTestCRUDResource("r0").CancelResourceAt("ApplyDeleteChange"),
 				newTestCRUDResource("r1"),
-				newTestCRUDResource("r2").SetResourceCancelledAt("GetDesiredState"),
+				newTestCRUDResource("r2").CancelResourceAt("GetDesiredState"),
 				newTestCRUDResource("r3"),
 				newTestCRUDResource("r4"),
 			},
@@ -453,13 +453,13 @@ func newTestCRUDResource(name string) *testCRUDResource {
 	}
 }
 
-func (r *testCRUDResource) SetReconcilationCancelledAt(method string) *testCRUDResource {
-	r.ops.SetReconcilationCancelledAt(method)
+func (r *testCRUDResource) CancelReconciliationAt(method string) *testCRUDResource {
+	r.ops.CancelReconciliationAt(method)
 	return r
 }
 
-func (r *testCRUDResource) SetResourceCancelledAt(method string) *testCRUDResource {
-	r.ops.SetResourceCancelledAt(method)
+func (r *testCRUDResource) CancelResourceAt(method string) *testCRUDResource {
+	r.ops.CancelResourceAt(method)
 	return r
 }
 
@@ -487,11 +487,11 @@ func (o *testCRUDResourceOps) Name() string {
 	return o.name
 }
 
-func (o *testCRUDResourceOps) SetReconcilationCancelledAt(method string) {
+func (o *testCRUDResourceOps) CancelReconciliationAt(method string) {
 	o.reconciliationCanceledStep = method
 }
 
-func (o *testCRUDResourceOps) SetResourceCancelledAt(method string) {
+func (o *testCRUDResourceOps) CancelResourceAt(method string) {
 	o.resourceCanceledStep = method
 }
 

@@ -97,7 +97,7 @@ func Test_ProcessDelete(t *testing.T) {
 			Resources: []Resource{
 				newTestResource("r0"),
 				newTestResource("r1"),
-				newTestResource("r2").SetResourceCancelledAt("EnsureDeleted"),
+				newTestResource("r2").CancelResourceAt("EnsureDeleted"),
 				newTestResource("r3"),
 				newTestResource("r4"),
 			},
@@ -222,7 +222,7 @@ func Test_ProcessUpdate(t *testing.T) {
 			Resources: []Resource{
 				newTestResource("r0"),
 				newTestResource("r1"),
-				newTestResource("r2").SetResourceCancelledAt("EnsureCreated"),
+				newTestResource("r2").CancelResourceAt("EnsureCreated"),
 				newTestResource("r3"),
 				newTestResource("r4"),
 			},
@@ -281,7 +281,7 @@ func (r *testResource) SetReconcilationCancelledAt(method string) *testResource 
 	return r
 }
 
-func (r *testResource) SetResourceCancelledAt(method string) *testResource {
+func (r *testResource) CancelResourceAt(method string) *testResource {
 	r.resourceCanceledStep = method
 	return r
 }
