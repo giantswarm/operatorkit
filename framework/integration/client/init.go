@@ -3,6 +3,8 @@
 package client
 
 import (
+	"time"
+
 	"github.com/giantswarm/e2e-harness/pkg/harness"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
@@ -23,6 +25,14 @@ var (
 	k8sClient kubernetes.Interface
 )
 
+type Config struct {
+	Informer  *informer.Informer
+	Resources []framework.Resource
+
+	Name      string
+	Namespace string
+}
+
 func init() {
 	k8sClient, err = newK8sClient()
 	if err != nil {
@@ -30,19 +40,26 @@ func init() {
 	}
 }
 
-func NewFramework(name, namespace string) (*framework.Framework, error) {
+func NewFramework(config Config) (*framework.Framework, error) {
 	logger, err := micrologger.New(micrologger.Config{})
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
 	var newInformer *informer.Informer
 	{
-		c := informer.Config{
-			Watcher: k8sClient.CoreV1().Pods(namespace),
-		}
-		newInformer, err = informer.New(c)
-		if err != nil {
-			return nil, microerror.Mask(err)
+		if config.Informer == nil {
+			c := informer.Config{
+				Watcher: k8sClient.CoreV1().ConfigMaps(config.Namespace),
+
+				RateWait:     time.Second * 2,
+				ResyncPeriod: time.Second * 10,
+			}
+			newInformer, err = informer.New(c)
+			if err != nil {
+				return nil, microerror.Mask(err)
+			}
+		} else {
+			newInformer = config.Informer
 		}
 	}
 	var resourceSet *framework.ResourceSet
@@ -50,8 +67,9 @@ func NewFramework(name, namespace string) (*framework.Framework, error) {
 		c := testresourceset.Config{
 			K8sClient: k8sClient,
 			Logger:    logger,
+			Resources: config.Resources,
 
-			ProjectName: name,
+			ProjectName: config.Name,
 		}
 
 		resourceSet, err = testresourceset.New(c)
@@ -80,7 +98,7 @@ func NewFramework(name, namespace string) (*framework.Framework, error) {
 		Logger:         logger,
 		ResourceRouter: resourceRouter,
 
-		Name: name,
+		Name: config.Name,
 	}
 	f, err := framework.New(cf)
 	if err != nil {
