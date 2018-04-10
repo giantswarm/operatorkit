@@ -82,9 +82,13 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	// 20 second ResyncPeriod + 2 second RateWait + 3 second for safety.
 	// The framework should now add the finalizer and EnsureCreated should be hit
 	// once immediatly.
-	// EnsureCreated: 1, EnsureDeleted: 0
+	//
+	// 		EnsureCreated: 1, EnsureDeleted: 0
+	//
 	// The framework should reconcile twice in this period.
-	// EnsureCreated: 3, EnsureDeleted: 0
+	//
+	// 		EnsureCreated: 3, EnsureDeleted: 0
+	//
 	time.Sleep(25 * time.Second)
 
 	// We get the ConfigMap after the framework has been started.
@@ -126,12 +130,16 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 
 	// We wait the absolute maximum amount of time here:
 	// 20 second ResyncPeriod + 2 second RateWait + 3 second for safety.
-	// The framework should now remove the finalizer and EnsureCreated should be
+	// The framework should now remove the finalizer and EnsureDeleted should be
 	// hit twice immediatly. See https://github.com/giantswarm/giantswarm/issues/2897
-	// EnsureCreated: 3, EnsureDeleted: 2
+	//
+	// 		EnsureCreated: 3, EnsureDeleted: 2
+	//
 	// The framework should also reconcile twice in this period. (The other
 	// finalizer is still set, so we reconcile.)
-	// EnsureCreated: 3, EnsureDeleted: 4
+	//
+	// 		EnsureCreated: 3, EnsureDeleted: 4
+	//
 	time.Sleep(25 * time.Second)
 
 	// We get the ConfigMap after the framework has handled the deletion event.
