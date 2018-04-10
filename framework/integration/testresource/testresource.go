@@ -47,10 +47,6 @@ func (w *Wrapper) EnsureDeleted(ctx context.Context, obj interface{}) error {
 	return nil
 }
 
-func (w *Wrapper) Name() string {
-	return "testresource"
-}
-
 func (w *Wrapper) GetCreateCount() int {
 	return w.createCount
 }
@@ -65,4 +61,8 @@ func (w *Wrapper) IncrementCreateCount() {
 
 func (w *Wrapper) IncrementDeleteCount() {
 	w.deleteCount++
+}
+
+func (w *Wrapper) Name() string {
+	return "testresource"
 }
