@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/giantswarm/operatorkit/framework/context/reconciliationcanceledcontext"
+	"github.com/giantswarm/operatorkit/framework/context/resourcecanceledcontext"
 )
 
 func Test_ProcessDelete(t *testing.T) {
@@ -77,6 +78,26 @@ func Test_ProcessDelete(t *testing.T) {
 				newTestResource("r0"),
 				newTestResource("r1"),
 				newTestResource("r2").SetReconcilationCancelledAt("EnsureDeleted"),
+				newTestResource("r3"),
+				newTestResource("r4"),
+			},
+			ExpectedOrder: []string{
+				"r0.EnsureDeleted",
+				"r1.EnsureDeleted",
+				"r2.EnsureDeleted",
+				"r3.EnsureDeleted",
+				"r4.EnsureDeleted",
+			},
+			ErrorMatcher: nil,
+		},
+		// Test 5 ensures ProcessDelete executes next resource after
+		// resourcecanceledcontext is cancelled.
+		{
+			Ctx: resourcecanceledcontext.NewContext(context.Background(), make(chan struct{})),
+			Resources: []Resource{
+				newTestResource("r0"),
+				newTestResource("r1"),
+				newTestResource("r2").SetResourceCancelledAt("EnsureDeleted"),
 				newTestResource("r3"),
 				newTestResource("r4"),
 			},
@@ -194,6 +215,26 @@ func Test_ProcessUpdate(t *testing.T) {
 			},
 			ErrorMatcher: nil,
 		},
+		// Test 5 ensures ProcessUpdate executes next resource after
+		// resourcecanceledcontext is cancelled.
+		{
+			Ctx: resourcecanceledcontext.NewContext(context.Background(), make(chan struct{})),
+			Resources: []Resource{
+				newTestResource("r0"),
+				newTestResource("r1"),
+				newTestResource("r2").SetResourceCancelledAt("EnsureCreated"),
+				newTestResource("r3"),
+				newTestResource("r4"),
+			},
+			ExpectedOrder: []string{
+				"r0.EnsureCreated",
+				"r1.EnsureCreated",
+				"r2.EnsureCreated",
+				"r3.EnsureCreated",
+				"r4.EnsureCreated",
+			},
+			ErrorMatcher: nil,
+		},
 	}
 
 	for i, tc := range testCases {
@@ -220,6 +261,7 @@ func Test_ProcessUpdate(t *testing.T) {
 type testResource struct {
 	name                       string
 	reconciliationCanceledStep string
+	resourceCanceledStep       string
 
 	Order []string
 }
@@ -230,33 +272,37 @@ func newTestResource(name string) *testResource {
 	}
 }
 
+func (r *testResource) Name() string {
+	return r.name
+}
+
 func (r *testResource) SetReconcilationCancelledAt(method string) *testResource {
 	r.reconciliationCanceledStep = method
 	return r
 }
 
+func (r *testResource) SetResourceCancelledAt(method string) *testResource {
+	r.resourceCanceledStep = method
+	return r
+}
+
 func (r *testResource) EnsureCreated(ctx context.Context, obj interface{}) error {
-	m := "EnsureCreated"
-	r.Order = append(r.Order, r.name+"."+m)
-
-	if r.reconciliationCanceledStep == m {
-		reconciliationcanceledcontext.SetCanceled(ctx)
-	}
-
+	r.executeMethod(ctx, "EnsureCreated")
 	return nil
 }
 
 func (r *testResource) EnsureDeleted(ctx context.Context, obj interface{}) error {
-	m := "EnsureDeleted"
-	r.Order = append(r.Order, r.name+"."+m)
-
-	if r.reconciliationCanceledStep == m {
-		reconciliationcanceledcontext.SetCanceled(ctx)
-	}
-
+	r.executeMethod(ctx, "EnsureDeleted")
 	return nil
 }
 
-func (r *testResource) Name() string {
-	return r.name
+func (r *testResource) executeMethod(ctx context.Context, method string) {
+	r.Order = append(r.Order, r.name+"."+method)
+
+	if r.reconciliationCanceledStep == method {
+		reconciliationcanceledcontext.SetCanceled(ctx)
+	}
+	if r.resourceCanceledStep == method {
+		resourcecanceledcontext.SetCanceled(ctx)
+	}
 }
