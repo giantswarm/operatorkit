@@ -1,20 +1,20 @@
 # memcached-operator example
 
-This is an exmpale operator using the operatorkit library.
+This is an example operator using the operatorkit library.
 
-## Why memcached?
+## Why Memcached?
 
-[memcached][memcached] was picked as an example as this shows how the operator
-can be build to create and scale a distributed system running inside
-kubernetes. memcached is easy to scale in particular as sharding is done on the
-client side. This allows to show complete example which does not do complex
-logic not really interesting from the example perspective.
+[Memcached][memcached] was picked as an example as this shows how the operator
+can be built to create and scale a distributed system running inside
+Kubernetes. Memcached is easy to scale in particular as sharding is done on the
+client side. This allows us to show a complete example which does not do
+complex logic not really interesting from the example perspective.
 
 ## Implementation
 
 This operator controller watches MemcachedConfig CRD (Custom Resource
 Definition). Upon arrival of new CR (custom resource, also called object) it
-creates the memcached cluster according to the CR spec.
+creates the Memcached cluster according to the CR spec.
 
 E.g. let's consider following MemcachedConfig CR:
 
@@ -29,7 +29,7 @@ spec:
   memory: 1G
 ```
 
-For this CR the operator will create memcached cluster of 2 nodes 1G memory
+For this CR the operator will create Memcached cluster of 3 nodes 1G memory
 each in the same namespace as the CR is defined in.
 
 When `replicas` part of the spec incremented a new cluster node is added. When
