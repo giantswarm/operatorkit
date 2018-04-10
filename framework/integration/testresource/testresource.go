@@ -15,7 +15,7 @@ type Config struct {
 	Name      string
 }
 
-type Wrapper struct {
+type Resource struct {
 	k8sClient kubernetes.Interface
 	logger    micrologger.Logger
 
@@ -24,8 +24,8 @@ type Wrapper struct {
 	name        string
 }
 
-func New(config Config) (*Wrapper, error) {
-	w := &Wrapper{
+func New(config Config) (*Resource, error) {
+	r := &Resource{
 		k8sClient: config.K8sClient,
 		logger:    config.Logger,
 
@@ -34,35 +34,35 @@ func New(config Config) (*Wrapper, error) {
 		name:        config.Name,
 	}
 
-	return w, nil
+	return r, nil
 }
 
-func (w *Wrapper) EnsureCreated(ctx context.Context, obj interface{}) error {
-	w.IncrementCreateCount()
+func (r *Resource) EnsureCreated(ctx context.Context, obj interface{}) error {
+	r.incrementCreateCount()
 	return nil
 }
 
-func (w *Wrapper) EnsureDeleted(ctx context.Context, obj interface{}) error {
-	w.IncrementDeleteCount()
+func (r *Resource) EnsureDeleted(ctx context.Context, obj interface{}) error {
+	r.incrementDeleteCount()
 	return nil
 }
 
-func (w *Wrapper) GetCreateCount() int {
-	return w.createCount
+func (r *Resource) GetCreateCount() int {
+	return r.createCount
 }
 
-func (w *Wrapper) GetDeleteCount() int {
-	return w.deleteCount
+func (r *Resource) GetDeleteCount() int {
+	return r.deleteCount
 }
 
-func (w *Wrapper) IncrementCreateCount() {
-	w.createCount++
-}
-
-func (w *Wrapper) IncrementDeleteCount() {
-	w.deleteCount++
-}
-
-func (w *Wrapper) Name() string {
+func (r *Resource) Name() string {
 	return "testresource"
+}
+
+func (r *Resource) incrementCreateCount() {
+	r.createCount++
+}
+
+func (r *Resource) incrementDeleteCount() {
+	r.deleteCount++
 }
