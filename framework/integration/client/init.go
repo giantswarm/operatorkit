@@ -47,6 +47,7 @@ func NewFramework(config Config) (*framework.Framework, error) {
 	}
 	var newInformer *informer.Informer
 	{
+
 		if config.Informer == nil {
 			c := informer.Config{
 				Watcher: k8sClient.CoreV1().ConfigMaps(config.Namespace),
