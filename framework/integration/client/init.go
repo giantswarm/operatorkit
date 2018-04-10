@@ -5,6 +5,7 @@ package client
 import (
 	"time"
 
+	"github.com/giantswarm/apiextensions/pkg/clientset/versioned"
 	"github.com/giantswarm/e2e-harness/pkg/harness"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
@@ -23,6 +24,7 @@ var (
 	err error
 
 	k8sClient kubernetes.Interface
+	g8sClient versioned.Interface
 )
 
 type Config struct {
@@ -38,6 +40,10 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	g8sClient, err = newG8sClient()
+	if err != nil {
+		panic(err)
+	}
 }
 
 func NewFramework(config Config) (*framework.Framework, error) {
@@ -50,7 +56,7 @@ func NewFramework(config Config) (*framework.Framework, error) {
 
 		if config.Informer == nil {
 			c := informer.Config{
-				Watcher: k8sClient.CoreV1().ConfigMaps(config.Namespace),
+				Watcher: g8sClient.CoreV1alpha1().NodeConfigs(config.Namespace),
 
 				RateWait:     time.Second * 2,
 				ResyncPeriod: time.Second * 10,
@@ -149,4 +155,18 @@ func newK8sClient() (kubernetes.Interface, error) {
 	}
 
 	return k8sClient, nil
+}
+
+func newG8sClient() (versioned.Interface, error) {
+	config, err := clientcmd.BuildConfigFromFlags("", harness.DefaultKubeConfig)
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
+	g8sClient, err := versioned.NewForConfig(config)
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
+	return g8sClient, nil
 }
