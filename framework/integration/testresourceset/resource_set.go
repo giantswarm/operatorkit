@@ -14,24 +14,31 @@ import (
 type Config struct {
 	K8sClient kubernetes.Interface
 	Logger    micrologger.Logger
+	Resources []framework.Resource
 
 	ProjectName string
 }
 
 func New(config Config) (*framework.ResourceSet, error) {
 	var err error
-	var tr framework.Resource
-	{
-		c := testresource.Config{}
+	var resources []framework.Resource
 
-		tr, err = testresource.New(c)
-		if err != nil {
-			return nil, microerror.Mask(err)
+	if len(config.Resources) == 0 {
+		var tr framework.Resource
+		{
+			c := testresource.Config{}
+
+			tr, err = testresource.New(c)
+			if err != nil {
+				return nil, microerror.Mask(err)
+			}
 		}
-	}
 
-	resources := []framework.Resource{
-		tr,
+		resources = []framework.Resource{
+			tr,
+		}
+	} else {
+		resources = config.Resources
 	}
 
 	handlesFunc := func(obj interface{}) bool {

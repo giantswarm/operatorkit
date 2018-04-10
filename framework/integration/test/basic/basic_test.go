@@ -24,10 +24,15 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	operatorName := "test-operator"
 	testNamespace := "finalizer-integration-basic-test"
 
+	c := client.Config{
+		Name:      operatorName,
+		Namespace: testNamespace,
+	}
+
 	client.MustSetup(testNamespace)
 	defer client.MustTeardown(testNamespace)
 
-	operatorkitFramework, err := client.NewFramework(operatorName, testNamespace)
+	operatorkitFramework, err := client.NewFramework(c)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
