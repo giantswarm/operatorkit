@@ -26,22 +26,19 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 
 	client.MustSetup(testNamespace)
 	defer client.MustTeardown(testNamespace)
-
-	var testWrapper testresource.Wrapper
-
-	var tr framework.Resource
+	var err error
+	var tr *testresource.Resource
 	{
 		c := testresource.Config{}
 
-		testWrapper, err := testresource.New(c)
+		tr, err = testresource.New(c)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}
-		tr = testWrapper.Resource
 	}
 
 	resources := []framework.Resource{
-		tr,
+		framework.Resource(tr),
 	}
 
 	c := client.Config{
@@ -83,6 +80,11 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 
 	// We wait the absolute maximum amount of time here:
 	// 20 second ResyncPeriod + 2 second RateWait + 3 second for safety.
+	// The framework should now add the finalizer and EnsureCreated should be hit
+	// once immediatly.
+	// EnsureCreated: 1, EnsureDeleted: 0
+	// The framework should reconcile twice in this period.
+	// EnsureCreated: 3, EnsureDeleted: 0
 	time.Sleep(25 * time.Second)
 
 	// We get the ConfigMap after the framework has been started.
@@ -107,6 +109,15 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		t.Fatalf("finalizers == %v, want %v", resultConfigMap.GetFinalizers(), expectedFinalizers)
 	}
 
+	// Verify that we hit the resource functions for the expected amounts.
+	if tr.GetCreateCount() != 3 {
+		t.Fatalf("EnsureCreated was hit %v times, want %v", tr.GetCreateCount(), 3)
+	}
+
+	if tr.GetDeleteCount() != 0 {
+		t.Fatalf("EnsureDeleted was hit %v times, want %v", tr.GetDeleteCount(), 0)
+	}
+
 	// We delete the configmap now.
 	err = client.DeleteConfigMap(configMapName, testNamespace)
 	if err != nil {
@@ -115,6 +126,12 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 
 	// We wait the absolute maximum amount of time here:
 	// 20 second ResyncPeriod + 2 second RateWait + 3 second for safety.
+	// The framework should now remove the finalizer and EnsureCreated should be
+	// hit twice immediatly. See https://github.com/giantswarm/giantswarm/issues/2897
+	// EnsureCreated: 3, EnsureDeleted: 2
+	// The framework should also reconcile twice in this period. (The other
+	// finalizer is still set, so we reconcile.)
+	// EnsureCreated: 3, EnsureDeleted: 4
 	time.Sleep(25 * time.Second)
 
 	// We get the ConfigMap after the framework has handled the deletion event.
@@ -138,12 +155,13 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		t.Fatalf("finalizers == %v, want %v", resultConfigMap.GetFinalizers(), expectedFinalizers)
 	}
 
-	if testWrapper.GetDeleteCount() != 4 {
-		t.Fatalf("finalizers == %v, want %v", testWrapper.GetDeleteCount(), 4)
+	// Verify that we hit the resource functions for the expected amounts.
+	if tr.GetCreateCount() != 3 {
+		t.Fatalf("EnsureCreated was hit %v times, want %v", tr.GetCreateCount(), 3)
 	}
 
-	if testWrapper.GetCreateCount() != 3 {
-		t.Fatalf("finalizers == %v, want %v", testWrapper.GetCreateCount(), 3)
+	if tr.GetDeleteCount() != 4 {
+		t.Fatalf("EnsureDeleted was hit %v times, want %v", tr.GetDeleteCount(), 4)
 	}
 
 }
