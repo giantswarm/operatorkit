@@ -60,7 +60,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	testClient.MustSetup(testNamespace)
 	defer testClient.MustTeardown(testNamespace)
 
-	operatorkitFramework := testClient.GetFramework()
+	operatorkitFramework := testClient.Framework()
 
 	// We start the framework.
 	go operatorkitFramework.Boot()

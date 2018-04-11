@@ -21,7 +21,7 @@ import (
 )
 
 type Client struct {
-	Framework *framework.Framework
+	framework *framework.Framework
 
 	k8sClient kubernetes.Interface
 }
@@ -97,14 +97,14 @@ func New(config client.Config) (*Client, error) {
 	}
 
 	client := &Client{
-		Framework: f,
+		framework: f,
 		k8sClient: k8sClient,
 	}
 	return client, nil
 }
 
-func (c Client) GetFramework() *framework.Framework {
-	return c.Framework
+func (c Client) Framework() *framework.Framework {
+	return c.framework
 }
 
 func (c Client) MustSetup(namespace string) {

@@ -43,7 +43,7 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	testClient.MustSetup(testNamespace)
 	defer testClient.MustTeardown(testNamespace)
 
-	operatorkitFramework := testClient.GetFramework()
+	operatorkitFramework := testClient.Framework()
 
 	cm := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{

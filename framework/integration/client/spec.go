@@ -16,7 +16,7 @@ type Interface interface {
 	MustTeardown(namespace string)
 
 	// Getters and setters.
-	GetFramework() *framework.Framework
+	Framework() *framework.Framework
 }
 
 type Config struct {
