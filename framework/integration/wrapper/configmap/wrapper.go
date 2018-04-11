@@ -19,17 +19,17 @@ import (
 	"github.com/giantswarm/operatorkit/informer"
 )
 
-type Wrapper struct {
-	framework *framework.Framework
-
-	k8sClient kubernetes.Interface
-}
-
 type Config struct {
 	Resources []framework.Resource
 
 	Name      string
 	Namespace string
+}
+
+type Wrapper struct {
+	framework *framework.Framework
+
+	k8sClient kubernetes.Interface
 }
 
 func New(config Config) (*Wrapper, error) {
