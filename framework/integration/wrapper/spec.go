@@ -1,6 +1,6 @@
 // +build k8srequired
 
-package client
+package wrapper
 
 import "github.com/giantswarm/operatorkit/framework"
 

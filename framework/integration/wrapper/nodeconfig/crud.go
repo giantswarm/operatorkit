@@ -8,12 +8,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (c Client) CreateObject(namespace string, obj interface{}) (interface{}, error) {
+func (w Wrapper) CreateObject(namespace string, obj interface{}) (interface{}, error) {
 	nodeConfig, err := toCustomObject(obj)
 	if err != nil {
 		return nil, err
 	}
-	createNodeConfig, err := c.g8sClient.CoreV1alpha1().NodeConfigs(namespace).Create(&nodeConfig)
+	createNodeConfig, err := w.g8sClient.CoreV1alpha1().NodeConfigs(namespace).Create(&nodeConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -21,8 +21,8 @@ func (c Client) CreateObject(namespace string, obj interface{}) (interface{}, er
 	return createNodeConfig, nil
 }
 
-func (c Client) DeleteObject(name, namespace string) error {
-	err := c.g8sClient.CoreV1alpha1().NodeConfigs(namespace).Delete(name, nil)
+func (w Wrapper) DeleteObject(name, namespace string) error {
+	err := w.g8sClient.CoreV1alpha1().NodeConfigs(namespace).Delete(name, nil)
 	if err != nil {
 		return err
 	}
@@ -30,8 +30,8 @@ func (c Client) DeleteObject(name, namespace string) error {
 	return nil
 }
 
-func (c Client) GetObject(name, namespace string) (interface{}, error) {
-	nodeConfig, err := c.g8sClient.CoreV1alpha1().NodeConfigs(namespace).Get(name, metav1.GetOptions{})
+func (w Wrapper) GetObject(name, namespace string) (interface{}, error) {
+	nodeConfig, err := w.g8sClient.CoreV1alpha1().NodeConfigs(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +39,7 @@ func (c Client) GetObject(name, namespace string) (interface{}, error) {
 	return nodeConfig, nil
 }
 
-func (c Client) UpdateObject(namespace string, obj interface{}) (interface{}, error) {
+func (w Wrapper) UpdateObject(namespace string, obj interface{}) (interface{}, error) {
 	return nil, nil
 }
 

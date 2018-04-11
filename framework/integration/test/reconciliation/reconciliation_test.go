@@ -14,9 +14,9 @@ import (
 	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/operatorkit/framework"
-	"github.com/giantswarm/operatorkit/framework/integration/client"
-	"github.com/giantswarm/operatorkit/framework/integration/client/nodeconfig"
 	"github.com/giantswarm/operatorkit/framework/integration/testresource"
+	"github.com/giantswarm/operatorkit/framework/integration/wrapper"
+	"github.com/giantswarm/operatorkit/framework/integration/wrapper/nodeconfig"
 )
 
 // Test_Finalizer_Integration_Reconciliation is a integration test for
@@ -50,17 +50,17 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		Namespace: testNamespace,
 	}
 
-	nodeconfigClient, err := nodeconfig.New(c)
+	nodeconfigWrapper, err := nodeconfig.New(c)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
 
-	testClient := client.Interface(nodeconfigClient)
+	testWrapper := wrapper.Interface(nodeconfigWrapper)
 
-	testClient.MustSetup(testNamespace)
-	defer testClient.MustTeardown(testNamespace)
+	testWrapper.MustSetup(testNamespace)
+	defer testWrapper.MustTeardown(testNamespace)
 
-	operatorkitFramework := testClient.Framework()
+	operatorkitFramework := testWrapper.Framework()
 
 	// We start the framework.
 	go operatorkitFramework.Boot()
@@ -80,7 +80,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		},
 	}
 	operation := func() error {
-		_, err = testClient.CreateObject(testNamespace, obj)
+		_, err = testWrapper.CreateObject(testNamespace, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -105,7 +105,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	time.Sleep(25 * time.Second)
 
 	// We get the object after the framework has been started.
-	resultObj, err := testClient.GetObject(objName, testNamespace)
+	resultObj, err := testWrapper.GetObject(objName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -141,7 +141,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	}
 
 	// We delete the object now.
-	err = testClient.DeleteObject(objName, testNamespace)
+	err = testWrapper.DeleteObject(objName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -161,7 +161,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	time.Sleep(25 * time.Second)
 
 	// We get the object after the framework has handled the deletion event.
-	resultObj, err = testClient.GetObject(objName, testNamespace)
+	resultObj, err = testWrapper.GetObject(objName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}

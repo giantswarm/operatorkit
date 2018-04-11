@@ -11,8 +11,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/giantswarm/operatorkit/framework/integration/client"
-	"github.com/giantswarm/operatorkit/framework/integration/client/configmap"
+	"github.com/giantswarm/operatorkit/framework/integration/wrapper"
+	"github.com/giantswarm/operatorkit/framework/integration/wrapper/configmap"
 )
 
 // Test_Finalizer_Integration_Basic is a integration test for basic finalizer
@@ -33,17 +33,17 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 		Name:      operatorName,
 		Namespace: testNamespace,
 	}
-	configmapClient, err := configmap.New(c)
+	configmapWrapper, err := configmap.New(c)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
 
-	testClient := client.Interface(configmapClient)
+	testWrapper := wrapper.Interface(configmapWrapper)
 
-	testClient.MustSetup(testNamespace)
-	defer testClient.MustTeardown(testNamespace)
+	testWrapper.MustSetup(testNamespace)
+	defer testWrapper.MustTeardown(testNamespace)
 
-	operatorkitFramework := testClient.Framework()
+	operatorkitFramework := testWrapper.Framework()
 
 	cm := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
@@ -57,7 +57,7 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 		Data: map[string]string{},
 	}
 	// We create an object which does not have any finalizers.
-	createdObj, err := testClient.CreateObject(testNamespace, cm)
+	createdObj, err := testWrapper.CreateObject(testNamespace, cm)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -65,7 +65,7 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	// We directly pass the object to UpdateFunc.
 	operatorkitFramework.UpdateFunc(createdObj, createdObj)
 
-	resultObj, err := testClient.GetObject(configMapName, testNamespace)
+	resultObj, err := testWrapper.GetObject(configMapName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -81,11 +81,11 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	}
 
 	// We delete our object.
-	err = testClient.DeleteObject(configMapName, testNamespace)
+	err = testWrapper.DeleteObject(configMapName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
-	resultObj, err = testClient.GetObject(configMapName, testNamespace)
+	resultObj, err = testWrapper.GetObject(configMapName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -109,7 +109,7 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	operatorkitFramework.DeleteFunc(resultObj)
 
 	// We verify that our object is completely gone now.
-	_, err = testClient.GetObject(configMapName, testNamespace)
+	_, err = testWrapper.GetObject(configMapName, testNamespace)
 	if !errors.IsNotFound(err) {
 		t.Fatalf("error == %#v, want NotFound error", err)
 	}
