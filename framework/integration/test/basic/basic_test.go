@@ -29,7 +29,7 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	operatorName := "test-operator"
 	testNamespace := "finalizer-integration-basic-test"
 
-	c := client.Config{
+	c := configmap.Config{
 		Name:      operatorName,
 		Namespace: testNamespace,
 	}

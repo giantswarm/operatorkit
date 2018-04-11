@@ -18,10 +18,3 @@ type Interface interface {
 	// Getters and setters.
 	Framework() *framework.Framework
 }
-
-type Config struct {
-	Resources []framework.Resource
-
-	Name      string
-	Namespace string
-}

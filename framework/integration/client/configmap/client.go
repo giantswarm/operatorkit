@@ -15,7 +15,6 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/giantswarm/operatorkit/framework"
-	"github.com/giantswarm/operatorkit/framework/integration/client"
 	"github.com/giantswarm/operatorkit/framework/integration/testresourceset"
 	"github.com/giantswarm/operatorkit/informer"
 )
@@ -26,7 +25,14 @@ type Client struct {
 	k8sClient kubernetes.Interface
 }
 
-func New(config client.Config) (*Client, error) {
+type Config struct {
+	Resources []framework.Resource
+
+	Name      string
+	Namespace string
+}
+
+func New(config Config) (*Client, error) {
 	restConfig, err := clientcmd.BuildConfigFromFlags("", harness.DefaultKubeConfig)
 	if err != nil {
 		return nil, microerror.Mask(err)

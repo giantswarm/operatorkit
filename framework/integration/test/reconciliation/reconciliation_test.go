@@ -43,7 +43,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		framework.Resource(tr),
 	}
 
-	c := client.Config{
+	c := nodeconfig.Config{
 		Resources: resources,
 
 		Name:      operatorName,
