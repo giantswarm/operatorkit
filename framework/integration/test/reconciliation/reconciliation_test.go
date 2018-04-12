@@ -91,7 +91,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		t.Fatal("expected", nil, "got", err)
 	}
 
-	// We wait the absolute maximum amount of time here:
+	// We use backout with the absolute maximum amount:
 	// 20 second ResyncPeriod + 2 second RateWait + 1 second for safety.
 	// The framework should now add the finalizer and EnsureCreated should be hit
 	// once immediatly.
@@ -102,7 +102,16 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	//
 	// 		EnsureCreated: 3, EnsureDeleted: 0
 	//
-	time.Sleep(23 * time.Second)
+	operation = func() error {
+		if tr.GetCreateCount() != 3 {
+			return microerror.New("EnsureCreated count not correct")
+		}
+		return nil
+	}
+	err = backoff.Retry(operation, backoff.WithMaxTries(backoff.NewConstantBackOff(1*time.Second), uint64(23)))
+	if err != nil {
+		t.Fatal("expected", nil, "got", err)
+	}
 
 	// We get the object after the framework has been started.
 	resultObj, err := testWrapper.GetObject(objName, testNamespace)
@@ -146,7 +155,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		t.Fatal("expected", nil, "got", err)
 	}
 
-	// We wait the absolute maximum amount of time here:
+	// We use backout with the absolute maximum amount:
 	// 20 second ResyncPeriod + 2 second RateWait + 1 second for safety.
 	// The framework should now remove the finalizer and EnsureDeleted should be
 	// hit twice immediatly. See https://github.com/giantswarm/giantswarm/issues/2897
@@ -158,7 +167,19 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	//
 	// 		EnsureCreated: 3, EnsureDeleted: 4
 	//
-	time.Sleep(23 * time.Second)
+	operation = func() error {
+		if tr.GetCreateCount() != 3 {
+			return microerror.New("EnsureCreated count not correct")
+		}
+		if tr.GetDeleteCount() != 4 {
+			return microerror.New("EnsureDelete count not correct")
+		}
+		return nil
+	}
+	err = backoff.Retry(operation, backoff.WithMaxTries(backoff.NewConstantBackOff(1*time.Second), uint64(23)))
+	if err != nil {
+		t.Fatal("expected", nil, "got", err)
+	}
 
 	// We get the object after the framework has handled the deletion event.
 	resultObj, err = testWrapper.GetObject(objName, testNamespace)
