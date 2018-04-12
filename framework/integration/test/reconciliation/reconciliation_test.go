@@ -91,8 +91,8 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		t.Fatal("expected", nil, "got", err)
 	}
 
-	// We use backout with the absolute maximum amount:
-	// 20 second ResyncPeriod + 2 second RateWait + 1 second for safety.
+	// We use backoff with the absolute maximum amount:
+	// 20 second ResyncPeriod + 2 second RateWait + 2 second for safety.
 	// The framework should now add the finalizer and EnsureCreated should be hit
 	// once immediatly.
 	//
@@ -104,11 +104,14 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	//
 	operation = func() error {
 		if tr.GetCreateCount() != 3 {
-			return microerror.New("EnsureCreated count not correct")
+			return microerror.Newf("EnsureCreated was hit %v times, want %v", tr.GetCreateCount(), 3)
+		}
+		if tr.GetDeleteCount() != 0 {
+			return microerror.Newf("EnsureDeleted was hit %v times, want %v", tr.GetDeleteCount(), 0)
 		}
 		return nil
 	}
-	err = backoff.Retry(operation, backoff.WithMaxTries(backoff.NewConstantBackOff(1*time.Second), uint64(23)))
+	err = backoff.Retry(operation, backoff.WithMaxTries(backoff.NewConstantBackOff(1*time.Second), uint64(24)))
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -140,23 +143,14 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		t.Fatalf("finalizers == %v, want %v", resultObjAccessor.GetFinalizers(), expectedFinalizers)
 	}
 
-	// Verify that we hit the resource functions for the expected amounts.
-	if tr.GetCreateCount() != 3 {
-		t.Fatalf("EnsureCreated was hit %v times, want %v", tr.GetCreateCount(), 3)
-	}
-
-	if tr.GetDeleteCount() != 0 {
-		t.Fatalf("EnsureDeleted was hit %v times, want %v", tr.GetDeleteCount(), 0)
-	}
-
 	// We delete the object now.
 	err = testWrapper.DeleteObject(objName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
 
-	// We use backout with the absolute maximum amount:
-	// 20 second ResyncPeriod + 2 second RateWait + 1 second for safety.
+	// We use backoff with the absolute maximum amount:
+	// 20 second ResyncPeriod + 2 second RateWait + 2 second for safety.
 	// The framework should now remove the finalizer and EnsureDeleted should be
 	// hit twice immediatly. See https://github.com/giantswarm/giantswarm/issues/2897
 	//
@@ -169,14 +163,14 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	//
 	operation = func() error {
 		if tr.GetCreateCount() != 3 {
-			return microerror.New("EnsureCreated count not correct")
+			return microerror.Newf("EnsureCreated was hit %v times, want %v", tr.GetCreateCount(), 3)
 		}
 		if tr.GetDeleteCount() != 4 {
-			return microerror.New("EnsureDelete count not correct")
+			return microerror.Newf("EnsureDeleted was hit %v times, want %v", tr.GetDeleteCount(), 4)
 		}
 		return nil
 	}
-	err = backoff.Retry(operation, backoff.WithMaxTries(backoff.NewConstantBackOff(1*time.Second), uint64(23)))
+	err = backoff.Retry(operation, backoff.WithMaxTries(backoff.NewConstantBackOff(1*time.Second), uint64(24)))
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -205,15 +199,6 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	// We verify, that our finalizer is still set.
 	if !reflect.DeepEqual(resultObjAccessor.GetFinalizers(), expectedFinalizers) {
 		t.Fatalf("finalizers == %v, want %v", resultObjAccessor.GetFinalizers(), expectedFinalizers)
-	}
-
-	// Verify that we hit the resource functions for the expected amounts.
-	if tr.GetCreateCount() != 3 {
-		t.Fatalf("EnsureCreated was hit %v times, want %v", tr.GetCreateCount(), 3)
-	}
-
-	if tr.GetDeleteCount() != 4 {
-		t.Fatalf("EnsureDeleted was hit %v times, want %v", tr.GetDeleteCount(), 4)
 	}
 
 }
