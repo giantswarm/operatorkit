@@ -5,7 +5,6 @@ package reconciliation
 import (
 	"reflect"
 	"testing"
-	"time"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -104,14 +103,14 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	//
 	operation = func() error {
 		if tr.GetCreateCount() != 3 {
-			return microerror.Newf("EnsureCreated was hit %v times, want %v", tr.GetCreateCount(), 3)
+			return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.GetCreateCount(), 3)
 		}
 		if tr.GetDeleteCount() != 0 {
-			return microerror.Newf("EnsureDeleted was hit %v times, want %v", tr.GetDeleteCount(), 0)
+			return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", tr.GetDeleteCount(), 0)
 		}
 		return nil
 	}
-	err = backoff.Retry(operation, backoff.WithMaxTries(backoff.NewConstantBackOff(1*time.Second), uint64(24)))
+	err = backoff.Retry(operation, newConstantBackoff(uint64(24)))
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -163,14 +162,14 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	//
 	operation = func() error {
 		if tr.GetCreateCount() != 3 {
-			return microerror.Newf("EnsureCreated was hit %v times, want %v", tr.GetCreateCount(), 3)
+			return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.GetCreateCount(), 3)
 		}
 		if tr.GetDeleteCount() != 4 {
-			return microerror.Newf("EnsureDeleted was hit %v times, want %v", tr.GetDeleteCount(), 4)
+			return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", tr.GetDeleteCount(), 4)
 		}
 		return nil
 	}
-	err = backoff.Retry(operation, backoff.WithMaxTries(backoff.NewConstantBackOff(1*time.Second), uint64(24)))
+	err = backoff.Retry(operation, newConstantBackoff(uint64(24)))
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
