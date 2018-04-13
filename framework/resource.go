@@ -5,7 +5,7 @@ import "context"
 // Resource is an interface. Resources are the building blocks of the
 // operator's reconciliation logic. Note there can be multiple Resources
 // reconciling the same object in the chain. In that case they are guaranteed
-// to be executed in order one one after another.
+// to be executed in order one after another.
 type Resource interface {
 	// Name returns the resource's name used for identification.
 	Name() string
