@@ -6,11 +6,11 @@ import (
 	"testing"
 
 	"github.com/giantswarm/operatorkit/framework/context/reconciliationcanceledcontext"
+	"github.com/giantswarm/operatorkit/framework/context/resourcecanceledcontext"
 )
 
 func Test_ProcessDelete(t *testing.T) {
 	testCases := []struct {
-		Ctx           context.Context
 		Resources     []Resource
 		ExpectedOrder []string
 		ErrorMatcher  func(err error) bool
@@ -18,7 +18,6 @@ func Test_ProcessDelete(t *testing.T) {
 		// Test 0 ensures ProcessDelete returns an error in case no resources are
 		// provided.
 		{
-			Ctx:           context.Background(),
 			Resources:     nil,
 			ExpectedOrder: nil,
 			ErrorMatcher:  IsExecutionFailed,
@@ -26,7 +25,6 @@ func Test_ProcessDelete(t *testing.T) {
 
 		// Test 1 ensures ProcessDelete calls EnsureDeleted method of the resource.
 		{
-			Ctx: context.Background(),
 			Resources: []Resource{
 				newTestResource("r0"),
 			},
@@ -39,7 +37,6 @@ func Test_ProcessDelete(t *testing.T) {
 		// Test 2 ensures ProcessDelete executes all the resources in
 		// the expected order.
 		{
-			Ctx: context.Background(),
 			Resources: []Resource{
 				newTestResource("r0"),
 				newTestResource("r1"),
@@ -54,7 +51,6 @@ func Test_ProcessDelete(t *testing.T) {
 		// Test 3 ensures ProcessDelete executes resources in the
 		// expected order until the reconciliation gets canceled.
 		{
-			Ctx: reconciliationcanceledcontext.NewContext(context.Background(), make(chan struct{})),
 			Resources: []Resource{
 				newTestResource("r0"),
 				newTestResource("r1"),
@@ -69,14 +65,13 @@ func Test_ProcessDelete(t *testing.T) {
 			},
 			ErrorMatcher: nil,
 		},
-		// Test 4 ensures ProcessDelete executes all resources in the
-		// expected order when reconciliationcanceledcontext is not set.
+		// Test 4 ensures ProcessDelete executes next resource after
+		// resourcecanceledcontext is cancelled.
 		{
-			Ctx: context.Background(),
 			Resources: []Resource{
 				newTestResource("r0"),
 				newTestResource("r1"),
-				newTestResource("r2").SetReconcilationCancelledAt("EnsureDeleted"),
+				newTestResource("r2").CancelResourceAt("EnsureDeleted"),
 				newTestResource("r3"),
 				newTestResource("r4"),
 			},
@@ -92,7 +87,7 @@ func Test_ProcessDelete(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		err := ProcessDelete(tc.Ctx, nil, tc.Resources)
+		err := ProcessDelete(context.Background(), nil, tc.Resources)
 		if err != nil {
 			if tc.ErrorMatcher == nil {
 				t.Fatal("test", i, "expected", nil, "got", err)
@@ -114,7 +109,6 @@ func Test_ProcessDelete(t *testing.T) {
 
 func Test_ProcessUpdate(t *testing.T) {
 	testCases := []struct {
-		Ctx           context.Context
 		Resources     []Resource
 		ExpectedOrder []string
 		ErrorMatcher  func(err error) bool
@@ -122,7 +116,6 @@ func Test_ProcessUpdate(t *testing.T) {
 		// Test 0 ensures ProcessUpdate returns an error in case no resources are
 		// provided.
 		{
-			Ctx:           context.Background(),
 			Resources:     nil,
 			ExpectedOrder: nil,
 			ErrorMatcher:  IsExecutionFailed,
@@ -130,7 +123,6 @@ func Test_ProcessUpdate(t *testing.T) {
 
 		// Test 1 ensures ProcessUpdate calls EnsureCreated method of the resource.
 		{
-			Ctx: context.Background(),
 			Resources: []Resource{
 				newTestResource("r0"),
 			},
@@ -143,7 +135,6 @@ func Test_ProcessUpdate(t *testing.T) {
 		// Test 2 ensures ProcessUpdate executes all resources in the
 		// expected order.
 		{
-			Ctx: context.Background(),
 			Resources: []Resource{
 				newTestResource("r0"),
 				newTestResource("r1"),
@@ -158,7 +149,6 @@ func Test_ProcessUpdate(t *testing.T) {
 		// Test 3 ensures ProcessUpdate executes resources in the
 		// expected order until the reconciliation gets canceled.
 		{
-			Ctx: reconciliationcanceledcontext.NewContext(context.Background(), make(chan struct{})),
 			Resources: []Resource{
 				newTestResource("r0"),
 				newTestResource("r1"),
@@ -173,15 +163,13 @@ func Test_ProcessUpdate(t *testing.T) {
 			},
 			ErrorMatcher: nil,
 		},
-		// Test 4 ensures ProcessUpdate executes all resources in the
-		// expected order when reconciliationcanceledcontext is not
-		// set.
+		// Test 4 ensures ProcessUpdate executes next resource after
+		// resourcecanceledcontext is cancelled.
 		{
-			Ctx: context.Background(),
 			Resources: []Resource{
 				newTestResource("r0"),
 				newTestResource("r1"),
-				newTestResource("r2").SetReconcilationCancelledAt("EnsureCreated"),
+				newTestResource("r2").CancelResourceAt("EnsureCreated"),
 				newTestResource("r3"),
 				newTestResource("r4"),
 			},
@@ -197,7 +185,7 @@ func Test_ProcessUpdate(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		err := ProcessUpdate(tc.Ctx, nil, tc.Resources)
+		err := ProcessUpdate(context.Background(), nil, tc.Resources)
 		if err != nil {
 			if tc.ErrorMatcher == nil {
 				t.Fatal("test", i, "expected", nil, "got", err)
@@ -220,6 +208,7 @@ func Test_ProcessUpdate(t *testing.T) {
 type testResource struct {
 	name                       string
 	reconciliationCanceledStep string
+	resourceCanceledStep       string
 
 	Order []string
 }
@@ -230,33 +219,37 @@ func newTestResource(name string) *testResource {
 	}
 }
 
+func (r *testResource) Name() string {
+	return r.name
+}
+
 func (r *testResource) SetReconcilationCancelledAt(method string) *testResource {
 	r.reconciliationCanceledStep = method
 	return r
 }
 
+func (r *testResource) CancelResourceAt(method string) *testResource {
+	r.resourceCanceledStep = method
+	return r
+}
+
 func (r *testResource) EnsureCreated(ctx context.Context, obj interface{}) error {
-	m := "EnsureCreated"
-	r.Order = append(r.Order, r.name+"."+m)
-
-	if r.reconciliationCanceledStep == m {
-		reconciliationcanceledcontext.SetCanceled(ctx)
-	}
-
+	r.executeMethod(ctx, "EnsureCreated")
 	return nil
 }
 
 func (r *testResource) EnsureDeleted(ctx context.Context, obj interface{}) error {
-	m := "EnsureDeleted"
-	r.Order = append(r.Order, r.name+"."+m)
-
-	if r.reconciliationCanceledStep == m {
-		reconciliationcanceledcontext.SetCanceled(ctx)
-	}
-
+	r.executeMethod(ctx, "EnsureDeleted")
 	return nil
 }
 
-func (r *testResource) Name() string {
-	return r.name
+func (r *testResource) executeMethod(ctx context.Context, method string) {
+	r.Order = append(r.Order, r.name+"."+method)
+
+	if r.reconciliationCanceledStep == method {
+		reconciliationcanceledcontext.SetCanceled(ctx)
+	}
+	if r.resourceCanceledStep == method {
+		resourcecanceledcontext.SetCanceled(ctx)
+	}
 }

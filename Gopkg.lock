@@ -48,6 +48,19 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/giantswarm/apiextensions"
+  packages = [
+    "pkg/apis/core/v1alpha1",
+    "pkg/apis/provider/v1alpha1",
+    "pkg/clientset/versioned",
+    "pkg/clientset/versioned/scheme",
+    "pkg/clientset/versioned/typed/core/v1alpha1",
+    "pkg/clientset/versioned/typed/provider/v1alpha1"
+  ]
+  revision = "2a517245443e2473ea3d49024e325c5ddae329c0"
+
+[[projects]]
+  branch = "master"
   name = "github.com/giantswarm/e2e-harness"
   packages = ["pkg/harness"]
   revision = "8a1f95276ffb0ab135f90f7d8aca4a3274d86bbb"
@@ -359,8 +372,8 @@
 [[projects]]
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "7f97868eec74b32b0982dd158a51a446d1da7eb5"
-  version = "v2.1.1"
+  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
+  version = "v2.2.1"
 
 [[projects]]
   name = "k8s.io/api"
@@ -519,6 +532,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a9cc1fb5d6f8c92d64ba1f0e8ec0121f41f85eaae009ab2ac11bcf131a78de16"
+  inputs-digest = "74734343fa17e30e55c1170f62dd09e517eecceac0b9909a46716c0318e679c3"
   solver-name = "gps-cdcl"
   solver-version = 1
