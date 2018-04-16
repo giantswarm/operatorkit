@@ -42,14 +42,14 @@ jobs:
       TEST_DIR: "informer/integration"
     <<: *e2eTest
 
-  e2eTestFrameworkIntegrationBasic:
+  e2eTestControllerIntegrationBasic:
     environment:
-      TEST_DIR: "framework/integration/test/basic"
+      TEST_DIR: "controller/integration/test/basic"
     <<: *e2eTest
 
-  e2eTestFrameworkIntegrationReconciliation:
+  e2eTestControllerIntegrationReconciliation:
     environment:
-      TEST_DIR: "framework/integration/test/reconciliation"
+      TEST_DIR: "controller/integration/test/reconciliation"
     <<: *e2eTest
 
 
@@ -64,10 +64,10 @@ workflows:
           requires:
           - build
 
-      - e2eTestFrameworkIntegrationBasic:
+      - e2eTestControllerIntegrationBasic:
           requires:
           - build
 
-      - e2eTestFrameworkIntegrationReconciliation:
+      - e2eTestControllerIntegrationReconciliation:
           requires:
           - build
