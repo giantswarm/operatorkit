@@ -5,7 +5,6 @@ package reconciliation
 import (
 	"reflect"
 	"testing"
-	"time"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -91,8 +90,8 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		t.Fatal("expected", nil, "got", err)
 	}
 
-	// We wait the absolute maximum amount of time here:
-	// 20 second ResyncPeriod + 2 second RateWait + 3 second for safety.
+	// We use backoff with the absolute maximum amount:
+	// 20 second ResyncPeriod + 2 second RateWait + 2 second for safety.
 	// The framework should now add the finalizer and EnsureCreated should be hit
 	// once immediatly.
 	//
@@ -102,7 +101,19 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	//
 	// 		EnsureCreated: 3, EnsureDeleted: 0
 	//
-	time.Sleep(25 * time.Second)
+	operation = func() error {
+		if tr.GetCreateCount() != 3 {
+			return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.GetCreateCount(), 3)
+		}
+		if tr.GetDeleteCount() != 0 {
+			return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", tr.GetDeleteCount(), 0)
+		}
+		return nil
+	}
+	err = backoff.Retry(operation, newConstantBackoff(uint64(24)))
+	if err != nil {
+		t.Fatal("expected", nil, "got", err)
+	}
 
 	// We get the object after the framework has been started.
 	resultObj, err := testWrapper.GetObject(objName, testNamespace)
@@ -131,23 +142,14 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		t.Fatalf("finalizers == %v, want %v", resultObjAccessor.GetFinalizers(), expectedFinalizers)
 	}
 
-	// Verify that we hit the resource functions for the expected amounts.
-	if tr.GetCreateCount() != 3 {
-		t.Fatalf("EnsureCreated was hit %v times, want %v", tr.GetCreateCount(), 3)
-	}
-
-	if tr.GetDeleteCount() != 0 {
-		t.Fatalf("EnsureDeleted was hit %v times, want %v", tr.GetDeleteCount(), 0)
-	}
-
 	// We delete the object now.
 	err = testWrapper.DeleteObject(objName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
 
-	// We wait the absolute maximum amount of time here:
-	// 20 second ResyncPeriod + 2 second RateWait + 3 second for safety.
+	// We use backoff with the absolute maximum amount:
+	// 20 second ResyncPeriod + 2 second RateWait + 2 second for safety.
 	// The framework should now remove the finalizer and EnsureDeleted should be
 	// hit twice immediatly. See https://github.com/giantswarm/giantswarm/issues/2897
 	//
@@ -158,7 +160,19 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	//
 	// 		EnsureCreated: 3, EnsureDeleted: 4
 	//
-	time.Sleep(25 * time.Second)
+	operation = func() error {
+		if tr.GetCreateCount() != 3 {
+			return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.GetCreateCount(), 3)
+		}
+		if tr.GetDeleteCount() != 4 {
+			return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", tr.GetDeleteCount(), 4)
+		}
+		return nil
+	}
+	err = backoff.Retry(operation, newConstantBackoff(uint64(24)))
+	if err != nil {
+		t.Fatal("expected", nil, "got", err)
+	}
 
 	// We get the object after the framework has handled the deletion event.
 	resultObj, err = testWrapper.GetObject(objName, testNamespace)
@@ -184,15 +198,6 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	// We verify, that our finalizer is still set.
 	if !reflect.DeepEqual(resultObjAccessor.GetFinalizers(), expectedFinalizers) {
 		t.Fatalf("finalizers == %v, want %v", resultObjAccessor.GetFinalizers(), expectedFinalizers)
-	}
-
-	// Verify that we hit the resource functions for the expected amounts.
-	if tr.GetCreateCount() != 3 {
-		t.Fatalf("EnsureCreated was hit %v times, want %v", tr.GetCreateCount(), 3)
-	}
-
-	if tr.GetDeleteCount() != 4 {
-		t.Fatalf("EnsureDeleted was hit %v times, want %v", tr.GetDeleteCount(), 4)
 	}
 
 }
