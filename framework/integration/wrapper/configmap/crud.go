@@ -40,7 +40,16 @@ func (w Wrapper) GetObject(name, namespace string) (interface{}, error) {
 }
 
 func (w Wrapper) UpdateObject(namespace string, obj interface{}) (interface{}, error) {
-	return nil, nil
+	configMap, err := toCustomObject(obj)
+	if err != nil {
+		return nil, err
+	}
+	updateConfigMap, err := w.k8sClient.CoreV1().ConfigMaps(configMap.Namespace).Update(&configMap)
+	if err != nil {
+		return nil, err
+	}
+
+	return updateConfigMap, nil
 }
 
 func toCustomObject(v interface{}) (corev1.ConfigMap, error) {
