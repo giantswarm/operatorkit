@@ -27,7 +27,8 @@ type ResourceSetConfig struct {
 	// Logger is a usual micrologger instance to emit log messages, if any.
 	Logger micrologger.Logger
 	// Resources is the list of framework resources being executed on runtime
-	// object reconciliation if Handles returns true when asked by the framework.
+	// object reconciliation if Handles returns true when asked by the
+	// framework. Resources are executed in given order.
 	Resources []Resource
 }
 

@@ -57,7 +57,7 @@ func (f *Framework) removeFinalizer(ctx context.Context, obj interface{}) error 
 		return microerror.Mask(err)
 	}
 	if patch == nil {
-		f.logger.LogCtx(ctx, "function", "removeFinalizer", "level", "warning", "message", "object is missing a finalizer")
+		f.logger.LogCtx(ctx, "function", "removeFinalizer", "level", "warning", "message", fmt.Sprintf("object is missing finalizer for framework %s", f.name))
 		return nil
 	}
 	p, err := json.Marshal(patch)

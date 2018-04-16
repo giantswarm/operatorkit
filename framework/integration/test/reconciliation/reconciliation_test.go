@@ -7,25 +7,27 @@ import (
 	"testing"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/cenkalti/backoff"
+	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
+	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/operatorkit/framework"
-	"github.com/giantswarm/operatorkit/framework/integration/client"
 	"github.com/giantswarm/operatorkit/framework/integration/testresource"
+	"github.com/giantswarm/operatorkit/framework/integration/wrapper"
+	"github.com/giantswarm/operatorkit/framework/integration/wrapper/nodeconfig"
 )
 
 // Test_Finalizer_Integration_Reconciliation is a integration test for
 // the proper replay and reconciliation of delete events with finalizers.
 func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
-	configMapName := "test-cm"
+	objName := "test-obj"
 	testFinalizer := "operatorkit.giantswarm.io/test-operator"
 	testNamespace := "finalizer-integration-reconciliation-test"
 	testOtherFinalizer := "operatorkit.giantswarm.io/other-operator"
 	operatorName := "test-operator"
 
-	client.MustSetup(testNamespace)
-	defer client.MustTeardown(testNamespace)
 	var err error
 	var tr *testresource.Resource
 	{
@@ -41,42 +43,53 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		framework.Resource(tr),
 	}
 
-	c := client.Config{
+	c := nodeconfig.Config{
 		Resources: resources,
 
 		Name:      operatorName,
 		Namespace: testNamespace,
 	}
 
-	operatorkitFramework, err := client.NewFramework(c)
+	nodeconfigWrapper, err := nodeconfig.New(c)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
 
-	// We create a configmap, but add a finalizer of another operator. This will
-	// cause the configmap to continue existing after the framework removes it own
+	testWrapper := wrapper.Interface(nodeconfigWrapper)
+
+	testWrapper.MustSetup(testNamespace)
+	defer testWrapper.MustTeardown(testNamespace)
+
+	operatorkitFramework := testWrapper.Framework()
+
+	// We start the framework.
+	go operatorkitFramework.Boot()
+
+	// We create an object, but add a finalizer of another operator. This will
+	// cause the object to continue existing after the framework removes its own
 	// finalizer.
-	cm := &corev1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "ConfigMap",
-		},
+	//
+	//Creation is retried because the existance of a CRD might have to be ensured.
+	obj := &v1alpha1.NodeConfig{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      configMapName,
+			Name:      objName,
 			Namespace: testNamespace,
 			Finalizers: []string{
 				testOtherFinalizer,
 			},
 		},
-		Data: map[string]string{},
 	}
-	_, err = client.CreateConfigMap(cm)
+	operation := func() error {
+		_, err = testWrapper.CreateObject(testNamespace, obj)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+		return nil
+	}
+	err = backoff.Retry(operation, backoff.NewExponentialBackOff())
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
-
-	// We start the framework.
-	go operatorkitFramework.Boot()
 
 	// We wait the absolute maximum amount of time here:
 	// 20 second ResyncPeriod + 2 second RateWait + 3 second for safety.
@@ -91,14 +104,19 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	//
 	time.Sleep(25 * time.Second)
 
-	// We get the ConfigMap after the framework has been started.
-	resultConfigMap, err := client.GetConfigMap(configMapName, testNamespace)
+	// We get the object after the framework has been started.
+	resultObj, err := testWrapper.GetObject(objName, testNamespace)
+	if err != nil {
+		t.Fatal("expected", nil, "got", err)
+	}
+
+	resultObjAccessor, err := meta.Accessor(resultObj)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
 
 	// We verify, that the DeletionTimestamp has not been set.
-	if resultConfigMap.GetDeletionTimestamp() != nil {
+	if resultObjAccessor.GetDeletionTimestamp() != nil {
 		t.Fatalf("DeletionTimestamp != nil, want nil")
 	}
 
@@ -109,8 +127,8 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	}
 
 	// We verify, that our finalizer is still set.
-	if !reflect.DeepEqual(resultConfigMap.GetFinalizers(), expectedFinalizers) {
-		t.Fatalf("finalizers == %v, want %v", resultConfigMap.GetFinalizers(), expectedFinalizers)
+	if !reflect.DeepEqual(resultObjAccessor.GetFinalizers(), expectedFinalizers) {
+		t.Fatalf("finalizers == %v, want %v", resultObjAccessor.GetFinalizers(), expectedFinalizers)
 	}
 
 	// Verify that we hit the resource functions for the expected amounts.
@@ -122,8 +140,8 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		t.Fatalf("EnsureDeleted was hit %v times, want %v", tr.GetDeleteCount(), 0)
 	}
 
-	// We delete the configmap now.
-	err = client.DeleteConfigMap(configMapName, testNamespace)
+	// We delete the object now.
+	err = testWrapper.DeleteObject(objName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -142,14 +160,19 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	//
 	time.Sleep(25 * time.Second)
 
-	// We get the ConfigMap after the framework has handled the deletion event.
-	resultConfigMap, err = client.GetConfigMap(configMapName, testNamespace)
+	// We get the object after the framework has handled the deletion event.
+	resultObj, err = testWrapper.GetObject(objName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
 
-	// We verify, that our configmap still exists, but has a DeletionTimestamp set.
-	if resultConfigMap.GetDeletionTimestamp() == nil {
+	resultObjAccessor, err = meta.Accessor(resultObj)
+	if err != nil {
+		t.Fatal("expected", nil, "got", err)
+	}
+
+	// We verify, that our object still exists, but has a DeletionTimestamp set.
+	if resultObjAccessor.GetDeletionTimestamp() == nil {
 		t.Fatalf("DeletionTimestamp == nil, want non-nil")
 	}
 
@@ -159,8 +182,8 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	}
 
 	// We verify, that our finalizer is still set.
-	if !reflect.DeepEqual(resultConfigMap.GetFinalizers(), expectedFinalizers) {
-		t.Fatalf("finalizers == %v, want %v", resultConfigMap.GetFinalizers(), expectedFinalizers)
+	if !reflect.DeepEqual(resultObjAccessor.GetFinalizers(), expectedFinalizers) {
+		t.Fatalf("finalizers == %v, want %v", resultObjAccessor.GetFinalizers(), expectedFinalizers)
 	}
 
 	// Verify that we hit the resource functions for the expected amounts.
