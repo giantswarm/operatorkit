@@ -62,7 +62,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	controller := testWrapper.Controller()
 
 	// We start the controller.
-	go operatorkitController.Boot()
+	go controller.Boot()
 
 	// We create an object, but add a finalizer of another operator. This will
 	// cause the object to continue existing after the controller removes its own
