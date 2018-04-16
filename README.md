@@ -10,8 +10,9 @@ practices learned while running operators in production.
 
 ## Features
 
-- CRD/TPR primitives to reliably create, watch and delete custom resources.
-- Provides custom object decoder reducing boilerplate code to the minimum.
+- CRD primitives to reliably create, watch and delete custom resources.
+- Managing finalizers on reconciled objects, making sure the code is executed
+  at least once for each delete event.
 - Independent packages. It is possible to use only certain parts of the
   library. 
 - Possible to change behaviour that often is specific to an organization
@@ -24,53 +25,32 @@ The project is split into independent packages providing complementary
 functionality, making it easier create production grade Kubernetes operators.
 
 - client - provides a unified way of creating Kubernetes clients required by
-  other packages.
-- crd/tpr - provides CRD/TPR primitives, allowing to reliably create custom
-  resources, wait for their initialization, and generate endpoint URLs. 
+  other packages. 
 - informer - provides well defined watching functionality for virtually any
   Kubernetes resource. The informer is deterministic, meaning it does not
   dispatch events twice after the resync period, which saves some cycles. It
   also features rate limiting of the event dispatching. It also provides
   functionality for decoding custom objects, reducing error prone boilerplate
   code.
-- framework - provides a framework aiming to help writing reliable, robust
-  reconciliation loops. The heart of the framework is a Resouce interface
-  guiding the user step by step towards a proper reconciliation that drives the
-  current state towards the desired state. The Resource is designed to be
-  composable. The framework provides useful Resource wrappers, making it easy
-  to retry on failures, emit metrics and log consistent diagnostic messages.
-
-## Future Scope
-
-- Custom object migration. With operators running in production handling many
-  custom objects in multiple installations it is essential to be able to change
-  the custom resource definition. This is something we are struggling with at
-  the moment. We want to provide some generic way to deal with that problem
-  nicely.
-- Ensuring processing of custom object deletion. Freeing resources managed by
-  the operator after custom resource deletion is a crucial part of the
-  operator. We think it is important that the operator processes custom
-  resource deletion even when it was not running during the deletion. E.g.
-  custom object deleted during operator redepolyment. Even if the probability
-  of such a case is small we do not want to risk orphaned resources. We plan to
-  use [finalizers][finalizers] for that.
-- Framework is still under heavy development. As we create new operators, and
-  run them in different environments we discover new problems, learn how to
-  deal with them and try to move that knowledge to the framework.
+- controller - provides a framework aiming to help writing reliable, robust
+  controllers performing reconciliation loops. The heart of the controller is
+  a Resource interface. The reconciliation primitive allowing split the
+  reconciliation into smaller bits. Controller manages [finalizers][finalizers]
+  on reconciled objects, making sure all resources are executed at least once
+  during the deletion.
 
 ## Projects using operatorkit
 
-- https://github.com/giantswarm/aws-operator (not using the framwork yet, but
-  we work hard on that)
+- https://github.com/giantswarm/aws-operator
 - https://github.com/giantswarm/azure-operator
 - https://github.com/giantswarm/cert-operator
-- https://github.com/giantswarm/draughtsman-operator (currently not used in
-  production because of goroutine leaks in Kubernetes apiservers)
-- https://github.com/giantswarm/endpoint-operator (WIP)
+- https://github.com/giantswarm/cluster-operator
+- https://github.com/giantswarm/chart-operator
 - https://github.com/giantswarm/flannel-operator
 - https://github.com/giantswarm/ingress-operator
 - https://github.com/giantswarm/kvm-operator
-- https://github.com/giantswarm/prometheus-config-controller (WIP)
+- https://github.com/giantswarm/node-operator
+- https://github.com/giantswarm/prometheus-config-controller
 - more to come
 
 ## Contact
