@@ -14,7 +14,6 @@ import (
 
 func Test_ProcessDelete_CRUD(t *testing.T) {
 	testCases := []struct {
-		Ctx           context.Context
 		Resources     []Resource
 		ExpectedOrder []string
 		ErrorMatcher  func(err error) bool
@@ -22,7 +21,6 @@ func Test_ProcessDelete_CRUD(t *testing.T) {
 		// Test 0 ensures ProcessDelete returns an error in case no resources are
 		// provided.
 		{
-			Ctx:           context.Background(),
 			Resources:     nil,
 			ExpectedOrder: nil,
 			ErrorMatcher:  IsExecutionFailed,
@@ -30,7 +28,6 @@ func Test_ProcessDelete_CRUD(t *testing.T) {
 
 		// Test 1 ensures ProcessDelete calls EnsureDeleted method of the resource.
 		{
-			Ctx: context.Background(),
 			Resources: []Resource{
 				newTestCRUDResource("r0"),
 			},
@@ -48,7 +45,6 @@ func Test_ProcessDelete_CRUD(t *testing.T) {
 		// Test 2 ensures ProcessDelete executes all the resources in
 		// the expected order.
 		{
-			Ctx: context.Background(),
 			Resources: []Resource{
 				newTestCRUDResource("r0"),
 				newTestCRUDResource("r1"),
@@ -74,7 +70,6 @@ func Test_ProcessDelete_CRUD(t *testing.T) {
 		// Test 3 ensures ProcessDelete executes resources in the
 		// expected order until the reconciliation gets canceled.
 		{
-			Ctx: reconciliationcanceledcontext.NewContext(context.Background(), make(chan struct{})),
 			Resources: []Resource{
 				newTestCRUDResource("r0"),
 				newTestCRUDResource("r1"),
@@ -102,59 +97,9 @@ func Test_ProcessDelete_CRUD(t *testing.T) {
 			},
 			ErrorMatcher: nil,
 		},
-		// Test 4 ensures ProcessDelete executes all resources in the
-		// expected order when reconciliationcanceledcontext is not set.
-		{
-			Ctx: context.Background(),
-			Resources: []Resource{
-				newTestCRUDResource("r0"),
-				newTestCRUDResource("r1"),
-				newTestCRUDResource("r2").CancelReconciliationAt("GetDesiredState"),
-				newTestCRUDResource("r3"),
-				newTestCRUDResource("r4"),
-			},
-			ExpectedOrder: []string{
-				"r0.GetCurrentState",
-				"r0.GetDesiredState",
-				"r0.NewDeletePatch",
-				"r0.ApplyCreateChange",
-				"r0.ApplyDeleteChange",
-				"r0.ApplyUpdateChange",
-
-				"r1.GetCurrentState",
-				"r1.GetDesiredState",
-				"r1.NewDeletePatch",
-				"r1.ApplyCreateChange",
-				"r1.ApplyDeleteChange",
-				"r1.ApplyUpdateChange",
-
-				"r2.GetCurrentState",
-				"r2.GetDesiredState",
-				"r2.NewDeletePatch",
-				"r2.ApplyCreateChange",
-				"r2.ApplyDeleteChange",
-				"r2.ApplyUpdateChange",
-
-				"r3.GetCurrentState",
-				"r3.GetDesiredState",
-				"r3.NewDeletePatch",
-				"r3.ApplyCreateChange",
-				"r3.ApplyDeleteChange",
-				"r3.ApplyUpdateChange",
-
-				"r4.GetCurrentState",
-				"r4.GetDesiredState",
-				"r4.NewDeletePatch",
-				"r4.ApplyCreateChange",
-				"r4.ApplyDeleteChange",
-				"r4.ApplyUpdateChange",
-			},
-			ErrorMatcher: nil,
-		},
-		// Test 5 ensures ProcessDelete executes next resource after
+		// Test 4 ensures ProcessDelete executes next resource after
 		// resourcecanceledcontext is cancelled.
 		{
-			Ctx: resourcecanceledcontext.NewContext(context.Background(), make(chan struct{})),
 			Resources: []Resource{
 				newTestCRUDResource("r0").CancelResourceAt("ApplyDeleteChange"),
 				newTestCRUDResource("r1"),
@@ -198,7 +143,7 @@ func Test_ProcessDelete_CRUD(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		err := ProcessDelete(tc.Ctx, nil, tc.Resources)
+		err := ProcessDelete(context.Background(), nil, tc.Resources)
 		if err != nil {
 			if tc.ErrorMatcher == nil {
 				t.Fatal("test", i, "expected", nil, "got", err)
@@ -220,7 +165,6 @@ func Test_ProcessDelete_CRUD(t *testing.T) {
 
 func Test_ProcessUpdate_CRUD(t *testing.T) {
 	testCases := []struct {
-		Ctx           context.Context
 		Resources     []Resource
 		ExpectedOrder []string
 		ErrorMatcher  func(err error) bool
@@ -228,7 +172,6 @@ func Test_ProcessUpdate_CRUD(t *testing.T) {
 		// Test 0 ensures ProcessUpdate returns an error in case no resources are
 		// provided.
 		{
-			Ctx:           context.Background(),
 			Resources:     nil,
 			ExpectedOrder: nil,
 			ErrorMatcher:  IsExecutionFailed,
@@ -236,7 +179,6 @@ func Test_ProcessUpdate_CRUD(t *testing.T) {
 
 		// Test 1 ensures ProcessUpdate calls EnsureDeleted method of the resource.
 		{
-			Ctx: context.Background(),
 			Resources: []Resource{
 				newTestCRUDResource("r0"),
 			},
@@ -254,7 +196,6 @@ func Test_ProcessUpdate_CRUD(t *testing.T) {
 		// Test 2 ensures ProcessUpdate executes all the resources in
 		// the expected order.
 		{
-			Ctx: context.Background(),
 			Resources: []Resource{
 				newTestCRUDResource("r0"),
 				newTestCRUDResource("r1"),
@@ -280,7 +221,6 @@ func Test_ProcessUpdate_CRUD(t *testing.T) {
 		// Test 3 ensures ProcessUpdate executes resources in the
 		// expected order until the reconciliation gets canceled.
 		{
-			Ctx: reconciliationcanceledcontext.NewContext(context.Background(), make(chan struct{})),
 			Resources: []Resource{
 				newTestCRUDResource("r0"),
 				newTestCRUDResource("r1"),
@@ -308,59 +248,9 @@ func Test_ProcessUpdate_CRUD(t *testing.T) {
 			},
 			ErrorMatcher: nil,
 		},
-		// Test 4 ensures ProcessUpdate executes all resources in the
-		// expected order when reconciliationcanceledcontext is not set.
-		{
-			Ctx: context.Background(),
-			Resources: []Resource{
-				newTestCRUDResource("r0"),
-				newTestCRUDResource("r1"),
-				newTestCRUDResource("r2").CancelReconciliationAt("GetDesiredState"),
-				newTestCRUDResource("r3"),
-				newTestCRUDResource("r4"),
-			},
-			ExpectedOrder: []string{
-				"r0.GetCurrentState",
-				"r0.GetDesiredState",
-				"r0.NewUpdatePatch",
-				"r0.ApplyCreateChange",
-				"r0.ApplyDeleteChange",
-				"r0.ApplyUpdateChange",
-
-				"r1.GetCurrentState",
-				"r1.GetDesiredState",
-				"r1.NewUpdatePatch",
-				"r1.ApplyCreateChange",
-				"r1.ApplyDeleteChange",
-				"r1.ApplyUpdateChange",
-
-				"r2.GetCurrentState",
-				"r2.GetDesiredState",
-				"r2.NewUpdatePatch",
-				"r2.ApplyCreateChange",
-				"r2.ApplyDeleteChange",
-				"r2.ApplyUpdateChange",
-
-				"r3.GetCurrentState",
-				"r3.GetDesiredState",
-				"r3.NewUpdatePatch",
-				"r3.ApplyCreateChange",
-				"r3.ApplyDeleteChange",
-				"r3.ApplyUpdateChange",
-
-				"r4.GetCurrentState",
-				"r4.GetDesiredState",
-				"r4.NewUpdatePatch",
-				"r4.ApplyCreateChange",
-				"r4.ApplyDeleteChange",
-				"r4.ApplyUpdateChange",
-			},
-			ErrorMatcher: nil,
-		},
-		// Test 5 ensures ProcessUpdate executes next resource after
+		// Test 4 ensures ProcessUpdate executes next resource after
 		// resourcecanceledcontext is cancelled.
 		{
-			Ctx: resourcecanceledcontext.NewContext(context.Background(), make(chan struct{})),
 			Resources: []Resource{
 				newTestCRUDResource("r0").CancelResourceAt("ApplyDeleteChange"),
 				newTestCRUDResource("r1"),
@@ -404,7 +294,7 @@ func Test_ProcessUpdate_CRUD(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		err := ProcessUpdate(tc.Ctx, nil, tc.Resources)
+		err := ProcessUpdate(context.Background(), nil, tc.Resources)
 		if err != nil {
 			if tc.ErrorMatcher == nil {
 				t.Fatal("test", i, "expected", nil, "got", err)
