@@ -14,7 +14,7 @@ practices learned while running operators in production.
 - Managing finalizers on reconciled objects, making sure the code is executed
   at least once for each delete event.
 - Independent packages. It is possible to use only certain parts of the
-  library. 
+  library.
 - Possible to change behaviour that often is specific to an organization
   like logging and error handling.
 - Minimal set of dependencies.
@@ -25,7 +25,7 @@ The project is split into independent packages providing complementary
 functionality, making it easier create production grade Kubernetes operators.
 
 - client - provides a unified way of creating Kubernetes clients required by
-  other packages. 
+  other packages.
 - informer - provides well defined watching functionality for virtually any
   Kubernetes resource. The informer is deterministic, meaning it does not
   dispatch events twice after the resync period, which saves some cycles. It
