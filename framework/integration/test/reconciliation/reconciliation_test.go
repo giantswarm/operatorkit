@@ -78,14 +78,33 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 			},
 		},
 	}
+	var createdObj interface{}
 	operation := func() error {
-		_, err = testWrapper.CreateObject(testNamespace, obj)
+		createdObj, err = testWrapper.CreateObject(testNamespace, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 		return nil
 	}
 	err = backoff.Retry(operation, backoff.NewExponentialBackOff())
+	if err != nil {
+		t.Fatal("expected", nil, "got", err)
+	}
+
+	// We update the object with a meaningless label to ensure a change in the
+	// ResourceVersion of the object.
+	createdObjAccessor, err := meta.Accessor(createdObj)
+	if err != nil {
+		t.Fatal("expected", nil, "got", err)
+	}
+	createdObjAccessor.SetLabels(
+		map[string]string{
+			"testlabel": "testlabel",
+		},
+	)
+	// Setting the labels on createdObj works through the magic or accessors and
+	// pointers here.
+	_, err = testWrapper.UpdateObject(testNamespace, createdObj)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -97,13 +116,18 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	//
 	// 		EnsureCreated: 1, EnsureDeleted: 0
 	//
+	// Then we hit EnsureCreated once more because we updated the object with a new
+	// label.
+	//
+	// 		EnsureCreated: 2, EnsureDeleted: 0
+	//
 	// The framework should reconcile twice in this period.
 	//
-	// 		EnsureCreated: 3, EnsureDeleted: 0
+	// 		EnsureCreated: 4, EnsureDeleted: 0
 	//
 	operation = func() error {
-		if tr.GetCreateCount() != 3 {
-			return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.GetCreateCount(), 3)
+		if tr.GetCreateCount() != 4 {
+			return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.GetCreateCount(), 4)
 		}
 		if tr.GetDeleteCount() != 0 {
 			return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", tr.GetDeleteCount(), 0)
@@ -153,16 +177,16 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	// The framework should now remove the finalizer and EnsureDeleted should be
 	// hit twice immediatly. See https://github.com/giantswarm/giantswarm/issues/2897
 	//
-	// 		EnsureCreated: 3, EnsureDeleted: 2
+	// 		EnsureCreated: 4, EnsureDeleted: 2
 	//
 	// The framework should also reconcile twice in this period. (The other
 	// finalizer is still set, so we reconcile.)
 	//
-	// 		EnsureCreated: 3, EnsureDeleted: 4
+	// 		EnsureCreated: 4, EnsureDeleted: 4
 	//
 	operation = func() error {
-		if tr.GetCreateCount() != 3 {
-			return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.GetCreateCount(), 3)
+		if tr.GetCreateCount() != 4 {
+			return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.GetCreateCount(), 4)
 		}
 		if tr.GetDeleteCount() != 4 {
 			return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", tr.GetDeleteCount(), 4)
