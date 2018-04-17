@@ -91,7 +91,7 @@ func New(config Config) (*Wrapper, error) {
 	}
 	cf := framework.Config{
 		Informer:       newInformer,
-		K8sClient:      k8sClient,
+		RESTClient:     k8sClient.CoreV1().RESTClient(),
 		Logger:         logger,
 		ResourceRouter: resourceRouter,
 

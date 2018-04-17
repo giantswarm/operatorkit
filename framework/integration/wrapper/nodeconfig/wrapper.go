@@ -118,7 +118,7 @@ func New(config Config) (*Wrapper, error) {
 		CRD:            v1alpha1.NewNodeConfigCRD(),
 		CRDClient:      crdClient,
 		Informer:       newInformer,
-		K8sClient:      k8sClient,
+		RESTClient:     g8sClient.ProviderV1alpha1().RESTClient(),
 		Logger:         logger,
 		ResourceRouter: resourceRouter,
 

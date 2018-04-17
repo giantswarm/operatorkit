@@ -75,8 +75,8 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	}
 
 	// We directly pass the _old_ configmap to UpdateFunc.
-	// This is expected to fail, we want to make sure that we only use the latest
-	// ResourceVersion of an object.
+	// This is expected to only add one finalizer, we want to make sure that we
+	// only use the latest ResourceVersion of an object.
 	operatorkitFramework.UpdateFunc(nil, createdObj)
 
 	// We run UpdateFunc multiple times on the old object to check for duplicates.

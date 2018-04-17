@@ -14,7 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 
 	"github.com/giantswarm/operatorkit/client/k8scrdclient"
 	"github.com/giantswarm/operatorkit/framework/context/reconciliationcanceledcontext"
@@ -44,7 +44,7 @@ type Config struct {
 	// and different resources can be executed depending on the runtime object
 	// being reconciled.
 	ResourceRouter *ResourceRouter
-	K8sClient      kubernetes.Interface
+	RESTClient     rest.Interface
 
 	BackOffFactory func() backoff.BackOff
 	// Name is the name which the framework uses on finalizers for resources.
@@ -57,7 +57,7 @@ type Framework struct {
 	crd            *apiextensionsv1beta1.CustomResourceDefinition
 	crdClient      *k8scrdclient.CRDClient
 	informer       informer.Interface
-	k8sClient      kubernetes.Interface
+	restClient     rest.Interface
 	logger         micrologger.Logger
 	resourceRouter *ResourceRouter
 
@@ -76,7 +76,7 @@ func New(config Config) (*Framework, error) {
 	if config.Informer == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Informer must not be empty")
 	}
-	if config.K8sClient == nil {
+	if config.RESTClient == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.K8sClient must not be empty")
 	}
 	if config.Logger == nil {
@@ -97,7 +97,7 @@ func New(config Config) (*Framework, error) {
 		crd:            config.CRD,
 		crdClient:      config.CRDClient,
 		informer:       config.Informer,
-		k8sClient:      config.K8sClient,
+		restClient:     config.RESTClient,
 		logger:         config.Logger,
 		resourceRouter: config.ResourceRouter,
 

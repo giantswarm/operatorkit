@@ -23,7 +23,6 @@ type patchSpec struct {
 }
 
 func (f *Framework) addFinalizer(obj interface{}) (stopReconciliation bool, err error) {
-	restClient := f.k8sClient.CoreV1().RESTClient()
 	// We get the accessor of the object which we got passed from the framework.
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
@@ -34,10 +33,9 @@ func (f *Framework) addFinalizer(obj interface{}) (stopReconciliation bool, err 
 	stopReconciliation = false
 
 	operation := func() error {
-		// We get an up to date version of our object from k8s.
-		res := restClient.Get().AbsPath(path).Do()
-		// We parse the response from the RESTClient to runtime object.
-		obj, err = res.Get()
+		// We get an up to date version of our object from k8s and parse the
+		// response from the RESTClient to runtime object.
+		obj, err := f.restClient.Get().AbsPath(path).Do().Get()
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -55,7 +53,7 @@ func (f *Framework) addFinalizer(obj interface{}) (stopReconciliation bool, err 
 		if err != nil {
 			return microerror.Mask(err)
 		}
-		err = restClient.Patch(types.JSONPatchType).AbsPath(path).Body(p).Do().Error()
+		err = f.restClient.Patch(types.JSONPatchType).AbsPath(path).Body(p).Do().Error()
 		if IsInvalidResourceVersionError(err) {
 			// We log a warning, this should not be the case. This warning should help
 			// identify race conditions.
@@ -78,7 +76,6 @@ func (f *Framework) addFinalizer(obj interface{}) (stopReconciliation bool, err 
 }
 
 func (f *Framework) removeFinalizer(ctx context.Context, obj interface{}) error {
-	restClient := f.k8sClient.CoreV1().RESTClient()
 	patch, path, err := createRemoveFinalizerPatch(obj, f.name)
 	if err != nil {
 		return microerror.Mask(err)
@@ -92,7 +89,7 @@ func (f *Framework) removeFinalizer(ctx context.Context, obj interface{}) error 
 		return microerror.Mask(err)
 	}
 	operation := func() error {
-		res := restClient.Patch(types.JSONPatchType).AbsPath(path).Body(p).Do()
+		res := f.restClient.Patch(types.JSONPatchType).AbsPath(path).Body(p).Do()
 		if errors.IsNotFound(res.Error()) {
 			return nil // the object is already gone, nothing to do.
 		} else if res.Error() != nil {

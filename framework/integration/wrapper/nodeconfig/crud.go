@@ -40,7 +40,16 @@ func (w Wrapper) GetObject(name, namespace string) (interface{}, error) {
 }
 
 func (w Wrapper) UpdateObject(namespace string, obj interface{}) (interface{}, error) {
-	return nil, nil
+	nodeConfig, err := toCustomObject(obj)
+	if err != nil {
+		return nil, err
+	}
+	updateNodeConfig, err := w.g8sClient.CoreV1alpha1().NodeConfigs(namespace).Update(&nodeConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return updateNodeConfig, nil
 }
 
 func toCustomObject(v interface{}) (v1alpha1.NodeConfig, error) {
