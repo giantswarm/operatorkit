@@ -28,6 +28,13 @@ func (f *Framework) addFinalizer(obj interface{}) (stopReconciliation bool, err 
 	if err != nil {
 		return false, microerror.Mask(err)
 	}
+	finalizerName := getFinalizerName(f.name)
+	// We check if the object has a finalizer here, to avoid unnecessary calls to
+	// the k8s api.
+	if containsFinalizer(accessor.GetFinalizers(), finalizerName) {
+		return false, nil // object already has the finalizer.
+	}
+
 	path := accessor.GetSelfLink()
 	// Continuing with reconciliation is set as a default here.
 	stopReconciliation = false
