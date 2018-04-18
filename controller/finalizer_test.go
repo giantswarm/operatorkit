@@ -15,16 +15,16 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 		operatorName                 string
 		expectedCancelReconciliation bool
 		expectedPatch                []patchSpec
-		expectedPath                 string
 		errorMatcher                 func(error) bool
 	}{
 		{
 			name: "case 0: No finalizer is set yet",
 			object: &apiv1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "TestPod",
-					Namespace: "TestNamespace",
-					SelfLink:  "/some/path",
+					Name:            "TestPod",
+					Namespace:       "TestNamespace",
+					ResourceVersion: "123",
+					SelfLink:        "/some/path",
 				},
 			},
 			operatorName:                 "test-operator",
@@ -40,8 +40,12 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 					Path:  "/metadata/finalizers/-",
 					Value: "operatorkit.giantswarm.io/test-operator",
 				},
+				{
+					Op:    "test",
+					Path:  "/metadata/resourceVersion",
+					Value: "123",
+				},
 			},
-			expectedPath: "/some/path",
 			errorMatcher: nil,
 		},
 		{
@@ -59,7 +63,6 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 			operatorName:                 "test-operator",
 			expectedCancelReconciliation: false,
 			expectedPatch:                nil,
-			expectedPath:                 "",
 			errorMatcher:                 nil,
 		},
 		{
@@ -75,16 +78,16 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 			operatorName:                 "test-operator",
 			expectedCancelReconciliation: true,
 			expectedPatch:                nil,
-			expectedPath:                 "",
 			errorMatcher:                 nil,
 		},
 		{
 			name: "case 3: Other finalizers are already set",
 			object: &apiv1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "TestPod",
-					Namespace: "TestNamespace",
-					SelfLink:  "/some/path",
+					Name:            "TestPod",
+					Namespace:       "TestNamespace",
+					ResourceVersion: "123",
+					SelfLink:        "/some/path",
 					Finalizers: []string{
 						"operatorkit.giantswarm.io/other-operator",
 						"operatorkit.giantswarm.io/123-operator",
@@ -99,8 +102,12 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 					Path:  "/metadata/finalizers/-",
 					Value: "operatorkit.giantswarm.io/test-operator",
 				},
+				{
+					Op:    "test",
+					Path:  "/metadata/resourceVersion",
+					Value: "123",
+				},
 			},
-			expectedPath: "/some/path",
 			errorMatcher: nil,
 		},
 	}
@@ -108,7 +115,7 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			patch, path, cancelReconciliation, err := createAddFinalizerPatch(tc.object, tc.operatorName)
+			patch, cancelReconciliation, err := createAddFinalizerPatch(tc.object, tc.operatorName)
 
 			switch {
 			case err == nil && tc.errorMatcher == nil:
@@ -122,9 +129,6 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 			}
 			if !reflect.DeepEqual(patch, tc.expectedPatch) {
 				t.Fatalf("patch == %v, want %v", patch, tc.expectedPatch)
-			}
-			if path != tc.expectedPath {
-				t.Fatalf("path == %v, want %v", path, tc.expectedPath)
 			}
 			if cancelReconciliation != tc.expectedCancelReconciliation {
 				t.Fatalf("cancelReconciliation == %v, want %v", cancelReconciliation, tc.expectedCancelReconciliation)

@@ -62,9 +62,27 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 		t.Fatal("expected", nil, "got", err)
 	}
 
-	// We directly pass the object to UpdateFunc.
-	operatorkitController.UpdateFunc(createdObj, createdObj)
+	// We update the object with a meaningless label to ensure a change in the
+	// ResourceVersion of the ConfigMap.
+	cm.SetLabels(
+		map[string]string{
+			"testlabel": "testlabel",
+		},
+	)
+	_, err = testWrapper.UpdateObject(testNamespace, cm)
+	if err != nil {
+		t.Fatal("expected", nil, "got", err)
+	}
 
+	// We directly pass the _old_ configmap to UpdateFunc.
+	// This is expected to only add one finalizer, we want to make sure that we
+	// only use the latest ResourceVersion of an object.
+	operatorkitController.UpdateFunc(nil, createdObj)
+
+	// We run UpdateFunc multiple times on the old object to check for duplicates.
+	operatorkitController.UpdateFunc(nil, createdObj)
+
+	// We get the current configmap.
 	resultObj, err := testWrapper.GetObject(configMapName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)

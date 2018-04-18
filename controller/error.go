@@ -1,8 +1,6 @@
 package controller
 
-import (
-	"github.com/giantswarm/microerror"
-)
+import "github.com/giantswarm/microerror"
 
 var executionFailedError = microerror.New("execution failed")
 
