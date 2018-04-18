@@ -43,7 +43,16 @@ type Config struct {
 	// and different resources can be executed depending on the runtime object
 	// being reconciled.
 	ResourceRouter *ResourceRouter
-	RESTClient     rest.Interface
+	// RESTClient needs to be a rest.interface which is configured with a serializer
+	// capable of serializing and deserializing the obect which is watched by the
+	// informer.
+	//
+	// For standard k8s object this is going to be e.g.
+	//   k8sClient.CoreV1().RESTClient()
+	//
+	// For CRs of giantswarm this is going to be e.g.
+	//   g8sClient.CoreV1alpha1().RESTClient()
+	RESTClient rest.Interface
 
 	BackOffFactory func() backoff.BackOff
 	// Name is the name which the controller uses on finalizers for resources.
