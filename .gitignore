@@ -4,4 +4,5 @@ TODO
 .e2e-harness/
 informer/integration/operatorkit-e2e
 controller/integration/test/basic/operatorkit-e2e
+controller/integration/test/controlflow/operatorkit-e2e
 controller/integration/test/reconciliation/operatorkit-e2e
