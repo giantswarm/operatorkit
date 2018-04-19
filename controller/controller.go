@@ -179,10 +179,12 @@ func (f *Controller) DeleteFunc(obj interface{}) {
 		return
 	}
 
-	err = f.removeFinalizer(ctx, obj)
-	if err != nil {
-		f.logger.LogCtx(ctx, "event", "delete", "function", "DeleteFunc", "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
-		return
+	if !isContextCanceled(ctx) {
+		err = f.removeFinalizer(ctx, obj)
+		if err != nil {
+			f.logger.LogCtx(ctx, "event", "delete", "function", "DeleteFunc", "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+			return
+		}
 	}
 }
 
@@ -371,6 +373,18 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 	}
 
 	return nil
+}
+
+func isContextCanceled(ctx context.Context) bool {
+	if reconciliationcanceledcontext.IsCanceled(ctx) {
+		return true
+	}
+
+	if resourcecanceledcontext.IsCanceled(ctx) {
+		return true
+	}
+
+	return false
 }
 
 func setLoggerCtxValue(ctx context.Context, key, value string) context.Context {

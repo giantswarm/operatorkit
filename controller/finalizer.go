@@ -83,7 +83,6 @@ func (f *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 		return microerror.Mask(err)
 	}
 	if patch == nil {
-		f.logger.LogCtx(ctx, "function", "removeFinalizer", "level", "warning", "message", fmt.Sprintf("object is missing finalizer for controller %s", f.name))
 		return nil
 	}
 	p, err := json.Marshal(patch)
@@ -154,11 +153,12 @@ func createAddFinalizerPatch(obj interface{}, operatorName string) (patch []patc
 	return patch, true, nil
 }
 
-func createRemoveFinalizerPatch(obj interface{}, operatorName string) (patch []patchSpec, path string, err error) {
+func createRemoveFinalizerPatch(obj interface{}, operatorName string) ([]patchSpec, string, error) {
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
 		return nil, "", microerror.Mask(err)
 	}
+
 	finalizerName := getFinalizerName(operatorName)
 	if !containsFinalizer(accessor.GetFinalizers(), finalizerName) {
 		// object has not finalizer set, this could have two reasons:
@@ -168,13 +168,15 @@ func createRemoveFinalizerPatch(obj interface{}, operatorName string) (patch []p
 		// Both cases should not be harmful in general, so we ignore it.
 		return nil, "", nil
 	}
-	patch = []patchSpec{}
-	deletePatch := patchSpec{
-		Op:    "replace",
-		Value: removeFinalizer(accessor.GetFinalizers(), finalizerName),
-		Path:  "/metadata/finalizers",
+
+	patch := []patchSpec{
+		{
+			Op:    "replace",
+			Value: removeFinalizer(accessor.GetFinalizers(), finalizerName),
+			Path:  "/metadata/finalizers",
+		},
 	}
-	patch = append(patch, deletePatch)
+
 	return patch, accessor.GetSelfLink(), nil
 }
 
@@ -189,5 +191,6 @@ func removeFinalizer(finalizers []string, finalizer string) []string {
 			break
 		}
 	}
+
 	return finalizers
 }
