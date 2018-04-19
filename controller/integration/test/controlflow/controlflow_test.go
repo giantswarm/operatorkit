@@ -19,9 +19,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 )
 
-// Test_Finalizer_Integration_Reconciliation is a integration test for
-// the proper replay and reconciliation of delete events with finalizers.
-func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
+// Test_Finalizer_Integration_Controlflow is a integration test to
+// check that errors during deletion prevent the finalizer from removal.
+func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	objName := "test-obj"
 	testFinalizer := "operatorkit.giantswarm.io/test-operator"
 	testNamespace := "finalizer-integration-reconciliation-test"
