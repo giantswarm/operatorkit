@@ -17,6 +17,7 @@ import (
 	"k8s.io/client-go/rest"
 
 	"github.com/giantswarm/operatorkit/client/k8scrdclient"
+	"github.com/giantswarm/operatorkit/controller/context/finalizerskeptcontext"
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
 	"github.com/giantswarm/operatorkit/informer"
@@ -179,7 +180,7 @@ func (f *Controller) DeleteFunc(obj interface{}) {
 		return
 	}
 
-	if !isContextCanceled(ctx) {
+	if finalizerskeptcontext.IsKept(ctx) {
 		err = f.removeFinalizer(ctx, obj)
 		if err != nil {
 			f.logger.LogCtx(ctx, "event", "delete", "function", "DeleteFunc", "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
@@ -373,18 +374,6 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 	}
 
 	return nil
-}
-
-func isContextCanceled(ctx context.Context) bool {
-	if reconciliationcanceledcontext.IsCanceled(ctx) {
-		return true
-	}
-
-	if resourcecanceledcontext.IsCanceled(ctx) {
-		return true
-	}
-
-	return false
 }
 
 func setLoggerCtxValue(ctx context.Context, key, value string) context.Context {
