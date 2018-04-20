@@ -136,9 +136,9 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 		t.Fatalf("finalizers == %v, want %v", resultObjAccessor.GetFinalizers(), expectedFinalizers)
 	}
 
-	// We set ThrowError to true, this causes the resource to always throw an error
+	// We set ReturnError to true, this causes the resource to always return an error
 	// and should therefor prevent thr removal of our finalizer.
-	tr.ThrowError(true)
+	tr.ReturnError(true)
 
 	// We delete the object now.
 	err = testWrapper.DeleteObject(objName, testNamespace)
@@ -149,7 +149,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	// We use backoff with the absolute maximum amount:
 	// 10 second ResyncPeriod + 2 second RateWait + 2 second for safety.
 	// The controller should get the deletion event immediatly but not remove the
-	// finalizer because of the error we throw in our resource.
+	// finalizer because of the error we return in our resource.
 	//
 	// 		EnsureCreated: 2, EnsureDeleted: 1
 	//
@@ -198,9 +198,9 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 		t.Fatalf("finalizers == %v, want %v", resultObjAccessor.GetFinalizers(), expectedFinalizers)
 	}
 
-	// We set ThrowError to false, our finalizer should be removed with the next
+	// We set ReturnError to false, our finalizer should be removed with the next
 	// reconciliation now.
-	tr.ThrowError(false)
+	tr.ReturnError(false)
 
 	// We use backoff with the absolute maximum amount:
 	// 10 second ResyncPeriod + 2 second RateWait + 2 second for safety.
