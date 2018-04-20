@@ -47,6 +47,11 @@ jobs:
       TEST_DIR: "controller/integration/test/basic"
     <<: *e2eTest
 
+  e2eTestControllerIntegrationControlflow:
+    environment:
+      TEST_DIR: "controller/integration/test/controlflow"
+    <<: *e2eTest
+
   e2eTestControllerIntegrationReconciliation:
     environment:
       TEST_DIR: "controller/integration/test/reconciliation"
@@ -65,6 +70,10 @@ workflows:
           - build
 
       - e2eTestControllerIntegrationBasic:
+          requires:
+          - build
+
+      - e2eTestControllerIntegrationControlflow:
           requires:
           - build
 
