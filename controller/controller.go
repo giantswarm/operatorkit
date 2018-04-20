@@ -180,7 +180,7 @@ func (f *Controller) DeleteFunc(obj interface{}) {
 		return
 	}
 
-	if finalizerskeptcontext.IsKept(ctx) {
+	if !finalizerskeptcontext.IsKept(ctx) {
 		err = f.removeFinalizer(ctx, obj)
 		if err != nil {
 			f.logger.LogCtx(ctx, "event", "delete", "function", "DeleteFunc", "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
