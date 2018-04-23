@@ -48,8 +48,9 @@ func (f *Controller) addFinalizer(obj interface{}) (bool, error) {
 			if err != nil {
 				return microerror.Mask(err)
 			}
-			stopReconciliation = stop
 			if patch == nil {
+				stopReconciliation = stop
+
 				// When patch is empty, there nothing to do. We trust
 				// createAddFinalizerPatch with the decision to stop reconciliation.
 				return nil
@@ -63,6 +64,8 @@ func (f *Controller) addFinalizer(obj interface{}) (bool, error) {
 			if err != nil {
 				return microerror.Mask(err)
 			}
+
+			stopReconciliation = true
 
 			return nil
 		}
