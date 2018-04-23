@@ -22,7 +22,7 @@ type patchSpec struct {
 	Value interface{} `json:"value"`
 }
 
-func (f *Controller) addFinalizer(obj interface{}) (stopReconciliation bool, err error) {
+func (f *Controller) addFinalizer(obj interface{}) (bool, error) {
 	// We get the accessor of the object which we got passed from the framework.
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
