@@ -158,6 +158,8 @@ func (f *Controller) DeleteFunc(obj interface{}) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
+	fmt.Printf("1\n")
+
 	resourceSet, err := f.resourceRouter.ResourceSet(obj)
 	if IsNoResourceSet(err) {
 		// In case the resource router is not able to find any resource set to
@@ -168,11 +170,15 @@ func (f *Controller) DeleteFunc(obj interface{}) {
 		return
 	}
 
+	fmt.Printf("2\n")
+
 	ctx, err := resourceSet.InitCtx(context.Background(), obj)
 	if err != nil {
 		f.logger.Log("event", "delete", "function", "DeleteFunc", "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
+
+	fmt.Printf("3\n")
 
 	err = ProcessDelete(ctx, obj, resourceSet.Resources())
 	if err != nil {
@@ -180,12 +186,20 @@ func (f *Controller) DeleteFunc(obj interface{}) {
 		return
 	}
 
+	fmt.Printf("8\n")
+
 	if !finalizerskeptcontext.IsKept(ctx) {
+		f.logger.LogCtx(ctx, "event", "delete", "function", "DeleteFunc", "level", "debug", "message", "removing finalizer from runtime object")
+
 		err = f.removeFinalizer(ctx, obj)
 		if err != nil {
 			f.logger.LogCtx(ctx, "event", "delete", "function", "DeleteFunc", "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 			return
 		}
+
+		f.logger.LogCtx(ctx, "event", "delete", "function", "DeleteFunc", "level", "debug", "message", "removed finalizer from runtime object")
+	} else {
+		f.logger.LogCtx(ctx, "event", "delete", "function", "DeleteFunc", "level", "debug", "message", "not removing finalizer from runtime object due to request of keeping it")
 	}
 }
 
@@ -234,18 +248,6 @@ func (f *Controller) UpdateFunc(oldObj, newObj interface{}) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
-	ok, err := f.addFinalizer(obj)
-	if err != nil {
-		f.logger.Log("event", "update", "function", "UpdateFunc", "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
-		return
-	}
-	if ok {
-		// A finalizer was added, this causes a new update event, so we stop
-		// reconciling here and will pick up the new event.
-		f.logger.Log("event", "update", "function", "UpdateFunc", "level", "debug", "message", "stop reconciliation due to finalizer added")
-		return
-	}
-
 	resourceSet, err := f.resourceRouter.ResourceSet(obj)
 	if IsNoResourceSet(err) {
 		// In case the resource router is not able to find any resource set to
@@ -258,7 +260,19 @@ func (f *Controller) UpdateFunc(oldObj, newObj interface{}) {
 
 	ctx, err := resourceSet.InitCtx(context.Background(), obj)
 	if err != nil {
+		f.logger.Log("event", "update", "function", "UpdateFunc", "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		return
+	}
+
+	ok, err := f.addFinalizer(obj)
+	if err != nil {
 		f.logger.LogCtx(ctx, "event", "update", "function", "UpdateFunc", "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		return
+	}
+	if ok {
+		// A finalizer was added, this causes a new update event, so we stop
+		// reconciling here and will pick up the new event.
+		f.logger.LogCtx(ctx, "event", "update", "function", "UpdateFunc", "level", "debug", "message", "stop reconciliation due to finalizer added")
 		return
 	}
 
@@ -308,15 +322,21 @@ func (f *Controller) bootWithError(ctx context.Context) error {
 //     }
 //
 func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) error {
+	fmt.Printf("4\n")
+
 	if len(resources) == 0 {
 		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}
+
+	fmt.Printf("5\n")
 
 	ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
 
 	defer unsetLoggerCtxValue(ctx, loggerResourceKey)
 
 	for _, r := range resources {
+		fmt.Printf("6\n")
+
 		ctx = setLoggerCtxValue(ctx, loggerResourceKey, r.Name())
 		ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 
@@ -329,6 +349,8 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 			return nil
 		}
 	}
+
+	fmt.Printf("7\n")
 
 	return nil
 }
