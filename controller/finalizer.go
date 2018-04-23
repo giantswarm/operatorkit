@@ -34,44 +34,46 @@ func (f *Controller) addFinalizer(obj interface{}) (stopReconciliation bool, err
 		return false, nil // object already has the finalizer.
 	}
 
-	o := func() error {
-		// We get an up to date version of our object from k8s and parse the
-		// response from the RESTClient to runtime object.
-		obj, err := f.restClient.Get().AbsPath(accessor.GetSelfLink()).Do().Get()
-		if err != nil {
-			return microerror.Mask(err)
-		}
+	var stopReconciliation bool
+	{
+		o := func() error {
+			// We get an up to date version of our object from k8s and parse the
+			// response from the RESTClient to runtime object.
+			obj, err := f.restClient.Get().AbsPath(accessor.GetSelfLink()).Do().Get()
+			if err != nil {
+				return microerror.Mask(err)
+			}
 
-		patch, result, err := createAddFinalizerPatch(obj, f.name)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-		if patch == nil {
-			// When patch is empty, there nothing to do. We trust
-			// createAddFinalizerPatch with the decision to stop reconciliation.
+			patch, stop, err := createAddFinalizerPatch(obj, f.name)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+			stopReconciliation = stop
+			if patch == nil {
+				// When patch is empty, there nothing to do. We trust
+				// createAddFinalizerPatch with the decision to stop reconciliation.
+				return nil
+			}
+
+			p, err := json.Marshal(patch)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+			err = f.restClient.Patch(types.JSONPatchType).AbsPath(accessor.GetSelfLink()).Body(p).Do().Error()
+			if err != nil {
+				return microerror.Mask(err)
+			}
+
 			return nil
 		}
 
-		p, err := json.Marshal(patch)
+		err = backoff.Retry(o, f.backOffFactory())
 		if err != nil {
-			return microerror.Mask(err)
+			return false, microerror.Mask(err)
 		}
-		err = f.restClient.Patch(types.JSONPatchType).AbsPath(accessor.GetSelfLink()).Body(p).Do().Error()
-		if err != nil {
-			return microerror.Mask(err)
-		}
-
-		// The finalizer was added, we should stop reconciliation and wait for the
-		// next update event to come in.
-		return nil
 	}
 
-	err = backoff.Retry(o, f.backOffFactory())
-	if err != nil {
-		return false, microerror.Mask(err)
-	}
-
-	return true, nil
+	return stopReconciliation, nil
 }
 
 func (f *Controller) removeFinalizer(ctx context.Context, obj interface{}) error {
