@@ -22,56 +22,58 @@ type patchSpec struct {
 	Value interface{} `json:"value"`
 }
 
-func (f *Controller) addFinalizer(obj interface{}) (stopReconciliation bool, err error) {
+func (f *Controller) addFinalizer(obj interface{}) (bool, error) {
 	// We get the accessor of the object which we got passed from the framework.
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
 		return false, microerror.Mask(err)
 	}
-	finalizerName := getFinalizerName(f.name)
 	// We check if the object has a finalizer here, to avoid unnecessary calls to
 	// the k8s api.
-	if containsFinalizer(accessor.GetFinalizers(), finalizerName) {
+	if containsFinalizer(accessor.GetFinalizers(), getFinalizerName(f.name)) {
 		return false, nil // object already has the finalizer.
 	}
 
-	path := accessor.GetSelfLink()
-	// Continuing with reconciliation is set as a default here.
-	stopReconciliation = false
+	var stopReconciliation bool
+	{
+		o := func() error {
+			// We get an up to date version of our object from k8s and parse the
+			// response from the RESTClient to runtime object.
+			obj, err := f.restClient.Get().AbsPath(accessor.GetSelfLink()).Do().Get()
+			if err != nil {
+				return microerror.Mask(err)
+			}
 
-	operation := func() error {
-		// We get an up to date version of our object from k8s and parse the
-		// response from the RESTClient to runtime object.
-		obj, err := f.restClient.Get().AbsPath(path).Do().Get()
-		if err != nil {
-			return microerror.Mask(err)
-		}
-		patch, result, err := createAddFinalizerPatch(obj, f.name)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-		if patch == nil {
-			// patch is empty, nothing to do.
-			// We trust createAddFinalizerPatch with the decision to stop reconciliation.
-			stopReconciliation = result
+			patch, stop, err := createAddFinalizerPatch(obj, f.name)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+			if patch == nil {
+				stopReconciliation = stop
+
+				// When patch is empty, there nothing to do. We trust
+				// createAddFinalizerPatch with the decision to stop reconciliation.
+				return nil
+			}
+
+			p, err := json.Marshal(patch)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+			err = f.restClient.Patch(types.JSONPatchType).AbsPath(accessor.GetSelfLink()).Body(p).Do().Error()
+			if err != nil {
+				return microerror.Mask(err)
+			}
+
+			stopReconciliation = true
+
 			return nil
 		}
-		p, err := json.Marshal(patch)
+
+		err = backoff.Retry(o, f.backOffFactory())
 		if err != nil {
-			return microerror.Mask(err)
+			return false, microerror.Mask(err)
 		}
-		err = f.restClient.Patch(types.JSONPatchType).AbsPath(path).Body(p).Do().Error()
-		if err != nil {
-			return microerror.Mask(err)
-		}
-		// The finalizer was added, we should stop reconciliation and wait for the
-		// next update event to come in.
-		stopReconciliation = true
-		return nil
-	}
-	err = backoff.Retry(operation, f.backOffFactory())
-	if err != nil {
-		return false, microerror.Mask(err)
 	}
 
 	return stopReconciliation, nil
