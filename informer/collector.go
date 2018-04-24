@@ -15,16 +15,13 @@ var (
 		[]string{
 			"exported_name",
 			"exported_namespace",
-			"deletion_timestamp",
 		},
 		nil,
 	)
 )
 
 func (i *Informer) Describe(ch chan<- *prometheus.Desc) {
-
 	ch <- description
-
 }
 
 func (i *Informer) Collect(ch chan<- prometheus.Metric) {
@@ -35,20 +32,12 @@ func (i *Informer) Collect(ch chan<- prometheus.Metric) {
 		if err != nil {
 			return
 		}
-		go func() {
-			for {
-				select {
-				case <-ctx.Done():
-					close(eventChan)
-					return
-				}
-			}
-		}()
+		close(eventChan)
 	}()
 
 	for e := range eventChan {
 		m, err := meta.Accessor(e.Object)
-		if err != nil {
+		if err != nil || m.GetDeletionTimestamp() == nil {
 			return
 		}
 		ch <- prometheus.MustNewConstMetric(
