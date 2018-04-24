@@ -29,6 +29,7 @@ func (i *Informer) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (i *Informer) Collect(ch chan<- prometheus.Metric) {
+	fmt.Printf("collect hit 1")
 	eventChan := make(chan watch.Event)
 	ctx := context.Background()
 	err := i.fillCache(ctx, eventChan)
