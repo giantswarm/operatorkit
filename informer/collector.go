@@ -33,6 +33,7 @@ func (i *Informer) Collect(ch chan<- prometheus.Metric) {
 	eventChan := make(chan watch.Event)
 	ctx := context.Background()
 	err := i.fillCache(ctx, eventChan)
+	close(eventChan)
 	if err != nil {
 	}
 	fmt.Printf("collect hit")
@@ -49,5 +50,4 @@ func (i *Informer) Collect(ch chan<- prometheus.Metric) {
 			m.GetNamespace(),
 		)
 	}
-	close(eventChan)
 }
