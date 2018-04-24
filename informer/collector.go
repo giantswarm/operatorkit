@@ -33,14 +33,16 @@ func (i *Informer) Collect(ch chan<- prometheus.Metric) {
 	eventChan := make(chan watch.Event)
 	ctx := context.Background()
 	err := i.fillCache(ctx, eventChan)
-	close(eventChan)
 	if err != nil {
+		return
 	}
+	close(eventChan)
 	fmt.Printf("collect hit")
 
 	for e := range eventChan {
 		m, err := meta.Accessor(e.Object)
 		if err != nil {
+			return
 		}
 		ch <- prometheus.MustNewConstMetric(
 			description,
