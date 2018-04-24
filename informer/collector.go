@@ -2,6 +2,7 @@ package informer
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -33,6 +34,7 @@ func (i *Informer) Collect(ch chan<- prometheus.Metric) {
 	err := i.fillCache(ctx, eventChan)
 	if err != nil {
 	}
+	fmt.Printf("collect hit")
 
 	for e := range eventChan {
 		m, err := meta.Accessor(e.Object)

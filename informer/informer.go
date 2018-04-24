@@ -96,7 +96,7 @@ func New(config Config) (*Informer, error) {
 		resyncPeriod: config.ResyncPeriod,
 	}
 
-	prometheus.MustRegister(newInformer)
+	prometheus.MustRegister(prometheus.Collector(newInformer))
 
 	return newInformer, nil
 }
