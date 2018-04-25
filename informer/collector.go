@@ -20,10 +20,13 @@ var (
 	)
 )
 
+// Describe is used to describe metrics which are exported to Prometheus.
 func (i *Informer) Describe(ch chan<- *prometheus.Desc) {
 	ch <- description
 }
 
+// Collect is called by the Prometheus registry when collecting metrics from
+// the informer.
 func (i *Informer) Collect(ch chan<- prometheus.Metric) {
 	eventChan := make(chan watch.Event)
 	ctx := context.Background()
