@@ -100,9 +100,11 @@ func New(config Config) (*Informer, error) {
 		resyncPeriod: config.ResyncPeriod,
 	}
 
-	prometheus.MustRegister(prometheus.Collector(newInformer))
-
 	return newInformer, nil
+}
+
+func (i *Informer) Boot() {
+	prometheus.MustRegister(prometheus.Collector(i))
 }
 
 // Watch only watches objects using a stream decoder. Afer the resync period the
