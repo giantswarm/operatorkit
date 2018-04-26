@@ -104,12 +104,15 @@ func New(config Config) (*Informer, error) {
 }
 
 func (i *Informer) Boot(ctx context.Context) error {
-	prometheus.Unregister(prometheus.Collector(i))
-
 	err := prometheus.Register(prometheus.Collector(i))
-	if err != nil {
+
+	if _, ok := err.(prometheus.AlreadyRegisteredError); ok {
+		i.logger.LogCtx(ctx, "level", "debug", "message", "collector was already registered")
+
+	} else if err != nil {
 		return microerror.Mask(err)
 	}
+
 	return nil
 }
 
