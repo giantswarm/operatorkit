@@ -1,12 +1,11 @@
 package informer
 
 import (
-	"context"
 	"fmt"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/watch"
 )
 
 var (
@@ -31,34 +30,39 @@ func (i *Informer) Describe(ch chan<- *prometheus.Desc) {
 func (i *Informer) Collect(ch chan<- prometheus.Metric) {
 	i.logger.Log("level", "debug", "message", "start collecting metrics")
 
-	eventChan := make(chan watch.Event)
-	ctx := context.Background()
-	go func() {
-		err := i.fillCache(ctx, eventChan)
-		if err != nil {
-			i.logger.Log("level", "error", "function", "Collect", "message", "could not list objects from cache", "stack", fmt.Sprintf("%#v", err))
-			return
-		}
-		close(eventChan)
-	}()
-
-	for e := range eventChan {
-		m, err := meta.Accessor(e.Object)
-		if err != nil {
-			i.logger.Log("level", "error", "function", "Collect", "message", "could not get accessor for object", "stack", fmt.Sprintf("%#v", err))
-			return
-		}
-		if m.GetDeletionTimestamp() == nil {
-			return // fall through, deletionTimestamp is not set yet
-		}
-		ch <- prometheus.MustNewConstMetric(
-			description,
-			prometheus.GaugeValue,
-			float64(m.GetDeletionTimestamp().Unix()),
-			m.GetName(),
-			m.GetNamespace(),
-		)
+	watcher, err := i.watcher.Watch(i.listOptions)
+	if err != nil {
+		i.logger.Log("level", "error", "function", "Collect", "message", "could not list objects from watcher", "stack", fmt.Sprintf("%#v", err))
+		return
 	}
 
-	i.logger.Log("level", "debug", "message", "finished collecting metrics")
+	defer watcher.Stop()
+
+	for {
+		select {
+		case event, ok := <-watcher.ResultChan():
+			if ok {
+				m, err := meta.Accessor(event.Object)
+				if err != nil {
+					i.logger.Log("level", "error", "function", "Collect", "message", "could not get accessor for object", "stack", fmt.Sprintf("%#v", err))
+					return
+				}
+				if m.GetDeletionTimestamp() == nil {
+					return // fall through, deletionTimestamp is not set yet
+				}
+				ch <- prometheus.MustNewConstMetric(
+					description,
+					prometheus.GaugeValue,
+					float64(m.GetDeletionTimestamp().Unix()),
+					m.GetName(),
+					m.GetNamespace(),
+				)
+			} else {
+				return
+			}
+		case <-time.After(time.Second):
+			i.logger.Log("level", "debug", "message", "finished collecting metrics")
+			return
+		}
+	}
 }
