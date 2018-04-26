@@ -5,16 +5,16 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var alreadyRegisteredError = microerror.New("duplicate metrics collector registration attempted")
+var alreadyRegisteredError = microerror.New("already registered")
 
 // IsAlreadyRegisteredError asserts alreadyRegisteredError.
 func IsAlreadyRegisteredError(err error) bool {
 	c := microerror.Cause(err)
-	are, ok := c.(prometheus.AlreadyRegisteredError)
-	if !ok {
-		return false
+	_, ok := c.(prometheus.AlreadyRegisteredError)
+	if ok {
+		return true
 	}
-	if are == alreadyRegisteredError {
+	if c == alreadyRegisteredError {
 		return true
 	}
 
