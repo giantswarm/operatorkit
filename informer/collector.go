@@ -32,7 +32,7 @@ func (i *Informer) Collect(ch chan<- prometheus.Metric) {
 
 	watcher, err := i.watcher.Watch(i.listOptions)
 	if err != nil {
-		i.logger.Log("level", "error", "function", "Collect", "message", "could not list objects from watcher", "stack", fmt.Sprintf("%#v", err))
+		i.logger.Log("level", "error", "function", "Collect", "message", "could not start watch", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
 
@@ -45,20 +45,17 @@ func (i *Informer) Collect(ch chan<- prometheus.Metric) {
 				m, err := meta.Accessor(event.Object)
 				if err != nil {
 					i.logger.Log("level", "error", "function", "Collect", "message", "could not get accessor for object", "stack", fmt.Sprintf("%#v", err))
-					return
+					break
 				}
-				if m.GetDeletionTimestamp() == nil {
-					return // fall through, deletionTimestamp is not set yet
+				if m.GetDeletionTimestamp() != nil {
+					ch <- prometheus.MustNewConstMetric(
+						description,
+						prometheus.GaugeValue,
+						float64(m.GetDeletionTimestamp().Unix()),
+						m.GetName(),
+						m.GetNamespace(),
+					)
 				}
-				ch <- prometheus.MustNewConstMetric(
-					description,
-					prometheus.GaugeValue,
-					float64(m.GetDeletionTimestamp().Unix()),
-					m.GetName(),
-					m.GetNamespace(),
-				)
-			} else {
-				return
 			}
 		case <-time.After(time.Second):
 			i.logger.Log("level", "debug", "message", "finished collecting metrics")
