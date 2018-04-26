@@ -290,7 +290,10 @@ func (f *Controller) bootWithError(ctx context.Context) error {
 	}
 
 	f.logger.LogCtx(ctx, "function", "bootWithError", "level", "debug", "message", "booting informer")
-	f.informer.Boot()
+	err := f.informer.Boot(ctx)
+	if err != nil {
+		return microerror.Mask(err)
+	}
 
 	f.logger.LogCtx(ctx, "function", "bootWithError", "level", "debug", "message", "starting list-watch")
 

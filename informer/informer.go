@@ -103,8 +103,9 @@ func New(config Config) (*Informer, error) {
 	return newInformer, nil
 }
 
-func (i *Informer) Boot() {
+func (i *Informer) Boot(ctx context.Context) error {
 	prometheus.MustRegister(prometheus.Collector(i))
+	return nil
 }
 
 // Watch only watches objects using a stream decoder. Afer the resync period the
