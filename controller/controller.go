@@ -295,6 +295,8 @@ func (f *Controller) bootWithError(ctx context.Context) error {
 		return microerror.Mask(err)
 	}
 
+	f.logger.LogCtx(ctx, "function", "bootWithError", "level", "debug", "message", "finished booting informer")
+
 	f.logger.LogCtx(ctx, "function", "bootWithError", "level", "debug", "message", "starting list-watch")
 
 	deleteChan, updateChan, errChan := f.informer.Watch(ctx)

@@ -104,7 +104,12 @@ func New(config Config) (*Informer, error) {
 }
 
 func (i *Informer) Boot(ctx context.Context) error {
-	prometheus.MustRegister(prometheus.Collector(i))
+	prometheus.Unregister(prometheus.Collector(i))
+
+	err := prometheus.Register(prometheus.Collector(i))
+	if err != nil {
+		return microerror.Mask(err)
+	}
 	return nil
 }
 
