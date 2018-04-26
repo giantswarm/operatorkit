@@ -2,6 +2,7 @@ package informer
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -13,8 +14,8 @@ var (
 		prometheus.BuildFQName("operatorkit", "informer", "deletion_timestamp"),
 		"DeletionTimestamp of watched objects.",
 		[]string{
-			"exported_name",
-			"exported_namespace",
+			"name",
+			"namespace",
 		},
 		nil,
 	)
@@ -28,11 +29,14 @@ func (i *Informer) Describe(ch chan<- *prometheus.Desc) {
 // Collect is called by the Prometheus registry when collecting metrics from
 // the informer.
 func (i *Informer) Collect(ch chan<- prometheus.Metric) {
+	i.logger.Log("level", "debug", "message", "start collecting metrics")
+
 	eventChan := make(chan watch.Event)
 	ctx := context.Background()
 	go func() {
 		err := i.fillCache(ctx, eventChan)
 		if err != nil {
+			i.logger.Log("level", "error", "function", "Collect", "message", "could not list objects from cache", "stack", fmt.Sprintf("%#v", err))
 			return
 		}
 		close(eventChan)
@@ -40,8 +44,12 @@ func (i *Informer) Collect(ch chan<- prometheus.Metric) {
 
 	for e := range eventChan {
 		m, err := meta.Accessor(e.Object)
-		if err != nil || m.GetDeletionTimestamp() == nil {
+		if err != nil {
+			i.logger.Log("level", "error", "function", "Collect", "message", "could not get accessor for object", "stack", fmt.Sprintf("%#v", err))
 			return
+		}
+		if m.GetDeletionTimestamp() == nil {
+			return // fall through, deletionTimestamp is not set yet
 		}
 		ch <- prometheus.MustNewConstMetric(
 			description,
@@ -51,4 +59,6 @@ func (i *Informer) Collect(ch chan<- prometheus.Metric) {
 			m.GetNamespace(),
 		)
 	}
+
+	i.logger.Log("level", "debug", "message", "finished collecting metrics")
 }

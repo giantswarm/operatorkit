@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/giantswarm/microerror"
+	"github.com/giantswarm/micrologger"
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,6 +42,7 @@ const (
 
 // Config represents the configuration used to create a new Informer.
 type Config struct {
+	Logger  micrologger.Logger
 	Watcher Watcher
 
 	// ListOptions to be passed to Watcher.Watch.
@@ -58,6 +60,7 @@ type Config struct {
 // in a deterministic way.
 type Informer struct {
 	// Dependencies.
+	logger  micrologger.Logger
 	watcher Watcher
 
 	// Internals.
@@ -84,6 +87,7 @@ func New(config Config) (*Informer, error) {
 
 	newInformer := &Informer{
 		// Dependencies.
+		logger:  config.Logger,
 		watcher: config.Watcher,
 
 		// Internals.

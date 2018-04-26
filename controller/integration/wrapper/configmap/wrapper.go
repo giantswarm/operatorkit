@@ -49,6 +49,7 @@ func New(config Config) (*Wrapper, error) {
 	var newInformer *informer.Informer
 	{
 		c := informer.Config{
+			Logger:  logger,
 			Watcher: k8sClient.CoreV1().ConfigMaps(config.Namespace),
 
 			RateWait:     time.Second * 2,
