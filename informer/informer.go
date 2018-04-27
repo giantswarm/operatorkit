@@ -23,6 +23,8 @@ import (
 	"time"
 
 	"github.com/giantswarm/microerror"
+	"github.com/giantswarm/micrologger"
+	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -40,6 +42,7 @@ const (
 
 // Config represents the configuration used to create a new Informer.
 type Config struct {
+	Logger  micrologger.Logger
 	Watcher Watcher
 
 	// ListOptions to be passed to Watcher.Watch.
@@ -57,6 +60,7 @@ type Config struct {
 // in a deterministic way.
 type Informer struct {
 	// Dependencies.
+	logger  micrologger.Logger
 	watcher Watcher
 
 	// Internals.
@@ -83,6 +87,7 @@ func New(config Config) (*Informer, error) {
 
 	newInformer := &Informer{
 		// Dependencies.
+		logger:  config.Logger,
 		watcher: config.Watcher,
 
 		// Internals.
@@ -96,6 +101,18 @@ func New(config Config) (*Informer, error) {
 	}
 
 	return newInformer, nil
+}
+
+func (i *Informer) Boot(ctx context.Context) error {
+	err := prometheus.Register(prometheus.Collector(i))
+
+	if IsAlreadyRegisteredError(err) {
+		i.logger.LogCtx(ctx, "level", "debug", "message", "collector was already registered")
+	} else if err != nil {
+		return microerror.Mask(err)
+	}
+
+	return nil
 }
 
 // Watch only watches objects using a stream decoder. Afer the resync period the

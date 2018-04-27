@@ -8,6 +8,7 @@ import (
 )
 
 type Interface interface {
+	Boot(ctx context.Context) error
 	Watch(ctx context.Context) (chan watch.Event, chan watch.Event, chan error)
 }
 

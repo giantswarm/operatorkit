@@ -74,6 +74,7 @@ func New(config Config) (*Wrapper, error) {
 	var newInformer *informer.Informer
 	{
 		c := informer.Config{
+			Logger:  logger,
 			Watcher: g8sClient.CoreV1alpha1().NodeConfigs(config.Namespace),
 
 			RateWait:     time.Second * 2,
