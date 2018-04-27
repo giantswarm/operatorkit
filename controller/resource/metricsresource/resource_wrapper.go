@@ -45,7 +45,6 @@ func (r *resourceWrapper) EnsureCreated(ctx context.Context, obj interface{}) er
 
 	err := r.resource.EnsureCreated(ctx, obj)
 	if err != nil {
-		operationErrorCounter.WithLabelValues(sl, rl, ol).Inc()
 		return microerror.Mask(err)
 	}
 
@@ -64,7 +63,6 @@ func (r *resourceWrapper) EnsureDeleted(ctx context.Context, obj interface{}) er
 
 	err := r.resource.EnsureDeleted(ctx, obj)
 	if err != nil {
-		operationErrorCounter.WithLabelValues(sl, rl, ol).Inc()
 		return microerror.Mask(err)
 	}
 
