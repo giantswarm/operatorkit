@@ -14,8 +14,8 @@ var (
 		prometheus.GaugeOpts{
 			Namespace: PrometheusNamespace,
 			Subsystem: PrometheusSubsystem,
-			Name:      "operation_error_total",
-			Help:      "Number of operation errors.",
+			Name:      "error_total",
+			Help:      "Number of reconciliation errors.",
 		},
 	)
 	controllerHistogram = prometheus.NewHistogramVec(
