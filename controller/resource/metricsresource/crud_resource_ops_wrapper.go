@@ -57,7 +57,6 @@ func (o *crudResourceWrapperOps) GetCurrentState(ctx context.Context, obj interf
 
 	v, err := o.underlying.GetCurrentState(ctx, obj)
 	if err != nil {
-		operationErrorCounter.WithLabelValues(sl, rl, ol).Inc()
 		return nil, microerror.Mask(err)
 	}
 
@@ -76,7 +75,6 @@ func (o *crudResourceWrapperOps) GetDesiredState(ctx context.Context, obj interf
 
 	v, err := o.underlying.GetDesiredState(ctx, obj)
 	if err != nil {
-		operationErrorCounter.WithLabelValues(sl, rl, ol).Inc()
 		return nil, microerror.Mask(err)
 	}
 
@@ -95,7 +93,6 @@ func (o *crudResourceWrapperOps) NewUpdatePatch(ctx context.Context, obj, curren
 
 	v, err := o.underlying.NewUpdatePatch(ctx, obj, currentState, desiredState)
 	if err != nil {
-		operationErrorCounter.WithLabelValues(sl, rl, ol).Inc()
 		return nil, microerror.Mask(err)
 	}
 
@@ -114,7 +111,6 @@ func (o *crudResourceWrapperOps) NewDeletePatch(ctx context.Context, obj, curren
 
 	v, err := o.underlying.NewDeletePatch(ctx, obj, currentState, desiredState)
 	if err != nil {
-		operationErrorCounter.WithLabelValues(sl, rl, ol).Inc()
 		return nil, microerror.Mask(err)
 	}
 
@@ -137,7 +133,6 @@ func (o *crudResourceWrapperOps) ApplyCreateChange(ctx context.Context, obj, cre
 
 	err := o.underlying.ApplyCreateChange(ctx, obj, createState)
 	if err != nil {
-		operationErrorCounter.WithLabelValues(sl, rl, ol).Inc()
 		return microerror.Mask(err)
 	}
 
@@ -156,7 +151,6 @@ func (o *crudResourceWrapperOps) ApplyDeleteChange(ctx context.Context, obj, del
 
 	err := o.underlying.ApplyDeleteChange(ctx, obj, deleteState)
 	if err != nil {
-		operationErrorCounter.WithLabelValues(sl, rl, ol).Inc()
 		return microerror.Mask(err)
 	}
 
@@ -175,7 +169,6 @@ func (o *crudResourceWrapperOps) ApplyUpdateChange(ctx context.Context, obj, upd
 
 	err := o.underlying.ApplyUpdateChange(ctx, obj, updateState)
 	if err != nil {
-		operationErrorCounter.WithLabelValues(sl, rl, ol).Inc()
 		return microerror.Mask(err)
 	}
 

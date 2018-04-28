@@ -10,6 +10,14 @@ const (
 )
 
 var (
+	controllerErrorGauge = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Namespace: PrometheusNamespace,
+			Subsystem: PrometheusSubsystem,
+			Name:      "error_total",
+			Help:      "Number of reconciliation errors.",
+		},
+	)
 	controllerHistogram = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Namespace: PrometheusNamespace,
@@ -22,5 +30,6 @@ var (
 )
 
 func init() {
+	prometheus.MustRegister(controllerErrorGauge)
 	prometheus.MustRegister(controllerHistogram)
 }

@@ -85,7 +85,7 @@ func New(config Config) (*Informer, error) {
 		config.ResyncPeriod = DefaultResyncPeriod
 	}
 
-	newInformer := &Informer{
+	i := &Informer{
 		// Dependencies.
 		logger:  config.Logger,
 		watcher: config.Watcher,
@@ -100,19 +100,28 @@ func New(config Config) (*Informer, error) {
 		resyncPeriod: config.ResyncPeriod,
 	}
 
-	return newInformer, nil
+	return i, nil
 }
 
 func (i *Informer) Boot(ctx context.Context) error {
-	err := prometheus.Register(prometheus.Collector(i))
+	{
+		i.logger.LogCtx(ctx, "level", "debug", "message", "registering informer collector")
 
-	if IsAlreadyRegisteredError(err) {
-		i.logger.LogCtx(ctx, "level", "debug", "message", "collector was already registered")
-	} else if err != nil {
-		return microerror.Mask(err)
+		err := prometheus.Register(prometheus.Collector(i))
+		if IsAlreadyRegisteredError(err) {
+			i.logger.LogCtx(ctx, "level", "debug", "message", "informer collector already registered")
+		} else if err != nil {
+			return microerror.Mask(err)
+		} else {
+			i.logger.LogCtx(ctx, "level", "debug", "message", "registered informer collector")
+		}
 	}
 
 	return nil
+}
+
+func (i *Informer) ResyncPeriod() time.Duration {
+	return i.resyncPeriod
 }
 
 // Watch only watches objects using a stream decoder. Afer the resync period the

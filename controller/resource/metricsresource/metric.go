@@ -18,16 +18,6 @@ var (
 		[]string{"service", "resource", "operation"},
 	)
 
-	operationErrorCounter = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: PrometheusNamespace,
-			Subsystem: PrometheusSubsystem,
-			Name:      "operation_error_total",
-			Help:      "Number of operation errors.",
-		},
-		[]string{"service", "resource", "operation"},
-	)
-
 	operationHistogram = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Namespace: PrometheusNamespace,
@@ -41,6 +31,5 @@ var (
 
 func init() {
 	prometheus.MustRegister(operationCounter)
-	prometheus.MustRegister(operationErrorCounter)
 	prometheus.MustRegister(operationHistogram)
 }
