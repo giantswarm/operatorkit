@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 
@@ -79,7 +78,7 @@ func (f *Controller) addFinalizer(obj interface{}) (bool, error) {
 	return stopReconciliation, nil
 }
 
-func (f *Controller) removeFinalizer(ctx context.Context, obj interface{}) error {
+func (f *Controller) removeFinalizer(obj interface{}) error {
 	patch, path, err := createRemoveFinalizerPatch(obj, f.name)
 	if err != nil {
 		return microerror.Mask(err)
