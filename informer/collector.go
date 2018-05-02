@@ -32,7 +32,7 @@ func (i *Informer) Collect(ch chan<- prometheus.Metric) {
 
 	watcher, err := i.watcher.Watch(i.listOptions)
 	if err != nil {
-		i.logger.Log("level", "error", "function", "Collect", "message", "could not start watch", "stack", fmt.Sprintf("%#v", err))
+		i.logger.Log("level", "error", "message", "could not start watch", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
 
@@ -44,7 +44,7 @@ func (i *Informer) Collect(ch chan<- prometheus.Metric) {
 			if ok {
 				m, err := meta.Accessor(event.Object)
 				if err != nil {
-					i.logger.Log("level", "error", "function", "Collect", "message", "could not get accessor for object", "stack", fmt.Sprintf("%#v", err))
+					i.logger.Log("level", "error", "message", "could not get accessor for object", "stack", fmt.Sprintf("%#v", err))
 					break
 				}
 				if m.GetDeletionTimestamp() != nil {
