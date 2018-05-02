@@ -163,7 +163,21 @@ func (c *Controller) DeleteFunc(obj interface{}) {
 	resourceSet, err := c.resourceRouter.ResourceSet(obj)
 	if IsNoResourceSet(err) {
 		// In case the resource router is not able to find any resource set to
-		// handle the reconciled runtime object, we stop here.
+		// handle the reconciled runtime object, we stop here. Note that we just
+		// remove the finalizer regardless because at this point there will never be
+		// a chance to remove it otherwhise because nobody wanted to handle this
+		// runtime object anyway.
+
+		c.logger.Log("level", "debug", "message", "removing finalizer from runtime object")
+
+		err = c.removeFinalizer(obj)
+		if err != nil {
+			c.logger.Log("level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+			return
+		}
+
+		c.logger.Log("level", "debug", "message", "removed finalizer from runtime object")
+
 		return
 	} else if err != nil {
 		c.logger.Log("level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
@@ -196,7 +210,7 @@ func (c *Controller) DeleteFunc(obj interface{}) {
 	if !finalizerskeptcontext.IsKept(ctx) {
 		c.logger.LogCtx(ctx, "level", "debug", "message", "removing finalizer from runtime object")
 
-		err = c.removeFinalizer(ctx, obj)
+		err = c.removeFinalizer(obj)
 		if err != nil {
 			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 			return
