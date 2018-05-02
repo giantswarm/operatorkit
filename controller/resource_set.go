@@ -79,7 +79,7 @@ func (r *ResourceSet) InitCtx(ctx context.Context, obj interface{}) (context.Con
 
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
-		r.logger.LogCtx(ctx, "function", "InitCtx", "level", "warning", "message", "cannot create accessor for object", "stack", fmt.Sprintf("%#v", err))
+		r.logger.LogCtx(ctx, "level", "warning", "message", "cannot create accessor for object", "stack", fmt.Sprintf("%#v", err))
 	} else {
 		meta, ok := loggermeta.FromContext(ctx)
 		if !ok {

@@ -139,12 +139,12 @@ func (c *Controller) Boot() {
 		}
 
 		notifier := func(err error, d time.Duration) {
-			c.logger.LogCtx(ctx, "function", "Boot", "level", "warning", "message", "retrying controller boot due to error", "stack", fmt.Sprintf("%#v", err))
+			c.logger.LogCtx(ctx, "level", "warning", "message", "retrying controller boot due to error", "stack", fmt.Sprintf("%#v", err))
 		}
 
 		err := backoff.RetryNotify(operation, c.backOffFactory(), notifier)
 		if err != nil {
-			c.logger.LogCtx(ctx, "function", "Boot", "level", "error", "message", "stop controller boot retries due to too many errors", "stack", fmt.Sprintf("%#v", err))
+			c.logger.LogCtx(ctx, "level", "error", "message", "stop controller boot retries due to too many errors", "stack", fmt.Sprintf("%#v", err))
 			os.Exit(1)
 		}
 	})
@@ -180,35 +180,45 @@ func (c *Controller) DeleteFunc(obj interface{}) {
 
 		return
 	} else if err != nil {
-		c.logger.Log("event", "delete", "function", "DeleteFunc", "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		c.logger.Log("level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
 
 	ctx, err := resourceSet.InitCtx(context.Background(), obj)
 	if err != nil {
-		c.logger.Log("event", "delete", "function", "DeleteFunc", "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		c.logger.Log("level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
+	}
+
+	{
+		meta, ok := loggermeta.FromContext(ctx)
+		if !ok {
+			meta = loggermeta.New()
+		}
+		meta.KeyVals["event"] = "delete"
+
+		ctx = loggermeta.NewContext(ctx, meta)
 	}
 
 	err = ProcessDelete(ctx, obj, resourceSet.Resources())
 	if err != nil {
 		c.errorCollector <- err
-		c.logger.LogCtx(ctx, "event", "delete", "function", "DeleteFunc", "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
 
 	if !finalizerskeptcontext.IsKept(ctx) {
-		c.logger.LogCtx(ctx, "event", "delete", "function", "DeleteFunc", "level", "debug", "message", "removing finalizer from runtime object")
+		c.logger.LogCtx(ctx, "level", "debug", "message", "removing finalizer from runtime object")
 
 		err = c.removeFinalizer(obj)
 		if err != nil {
-			c.logger.LogCtx(ctx, "event", "delete", "function", "DeleteFunc", "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 			return
 		}
 
-		c.logger.LogCtx(ctx, "event", "delete", "function", "DeleteFunc", "level", "debug", "message", "removed finalizer from runtime object")
+		c.logger.LogCtx(ctx, "level", "debug", "message", "removed finalizer from runtime object")
 	} else {
-		c.logger.LogCtx(ctx, "event", "delete", "function", "DeleteFunc", "level", "debug", "message", "not removing finalizer from runtime object due to request of keeping it")
+		c.logger.LogCtx(ctx, "level", "debug", "message", "not removing finalizer from runtime object due to request of keeping it")
 	}
 }
 
@@ -235,12 +245,12 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 	}
 
 	notifier := func(err error, d time.Duration) {
-		c.logger.LogCtx(ctx, "function", "ProcessEvents", "level", "warning", "message", "retrying event processing due to error", "stack", fmt.Sprintf("%#v", err))
+		c.logger.LogCtx(ctx, "level", "warning", "message", "retrying event processing due to error", "stack", fmt.Sprintf("%#v", err))
 	}
 
 	err := backoff.RetryNotify(operation, c.backOffFactory(), notifier)
 	if err != nil {
-		c.logger.LogCtx(ctx, "function", "ProcessEvents", "level", "error", "message", "stop event processing retries due to too many errors", "stack", fmt.Sprintf("%#v", err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "stop event processing retries due to too many errors", "stack", fmt.Sprintf("%#v", err))
 		os.Exit(1)
 	}
 }
@@ -263,57 +273,67 @@ func (c *Controller) UpdateFunc(oldObj, newObj interface{}) {
 		// handle the reconciled runtime object, we stop here.
 		return
 	} else if err != nil {
-		c.logger.Log("event", "update", "function", "UpdateFunc", "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		c.logger.Log("level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
 
 	ctx, err := resourceSet.InitCtx(context.Background(), obj)
 	if err != nil {
-		c.logger.Log("event", "update", "function", "UpdateFunc", "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		c.logger.Log("level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
+	}
+
+	{
+		meta, ok := loggermeta.FromContext(ctx)
+		if !ok {
+			meta = loggermeta.New()
+		}
+		meta.KeyVals["event"] = "update"
+
+		ctx = loggermeta.NewContext(ctx, meta)
 	}
 
 	ok, err := c.addFinalizer(obj)
 	if err != nil {
-		c.logger.LogCtx(ctx, "event", "update", "function", "UpdateFunc", "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
 	if ok {
 		// A finalizer was added, this causes a new update event, so we stop
 		// reconciling here and will pick up the new event.
-		c.logger.LogCtx(ctx, "event", "update", "function", "UpdateFunc", "level", "debug", "message", "stop reconciliation due to finalizer added")
+		c.logger.LogCtx(ctx, "level", "debug", "message", "stop reconciliation due to finalizer added")
 		return
 	}
 
 	err = ProcessUpdate(ctx, obj, resourceSet.Resources())
 	if err != nil {
 		c.errorCollector <- err
-		c.logger.LogCtx(ctx, "event", "update", "function", "UpdateFunc", "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
 }
 
 func (c *Controller) bootWithError(ctx context.Context) error {
 	if c.crd != nil {
-		c.logger.LogCtx(ctx, "function", "bootWithError", "level", "debug", "message", "ensuring custom resource definition exists")
+		c.logger.LogCtx(ctx, "level", "debug", "message", "ensuring custom resource definition exists")
 
 		err := c.crdClient.EnsureCreated(ctx, c.crd, c.backOffFactory())
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
-		c.logger.LogCtx(ctx, "function", "bootWithError", "level", "debug", "message", "ensured custom resource definition exists")
+		c.logger.LogCtx(ctx, "level", "debug", "message", "ensured custom resource definition exists")
 	}
 
 	{
-		c.logger.LogCtx(ctx, "function", "bootWithError", "level", "debug", "message", "booting informer")
+		c.logger.LogCtx(ctx, "level", "debug", "message", "booting informer")
 
 		err := c.informer.Boot(ctx)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
-		c.logger.LogCtx(ctx, "function", "bootWithError", "level", "debug", "message", "booted informer")
+		c.logger.LogCtx(ctx, "level", "debug", "message", "booted informer")
 	}
 
 	go func() {
@@ -329,7 +349,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 		}
 	}()
 
-	c.logger.LogCtx(ctx, "function", "bootWithError", "level", "debug", "message", "starting list-watch")
+	c.logger.LogCtx(ctx, "level", "debug", "message", "starting list-watch")
 
 	deleteChan, updateChan, errChan := c.informer.Watch(ctx)
 	c.ProcessEvents(ctx, deleteChan, updateChan, errChan)
