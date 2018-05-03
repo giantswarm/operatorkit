@@ -109,7 +109,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	// 		EnsureCreated: 2, EnsureDeleted: 0
 	//
 	operation = func() error {
-		// We are more lax here compared to other tests, the controllers might
+		// We are more forgiving here compared to other tests, the controllers might
 		// receive events at different times. Checking the count exactly might fail
 		// if a controller is slower and the other one reconciles one more time.
 		if trA.CreateCount() < 2 {
