@@ -31,7 +31,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	testFinalizerB := "operatorkit.giantswarm.io/test-operator-b"
 	operatorNameB := "test-operator-b"
 
-	//
+	// We create the first controller "A" here with its own resource.
 	var trA *testresource.Resource
 	{
 		c := testresource.Config{}
@@ -49,7 +49,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 
 	controllerA := testWrapperA.Controller()
 
-	//
+	// We create the second controller "B" and give it a different resource.
 	var trB *testresource.Resource
 	{
 		c := testresource.Config{}
@@ -67,17 +67,16 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 
 	controllerB := testWrapperB.Controller()
 
-	//
+	// We setup the namespace in which we test. We use the wrapper of controller A
+	// here, it makes no difference if we use the wrapper of A or B.
 	testWrapperA.MustSetup(testNamespace)
 	defer testWrapperA.MustTeardown(testNamespace)
 
-	// We start the controller.
+	// We start the controllers.
 	go controllerA.Boot()
 	go controllerB.Boot()
 
-	// We create an object, but add a finalizer of another operator. This will
-	// cause the object to continue existing after the controller removes its own
-	// finalizer.
+	// We create an object without any finalizers.
 	//
 	//Creation is retried because the existance of a CRD might have to be ensured.
 	obj := &v1alpha1.NodeConfig{
@@ -101,16 +100,19 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 
 	// We use backoff with the absolute maximum amount:
 	// 10 second ResyncPeriod + 2 second RateWait + 8 second for safety.
-	// The controller should now add the finalizer and EnsureCreated should be hit
-	// once immediatly.
+	// The controllers should now add their finalizers and EnsureCreated should be
+	// hit once immediatly.
 	//
 	// 		EnsureCreated: 1, EnsureDeleted: 0
 	//
-	// The controller should reconcile once in this period.
+	// The controllers should reconcile once in this period.
 	//
 	// 		EnsureCreated: 2, EnsureDeleted: 0
 	//
 	operation = func() error {
+		// We are more lax here compared to other tests, the controllers might
+		// receive events at different times. Checking the count exactly might fail
+		// if a controller is slower and the other one reconciles one more time.
 		if trA.CreateCount() < 2 {
 			return microerror.Maskf(countMismatchError, "EnsureCreated of controller A was hit %v times, want atleast %v", trA.CreateCount(), 2)
 		}
@@ -147,6 +149,8 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	}
 
 	// We verify, that our finalizer is still set.
+	// We check this individually because we are not sure in which order the
+	// finalizers were added.
 	if !containsFinalizer(resultObjAccessor.GetFinalizers(), testFinalizerA) {
 		t.Fatalf("finalizers == %v, want to contain %v", resultObjAccessor.GetFinalizers(), testFinalizerA)
 	}
@@ -162,22 +166,18 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 
 	// We use backoff with the absolute maximum amount:
 	// 10 second ResyncPeriod + 2 second RateWait + 8 second for safety.
-	// The controller should get the deletion event immediatly but not remove the
-	// finalizer because of the error we return in our resource.
+	// The controllers should now remove the finalizer and EnsureDeleted should be
+	// hit four times immediatly.
+	// See https://github.com/giantswarm/giantswarm/issues/2897
 	//
-	// 		EnsureCreated: 2, EnsureDeleted: 1
-	//
-	// The controller should also reconcile once in this period. (The other
-	// finalizer is still set, so we reconcile.)
-	//
-	// 		EnsureCreated: 2, EnsureDeleted: 2
+	// 		EnsureDeleted: 4
 	//
 	operation = func() error {
-		if trA.DeleteCount() < 2 {
-			return microerror.Maskf(countMismatchError, "EnsureDeleted of controller A was hit %v times, want atleast %v", trA.DeleteCount(), 2)
+		if trA.DeleteCount() != 4 {
+			return microerror.Maskf(countMismatchError, "EnsureDeleted of controller A was hit %v times, want %v", trA.DeleteCount(), 4)
 		}
-		if trB.DeleteCount() < 2 {
-			return microerror.Maskf(countMismatchError, "EnsureDeleted of controller B was hit %v times, want atleast %v", trB.DeleteCount(), 2)
+		if trB.DeleteCount() != 4 {
+			return microerror.Maskf(countMismatchError, "EnsureDeleted of controller B was hit %v times, want %v", trB.DeleteCount(), 4)
 		}
 		return nil
 	}
