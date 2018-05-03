@@ -77,8 +77,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	go controllerB.Boot()
 
 	// We create an object without any finalizers.
-	//
-	//Creation is retried because the existance of a CRD might have to be ensured.
+	// Creation is retried because the existance of a CRD might have to be ensured.
 	obj := &v1alpha1.NodeConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      objName,
