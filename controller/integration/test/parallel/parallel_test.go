@@ -165,7 +165,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	}
 
 	// We use backoff with the absolute maximum amount:
-	// 10 second ResyncPeriod + 2 second RateWait + 8 second for safety.
+	// 2 second RateWait + 18 second to ensure that both finalizers were removed.
 	// The controllers should now remove the finalizer and EnsureDeleted should be
 	// hit four times immediatly.
 	// See https://github.com/giantswarm/giantswarm/issues/2897
