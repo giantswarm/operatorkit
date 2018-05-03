@@ -110,7 +110,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	}
 
 	// We use backoff with the absolute maximum amount:
-	// 20 second ResyncPeriod + 2 second RateWait + 2 second for safety.
+	// 20 second ResyncPeriod + 2 second RateWait + 8 second for safety.
 	// The controller should now add the finalizer and EnsureCreated should be hit
 	// once immediatly.
 	//
@@ -134,7 +134,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		}
 		return nil
 	}
-	err = backoff.Retry(operation, newConstantBackoff(uint64(24)))
+	err = backoff.Retry(operation, newConstantBackoff(uint64(30)))
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -173,7 +173,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	}
 
 	// We use backoff with the absolute maximum amount:
-	// 20 second ResyncPeriod + 2 second RateWait + 2 second for safety.
+	// 20 second ResyncPeriod + 2 second RateWait + 8 second for safety.
 	// The controller should now remove the finalizer and EnsureDeleted should be
 	// hit twice immediatly. See https://github.com/giantswarm/giantswarm/issues/2897
 	//
@@ -193,7 +193,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		}
 		return nil
 	}
-	err = backoff.Retry(operation, newConstantBackoff(uint64(24)))
+	err = backoff.Retry(operation, newConstantBackoff(uint64(30)))
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
