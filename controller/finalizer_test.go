@@ -157,7 +157,6 @@ func Test_createRemoveFinalizerPatch(t *testing.T) {
 			},
 			operatorName:  "test-operator",
 			expectedPatch: nil,
-			expectedPath:  "",
 			errorMatcher:  nil,
 		},
 		{
@@ -181,7 +180,6 @@ func Test_createRemoveFinalizerPatch(t *testing.T) {
 					Value: []string{},
 				},
 			},
-			expectedPath: "/some/path",
 			errorMatcher: nil,
 		},
 		{
@@ -210,7 +208,6 @@ func Test_createRemoveFinalizerPatch(t *testing.T) {
 					},
 				},
 			},
-			expectedPath: "/some/path",
 			errorMatcher: nil,
 		},
 	}
@@ -218,7 +215,7 @@ func Test_createRemoveFinalizerPatch(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			patch, path, err := createRemoveFinalizerPatch(tc.object, tc.operatorName)
+			patch, err := createRemoveFinalizerPatch(tc.object, tc.operatorName)
 
 			switch {
 			case err == nil && tc.errorMatcher == nil:
@@ -232,9 +229,6 @@ func Test_createRemoveFinalizerPatch(t *testing.T) {
 			}
 			if !reflect.DeepEqual(patch, tc.expectedPatch) {
 				t.Fatalf("patch == %v, want %v", patch, tc.expectedPatch)
-			}
-			if path != tc.expectedPath {
-				t.Fatalf("path == %v, want %v", path, tc.expectedPath)
 			}
 		})
 	}
