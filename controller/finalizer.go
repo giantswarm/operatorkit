@@ -78,6 +78,9 @@ func (f *Controller) addFinalizer(obj interface{}) (bool, error) {
 	return stopReconciliation, nil
 }
 
+// removeFinalizer receives an object and tries to remove its finalizer which
+// was set by operatorkit. The removal of a finalizer will be retried and a fresh
+// object will get fetched from k8s if the ResourceVersion is out of date.
 func (f *Controller) removeFinalizer(obj interface{}) error {
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
