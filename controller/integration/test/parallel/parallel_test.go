@@ -31,7 +31,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	testFinalizerB := "operatorkit.giantswarm.io/test-operator-b"
 	operatorNameB := "test-operator-b"
 
-	// We create the first controller "A" here with its own resource.
+	// We create the first resource "A" here with its own resource.
 	var trA *testresource.Resource
 	{
 		c := testresource.Config{}
@@ -49,7 +49,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 
 	controllerA := testWrapperA.Controller()
 
-	// We create the second controller "B" and give it a different resource.
+	// We create the second resource "B" and give it a different resource.
 	var trB *testresource.Resource
 	{
 		c := testresource.Config{}
