@@ -172,11 +172,11 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	// 		EnsureDeleted: 4
 	//
 	operation = func() error {
-		if trA.DeleteCount() != 4 {
-			return microerror.Maskf(countMismatchError, "EnsureDeleted of controller A was hit %v times, want %v", trA.DeleteCount(), 4)
+		if trA.DeleteCount() != 3 {
+			return microerror.Maskf(countMismatchError, "EnsureDeleted of controller A was hit %v times, want %v", trA.DeleteCount(), 3)
 		}
-		if trB.DeleteCount() != 4 {
-			return microerror.Maskf(countMismatchError, "EnsureDeleted of controller B was hit %v times, want %v", trB.DeleteCount(), 4)
+		if trB.DeleteCount() != 3 {
+			return microerror.Maskf(countMismatchError, "EnsureDeleted of controller B was hit %v times, want %v", trB.DeleteCount(), 3)
 		}
 		return nil
 	}
