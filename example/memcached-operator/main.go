@@ -3,8 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 
 	"github.com/giantswarm/microerror"
+	"github.com/giantswarm/micrologger"
 
 	"github.com/giantswarm/operatorkit/example/memcached-operator/memcached"
 )
@@ -18,6 +20,20 @@ func main() {
 
 func mainWithError() (err error) {
 	c := parseFlags()
+
+	// Create a new logger that is used by all packages.
+	var newLogger micrologger.Logger
+	{
+		c := micrologger.Config{
+			IOWriter: os.Stdout,
+		}
+		newLogger, err = micrologger.New(c)
+		if err != nil {
+			return microerror.Maskf(err, "micrologger.New")
+		}
+	}
+
+	c.Logger = newLogger
 	_, err = memcached.New(c)
 	if err != nil {
 		return microerror.Mask(err)
