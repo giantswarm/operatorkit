@@ -55,9 +55,9 @@ func (r *ResourceRouter) ResourceSet(obj interface{}) (*ResourceSet, error) {
 	if len(found) == 0 {
 		accessor, err := meta.Accessor(obj)
 		if err != nil {
-			r.logger.Log("function", "ResourceSet", "level", "warning", "message", "cannot create accessor for object", "object", fmt.Sprintf("%#v", obj), "stack", fmt.Sprintf("%#v", err))
+			r.logger.Log("level", "warning", "message", "cannot create accessor for object", "object", fmt.Sprintf("%#v", obj), "stack", fmt.Sprintf("%#v", err))
 		} else {
-			r.logger.Log("function", "ResourceSet", "level", "debug", "message", "no resource set for reconciled object", "object", accessor.GetSelfLink())
+			r.logger.Log("level", "debug", "message", "no resource set for reconciled object", "object", accessor.GetSelfLink())
 		}
 
 		return nil, microerror.Mask(noResourceSetError)

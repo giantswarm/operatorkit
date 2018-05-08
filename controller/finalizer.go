@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 
@@ -79,28 +78,55 @@ func (f *Controller) addFinalizer(obj interface{}) (bool, error) {
 	return stopReconciliation, nil
 }
 
-func (f *Controller) removeFinalizer(ctx context.Context, obj interface{}) error {
-	patch, path, err := createRemoveFinalizerPatch(obj, f.name)
+// removeFinalizer receives an object and tries to remove its finalizer which
+// was set by operatorkit. The removal of a finalizer will be retried and a fresh
+// object will get fetched from k8s if the ResourceVersion is out of date.
+func (f *Controller) removeFinalizer(obj interface{}) error {
+	accessor, err := meta.Accessor(obj)
 	if err != nil {
 		return microerror.Mask(err)
 	}
-	if patch == nil {
+	if !containsFinalizer(accessor.GetFinalizers(), getFinalizerName(f.name)) {
+		// object has no finalizer set, this could have two reasons:
+		// 1. We are migrating and an old object never got reconciled before deletion.
+		// 2. The operator wasn't running and our first interaction with the object
+		// is its deletion.
+		// 3. The object has another finalizer set and we removed ours already.
+		// All cases should not be harmful in general, so we ignore it.
 		return nil
 	}
-	p, err := json.Marshal(patch)
-	if err != nil {
-		return microerror.Mask(err)
-	}
-	operation := func() error {
-		res := f.restClient.Patch(types.JSONPatchType).AbsPath(path).Body(p).Do()
-		if errors.IsNotFound(res.Error()) {
+
+	path := accessor.GetSelfLink()
+
+	o := func() error {
+		// We get an up to date version of our object from k8s and parse the
+		// response from the RESTClient to runtime object.
+		obj, err := f.restClient.Get().AbsPath(path).Do().Get()
+		if errors.IsNotFound(err) {
 			return nil // the object is already gone, nothing to do.
-		} else if res.Error() != nil {
-			return microerror.Mask(res.Error())
+		} else if err != nil {
+			return microerror.Mask(err)
+		}
+
+		patch, err := createRemoveFinalizerPatch(obj, f.name)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+		if patch == nil {
+			return nil
+		}
+
+		p, err := json.Marshal(patch)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+		err = f.restClient.Patch(types.JSONPatchType).AbsPath(path).Body(p).Do().Error()
+		if err != nil {
+			return microerror.Mask(err)
 		}
 		return nil
 	}
-	err = backoff.Retry(operation, f.backOffFactory())
+	err = backoff.Retry(o, f.backOffFactory())
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -155,20 +181,15 @@ func createAddFinalizerPatch(obj interface{}, operatorName string) (patch []patc
 	return patch, true, nil
 }
 
-func createRemoveFinalizerPatch(obj interface{}, operatorName string) ([]patchSpec, string, error) {
+func createRemoveFinalizerPatch(obj interface{}, operatorName string) ([]patchSpec, error) {
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
-		return nil, "", microerror.Mask(err)
+		return nil, microerror.Mask(err)
 	}
 
 	finalizerName := getFinalizerName(operatorName)
 	if !containsFinalizer(accessor.GetFinalizers(), finalizerName) {
-		// object has not finalizer set, this could have two reasons:
-		// 1. We are migrating and an old object never got reconciled before deletion.
-		// 2. The operator wasn't running and our first interaction with the object
-		// is its deletion.
-		// Both cases should not be harmful in general, so we ignore it.
-		return nil, "", nil
+		return nil, nil
 	}
 
 	patch := []patchSpec{
@@ -179,7 +200,7 @@ func createRemoveFinalizerPatch(obj interface{}, operatorName string) ([]patchSp
 		},
 	}
 
-	return patch, accessor.GetSelfLink(), nil
+	return patch, nil
 }
 
 func getFinalizerName(name string) string {
