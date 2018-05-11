@@ -20,6 +20,7 @@ package scheme
 
 import (
 	corev1alpha1 "github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
+	examplev1alpha1 "github.com/giantswarm/apiextensions/pkg/apis/example/v1alpha1"
 	providerv1alpha1 "github.com/giantswarm/apiextensions/pkg/apis/provider/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
@@ -52,6 +53,7 @@ func init() {
 // correctly.
 func AddToScheme(scheme *runtime.Scheme) {
 	corev1alpha1.AddToScheme(scheme)
+	examplev1alpha1.AddToScheme(scheme)
 	providerv1alpha1.AddToScheme(scheme)
 
 }
