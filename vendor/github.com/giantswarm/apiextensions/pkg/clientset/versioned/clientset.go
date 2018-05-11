@@ -20,6 +20,7 @@ package versioned
 
 import (
 	corev1alpha1 "github.com/giantswarm/apiextensions/pkg/clientset/versioned/typed/core/v1alpha1"
+	examplev1alpha1 "github.com/giantswarm/apiextensions/pkg/clientset/versioned/typed/example/v1alpha1"
 	providerv1alpha1 "github.com/giantswarm/apiextensions/pkg/clientset/versioned/typed/provider/v1alpha1"
 	glog "github.com/golang/glog"
 	discovery "k8s.io/client-go/discovery"
@@ -32,6 +33,9 @@ type Interface interface {
 	CoreV1alpha1() corev1alpha1.CoreV1alpha1Interface
 	// Deprecated: please explicitly pick a version if possible.
 	Core() corev1alpha1.CoreV1alpha1Interface
+	ExampleV1alpha1() examplev1alpha1.ExampleV1alpha1Interface
+	// Deprecated: please explicitly pick a version if possible.
+	Example() examplev1alpha1.ExampleV1alpha1Interface
 	ProviderV1alpha1() providerv1alpha1.ProviderV1alpha1Interface
 	// Deprecated: please explicitly pick a version if possible.
 	Provider() providerv1alpha1.ProviderV1alpha1Interface
@@ -42,6 +46,7 @@ type Interface interface {
 type Clientset struct {
 	*discovery.DiscoveryClient
 	coreV1alpha1     *corev1alpha1.CoreV1alpha1Client
+	exampleV1alpha1  *examplev1alpha1.ExampleV1alpha1Client
 	providerV1alpha1 *providerv1alpha1.ProviderV1alpha1Client
 }
 
@@ -54,6 +59,17 @@ func (c *Clientset) CoreV1alpha1() corev1alpha1.CoreV1alpha1Interface {
 // Please explicitly pick a version.
 func (c *Clientset) Core() corev1alpha1.CoreV1alpha1Interface {
 	return c.coreV1alpha1
+}
+
+// ExampleV1alpha1 retrieves the ExampleV1alpha1Client
+func (c *Clientset) ExampleV1alpha1() examplev1alpha1.ExampleV1alpha1Interface {
+	return c.exampleV1alpha1
+}
+
+// Deprecated: Example retrieves the default version of ExampleClient.
+// Please explicitly pick a version.
+func (c *Clientset) Example() examplev1alpha1.ExampleV1alpha1Interface {
+	return c.exampleV1alpha1
 }
 
 // ProviderV1alpha1 retrieves the ProviderV1alpha1Client
@@ -87,6 +103,10 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	if err != nil {
 		return nil, err
 	}
+	cs.exampleV1alpha1, err = examplev1alpha1.NewForConfig(&configShallowCopy)
+	if err != nil {
+		return nil, err
+	}
 	cs.providerV1alpha1, err = providerv1alpha1.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
@@ -105,6 +125,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
 	cs.coreV1alpha1 = corev1alpha1.NewForConfigOrDie(c)
+	cs.exampleV1alpha1 = examplev1alpha1.NewForConfigOrDie(c)
 	cs.providerV1alpha1 = providerv1alpha1.NewForConfigOrDie(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
@@ -115,6 +136,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
 	cs.coreV1alpha1 = corev1alpha1.New(c)
+	cs.exampleV1alpha1 = examplev1alpha1.New(c)
 	cs.providerV1alpha1 = providerv1alpha1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
