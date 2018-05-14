@@ -26,7 +26,7 @@ metadata:
   namespace: default
 spec:
   replicas: 3
-  memory: 1G
+  memory: 1Gi
 ```
 
 For this CR the operator will create Memcached cluster of 3 nodes 1G memory
