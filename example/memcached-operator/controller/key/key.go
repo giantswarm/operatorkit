@@ -1,6 +1,8 @@
 package key
 
 import (
+	"fmt"
+
 	examplev1alpha1 "github.com/giantswarm/apiextensions/pkg/apis/example/v1alpha1"
 	"github.com/giantswarm/microerror"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -36,4 +38,8 @@ func MemoryMB(m *examplev1alpha1.MemcachedConfig) (int64, error) {
 
 func Namespace(m *examplev1alpha1.MemcachedConfig) string {
 	return m.Namespace
+}
+
+func ReplicaName(replica int) string {
+	return fmt.Sprintf("memcached%04d", replica)
 }
