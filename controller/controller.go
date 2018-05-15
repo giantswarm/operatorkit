@@ -337,7 +337,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 	}
 
 	go func() {
-		resetWait := c.informer.ResyncPeriod() * 2
+		resetWait := c.informer.ResyncPeriod() * 3
 
 		for {
 			select {
