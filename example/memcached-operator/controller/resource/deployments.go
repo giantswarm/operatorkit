@@ -110,24 +110,30 @@ func (d *Deployments) ensureReplicaCreated(ctx context.Context, m *examplev1alph
 		return microerror.Mask(err)
 	}
 
-	_, err = d.k8sClient.AppsV1().Deployments(desired.Namespace).Update(desired)
+	current, err := d.k8sClient.AppsV1().Deployments(desired.Namespace).Get(desired.Name, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("deployment %s/%s does not exist, it will be created", desired.Namespace, desired.Name))
+		// Just make sure current is nil when not found.
+		current = nil
 	} else if err != nil {
 		return microerror.Mask(err)
-	} else {
-		logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("deployment %s/%s updated", desired.Namespace, desired.Name))
-		return nil
 	}
 
-	_, err = d.k8sClient.AppsV1().Deployments(desired.Namespace).Create(desired)
-	if apierrors.IsAlreadyExists(err) {
-		logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("deployment %s/%s already exists", desired.Namespace, desired.Name))
-	} else if err != nil {
-		return microerror.Mask(err)
-	} else {
+	if current == nil {
+		_, err = d.k8sClient.AppsV1().Deployments(desired.Namespace).Create(desired)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
 		logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("deployment %s/%s created", desired.Namespace, desired.Name))
-		return nil
+	} else {
+		desired.ResourceVersion = current.ResourceVersion
+
+		_, err = d.k8sClient.AppsV1().Deployments(desired.Namespace).Update(desired)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
+		logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("deployment %s/%s updated", desired.Namespace, desired.Name))
 	}
 
 	return nil

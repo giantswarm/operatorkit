@@ -34,14 +34,14 @@ func NewServices(config ServicesConfig) (*Services, error) {
 
 	return d, nil
 }
-func (d *Services) Name() string {
+func (s *Services) Name() string {
 	return servicesName
 }
 
-func (d *Services) EnsureCreated(ctx context.Context, obj interface{}) error {
+func (s *Services) EnsureCreated(ctx context.Context, obj interface{}) error {
 	memcachedConfig := obj.(*examplev1alpha1.MemcachedConfig).DeepCopy()
 
-	managedServices, err := d.k8sClient.CoreV1().Services(memcachedConfig.Namespace).List(metav1.ListOptions{
+	managedServices, err := s.k8sClient.CoreV1().Services(memcachedConfig.Namespace).List(metav1.ListOptions{
 		LabelSelector: key.LabelSelectorManagedBy,
 	})
 	if err != nil {
@@ -55,7 +55,7 @@ func (d *Services) EnsureCreated(ctx context.Context, obj interface{}) error {
 
 	// Update existing services and scale up if necessary.
 	for i := 0; i < desiredReplicas; i++ {
-		err := d.ensureReplicaCreated(ctx, memcachedConfig, i)
+		err := s.ensureReplicaCreated(ctx, memcachedConfig, i)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -64,7 +64,7 @@ func (d *Services) EnsureCreated(ctx context.Context, obj interface{}) error {
 
 	// Scale down if necessary.
 	for i := desiredReplicas; i < currentReplicas; i++ {
-		err := d.ensureReplicaDeleted(ctx, memcachedConfig, i)
+		err := s.ensureReplicaDeleted(ctx, memcachedConfig, i)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -73,10 +73,10 @@ func (d *Services) EnsureCreated(ctx context.Context, obj interface{}) error {
 	return nil
 }
 
-func (d *Services) EnsureDeleted(ctx context.Context, obj interface{}) error {
+func (s *Services) EnsureDeleted(ctx context.Context, obj interface{}) error {
 	memcachedConfig := obj.(*examplev1alpha1.MemcachedConfig).DeepCopy()
 
-	managedServices, err := d.k8sClient.CoreV1().Services(memcachedConfig.Namespace).List(metav1.ListOptions{
+	managedServices, err := s.k8sClient.CoreV1().Services(memcachedConfig.Namespace).List(metav1.ListOptions{
 		LabelSelector: key.LabelSelectorManagedBy,
 	})
 	if err != nil {
@@ -94,7 +94,7 @@ func (d *Services) EnsureDeleted(ctx context.Context, obj interface{}) error {
 
 	// Delete existing servicees.
 	for i := 0; i < currentReplicas; i++ {
-		err := d.ensureReplicaDeleted(ctx, memcachedConfig, i)
+		err := s.ensureReplicaDeleted(ctx, memcachedConfig, i)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -103,40 +103,50 @@ func (d *Services) EnsureDeleted(ctx context.Context, obj interface{}) error {
 	return nil
 }
 
-func (d *Services) ensureReplicaCreated(ctx context.Context, m *examplev1alpha1.MemcachedConfig, replica int) error {
+func (s *Services) ensureReplicaCreated(ctx context.Context, m *examplev1alpha1.MemcachedConfig, replica int) error {
 	desired, err := newDesiredService(m, replica)
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
-	_, err = d.k8sClient.CoreV1().Services(desired.Namespace).Update(desired)
+	current, err := s.k8sClient.CoreV1().Services(desired.Namespace).Get(desired.Name, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("service %s/%s does not exist, it will be created", desired.Namespace, desired.Name))
+		// Just make sure current is nil when not found.
+		current = nil
 	} else if err != nil {
 		return microerror.Mask(err)
-	} else {
-		logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("service %s/%s updated", desired.Namespace, desired.Name))
-		return nil
 	}
 
-	_, err = d.k8sClient.CoreV1().Services(desired.Namespace).Create(desired)
-	if apierrors.IsAlreadyExists(err) {
-		logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("service %s/%s already exists", desired.Namespace, desired.Name))
-	} else if err != nil {
-		return microerror.Mask(err)
-	} else {
+	if current == nil {
+		_, err = s.k8sClient.CoreV1().Services(desired.Namespace).Create(desired)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
 		logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("service %s/%s created", desired.Namespace, desired.Name))
-		return nil
+	} else {
+		// Service.spec.clusterIP is immutable and filled by the
+		// Kubernetes when not provided.
+		desired.Spec.ClusterIP = current.Spec.ClusterIP
+
+		desired.ResourceVersion = current.ResourceVersion
+
+		_, err = s.k8sClient.CoreV1().Services(desired.Namespace).Update(desired)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
+		logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("service %s/%s updated", desired.Namespace, desired.Name))
 	}
 
 	return nil
 }
 
-func (d *Services) ensureReplicaDeleted(ctx context.Context, m *examplev1alpha1.MemcachedConfig, replica int) error {
+func (s *Services) ensureReplicaDeleted(ctx context.Context, m *examplev1alpha1.MemcachedConfig, replica int) error {
 	name := key.ReplicaName(replica)
 	namespace := key.Namespace(m)
 
-	err := d.k8sClient.CoreV1().Services(namespace).Delete(name, &metav1.DeleteOptions{})
+	err := s.k8sClient.CoreV1().Services(namespace).Delete(name, &metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("service %s/%s already deleted", namespace, name))
 	} else if err != nil {
