@@ -52,7 +52,9 @@ func NewMemcached(config Config) (*Memcached, error) {
 
 	var servicesResource controller.Resource
 	{
-		c := resource.ServicesConfig{}
+		c := resource.ServicesConfig{
+			K8sClient: config.K8sClient,
+		}
 
 		servicesResource, err = resource.NewServices(c)
 		if err != nil {
