@@ -27,6 +27,10 @@ operators in production.
   logging and error handling.
 - Minimal set of dependencies.
 
+## Docs
+
+- [Keeping Reconciliation Loops Short](docs/keeping_reconciliation_loops_short.md)
+
 ## Current Scope
 
 The project is split into independent packages providing complementary
