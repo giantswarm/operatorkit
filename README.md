@@ -5,8 +5,8 @@
 Package `operatorkit` implements an opinionated framework for developing
 [Kubernetes operators][operators]. It emerged as we extracted common
 functionality from a number of the operators we developed at [Giant
-Swarm][giantswarm]. The goal of this library is to provide a common structure of
-operator projects and to encapsulate best practices we learned while running
+Swarm][giantswarm]. The goal of this library is to provide a common structure
+for operator projects and to encapsulate best practices we learned while running
 operators in production.
 
 ## Features
@@ -17,13 +17,13 @@ operators in production.
   is executed at least once for each create/delete/update event.
 - A deterministic informer implementation that guarantees the expected behaviour
   of configured resync periods and rate waits.
-- Convenient client library helpers for more simple client creation.
+- Convenient client library helpers for simpler client creation.
 - Resource wrapping to gain ability of composing resources like middlewares.
 - Control flow primitives that allow cancelation and repetition of resource
   implementations.
 - Independent packages. It is possible to use only certain parts of the library
   without being bound to all primitives it provides.
-- Possible to change behaviour that is often specific to an organization like
+- Ability to change behaviour that is often specific to an organization like
   logging and error handling.
 - Minimal set of dependencies.
 
@@ -43,8 +43,8 @@ operators][operators].
   code.
 - `controller`: provides a framework aiming to help writing reliable, robust
   controllers performing reconciliation loops. The heart of the controller is a
-  Resource interface. The reconciliation primitive allowing split the
-  reconciliation into smaller bits. Controller manages [finalizers][finalizers]
+  Resource interface. The reconciliation primitive allows splitting the
+  reconciliation into smaller parts. Controller manages [finalizers][finalizers]
   on reconciled objects, making sure all resources are executed at least once
   during the deletion.
 
