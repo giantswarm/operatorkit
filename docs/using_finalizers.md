@@ -2,14 +2,13 @@
 
 [Kubernetes operators][operators] in general try to ensure a certain state. The
 create state is already constantly ensured by the create and update events of
-the informer. Deletion events are only executed ones though. In order to
-replicate a continuous reconciliation as well for the delete state a Kubernetes
-concept called [finalizers][finalizers] is used. They are actually only simple
-strings being tracked in the object metadata of any Kubernetes runtime object.
-Once a runtime object is deleted the Kubernetes API sees the list of finalizers
-applied is not empty and defers deletion until no finalizers is tracked anymore.
-Users are responsible to remove finalizers from their reconciled runtime
-objects.
+the informer. Deletion events are only executed once though. In order to also
+replicate a continuous reconciliation for the delete state a Kubernetes concept
+called [finalizers][finalizers] is used. They are actually only simple strings
+being tracked in the object metadata of any Kubernetes runtime object. Once a
+runtime object is deleted the Kubernetes API sees the list of finalizers applied
+is not empty and defers deletion until no finalizers are tracked anymore. Users
+are responsible to remove finalizers from their reconciled runtime objects.
 
 The good news is `operatorkit` does all this for you already. As soon as an
 operator using operatorkit reconciles a runtime object the object's metadata is
@@ -61,7 +60,7 @@ setting. In case operators boot multiple controllers for different
 reconciliation loops and purposes the configured name is used to manage
 finalizers.
 
-[The name setting for the `cluster` controller in the kvm-operator look like this.](https://github.com/giantswarm/kvm-operator/blob/4794d415a21c6e6d0e2ba7fb6f1ef1591101f4b0/service/controller/cluster.go#L337-L346)
+[The name setting for the `cluster` controller in the kvm-operator looks like this.](https://github.com/giantswarm/kvm-operator/blob/4794d415a21c6e6d0e2ba7fb6f1ef1591101f4b0/service/controller/cluster.go#L337-L346)
 
 ```
 c := controller.Config{
@@ -71,7 +70,7 @@ c := controller.Config{
 }
 ```
 
-[The name setting for the `drainer` controller in the kvm-operator look like this.](https://github.com/giantswarm/kvm-operator/blob/4794d415a21c6e6d0e2ba7fb6f1ef1591101f4b0/service/controller/drainer.go#L69-L76)
+[The name setting for the `drainer` controller in the kvm-operator looks like this.](https://github.com/giantswarm/kvm-operator/blob/4794d415a21c6e6d0e2ba7fb6f1ef1591101f4b0/service/controller/drainer.go#L69-L76)
 
 ```
 c := controller.Config{
