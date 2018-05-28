@@ -30,6 +30,7 @@ operators in production.
 ## Docs
 
 - [Keeping Reconciliation Loops Short](docs/keeping_reconciliation_loops_short.md)
+- [Using Finalizers](docs/using_finalizers.md)
 
 ## Current Scope
 
