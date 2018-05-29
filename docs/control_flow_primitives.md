@@ -39,7 +39,7 @@ again based on how they got configured.
 
 ## Repeat Delete Events
 
-There are separate [docs about on finalizers](using_finalizers.md) which
+There are separate docs about [using finalizers](using_finalizers.md) which
 describe a lot of background. Thus we just touch the control flow aspects of
 finalizers here briefly. In order to repeat delete events you can cause the
 operatorkit controller to keep finalizers by calling
