@@ -25,14 +25,14 @@ CRUD resources implement a couple of steps to help with structuring more complex
 use cases. These steps act like a framework and help navigating through the
 stormy waters of reconciliation and its implications. In order to cancel
 resources within one of its steps you can call
-[`resourcecanceledcontext.SetCanceled(ctx)`](https://github.com/giantswarm/kvm-operator/blob/de7e109f4a652b785bbcf4214a1c8e028bf0eed4/service/controller/v12/resource/namespace/current.go#L51-L75).
+[`resourcecanceledcontext.SetCanceled(ctx)`](https://github.com/giantswarm/kvm-operator/blob/de7e109f4a652b785bbcf4214a1c8e028bf0eed4/service/controller/v12/resource/namespace/current.go#L66).
 A convention for CRUD resource cancelation is to do it within `GetCurrentState`
 when possible.
 
 ## Cancel Reconciliation
 
 In order to cancel the whole reconciliation you can simply call
-[`reconciliationcanceledcontext.SetCanceled(ctx)`](https://github.com/giantswarm/kvm-operator/blob/de7e109f4a652b785bbcf4214a1c8e028bf0eed4/service/controller/v12/resource/namespace/current.go#L40-L49)
+[`reconciliationcanceledcontext.SetCanceled(ctx)`](https://github.com/giantswarm/kvm-operator/blob/de7e109f4a652b785bbcf4214a1c8e028bf0eed4/service/controller/v12/resource/namespace/current.go#L45)
 which will then stop executing all configured resources within the current
 reconciliation loop. On the next reconciliation loop all resources are executed
 again based on how they got configured.
