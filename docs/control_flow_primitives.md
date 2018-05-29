@@ -35,12 +35,15 @@ In order to cancel the whole reconciliation you can simply call
 [`reconciliationcanceledcontext.SetCanceled(ctx)`](https://github.com/giantswarm/kvm-operator/blob/de7e109f4a652b785bbcf4214a1c8e028bf0eed4/service/controller/v12/resource/namespace/current.go#L45)
 which will then stop executing all configured resources within the current
 reconciliation loop. On the next reconciliation loop all resources are executed
-again based on how they got configured.
+again based on how they were configured. Note that cancelling resources on
+delete events will cause the finalizer to be removed. This means the delete
+event will not be replayed. When this behaviour is not desired check on how to
+[repeat delete events](#repeat-delete-events).
 
 ## Repeat Delete Events
 
 There are separate docs about [using finalizers](using_finalizers.md) which
-describe a lot of background. Thus we just touch the control flow aspects of
+describe a lot of the background. Thus we just touch the control flow aspects of
 finalizers here briefly. In order to repeat delete events you can cause the
 operatorkit controller to keep finalizers by calling
 [`finalizerskeptcontext.SetKept(ctx)`](https://github.com/giantswarm/kvm-operator/blob/de7e109f4a652b785bbcf4214a1c8e028bf0eed4/service/controller/v12/resource/namespace/current.go#L67)
