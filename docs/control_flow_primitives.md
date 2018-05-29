@@ -25,7 +25,7 @@ CRUD resources implement a couple of steps to help with structuring more complex
 use cases. These steps act like a framework and help navigating through the
 stormy waters of reconciliation and its implications. In order to cancel
 resources within one of its steps you can call
-[`resourcecanceledcontext.SetCanceled(ctx)`](https://github.com/giantswarm/kvm-operator/blob/de7e109f4a652b785bbcf4214a1c8e028bf0eed4/service/controller/v12/resource/namespace/current.go#L40-L49).
+[`resourcecanceledcontext.SetCanceled(ctx)`](https://github.com/giantswarm/kvm-operator/blob/de7e109f4a652b785bbcf4214a1c8e028bf0eed4/service/controller/v12/resource/namespace/current.go#L51-L75).
 A convention for CRUD resource cancelation is to do it within `GetCurrentState`
 when possible.
 
