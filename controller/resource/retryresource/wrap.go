@@ -23,7 +23,7 @@ func Wrap(resources []controller.Resource, config WrapConfig) ([]controller.Reso
 	}
 
 	if config.BackOffFactory == nil {
-		config.BackOffFactory = func() backoff.BackOff { return &backoff.ZeroBackOff{} }
+		config.BackOffFactory = func() backoff.BackOff { return backoff.WithMaxTries(backoff.NewExponentialBackOff(), uint64(3)) }
 	}
 
 	var wrapped []controller.Resource
