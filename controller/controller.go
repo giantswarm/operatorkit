@@ -294,7 +294,9 @@ func (c *Controller) UpdateFunc(oldObj, newObj interface{}) {
 	}
 
 	ok, err := c.addFinalizer(obj)
-	if err != nil {
+	if IsInvalidRESTClient(err) {
+		panic("invalid REST client configured for controller")
+	} else if err != nil {
 		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
