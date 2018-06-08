@@ -56,6 +56,7 @@ package k8srestconfig
 
 import (
 	"net/url"
+	"time"
 
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
@@ -66,7 +67,8 @@ const (
 	// Maximum QPS to the master from this client.
 	MaxQPS = 100
 	// Maximum burst for throttle.
-	MaxBurst = 100
+	MaxBurst       = 100
+	DefaultTimeout = 30 * time.Second
 )
 
 // TLSClientConfig contains settings to enable transport layer security.
@@ -93,6 +95,7 @@ type Config struct {
 	// Settings
 	Address   string
 	InCluster bool
+	Timeout   time.Duration
 	TLS       TLSClientConfig
 }
 
@@ -113,6 +116,9 @@ func New(config Config) (*rest.Config, error) {
 			return nil, microerror.Maskf(invalidConfigError, "config.Address=%s must be a valid URL: %s", config.Address, err)
 		}
 	}
+	if config.Timeout.Seconds() == 0 {
+		config.Timeout = DefaultTimeout
+	}
 
 	var err error
 
@@ -128,7 +134,8 @@ func New(config Config) (*rest.Config, error) {
 		config.Logger.Log("level", "debug", "message", "creating out-cluster config")
 
 		restConfig = &rest.Config{
-			Host: config.Address,
+			Host:    config.Address,
+			Timeout: config.Timeout,
 			TLSClientConfig: rest.TLSClientConfig{
 				CertFile: config.TLS.CrtFile,
 				KeyFile:  config.TLS.KeyFile,
