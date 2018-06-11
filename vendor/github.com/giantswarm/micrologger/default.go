@@ -15,5 +15,5 @@ var DefaultCaller = func() interface{} {
 var DefaultIOWriter = os.Stdout
 
 var DefaultTimestampFormatter = func() interface{} {
-	return time.Now().UTC().Format("2006-01-02 15:04:05.000")
+	return time.Now().UTC().Format("2006-01-02T15:04:05.999999-07:00")
 }
