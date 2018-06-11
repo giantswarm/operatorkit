@@ -26,7 +26,7 @@
   version = "v1.0.0"
 
 [[projects]]
-  branch = "k8s-1.10.4"
+  branch = "master"
   name = "github.com/giantswarm/apiextensions"
   packages = [
     "pkg/apis/core/v1alpha1",
@@ -38,13 +38,13 @@
     "pkg/clientset/versioned/typed/example/v1alpha1",
     "pkg/clientset/versioned/typed/provider/v1alpha1"
   ]
-  revision = "6432d5e9d211094d511f17b560819dd757c97bb6"
+  revision = "18c1aa070409bfa5ebdf91660837370dfb4071b1"
 
 [[projects]]
   branch = "master"
   name = "github.com/giantswarm/e2e-harness"
   packages = ["pkg/harness"]
-  revision = "54be9f9ff435305dcbe09ee26fc94361ac57a330"
+  revision = "c5b82c0351c122d5c4f96de2381c58fd97f1e354"
 
 [[projects]]
   branch = "master"
@@ -141,8 +141,8 @@
 [[projects]]
   name = "github.com/imdario/mergo"
   packages = ["."]
-  revision = "9d5f1277e9a8ed20c3684bda8fde67c05628518c"
-  version = "v0.3.4"
+  revision = "9316a62528ac99aaecb4e47eadd6dc8aa6533d58"
+  version = "v0.3.5"
 
 [[projects]]
   name = "github.com/json-iterator/go"
@@ -184,7 +184,7 @@
   branch = "master"
   name = "github.com/prometheus/client_golang"
   packages = ["prometheus"]
-  revision = "208fa994be3bd65c0de04f506db92852b581bc4a"
+  revision = "faf4ec335fe01ae5a6a0eaa34a5a9333bfbd1a30"
 
 [[projects]]
   branch = "master"
@@ -219,8 +219,8 @@
     ".",
     "mem"
   ]
-  revision = "63644898a8da0bc22138abf860edaf5277b6102e"
-  version = "v1.1.0"
+  revision = "787d034dfe70e44075ccc060d346146ef53270ad"
+  version = "v1.1.1"
 
 [[projects]]
   name = "github.com/spf13/pflag"
@@ -232,7 +232,7 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "b47b1587369238182299fe4dad77d05b8b461e06"
+  revision = "8ac0e0d97ce45cd83d1d7243c060cb8461dda5e9"
 
 [[projects]]
   branch = "master"
@@ -253,7 +253,7 @@
     "unix",
     "windows"
   ]
-  revision = "9527bec2660bd847c050fda93a0f0c6dee0800bb"
+  revision = "bff228c7b664c5fce602223a05fb708fd8654986"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -449,6 +449,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "44f41d3d79d384e1b1212e6ebcb8ba4aaa597ba5f14aa42dad9f732a0db58b7e"
+  inputs-digest = "275c8a90d120582bc355e2583fb287716d938f8fdc382884520f69d7a13153e2"
   solver-name = "gps-cdcl"
   solver-version = 1
