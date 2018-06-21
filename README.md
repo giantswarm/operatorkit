@@ -32,6 +32,7 @@ operators in production.
 - [Control Flow Primitives](docs/control_flow_primitives.md)
 - [Keeping Reconciliation Loops Short](docs/keeping_reconciliation_loops_short.md)
 - [Using Finalizers](docs/using_finalizers.md)
+- [Troubleshooting Guide](docs/troubleshooting.md)
 
 ## Current Scope
 

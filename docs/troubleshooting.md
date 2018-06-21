@@ -8,13 +8,19 @@ message is not perfectly clear.
 
 ## RBAC rules
 
-When `informer.Watch()` is called, it might fail to unknown error:
-`unknown (get clusternetworkconfigs.core.giantswarm.io)`. This error is not very
-descriptive and OperatorKit cannot really improve here since the original error
-is generic `StatusError`.
+When `informer.Watch()` is called, it might fail with an "unknown error". This
+error is not very descriptive and there is work ongoing towards OperatorKit
+improving logging here as the original error is
+[StatusError](https://github.com/kubernetes/apimachinery/blob/master/pkg/api/errors/errors.go#L39)
+with `ErrStatus.Reason`:
+[Forbidden](https://github.com/kubernetes/apimachinery/blob/master/pkg/apis/meta/v1/types.go#L569)
+Root cause here is a missing RBAC rule. The operator must have watch permission
+for the used CRD in order to be able to operate on it.
 
-Root cause here is though missing RBAC rule: Operator must have watch permission
-to used CRD in order to be able to operate on it.
+```
+unknown (get clusternetworkconfigs.core.giantswarm.io)
+```
+
 
 ## CRD registration
 
@@ -25,5 +31,7 @@ mistake in this case is missing type registration when using generated CRD
 clientset. When type registration is missing, `client-go` decoder cannot
 recognize event and therefore fails with message like following:
 
-`ERROR: logging before flag.Parse: E0619 13:28:42.006292       1 streamwatcher.go:109] Unable to decode an event from the watch stream: unable to decode watch event: no kind "ClusterNetworkConfig" is registered for version "core.giantswarm.io/v1alpha1"`
+```
+ERROR: logging before flag.Parse: E0619 13:28:42.006292       1 streamwatcher.go:109] Unable to decode an event from the watch stream: unable to decode watch event: no kind "ClusterNetworkConfig" is registered for version "core.giantswarm.io/v1alpha1"
+```
 
