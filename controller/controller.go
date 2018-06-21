@@ -13,6 +13,7 @@ import (
 	"github.com/giantswarm/micrologger/loggermeta"
 	"github.com/prometheus/client_golang/prometheus"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/rest"
 
@@ -237,7 +238,7 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 				c.UpdateFunc(nil, e.Object)
 				t.ObserveDuration()
 			case err := <-errChan:
-				return microerror.Mask(err)
+				return microerror.Mask(matchAndTransform(err, c.crd.Name))
 			case <-ctx.Done():
 				return nil
 			}
@@ -442,6 +443,18 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 	}
 
 	return nil
+}
+
+// matchAndTransform matches against known errors and transforms them to
+// OperatorKit errors with more user friendly error message.
+func matchAndTransform(err error, crdName string) error {
+	c := microerror.Cause(err)
+	switch {
+	case errors.IsForbidden(c):
+		return microerror.Maskf(statusForbiddenError, "controller might be missing RBAC rule for %s CRD", crdName)
+	default:
+		return err
+	}
 }
 
 func setLoggerCtxValue(ctx context.Context, key, value string) context.Context {

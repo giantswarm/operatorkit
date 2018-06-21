@@ -1,6 +1,8 @@
 package controller
 
-import "github.com/giantswarm/microerror"
+import (
+	"github.com/giantswarm/microerror"
+)
 
 var executionFailedError = microerror.New("execution failed")
 
@@ -28,4 +30,11 @@ var noResourceSetError = microerror.New("no resource set")
 // IsNoResourceSet asserts noResourceSetError.
 func IsNoResourceSet(err error) bool {
 	return microerror.Cause(err) == noResourceSetError
+}
+
+var statusForbiddenError = microerror.New("status forbidden")
+
+// IsStatusForbiddenError asserts statusForbiddenError.
+func IsStatusForbidden(err error) bool {
+	return microerror.Cause(err) == statusForbiddenError
 }
