@@ -10,12 +10,12 @@ message is not perfectly clear.
 
 When `informer.Watch()` is called, it might fail with an "unknown error". This
 error is not very descriptive and there is work ongoing towards OperatorKit
-improving logging here as the original error is
+improving logging on this as the original error is
 [StatusError](https://github.com/kubernetes/apimachinery/blob/master/pkg/api/errors/errors.go#L39)
 with `ErrStatus.Reason`:
 [Forbidden](https://github.com/kubernetes/apimachinery/blob/master/pkg/apis/meta/v1/types.go#L569)
-Root cause here is a missing RBAC rule. The operator must have watch permission
-for the used CRD in order to be able to operate on it.
+Root cause here is a missing RBAC authorization rule. The operator must have
+watch permission for the used CRD in order to be able to operate on it.
 
 ```
 unknown (get clusternetworkconfigs.core.giantswarm.io)
