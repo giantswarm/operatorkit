@@ -26,7 +26,7 @@ unknown (get clusternetworkconfigs.core.giantswarm.io)
 ```
 
 An improved OperatorKit log message (when CRD name is
-`clusternetworkconfigs.core.giantswarm.io`:
+`clusternetworkconfigs.core.giantswarm.io`):
 
 ```
 controller might be missing RBAC rule for clusternetworkconfigs.core.giantswarm.io CRD
