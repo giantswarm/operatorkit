@@ -2,6 +2,7 @@ package controller
 
 import (
 	"github.com/giantswarm/microerror"
+	"k8s.io/apimachinery/pkg/api/errors"
 )
 
 var executionFailedError = microerror.New("execution failed")
@@ -34,7 +35,22 @@ func IsNoResourceSet(err error) bool {
 
 var statusForbiddenError = microerror.New("status forbidden")
 
-// IsStatusForbiddenError asserts statusForbiddenError.
+// IsStatusForbiddenError asserts statusForbiddenError and apimachinery
+// StatusError with StatusReasonForbidden.
 func IsStatusForbidden(err error) bool {
-	return microerror.Cause(err) == statusForbiddenError
+	if err == nil {
+		return false
+	}
+
+	c := microerror.Cause(err)
+
+	if c == statusForbiddenError {
+		return true
+	}
+
+	if errors.IsForbidden(c) {
+		return true
+	}
+
+	return false
 }
