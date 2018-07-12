@@ -7,9 +7,9 @@ import (
 	"github.com/giantswarm/operatorkit/example/memcached-operator/logger"
 )
 
-// newSimpleResourceRouter creates a resource router which handles all objects
-// with single set of resources.
-func newSimpleResourceRouter(resources []controller.Resource) (*controller.ResourceRouter, error) {
+// newSimpleResourceSets creates a list if resource sets which handles all
+// reconciled objects. In this case with only a single resource set.
+func newSimpleResourceSets(resources []controller.Resource) ([]*controller.ResourceSet, error) {
 	var err error
 
 	var set *controller.ResourceSet
@@ -29,21 +29,9 @@ func newSimpleResourceRouter(resources []controller.Resource) (*controller.Resou
 		}
 	}
 
-	var router *controller.ResourceRouter
-	{
-		c := controller.ResourceRouterConfig{
-			Logger: logger.Default,
-
-			ResourceSets: []*controller.ResourceSet{
-				set,
-			},
-		}
-
-		router, err = controller.NewResourceRouter(c)
-		if err != nil {
-			return nil, microerror.Mask(err)
-		}
+	resourceSets := []*controller.ResourceSet{
+		set,
 	}
 
-	return router, nil
+	return resourceSets, nil
 }
