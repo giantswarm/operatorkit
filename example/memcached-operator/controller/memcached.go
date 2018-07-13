@@ -86,9 +86,9 @@ func NewMemcached(config Config) (*Memcached, error) {
 
 	}
 
-	// resourceRouter is used in more complex operators that support multiple
+	// resourceSets is used in more complex operators that support multiple
 	// resources and multiple versions of those resources.
-	resourceRouter, err := newSimpleResourceRouter(resources)
+	resourceSets, err := newSimpleResourceSets(resources)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
@@ -107,7 +107,6 @@ func NewMemcached(config Config) (*Memcached, error) {
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
-
 	}
 
 	// underlying is the OperatorKit controller. It implements a control loop
@@ -116,15 +115,14 @@ func NewMemcached(config Config) (*Memcached, error) {
 	var underlying *controller.Controller
 	{
 		c := controller.Config{
-			Logger: logger.Default,
-			Name:   name,
+			CRD:          crd,
+			CRDClient:    crdClient,
+			Informer:     memcachedInformer,
+			Logger:       logger.Default,
+			ResourceSets: resourceSets,
+			RESTClient:   restClient,
 
-			CRD:        crd,
-			CRDClient:  crdClient,
-			Informer:   memcachedInformer,
-			RESTClient: restClient,
-
-			ResourceRouter: resourceRouter,
+			Name: name,
 		}
 
 		underlying, err = controller.New(c)
