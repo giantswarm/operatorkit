@@ -1,4 +1,4 @@
-# Troubleshooting Tips
+# Troubleshooting
 
 When developing operators, there might occasionally be moments when Kubernetes
 APIs or apiserver don't return error message with full context or when the error
@@ -46,4 +46,3 @@ and therefore fails with message like following:
 ```
 ERROR: logging before flag.Parse: E0619 13:28:42.006292       1 streamwatcher.go:109] Unable to decode an event from the watch stream: unable to decode watch event: no kind "ClusterNetworkConfig" is registered for version "core.giantswarm.io/v1alpha1"
 ```
-

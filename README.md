@@ -31,7 +31,8 @@ operators in production.
 
 - [Control Flow Primitives](docs/control_flow_primitives.md)
 - [Keeping Reconciliation Loops Short](docs/keeping_reconciliation_loops_short.md)
-- [Troubleshooting Guide](docs/troubleshooting.md)
+- [Managing CR Status Sub Resources](docs/managing_cr_status_sub_resources.md)
+- [Troubleshooting](docs/troubleshooting.md)
 - [Using Finalizers](docs/using_finalizers.md)
 
 ## Current Scope
