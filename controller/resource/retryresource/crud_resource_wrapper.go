@@ -2,6 +2,9 @@ package retryresource
 
 import (
 	"context"
+	"fmt"
+	"reflect"
+	"strings"
 
 	"github.com/cenkalti/backoff"
 	"github.com/giantswarm/microerror"
@@ -41,6 +44,34 @@ func newCRUDResourceWrapper(config Config) (*crudResourceWrapper, error) {
 		}
 
 		underlyingCRUD, ok := underlying.(*controller.CRUDResource)
+		if !ok {
+			// TODO this is pretty magical. Needs separate testing and sharing between wrapping resources.
+
+			// Check if *controller.CRUDResource is embbeded type.
+			// And if it is extract embbeded CRUDResource.
+
+			// Create compiler checked name of the CRUDResource.
+			crudResourceTypeName := fmt.Sprintf("%T", controller.CRUDResource{})
+			split := strings.Split(crudResourceTypeName, ".")
+			crudResourceTypeName = split[len(split)-1]
+
+			// Find a field with "CRUDResource".
+			val := reflect.ValueOf(underlying)
+			val = reflect.Indirect(val)
+			crudResourceField := val.FieldByName(crudResourceTypeName)
+
+			// If the the field with name "CRUDResource" is a non
+			// zero reflec.Value and it's of of type
+			// *controller.CRUDResource then this underlying
+			// resource embeds *controller.CRUDResource. In that
+			// case it is remembered and ok is set to true.
+			zeroValue := reflect.Value{}
+			if crudResourceField != zeroValue && crudResourceField.Type() == reflect.TypeOf(&controller.CRUDResource{}) {
+				i := crudResourceField.Interface()
+				underlyingCRUD = i.(*controller.CRUDResource)
+				ok = true
+			}
+		}
 		if !ok {
 			return nil, microerror.Maskf(incompatibleUnderlyingResourceError, "expected %T", underlyingCRUD)
 		}
