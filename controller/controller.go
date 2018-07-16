@@ -13,6 +13,7 @@ import (
 	"github.com/giantswarm/micrologger/loggermeta"
 	"github.com/prometheus/client_golang/prometheus"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/rest"
 
@@ -32,18 +33,16 @@ type Config struct {
 	CRDClient *k8scrdclient.CRDClient
 	Informer  informer.Interface
 	Logger    micrologger.Logger
-	// ResourceRouter determines which resource set to use on reconciliation based
-	// on its own implementation. A resource router is to decide which resource
-	// set to execute. A resource set provides a specific function to initialize
-	// the request context and a list of resources to be executed for a
-	// reconciliation loop. That way each runtime object being reconciled is
-	// executed against a desired list of resources. Since runtime objects may
-	// differ in version and/or structure the resource router enables custom
-	// inspection before each reconciliation loop. That way the complete list of
-	// resources being executed for the received runtime object can be versioned
-	// and different resources can be executed depending on the runtime object
-	// being reconciled.
-	ResourceRouter *ResourceRouter
+	// ResourceSets is a list of resource sets. A resource set provides a specific
+	// function to initialize the request context and a list of resources to be
+	// executed for a reconciliation loop. That way each runtime object being
+	// reconciled is executed against a desired list of resources. Since runtime
+	// objects may differ in version and/or structure the resource router enables
+	// custom inspection before each reconciliation loop. That way the complete
+	// list of resources being executed for the received runtime object can be
+	// versioned and different resources can be executed depending on the runtime
+	// object being reconciled.
+	ResourceSets []*ResourceSet
 	// RESTClient needs to be configured with a serializer capable of serializing
 	// and deserializing the object which is watched by the informer. Otherwise
 	// deserialization will fail when trying to add a finalizer.
@@ -66,12 +65,12 @@ type Config struct {
 }
 
 type Controller struct {
-	crd            *apiextensionsv1beta1.CustomResourceDefinition
-	crdClient      *k8scrdclient.CRDClient
-	informer       informer.Interface
-	restClient     rest.Interface
-	logger         micrologger.Logger
-	resourceRouter *ResourceRouter
+	crd          *apiextensionsv1beta1.CustomResourceDefinition
+	crdClient    *k8scrdclient.CRDClient
+	informer     informer.Interface
+	restClient   rest.Interface
+	logger       micrologger.Logger
+	resourceSets []*ResourceSet
 
 	bootOnce       sync.Once
 	errorCollector chan error
@@ -95,8 +94,8 @@ func New(config Config) (*Controller, error) {
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
 	}
-	if config.ResourceRouter == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.ResourceRouter must not be empty")
+	if len(config.ResourceSets) == 0 {
+		return nil, microerror.Maskf(invalidConfigError, "config.ResourceSets must not be empty")
 	}
 
 	if config.BackOffFactory == nil {
@@ -107,12 +106,12 @@ func New(config Config) (*Controller, error) {
 	}
 
 	c := &Controller{
-		crd:            config.CRD,
-		crdClient:      config.CRDClient,
-		informer:       config.Informer,
-		restClient:     config.RESTClient,
-		logger:         config.Logger,
-		resourceRouter: config.ResourceRouter,
+		crd:          config.CRD,
+		crdClient:    config.CRDClient,
+		informer:     config.Informer,
+		restClient:   config.RESTClient,
+		logger:       config.Logger,
+		resourceSets: config.ResourceSets,
 
 		bootOnce:       sync.Once{},
 		errorCollector: make(chan error, 1),
@@ -160,7 +159,7 @@ func (c *Controller) DeleteFunc(obj interface{}) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	resourceSet, err := c.resourceRouter.ResourceSet(obj)
+	resourceSet, err := c.resourceSet(obj)
 	if IsNoResourceSet(err) {
 		// In case the resource router is not able to find any resource set to
 		// handle the reconciled runtime object, we stop here. Note that we just
@@ -271,7 +270,7 @@ func (c *Controller) UpdateFunc(oldObj, newObj interface{}) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	resourceSet, err := c.resourceRouter.ResourceSet(obj)
+	resourceSet, err := c.resourceSet(obj)
 	if IsNoResourceSet(err) {
 		// In case the resource router is not able to find any resource set to
 		// handle the reconciled runtime object, we stop here.
@@ -361,6 +360,37 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 	c.ProcessEvents(ctx, deleteChan, updateChan, errChan)
 
 	return nil
+}
+
+// resourceSet tries to lookup the appropriate resource set based on the
+// received runtime object. There might be not any resource set for an observed
+// runtime object if an operator uses multiple controllers for reconciliations.
+// There must not be multiple resource sets per observed runtime object though.
+// If this is the case, ResourceSet returns an error.
+func (c *Controller) resourceSet(obj interface{}) (*ResourceSet, error) {
+	var found []*ResourceSet
+
+	for _, r := range c.resourceSets {
+		if r.Handles(obj) {
+			found = append(found, r)
+		}
+	}
+
+	if len(found) == 0 {
+		accessor, err := meta.Accessor(obj)
+		if err != nil {
+			c.logger.Log("level", "warning", "message", "cannot create accessor for object", "object", fmt.Sprintf("%#v", obj), "stack", fmt.Sprintf("%#v", err))
+		} else {
+			c.logger.Log("level", "debug", "message", "no resource set for reconciled object", "object", accessor.GetSelfLink())
+		}
+
+		return nil, microerror.Mask(noResourceSetError)
+	}
+	if len(found) > 1 {
+		return nil, microerror.Maskf(executionFailedError, "multiple handling resource sets found; only single allowed")
+	}
+
+	return found[0], nil
 }
 
 // ProcessDelete is a drop-in for an informer's DeleteFunc. It receives the
