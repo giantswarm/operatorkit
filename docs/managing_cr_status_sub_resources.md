@@ -9,3 +9,11 @@ In the linked example we have the `chart` resource and the `chartstatus`
 resource. The advantage of this pattern is to have dedicated operatorkit
 resource implementations which can reconcile independently. That way different
 resync periods can be used for each operatorkit resource implementation.
+
+All this is not black and white though. Best practises with the status
+management will also evolve further. One aspect which always has to be
+considered here is who reads and writes status and in which combination does
+this occur to be relevant or dramatically different than in other projects. As a
+guideline the approach of the separated resources should be considered the
+default for now because it keeps different responsibilities separated not mixed
+them up.
