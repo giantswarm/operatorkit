@@ -55,15 +55,21 @@ func New(config Config) (*Wrapper, error) {
 		return nil, microerror.Mask(err)
 	}
 
-	logger, err := micrologger.New(micrologger.Config{})
-	if err != nil {
-		return nil, microerror.Mask(err)
+	var newLogger micrologger.Logger
+	{
+		c := micrologger.Config{}
+
+		newLogger, err = micrologger.New(c)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
 	}
+
 	var crdClient *k8scrdclient.CRDClient
 	{
 		c := k8scrdclient.Config{
 			K8sExtClient: k8sExtClient,
-			Logger:       logger,
+			Logger:       newLogger,
 		}
 
 		crdClient, err = k8scrdclient.New(c)
@@ -71,10 +77,11 @@ func New(config Config) (*Wrapper, error) {
 			return nil, microerror.Mask(err)
 		}
 	}
+
 	var newInformer *informer.Informer
 	{
 		c := informer.Config{
-			Logger:  logger,
+			Logger:  newLogger,
 			Watcher: g8sClient.CoreV1alpha1().NodeConfigs(config.Namespace),
 
 			RateWait:     time.Second * 2,
@@ -85,11 +92,12 @@ func New(config Config) (*Wrapper, error) {
 			return nil, microerror.Mask(err)
 		}
 	}
+
 	var resourceSet *controller.ResourceSet
 	{
 		c := testresourceset.Config{
 			K8sClient: k8sClient,
-			Logger:    logger,
+			Logger:    newLogger,
 			Resources: config.Resources,
 
 			ProjectName: config.Name,
@@ -100,41 +108,34 @@ func New(config Config) (*Wrapper, error) {
 			return nil, microerror.Mask(err)
 		}
 	}
-	var resourceRouter *controller.ResourceRouter
-	{
-		c := controller.ResourceRouterConfig{
-			Logger: logger,
 
+	var newController *controller.Controller
+	{
+		c := controller.Config{
+			CRD:       v1alpha1.NewNodeConfigCRD(),
+			CRDClient: crdClient,
+			Informer:  newInformer,
+			Logger:    newLogger,
 			ResourceSets: []*controller.ResourceSet{
 				resourceSet,
 			},
+			RESTClient: g8sClient.CoreV1alpha1().RESTClient(),
+
+			Name: config.Name,
 		}
 
-		resourceRouter, err = controller.NewResourceRouter(c)
+		newController, err = controller.New(c)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
 	}
-	cf := controller.Config{
-		CRD:            v1alpha1.NewNodeConfigCRD(),
-		CRDClient:      crdClient,
-		Informer:       newInformer,
-		RESTClient:     g8sClient.CoreV1alpha1().RESTClient(),
-		Logger:         logger,
-		ResourceRouter: resourceRouter,
-
-		Name: config.Name,
-	}
-	f, err := controller.New(cf)
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
 
 	wrapper := &Wrapper{
-		controller: f,
+		controller: newController,
 		g8sClient:  g8sClient,
 		k8sClient:  k8sClient,
 	}
+
 	return wrapper, nil
 }
 
