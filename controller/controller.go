@@ -381,7 +381,7 @@ func (c *Controller) resourceSet(obj interface{}) (*ResourceSet, error) {
 		if err != nil {
 			c.logger.Log("level", "warning", "message", "cannot create accessor for object", "object", fmt.Sprintf("%#v", obj), "stack", fmt.Sprintf("%#v", err))
 		} else {
-			c.logger.Log("level", "debug", "message", "no resource set for reconciled object", "object", accessor.GetSelfLink())
+			c.logger.Log("level", "debug", "message", "no resource set for reconciled object", "object", fmt.Sprintf("%#v", obj))
 		}
 
 		return nil, microerror.Mask(noResourceSetError)
