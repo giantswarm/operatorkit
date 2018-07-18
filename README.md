@@ -2,40 +2,57 @@
 
 # operatorkit
 
-operatorkit package is a library for creating [Kubernetes
-operators][operators]. It emerged as we extracted common functionality from
-number of the operators we developed at Giant Swarm. The goal of the library is
-to provide a common structure of operator projects and to encapsulate best
-practices learned while running operators in production.
+Package `operatorkit` implements an opinionated framework for developing
+[Kubernetes operators][operators]. It emerged as we extracted common
+functionality from a number of the operators we developed at [Giant
+Swarm][giantswarm]. The goal of this library is to provide a common structure
+for operator projects and to encapsulate best practices we learned while running
+operators in production.
 
 ## Features
 
-- CRD primitives to reliably create, watch and delete custom resources.
-- Managing finalizers on reconciled objects, making sure the code is executed
-  at least once for each delete event.
-- Independent packages. It is possible to use only certain parts of the
-  library.
-- Possible to change behaviour that often is specific to an organization
-  like logging and error handling.
+- CRD primitives to reliably create, watch and delete custom resources, as well
+  as any Kubernetes runtime object.
+- Managing [finalizers][finalizers] on reconciled objects, making sure the code
+  is executed at least once for each create/delete/update event.
+- A deterministic informer implementation that guarantees the expected behaviour
+  of configured resync periods and rate waits.
+- Convenient client library helpers for simpler client creation.
+- Resource wrapping to gain ability of composing resources like middlewares.
+- Control flow primitives that allow cancelation and repetition of resource
+  implementations.
+- Independent packages. It is possible to use only certain parts of the library
+  without being bound to all primitives it provides.
+- Ability to change behaviour that is often specific to an organization like
+  logging and error handling.
 - Minimal set of dependencies.
+
+## Docs
+
+- [Control Flow Primitives](docs/control_flow_primitives.md)
+- [Keeping Reconciliation Loops Short](docs/keeping_reconciliation_loops_short.md)
+- [Managing CR Status Sub Resources](docs/managing_cr_status_sub_resources.md)
+- [Troubleshooting](docs/troubleshooting.md)
+- [Using Finalizers](docs/using_finalizers.md)
 
 ## Current Scope
 
 The project is split into independent packages providing complementary
-functionality, making it easier create production grade Kubernetes operators.
+functionality, making it easier to create production grade [Kubernetes
+operators][operators].
 
-- client - provides a unified way of creating Kubernetes clients required by
+- `client`: provides a unified way of creating Kubernetes clients required by
   other packages.
-- informer - provides well defined watching functionality for virtually any
+- `informer`: provides well defined watching functionality for virtually any
   Kubernetes resource. The informer is deterministic, meaning it does not
   dispatch events twice after the resync period, which saves some cycles. It
   also features rate limiting of the event dispatching. It also provides
   functionality for decoding custom objects, reducing error prone boilerplate
   code.
-- controller - provides a framework aiming to help writing reliable, robust
-  controllers performing reconciliation loops. The heart of the controller is
-  a Resource interface. The reconciliation primitive allowing split the
-  reconciliation into smaller bits. Controller manages [finalizers][finalizers]
+- `controller`: provides a framework aiming to help writing reliable, robust
+  controllers performing reconciliation loops. The heart of the controller is a
+  Resource interface. The reconciliation primitive allows splitting the
+  reconciliation into smaller parts. Controller manages [finalizers][finalizers]
   on reconciled objects, making sure all resources are executed at least once
   during the deletion.
 
@@ -66,8 +83,9 @@ contribution workflow as well as reporting bugs.
 
 ## License
 
-operatorkit is under the Apache 2.0 license. See the [LICENSE](LICENSE) file
+`operatorkit` is under the Apache 2.0 license. See the [LICENSE](LICENSE) file
 for details.
 
 [finalizers]: https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-custom-resource-definitions/#finalizers
+[giantswarm]: https://giantswarm.io
 [operators]: https://coreos.com/operators

@@ -80,6 +80,11 @@ func (c *CRDClient) EnsureCreated(ctx context.Context, customResource *apiextens
 		return microerror.Mask(err)
 	}
 
+	err = c.ensureStatusSubresourceCreated(ctx, customResource, backOff)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
 	return nil
 }
 
@@ -91,6 +96,40 @@ func (c *CRDClient) EnsureDeleted(ctx context.Context, customResource *apiextens
 			// Fall trough. We reached our goal.
 		} else if err != nil {
 			return microerror.Mask(err)
+		}
+
+		return nil
+	}
+
+	err := backoff.Retry(operation, backOff)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	return nil
+}
+
+// ensureStatusSubresourceCreated ensures if the CRD has a status subresource
+// it is created. This is needed if a previous version of the CRD without the
+// status subresource is present.
+func (c *CRDClient) ensureStatusSubresourceCreated(ctx context.Context, customResource *apiextensionsv1beta1.CustomResourceDefinition, backOff backoff.BackOff) error {
+	if customResource.Spec.Subresources == nil || customResource.Spec.Subresources.Status == nil {
+		// Nothing to do.
+		return nil
+	}
+
+	operation := func() error {
+		manifest, err := c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Get(customResource.Name, metav1.GetOptions{})
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
+		if manifest.Spec.Subresources == nil || manifest.Spec.Subresources.Status == nil {
+			customResource.SetResourceVersion(manifest.ResourceVersion)
+			_, err = c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Update(customResource)
+			if err != nil {
+				return microerror.Mask(err)
+			}
 		}
 
 		return nil

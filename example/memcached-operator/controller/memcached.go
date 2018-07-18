@@ -71,6 +71,8 @@ func NewMemcached(config Config) (*Memcached, error) {
 	// you want to reconcile non-CRD objects or to use more sophisticated
 	// object routing.
 
+	// crdClient ensures that the configured CRD exists on the cluster when the
+	// operator boots.
 	var crdClient *k8scrdclient.CRDClient
 	{
 		c := k8scrdclient.Config{
@@ -86,11 +88,15 @@ func NewMemcached(config Config) (*Memcached, error) {
 
 	}
 
-	resourceRouter, err := newSimpleResourceRouter(resources)
+	// resourceSets is used in more complex operators that support multiple
+	// resources and multiple versions of those resources.
+	resourceSets, err := newSimpleResourceSets(resources)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
 
+	// memcachedInformer implements a list watch of the memcachedconfig custom
+	// resources.
 	var memcachedInformer *informer.Informer
 	{
 		c := informer.Config{
@@ -103,21 +109,22 @@ func NewMemcached(config Config) (*Memcached, error) {
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
-
 	}
 
+	// underlying is the OperatorKit controller. It implements a control loop
+	// that reconciles the current state of the resources towards their
+	// desired state.
 	var underlying *controller.Controller
 	{
 		c := controller.Config{
-			Logger: logger.Default,
-			Name:   name,
+			CRD:          crd,
+			CRDClient:    crdClient,
+			Informer:     memcachedInformer,
+			Logger:       logger.Default,
+			ResourceSets: resourceSets,
+			RESTClient:   restClient,
 
-			CRD:        crd,
-			CRDClient:  crdClient,
-			Informer:   memcachedInformer,
-			RESTClient: restClient,
-
-			ResourceRouter: resourceRouter,
+			Name: name,
 		}
 
 		underlying, err = controller.New(c)

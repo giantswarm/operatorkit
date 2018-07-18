@@ -8,6 +8,7 @@ import (
 	"github.com/giantswarm/microerror"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -39,7 +40,9 @@ func (f *Controller) addFinalizer(obj interface{}) (bool, error) {
 			// We get an up to date version of our object from k8s and parse the
 			// response from the RESTClient to runtime object.
 			obj, err := f.restClient.Get().AbsPath(accessor.GetSelfLink()).Do().Get()
-			if err != nil {
+			if runtime.IsNotRegisteredError(err) {
+				return microerror.Mask(invalidRESTClientError)
+			} else if err != nil {
 				return microerror.Mask(err)
 			}
 
