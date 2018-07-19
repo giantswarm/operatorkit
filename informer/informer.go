@@ -350,6 +350,7 @@ func (i *Informer) fillCache(ctx context.Context, eventChan chan watch.Event) er
 		}
 	}
 	defer watcher.Stop()
+	fmt.Printf("%s: initializing watcher successful\n", time.Now())
 
 	for {
 		select {
@@ -357,6 +358,9 @@ func (i *Informer) fillCache(ctx context.Context, eventChan chan watch.Event) er
 			return nil
 		case event, ok := <-watcher.ResultChan():
 			if ok {
+				fmt.Printf("\n")
+				fmt.Printf("%s: received informer event from Kuberntes\n", time.Now())
+				fmt.Printf("\n")
 				eventChan <- event
 			} else {
 				return nil
@@ -486,6 +490,7 @@ func (i *Informer) streamEvents(ctx context.Context, eventChan chan watch.Event)
 		}
 	}
 	defer watcher.Stop()
+	fmt.Printf("%s: initializing watcher successful\n", time.Now())
 
 	for {
 		select {
