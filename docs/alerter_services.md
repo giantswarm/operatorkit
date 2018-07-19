@@ -1,10 +1,10 @@
 # Alerter Services
 
 The idea about alerter services is to have a metrics driven approach of
-verifying the operators functionality. An operator might reconcile a system in
-which several resources should exist or maybe even not. As a means of
-measurement and safety net it is a good practise to implement alerter services
-that emit metrics about the managed system and its resources.
+verifying the operators functionality. An operator reconciles a system were
+several resources exist As a means of measurement and safety net it is a good
+practise to implement alerter services that emit metrics about the managed
+system and its resources.
 
 In [`aws-operator` we implement a Prometheus collector](https://github.com/giantswarm/aws-operator/blob/845afd245b0ace5cc6b37a1bd4f5da6c7e1d12d6/service/collector/collector.go)
 to emit metrics about e.g. VPCs. These metrics are used for verifying each guest
