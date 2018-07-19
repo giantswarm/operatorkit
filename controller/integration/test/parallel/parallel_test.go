@@ -3,6 +3,7 @@
 package parallel
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -118,7 +119,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 			return microerror.Maskf(countMismatchError, "EnsureCreated of controller A was hit %v times, want atleast %v", trA.CreateCount(), 2)
 		}
 		if trA.DeleteCount() != 0 {
-			return microerror.Maskf(countMismatchError, "EnsureDeleted of controller A was hit %v times, want %v", trB.DeleteCount(), 0)
+			return microerror.Maskf(countMismatchError, "EnsureDeleted of controller A was hit %v times, want %v", trA.DeleteCount(), 0)
 		}
 		if trB.CreateCount() < 2 {
 			return microerror.Maskf(countMismatchError, "EnsureCreated of controller B was hit %v times, want atleast %v", trB.CreateCount(), 2)
@@ -128,7 +129,13 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 		}
 		return nil
 	}
-	err = backoff.Retry(operation, newConstantBackoff(uint64(20)))
+	n := func(err error, d time.Duration) {
+		fmt.Printf("\n")
+		fmt.Printf("%s: retrying (%s) count matching due to error %#v\n", time.Now(), d, err)
+		fmt.Printf("\n")
+	}
+
+	err = backoff.RetryNotify(operation, newConstantBackoff(uint64(20)), n)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
