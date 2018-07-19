@@ -23,6 +23,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cenkalti/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/prometheus/client_golang/prometheus"
@@ -305,11 +306,49 @@ func (i *Informer) cacheAndSendIfNotExists(event watch.Event, updateChan chan wa
 // initialization. As soon as the watcher does not receive any event objects
 // anymore, the cache is filled and the usual event watching process can begin.
 func (i *Informer) fillCache(ctx context.Context, eventChan chan watch.Event) error {
-	watcher, err := i.watcher.Watch(i.listOptions)
-	if err != nil {
-		return microerror.Mask(err)
-	}
+	var err error
 
+	var watcher watch.Interface
+	{
+		o := func() error {
+			failed := make(chan error, 1)
+			found := make(chan struct{}, 1)
+
+			func() {
+				watcher, err = i.watcher.Watch(i.listOptions)
+				if err != nil {
+					failed <- microerror.Mask(err)
+					return
+				}
+
+				found <- struct{}{}
+			}()
+
+			select {
+			case <-ctx.Done():
+				return nil
+			case err := <-failed:
+				return microerror.Mask(err)
+			case <-found:
+				// fall through
+			case <-time.After(time.Second):
+				return fmt.Errorf("initializing watcher timed out")
+			}
+
+			return nil
+		}
+		b := backoff.NewExponentialBackOff()
+		n := func(err error, d time.Duration) {
+			fmt.Printf("\n")
+			fmt.Printf("%s: retrying initializing watcher due to error %#v\n", time.Now(), err)
+			fmt.Printf("\n")
+		}
+
+		err = backoff.RetryNotify(o, b, n)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+	}
 	defer watcher.Stop()
 
 	for {
@@ -403,11 +442,49 @@ func (i *Informer) sendCachedEvents(ctx context.Context, deleteChan, updateChan 
 // canceled via the done channel of the provided context, streamEvents returns
 // and stops blocking.
 func (i *Informer) streamEvents(ctx context.Context, eventChan chan watch.Event) error {
-	watcher, err := i.watcher.Watch(i.listOptions)
-	if err != nil {
-		return microerror.Mask(err)
-	}
+	var err error
 
+	var watcher watch.Interface
+	{
+		o := func() error {
+			failed := make(chan error, 1)
+			found := make(chan struct{}, 1)
+
+			func() {
+				watcher, err = i.watcher.Watch(i.listOptions)
+				if err != nil {
+					failed <- microerror.Mask(err)
+					return
+				}
+
+				found <- struct{}{}
+			}()
+
+			select {
+			case <-ctx.Done():
+				return nil
+			case err := <-failed:
+				return microerror.Mask(err)
+			case <-found:
+				// fall through
+			case <-time.After(time.Second):
+				return fmt.Errorf("initializing watcher timed out")
+			}
+
+			return nil
+		}
+		b := backoff.NewExponentialBackOff()
+		n := func(err error, d time.Duration) {
+			fmt.Printf("\n")
+			fmt.Printf("%s: retrying initializing watcher due to error %#v\n", time.Now(), err)
+			fmt.Printf("\n")
+		}
+
+		err = backoff.RetryNotify(o, b, n)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+	}
 	defer watcher.Stop()
 
 	for {

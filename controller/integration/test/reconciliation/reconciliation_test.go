@@ -3,8 +3,10 @@
 package reconciliation
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -84,6 +86,16 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		if err != nil {
 			return microerror.Mask(err)
 		}
+		fmt.Printf("\n")
+		fmt.Printf("%s: created NodeConfig CR in Kuberntes\n", time.Now())
+		fmt.Printf("\n")
+		//_, err = testWrapper.GetObject(objName, testNamespace)
+		//if err != nil {
+		//	t.Fatal("expected", nil, "got", err)
+		//}
+		//fmt.Printf("\n")
+		//fmt.Printf("%s: fetched NodeConfig CR from Kuberntes\n", time.Now())
+		//fmt.Printf("\n")
 		return nil
 	}
 	err = backoff.Retry(operation, backoff.NewExponentialBackOff())
