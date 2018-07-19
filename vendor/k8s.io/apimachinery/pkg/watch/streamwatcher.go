@@ -94,7 +94,9 @@ func (sw *StreamWatcher) receive() {
 	for {
 		action, obj, err := sw.source.Decode()
 		fmt.Printf("\n")
-		fmt.Printf("%s: streamwatcher received %s event\n", time.Now(), action)
+		fmt.Printf("%s: streamwatcher received %s action\n", time.Now(), action)
+		fmt.Printf("%s: streamwatcher received %#v object\n", time.Now(), obj)
+		fmt.Printf("%s: streamwatcher received %#v error\n", time.Now(), err)
 		fmt.Printf("\n")
 		if err != nil {
 			// Ignore expected error.
