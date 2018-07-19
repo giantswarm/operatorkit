@@ -29,6 +29,7 @@ operators in production.
 
 ## Docs
 
+- [Alerter Services](docs/alerter_services.md)
 - [Control Flow Primitives](docs/control_flow_primitives.md)
 - [Keeping Reconciliation Loops Short](docs/keeping_reconciliation_loops_short.md)
 - [Managing CR Status Sub Resources](docs/managing_cr_status_sub_resources.md)
