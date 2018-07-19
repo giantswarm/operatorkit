@@ -495,6 +495,9 @@ func (r *Request) Watch() (watch.Interface, error) {
 	}
 
 	url := r.URL().String()
+	fmt.Printf("\n")
+	fmt.Printf("%s: watching URL %s\n", time.Now(), url)
+	fmt.Printf("\n")
 	req, err := http.NewRequest(r.verb, url, r.body)
 	if err != nil {
 		return nil, err
@@ -525,6 +528,9 @@ func (r *Request) Watch() (watch.Interface, error) {
 		}
 		return nil, err
 	}
+	fmt.Printf("\n")
+	fmt.Printf("%s: received response %d\n", time.Now(), resp.StatusCode)
+	fmt.Printf("\n")
 	if resp.StatusCode != http.StatusOK {
 		defer resp.Body.Close()
 		if result := r.transformResponse(resp, req); result.err != nil {

@@ -83,6 +83,13 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 			fmt.Printf("\n")
 			fmt.Printf("%s: created NodeConfig CR in Kuberntes\n", time.Now())
 			fmt.Printf("\n")
+			_, err = testWrapper.GetObject(objName, testNamespace)
+			if err != nil {
+				t.Fatal("expected", nil, "got", err)
+			}
+			fmt.Printf("\n")
+			fmt.Printf("%s: fetched NodeConfig CR from Kuberntes\n", time.Now())
+			fmt.Printf("\n")
 
 			return nil
 		}

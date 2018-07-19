@@ -17,8 +17,10 @@ limitations under the License.
 package watch
 
 import (
+	"fmt"
 	"io"
 	"sync"
+	"time"
 
 	"github.com/golang/glog"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -91,6 +93,9 @@ func (sw *StreamWatcher) receive() {
 	defer utilruntime.HandleCrash()
 	for {
 		action, obj, err := sw.source.Decode()
+		fmt.Printf("\n")
+		fmt.Printf("%s: streamwatcher received %s event\n", time.Now(), action)
+		fmt.Printf("\n")
 		if err != nil {
 			// Ignore expected error.
 			if sw.stopping() {
