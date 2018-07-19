@@ -308,6 +308,9 @@ func (i *Informer) cacheAndSendIfNotExists(event watch.Event, updateChan chan wa
 func (i *Informer) fillCache(ctx context.Context, eventChan chan watch.Event) error {
 	var err error
 
+	fmt.Printf("\n")
+	fmt.Printf("%s: initializing watcher started\n", time.Now())
+	fmt.Printf("\n")
 	var watcher watch.Interface
 	{
 		o := func() error {
@@ -315,17 +318,29 @@ func (i *Informer) fillCache(ctx context.Context, eventChan chan watch.Event) er
 			found := make(chan struct{}, 1)
 
 			func() {
+				fmt.Printf("\n")
+				fmt.Printf("%s: calling watcher constructor\n", time.Now())
+				fmt.Printf("\n")
 				watcher, err = i.watcher.Watch(i.listOptions)
 				if err != nil {
+					fmt.Printf("\n")
+					fmt.Printf("%s: writing to failed channel\n", time.Now())
+					fmt.Printf("\n")
 					failed <- microerror.Mask(err)
 					return
 				}
 
+				fmt.Printf("\n")
+				fmt.Printf("%s: writing to found channel\n", time.Now())
+				fmt.Printf("\n")
 				found <- struct{}{}
 			}()
 
 			select {
 			case <-ctx.Done():
+				fmt.Printf("\n")
+				fmt.Printf("%s: context done\n", time.Now())
+				fmt.Printf("\n")
 				return nil
 			case err := <-failed:
 				return microerror.Mask(err)
@@ -350,7 +365,9 @@ func (i *Informer) fillCache(ctx context.Context, eventChan chan watch.Event) er
 		}
 	}
 	defer watcher.Stop()
+	fmt.Printf("\n")
 	fmt.Printf("%s: initializing watcher successful\n", time.Now())
+	fmt.Printf("\n")
 
 	for {
 		select {
@@ -448,6 +465,9 @@ func (i *Informer) sendCachedEvents(ctx context.Context, deleteChan, updateChan 
 func (i *Informer) streamEvents(ctx context.Context, eventChan chan watch.Event) error {
 	var err error
 
+	fmt.Printf("\n")
+	fmt.Printf("%s: initializing watcher started\n", time.Now())
+	fmt.Printf("\n")
 	var watcher watch.Interface
 	{
 		o := func() error {
@@ -455,17 +475,29 @@ func (i *Informer) streamEvents(ctx context.Context, eventChan chan watch.Event)
 			found := make(chan struct{}, 1)
 
 			func() {
+				fmt.Printf("\n")
+				fmt.Printf("%s: calling watcher constructor\n", time.Now())
+				fmt.Printf("\n")
 				watcher, err = i.watcher.Watch(i.listOptions)
 				if err != nil {
+					fmt.Printf("\n")
+					fmt.Printf("%s: writing to failed channel\n", time.Now())
+					fmt.Printf("\n")
 					failed <- microerror.Mask(err)
 					return
 				}
 
+				fmt.Printf("\n")
+				fmt.Printf("%s: writing to found channel\n", time.Now())
+				fmt.Printf("\n")
 				found <- struct{}{}
 			}()
 
 			select {
 			case <-ctx.Done():
+				fmt.Printf("\n")
+				fmt.Printf("%s: context done\n", time.Now())
+				fmt.Printf("\n")
 				return nil
 			case err := <-failed:
 				return microerror.Mask(err)
@@ -490,7 +522,9 @@ func (i *Informer) streamEvents(ctx context.Context, eventChan chan watch.Event)
 		}
 	}
 	defer watcher.Stop()
+	fmt.Printf("\n")
 	fmt.Printf("%s: initializing watcher successful\n", time.Now())
+	fmt.Printf("\n")
 
 	for {
 		select {

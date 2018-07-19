@@ -115,15 +115,27 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	//
 	operation := func() error {
 		if tr.CreateCount() != 2 {
+			fmt.Printf("\n")
+			fmt.Printf("%s: create count does not match\n", time.Now())
+			fmt.Printf("\n")
 			return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 2)
 		}
 		if tr.DeleteCount() != 0 {
+			fmt.Printf("\n")
+			fmt.Printf("%s: delete count does not match\n", time.Now())
+			fmt.Printf("\n")
 			return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 0)
 		}
+		fmt.Printf("\n")
+		fmt.Printf("%s: create and delete counts match\n", time.Now())
+		fmt.Printf("\n")
 		return nil
 	}
 	err = backoff.Retry(operation, newConstantBackoff(uint64(20)))
 	if err != nil {
+		fmt.Printf("\n")
+		fmt.Printf("%s: test failed\n", time.Now())
+		fmt.Printf("\n")
 		t.Fatal("expected", nil, "got", err)
 	}
 
