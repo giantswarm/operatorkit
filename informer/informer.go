@@ -19,6 +19,7 @@ package informer
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -376,9 +377,15 @@ func (i *Informer) sendCachedEvents(ctx context.Context, deleteChan, updateChan 
 				t := m.GetDeletionTimestamp()
 				if t == nil {
 					watchEventCounter.WithLabelValues("update").Inc()
+					fmt.Printf("\n")
+					fmt.Printf("%s: sending cached update event\n", time.Now())
+					fmt.Printf("\n")
 					updateChan <- e
 				} else {
 					watchEventCounter.WithLabelValues("delete").Inc()
+					fmt.Printf("\n")
+					fmt.Printf("%s: sending cached delete event\n", time.Now())
+					fmt.Printf("\n")
 					deleteChan <- e
 				}
 			}
@@ -409,6 +416,9 @@ func (i *Informer) streamEvents(ctx context.Context, eventChan chan watch.Event)
 			return nil
 		case event, ok := <-watcher.ResultChan():
 			if ok {
+				fmt.Printf("\n")
+				fmt.Printf("%s: received informer event from Kuberntes\n", time.Now())
+				fmt.Printf("\n")
 				eventChan <- event
 			} else {
 				watcherCloseCounter.Inc()

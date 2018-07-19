@@ -228,10 +228,16 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 		for {
 			select {
 			case e := <-deleteChan:
+				fmt.Printf("\n")
+				fmt.Printf("%s: controller received update event from informer\n", time.Now())
+				fmt.Printf("\n")
 				t := prometheus.NewTimer(controllerHistogram.WithLabelValues("delete"))
 				c.DeleteFunc(e.Object)
 				t.ObserveDuration()
 			case e := <-updateChan:
+				fmt.Printf("\n")
+				fmt.Printf("%s: controller received update event from informer\n", time.Now())
+				fmt.Printf("\n")
 				t := prometheus.NewTimer(controllerHistogram.WithLabelValues("update"))
 				c.UpdateFunc(nil, e.Object)
 				t.ObserveDuration()
