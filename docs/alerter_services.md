@@ -1,9 +1,9 @@
-# Alerter Services
+# Metrics provider
 
-The idea about alerter services is to have a metrics driven approach of
+The idea about metrics provider is to have a metrics driven approach of
 verifying the operators functionality. An operator reconciles a system were
-several resources exist As a means of measurement and safety net it is a good
-practise to implement alerter services that emit metrics about the managed
+several resources exist. As a means of measurement and safety net it is a good
+practise to implement metrics providers that emit metrics about the managed
 system and its resources.
 
 In [`aws-operator` we implement a Prometheus collector](https://github.com/giantswarm/aws-operator/blob/845afd245b0ace5cc6b37a1bd4f5da6c7e1d12d6/service/collector/collector.go)
