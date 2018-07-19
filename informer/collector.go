@@ -11,7 +11,7 @@ import (
 var (
 	creationTimestampDescription *prometheus.Desc = prometheus.NewDesc(
 		prometheus.BuildFQName("operatorkit", "informer", "creation_timestamp"),
-		"DeletionTimestamp of watched objects.",
+		"CreationTimestamp of watched objects.",
 		[]string{
 			"kind",
 			"name",
