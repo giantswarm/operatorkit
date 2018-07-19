@@ -4,6 +4,7 @@ package parallel
 
 import (
 	"testing"
+	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -75,6 +76,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	// We start the controllers.
 	go controllerA.Boot()
 	go controllerB.Boot()
+	time.Sleep(1 * time.Second)
 
 	// We create an object without any finalizers.
 	// Creation is retried because the existance of a CRD might have to be ensured.
