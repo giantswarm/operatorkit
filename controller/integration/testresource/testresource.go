@@ -5,6 +5,7 @@ package testresource
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/giantswarm/microerror"
@@ -16,6 +17,7 @@ type Config struct {
 type Resource struct {
 	createCount int
 	deleteCount int
+	mutex       sync.Mutex
 	returnError bool
 }
 
@@ -23,6 +25,7 @@ func New(config Config) (*Resource, error) {
 	r := &Resource{
 		createCount: 0,
 		deleteCount: 0,
+		mutex:       sync.Mutex{},
 		returnError: false,
 	}
 
@@ -30,10 +33,14 @@ func New(config Config) (*Resource, error) {
 }
 
 func (r *Resource) CreateCount() int {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	return r.createCount
 }
 
 func (r *Resource) DeleteCount() int {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	return r.deleteCount
 }
 
@@ -68,9 +75,13 @@ func (r *Resource) ReturnError(returnError bool) {
 }
 
 func (r *Resource) incrementCreateCount() {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	r.createCount++
 }
 
 func (r *Resource) incrementDeleteCount() {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	r.deleteCount++
 }
