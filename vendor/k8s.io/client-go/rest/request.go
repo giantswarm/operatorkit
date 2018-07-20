@@ -116,7 +116,6 @@ func NewRequest(client HTTPClient, verb string, baseURL *url.URL, versionedAPIPa
 	if backoff == nil {
 		glog.V(2).Infof("Not implementing request backoff strategy.")
 		backoff = &NoBackoff{}
-		fmt.Printf("%s: not using backoff manager\n", time.Now())
 	}
 
 	pathPrefix := "/"
@@ -186,7 +185,6 @@ func (r *Request) Resource(resource string) *Request {
 func (r *Request) BackOff(manager BackoffManager) *Request {
 	if manager == nil {
 		r.backoffMgr = &NoBackoff{}
-		fmt.Printf("%s: not using backoff manager\n", time.Now())
 		return r
 	}
 
@@ -497,9 +495,6 @@ func (r *Request) Watch() (watch.Interface, error) {
 	}
 
 	url := r.URL().String()
-	fmt.Printf("\n")
-	fmt.Printf("%s: watching URL %s\n", time.Now(), url)
-	fmt.Printf("\n")
 	req, err := http.NewRequest(r.verb, url, r.body)
 	if err != nil {
 		return nil, err
@@ -512,12 +507,8 @@ func (r *Request) Watch() (watch.Interface, error) {
 	if client == nil {
 		client = http.DefaultClient
 	}
-	fmt.Printf("%s: before backoff manager\n", time.Now())
 	r.backoffMgr.Sleep(r.backoffMgr.CalculateBackoff(r.URL()))
-	fmt.Printf("%s: after backoff manager\n", time.Now())
-	fmt.Printf("%s: before HTTP client DO\n", time.Now())
 	resp, err := client.Do(req)
-	fmt.Printf("%s: after HTTP client DO\n", time.Now())
 	updateURLMetrics(r, resp, err)
 	if r.baseURL != nil {
 		if err != nil {
@@ -534,9 +525,6 @@ func (r *Request) Watch() (watch.Interface, error) {
 		}
 		return nil, err
 	}
-	fmt.Printf("\n")
-	fmt.Printf("%s: received response %d\n", time.Now(), resp.StatusCode)
-	fmt.Printf("\n")
 	if resp.StatusCode != http.StatusOK {
 		defer resp.Body.Close()
 		if result := r.transformResponse(resp, req); result.err != nil {

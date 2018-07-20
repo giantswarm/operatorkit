@@ -263,6 +263,9 @@ func (i *Informer) cacheAndSend(event watch.Event, deleteChan, updateChan chan w
 	t := m.GetDeletionTimestamp()
 	if t == nil {
 		watchEventCounter.WithLabelValues("update").Inc()
+		fmt.Printf("\n")
+		fmt.Printf("%s: writing event to updateChan\n", time.Now())
+		fmt.Printf("\n")
 		updateChan <- event
 	} else {
 		watchEventCounter.WithLabelValues("delete").Inc()
@@ -294,6 +297,9 @@ func (i *Informer) cacheAndSendIfNotExists(event watch.Event, updateChan chan wa
 	_, ok := i.cache.Load(k)
 	if !ok && i.isCachedFilled() {
 		watchEventCounter.WithLabelValues("create").Inc()
+		fmt.Printf("\n")
+		fmt.Printf("%s: writing event to updateChan\n", time.Now())
+		fmt.Printf("\n")
 		updateChan <- event
 	}
 
@@ -425,6 +431,9 @@ func (i *Informer) sendCachedEvents(ctx context.Context, deleteChan, updateChan 
 				t := m.GetDeletionTimestamp()
 				if t == nil {
 					watchEventCounter.WithLabelValues("update").Inc()
+					fmt.Printf("\n")
+					fmt.Printf("%s: writing event to updateChan\n", time.Now())
+					fmt.Printf("\n")
 					updateChan <- e
 				} else {
 					watchEventCounter.WithLabelValues("delete").Inc()
