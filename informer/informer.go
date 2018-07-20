@@ -306,6 +306,46 @@ func (i *Informer) cacheAndSendIfNotExists(event watch.Event, updateChan chan wa
 // initialization. As soon as the watcher does not receive any event objects
 // anymore, the cache is filled and the usual event watching process can begin.
 func (i *Informer) fillCache(ctx context.Context, eventChan chan watch.Event) error {
+	watcher, err := i.newWatcher(ctx)
+	if IsContextCanceled(err) {
+		return nil
+	} else if err != nil {
+		return microerror.Mask(err)
+	}
+	defer watcher.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case event, ok := <-watcher.ResultChan():
+			if ok {
+				fmt.Printf("\n")
+				fmt.Printf("%s: received informer event from Kuberntes\n", time.Now())
+				fmt.Printf("\n")
+				eventChan <- event
+			} else {
+				return nil
+			}
+		case <-time.After(time.Second):
+			return nil
+		}
+	}
+}
+
+// isCachedFilled checks whether the informer cache is filled.
+func (i *Informer) isCachedFilled() bool {
+	select {
+	case <-i.initializer:
+		return true
+	default:
+		// fall thorugh
+	}
+
+	return false
+}
+
+func (i *Informer) newWatcher(ctx context.Context) (watch.Interface, error) {
 	var err error
 
 	fmt.Printf("\n")
@@ -341,13 +381,13 @@ func (i *Informer) fillCache(ctx context.Context, eventChan chan watch.Event) er
 				fmt.Printf("\n")
 				fmt.Printf("%s: context done\n", time.Now())
 				fmt.Printf("\n")
-				return nil
+				return backoff.Permanent(microerror.Mask(contextCanceledError))
 			case err := <-failed:
 				return microerror.Mask(err)
 			case <-found:
 				// fall through
 			case <-time.After(time.Second):
-				return fmt.Errorf("initializing watcher timed out")
+				return microerror.Mask(initializationTimedOutError)
 			}
 
 			return nil
@@ -361,43 +401,14 @@ func (i *Informer) fillCache(ctx context.Context, eventChan chan watch.Event) er
 
 		err = backoff.RetryNotify(o, b, n)
 		if err != nil {
-			return microerror.Mask(err)
+			return nil, microerror.Mask(err)
 		}
 	}
-	defer watcher.Stop()
 	fmt.Printf("\n")
 	fmt.Printf("%s: initializing watcher successful\n", time.Now())
 	fmt.Printf("\n")
 
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case event, ok := <-watcher.ResultChan():
-			if ok {
-				fmt.Printf("\n")
-				fmt.Printf("%s: received informer event from Kuberntes\n", time.Now())
-				fmt.Printf("\n")
-				eventChan <- event
-			} else {
-				return nil
-			}
-		case <-time.After(time.Second):
-			return nil
-		}
-	}
-}
-
-// isCachedFilled checks whether the informer cache is filled.
-func (i *Informer) isCachedFilled() bool {
-	select {
-	case <-i.initializer:
-		return true
-	default:
-		// fall thorugh
-	}
-
-	return false
+	return watcher, nil
 }
 
 // sendCachedEvents sends all cached event objects to the provided delete or
@@ -463,68 +474,13 @@ func (i *Informer) sendCachedEvents(ctx context.Context, deleteChan, updateChan 
 // canceled via the done channel of the provided context, streamEvents returns
 // and stops blocking.
 func (i *Informer) streamEvents(ctx context.Context, eventChan chan watch.Event) error {
-	var err error
-
-	fmt.Printf("\n")
-	fmt.Printf("%s: initializing watcher started\n", time.Now())
-	fmt.Printf("\n")
-	var watcher watch.Interface
-	{
-		o := func() error {
-			failed := make(chan error, 1)
-			found := make(chan struct{}, 1)
-
-			go func() {
-				fmt.Printf("\n")
-				fmt.Printf("%s: calling watcher constructor\n", time.Now())
-				fmt.Printf("\n")
-				watcher, err = i.watcher.Watch(i.listOptions)
-				if err != nil {
-					fmt.Printf("\n")
-					fmt.Printf("%s: writing to failed channel\n", time.Now())
-					fmt.Printf("\n")
-					failed <- microerror.Mask(err)
-					return
-				}
-
-				fmt.Printf("\n")
-				fmt.Printf("%s: writing to found channel\n", time.Now())
-				fmt.Printf("\n")
-				found <- struct{}{}
-			}()
-
-			select {
-			case <-ctx.Done():
-				fmt.Printf("\n")
-				fmt.Printf("%s: context done\n", time.Now())
-				fmt.Printf("\n")
-				return nil
-			case err := <-failed:
-				return microerror.Mask(err)
-			case <-found:
-				// fall through
-			case <-time.After(time.Second):
-				return fmt.Errorf("initializing watcher timed out")
-			}
-
-			return nil
-		}
-		b := backoff.NewExponentialBackOff()
-		n := func(err error, d time.Duration) {
-			fmt.Printf("\n")
-			fmt.Printf("%s: retrying initializing watcher due to error %#v\n", time.Now(), err)
-			fmt.Printf("\n")
-		}
-
-		err = backoff.RetryNotify(o, b, n)
-		if err != nil {
-			return microerror.Mask(err)
-		}
+	watcher, err := i.newWatcher(ctx)
+	if IsContextCanceled(err) {
+		return nil
+	} else if err != nil {
+		return microerror.Mask(err)
 	}
 	defer watcher.Stop()
-	fmt.Printf("\n")
-	fmt.Printf("%s: initializing watcher successful\n", time.Now())
-	fmt.Printf("\n")
 
 	for {
 		select {
