@@ -320,9 +320,6 @@ func (i *Informer) fillCache(ctx context.Context, eventChan chan watch.Event) er
 			return nil
 		case event, ok := <-watcher.ResultChan():
 			if ok {
-				fmt.Printf("\n")
-				fmt.Printf("%s: received informer event from Kuberntes\n", time.Now())
-				fmt.Printf("\n")
 				eventChan <- event
 			} else {
 				return nil
@@ -348,9 +345,6 @@ func (i *Informer) isCachedFilled() bool {
 func (i *Informer) newWatcher(ctx context.Context) (watch.Interface, error) {
 	var err error
 
-	fmt.Printf("\n")
-	fmt.Printf("%s: initializing watcher started\n", time.Now())
-	fmt.Printf("\n")
 	var watcher watch.Interface
 	{
 		o := func() error {
@@ -358,29 +352,17 @@ func (i *Informer) newWatcher(ctx context.Context) (watch.Interface, error) {
 			found := make(chan struct{}, 1)
 
 			go func() {
-				fmt.Printf("\n")
-				fmt.Printf("%s: calling watcher constructor\n", time.Now())
-				fmt.Printf("\n")
 				watcher, err = i.watcher.Watch(i.listOptions)
 				if err != nil {
-					fmt.Printf("\n")
-					fmt.Printf("%s: writing to failed channel\n", time.Now())
-					fmt.Printf("\n")
 					failed <- microerror.Mask(err)
 					return
 				}
 
-				fmt.Printf("\n")
-				fmt.Printf("%s: writing to found channel\n", time.Now())
-				fmt.Printf("\n")
 				found <- struct{}{}
 			}()
 
 			select {
 			case <-ctx.Done():
-				fmt.Printf("\n")
-				fmt.Printf("%s: context done\n", time.Now())
-				fmt.Printf("\n")
 				return backoff.Permanent(microerror.Mask(contextCanceledError))
 			case err := <-failed:
 				return microerror.Mask(err)
@@ -394,9 +376,7 @@ func (i *Informer) newWatcher(ctx context.Context) (watch.Interface, error) {
 		}
 		b := backoff.NewExponentialBackOff()
 		n := func(err error, d time.Duration) {
-			fmt.Printf("\n")
-			fmt.Printf("%s: retrying initializing watcher due to error %#v\n", time.Now(), err)
-			fmt.Printf("\n")
+			i.logger.LogCtx(ctx, "level", "warning", "message", "retrying watcher initialization due to error", "stack", fmt.Sprintf("%#v", err))
 		}
 
 		err = backoff.RetryNotify(o, b, n)
@@ -404,9 +384,6 @@ func (i *Informer) newWatcher(ctx context.Context) (watch.Interface, error) {
 			return nil, microerror.Mask(err)
 		}
 	}
-	fmt.Printf("\n")
-	fmt.Printf("%s: initializing watcher successful\n", time.Now())
-	fmt.Printf("\n")
 
 	return watcher, nil
 }
@@ -448,15 +425,9 @@ func (i *Informer) sendCachedEvents(ctx context.Context, deleteChan, updateChan 
 				t := m.GetDeletionTimestamp()
 				if t == nil {
 					watchEventCounter.WithLabelValues("update").Inc()
-					fmt.Printf("\n")
-					fmt.Printf("%s: sending cached update event\n", time.Now())
-					fmt.Printf("\n")
 					updateChan <- e
 				} else {
 					watchEventCounter.WithLabelValues("delete").Inc()
-					fmt.Printf("\n")
-					fmt.Printf("%s: sending cached delete event\n", time.Now())
-					fmt.Printf("\n")
 					deleteChan <- e
 				}
 			}
@@ -488,9 +459,6 @@ func (i *Informer) streamEvents(ctx context.Context, eventChan chan watch.Event)
 			return nil
 		case event, ok := <-watcher.ResultChan():
 			if ok {
-				fmt.Printf("\n")
-				fmt.Printf("%s: received informer event from Kuberntes\n", time.Now())
-				fmt.Printf("\n")
 				eventChan <- event
 			} else {
 				watcherCloseCounter.Inc()
