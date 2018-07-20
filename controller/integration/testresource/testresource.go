@@ -4,9 +4,7 @@ package testresource
 
 import (
 	"context"
-	"fmt"
 	"sync"
-	"time"
 
 	"github.com/giantswarm/microerror"
 )
@@ -45,9 +43,6 @@ func (r *Resource) DeleteCount() int {
 }
 
 func (r *Resource) EnsureCreated(ctx context.Context, obj interface{}) error {
-	fmt.Printf("\n")
-	fmt.Printf("%s: EnsureCreated of test resource executed\n", time.Now())
-	fmt.Printf("\n")
 	r.incrementCreateCount()
 	if r.returnError {
 		return microerror.Mask(testError)
@@ -56,9 +51,6 @@ func (r *Resource) EnsureCreated(ctx context.Context, obj interface{}) error {
 }
 
 func (r *Resource) EnsureDeleted(ctx context.Context, obj interface{}) error {
-	fmt.Printf("\n")
-	fmt.Printf("%s: EnsureDeleted of test resource executed\n", time.Now())
-	fmt.Printf("\n")
 	r.incrementDeleteCount()
 	if r.returnError {
 		return microerror.Mask(testError)
