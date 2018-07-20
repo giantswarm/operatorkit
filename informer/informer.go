@@ -317,7 +317,7 @@ func (i *Informer) fillCache(ctx context.Context, eventChan chan watch.Event) er
 			failed := make(chan error, 1)
 			found := make(chan struct{}, 1)
 
-			func() {
+			go func() {
 				fmt.Printf("\n")
 				fmt.Printf("%s: calling watcher constructor\n", time.Now())
 				fmt.Printf("\n")
@@ -474,7 +474,7 @@ func (i *Informer) streamEvents(ctx context.Context, eventChan chan watch.Event)
 			failed := make(chan error, 1)
 			found := make(chan struct{}, 1)
 
-			func() {
+			go func() {
 				fmt.Printf("\n")
 				fmt.Printf("%s: calling watcher constructor\n", time.Now())
 				fmt.Printf("\n")
