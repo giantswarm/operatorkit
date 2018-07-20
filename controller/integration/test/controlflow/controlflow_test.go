@@ -3,10 +3,8 @@
 package controlflow
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/cenkalti/backoff"
 	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
@@ -62,7 +60,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 		defer testWrapper.MustTeardown(testNamespace)
 		newController := testWrapper.Controller()
 		go newController.Boot()
-		time.Sleep(5 * time.Second)
+		<-newController.Booted()
 	}
 
 	// We create an object which is valid and wait for the framework to add a
@@ -81,16 +79,6 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 			if err != nil {
 				return microerror.Mask(err)
 			}
-			fmt.Printf("\n")
-			fmt.Printf("%s: created NodeConfig CR in Kuberntes\n", time.Now())
-			fmt.Printf("\n")
-			//_, err = testWrapper.GetObject(objName, testNamespace)
-			//if err != nil {
-			//	t.Fatal("expected", nil, "got", err)
-			//}
-			//fmt.Printf("\n")
-			//fmt.Printf("%s: fetched NodeConfig CR from Kuberntes\n", time.Now())
-			//fmt.Printf("\n")
 
 			return nil
 		}
@@ -115,27 +103,15 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	//
 	operation := func() error {
 		if tr.CreateCount() != 2 {
-			fmt.Printf("\n")
-			fmt.Printf("%s: create count does not match\n", time.Now())
-			fmt.Printf("\n")
 			return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 2)
 		}
 		if tr.DeleteCount() != 0 {
-			fmt.Printf("\n")
-			fmt.Printf("%s: delete count does not match\n", time.Now())
-			fmt.Printf("\n")
 			return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 0)
 		}
-		fmt.Printf("\n")
-		fmt.Printf("%s: create and delete counts match\n", time.Now())
-		fmt.Printf("\n")
 		return nil
 	}
 	err = backoff.Retry(operation, newConstantBackoff(uint64(20)))
 	if err != nil {
-		fmt.Printf("\n")
-		fmt.Printf("%s: test failed\n", time.Now())
-		fmt.Printf("\n")
 		t.Fatal("expected", nil, "got", err)
 	}
 

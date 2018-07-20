@@ -3,9 +3,7 @@
 package parallel
 
 import (
-	"fmt"
 	"testing"
-	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -77,7 +75,8 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	// We start the controllers.
 	go controllerA.Boot()
 	go controllerB.Boot()
-	time.Sleep(5 * time.Second)
+	<-controllerA.Booted()
+	<-controllerB.Booted()
 
 	// We create an object without any finalizers.
 	// Creation is retried because the existance of a CRD might have to be ensured.
@@ -129,13 +128,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 		}
 		return nil
 	}
-	n := func(err error, d time.Duration) {
-		fmt.Printf("\n")
-		fmt.Printf("%s: retrying (%s) count matching due to error %#v\n", time.Now(), d, err)
-		fmt.Printf("\n")
-	}
-
-	err = backoff.RetryNotify(operation, newConstantBackoff(uint64(20)), n)
+	err = backoff.Retry(operation, newConstantBackoff(uint64(20)))
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}

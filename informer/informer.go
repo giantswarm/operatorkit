@@ -66,8 +66,8 @@ type Informer struct {
 	watcher Watcher
 
 	// Internals.
-	cache       *sync.Map
-	initializer chan struct{}
+	cache  *sync.Map
+	filled chan struct{}
 
 	// Settings.
 	listOptions  metav1.ListOptions
@@ -93,8 +93,8 @@ func New(config Config) (*Informer, error) {
 		watcher: config.Watcher,
 
 		// Internals.
-		cache:       &sync.Map{},
-		initializer: make(chan struct{}),
+		cache:  &sync.Map{},
+		filled: make(chan struct{}),
 
 		// Settings.
 		listOptions:  config.ListOptions,
@@ -197,7 +197,6 @@ func (i *Informer) Watch(ctx context.Context) (chan watch.Event, chan watch.Even
 				watchEventCounter.WithLabelValues("error").Inc()
 				errChan <- microerror.Mask(err)
 			}
-			close(i.initializer)
 			i.sendCachedEvents(ctx, deleteChan, updateChan, errChan)
 		}
 
@@ -240,6 +239,14 @@ func (i *Informer) Watch(ctx context.Context) (chan watch.Event, chan watch.Even
 		close(updateChan)
 		close(errChan)
 	}()
+
+	// Before returning the event channels we wait for the cached being filled.
+	// The implication of an initial cache fill is a set up watcher connection to
+	// the remote Kubernetes watch API. It can happen that this setup takes longer
+	// due to retries after broken initial connections. Waiting for this setup to
+	// be properly done ensures users of the informer do not experience broken
+	// event processing due to initial connection issues.
+	<-i.filled
 
 	return deleteChan, updateChan, errChan
 }
@@ -295,7 +302,7 @@ func (i *Informer) cacheAndSendIfNotExists(event watch.Event, updateChan chan wa
 	}
 
 	_, ok := i.cache.Load(k)
-	if !ok && i.isCachedFilled() {
+	if !ok && i.isCacheFilled() {
 		watchEventCounter.WithLabelValues("create").Inc()
 		fmt.Printf("\n")
 		fmt.Printf("%s: writing event to updateChan\n", time.Now())
@@ -318,6 +325,7 @@ func (i *Informer) fillCache(ctx context.Context, eventChan chan watch.Event) er
 	} else if err != nil {
 		return microerror.Mask(err)
 	}
+	defer close(i.filled)
 	defer watcher.Stop()
 
 	for {
@@ -336,10 +344,10 @@ func (i *Informer) fillCache(ctx context.Context, eventChan chan watch.Event) er
 	}
 }
 
-// isCachedFilled checks whether the informer cache is filled.
-func (i *Informer) isCachedFilled() bool {
+// isCacheFilled checks whether the informer cache is filled.
+func (i *Informer) isCacheFilled() bool {
 	select {
-	case <-i.initializer:
+	case <-i.filled:
 		return true
 	default:
 		// fall thorugh

@@ -73,6 +73,7 @@ type Controller struct {
 	resourceSets []*ResourceSet
 
 	bootOnce       sync.Once
+	booted         chan struct{}
 	errorCollector chan error
 	mutex          sync.Mutex
 
@@ -114,6 +115,7 @@ func New(config Config) (*Controller, error) {
 		resourceSets: config.ResourceSets,
 
 		bootOnce:       sync.Once{},
+		booted:         make(chan struct{}),
 		errorCollector: make(chan error, 1),
 		mutex:          sync.Mutex{},
 
@@ -147,6 +149,10 @@ func (c *Controller) Boot() {
 			os.Exit(1)
 		}
 	})
+}
+
+func (c *Controller) Booted() chan struct{} {
+	return c.booted
 }
 
 // DeleteFunc executes the controller's ProcessDelete function.
@@ -223,21 +229,15 @@ func (c *Controller) DeleteFunc(obj interface{}) {
 
 // ProcessEvents takes the event channels created by the operatorkit informer
 // and executes the controller's event functions accordingly.
-func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Event, updateChan chan watch.Event, errChan chan error) {
+func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Event, updateChan chan watch.Event, errChan chan error) error {
 	operation := func() error {
 		for {
 			select {
 			case e := <-deleteChan:
-				fmt.Printf("\n")
-				fmt.Printf("%s: controller received delete event from informer\n", time.Now())
-				fmt.Printf("\n")
 				t := prometheus.NewTimer(controllerHistogram.WithLabelValues("delete"))
 				c.DeleteFunc(e.Object)
 				t.ObserveDuration()
 			case e := <-updateChan:
-				fmt.Printf("\n")
-				fmt.Printf("%s: controller received update event from informer\n", time.Now())
-				fmt.Printf("\n")
 				t := prometheus.NewTimer(controllerHistogram.WithLabelValues("update"))
 				c.UpdateFunc(nil, e.Object)
 				t.ObserveDuration()
@@ -259,9 +259,10 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 
 	err := backoff.RetryNotify(operation, c.backOffFactory(), notifier)
 	if err != nil {
-		c.logger.LogCtx(ctx, "level", "error", "message", "stop event processing retries due to too many errors", "stack", fmt.Sprintf("%#v", err))
-		os.Exit(1)
+		return microerror.Mask(err)
 	}
+
+	return nil
 }
 
 // UpdateFunc executes the controller's ProcessUpdate function.
@@ -360,10 +361,22 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 		}
 	}()
 
-	c.logger.LogCtx(ctx, "level", "debug", "message", "starting list-watch")
+	// Initializing the watch gives us all necessary event channels we need to
+	// further process them within the controller. Once we got the event channels
+	// everything is set up for the operator's reconciliation. We put the
+	// controller into a booted state by closing its booted channel so users know
+	// when to go ahead. Note that ProcessEvents below blocks the boot process
+	// until it fails.
+	{
+		c.logger.LogCtx(ctx, "level", "debug", "message", "starting list-watch")
 
-	deleteChan, updateChan, errChan := c.informer.Watch(ctx)
-	c.ProcessEvents(ctx, deleteChan, updateChan, errChan)
+		deleteChan, updateChan, errChan := c.informer.Watch(ctx)
+		close(c.booted)
+		err := c.ProcessEvents(ctx, deleteChan, updateChan, errChan)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+	}
 
 	return nil
 }
