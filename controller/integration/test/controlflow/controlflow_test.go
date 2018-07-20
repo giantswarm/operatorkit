@@ -62,7 +62,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 		defer testWrapper.MustTeardown(testNamespace)
 		newController := testWrapper.Controller()
 		go newController.Boot()
-		time.Sleep(1 * time.Second)
+		time.Sleep(5 * time.Second)
 	}
 
 	// We create an object which is valid and wait for the framework to add a
