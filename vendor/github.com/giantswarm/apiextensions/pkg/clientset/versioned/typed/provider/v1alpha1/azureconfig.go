@@ -37,6 +37,7 @@ type AzureConfigsGetter interface {
 type AzureConfigInterface interface {
 	Create(*v1alpha1.AzureConfig) (*v1alpha1.AzureConfig, error)
 	Update(*v1alpha1.AzureConfig) (*v1alpha1.AzureConfig, error)
+	UpdateStatus(*v1alpha1.AzureConfig) (*v1alpha1.AzureConfig, error)
 	Delete(name string, options *v1.DeleteOptions) error
 	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
 	Get(name string, options v1.GetOptions) (*v1alpha1.AzureConfig, error)
@@ -114,6 +115,22 @@ func (c *azureConfigs) Update(azureConfig *v1alpha1.AzureConfig) (result *v1alph
 		Namespace(c.ns).
 		Resource("azureconfigs").
 		Name(azureConfig.Name).
+		Body(azureConfig).
+		Do().
+		Into(result)
+	return
+}
+
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+
+func (c *azureConfigs) UpdateStatus(azureConfig *v1alpha1.AzureConfig) (result *v1alpha1.AzureConfig, err error) {
+	result = &v1alpha1.AzureConfig{}
+	err = c.client.Put().
+		Namespace(c.ns).
+		Resource("azureconfigs").
+		Name(azureConfig.Name).
+		SubResource("status").
 		Body(azureConfig).
 		Do().
 		Into(result)

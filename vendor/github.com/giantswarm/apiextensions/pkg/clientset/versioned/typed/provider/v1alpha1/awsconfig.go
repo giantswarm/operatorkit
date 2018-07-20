@@ -37,6 +37,7 @@ type AWSConfigsGetter interface {
 type AWSConfigInterface interface {
 	Create(*v1alpha1.AWSConfig) (*v1alpha1.AWSConfig, error)
 	Update(*v1alpha1.AWSConfig) (*v1alpha1.AWSConfig, error)
+	UpdateStatus(*v1alpha1.AWSConfig) (*v1alpha1.AWSConfig, error)
 	Delete(name string, options *v1.DeleteOptions) error
 	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
 	Get(name string, options v1.GetOptions) (*v1alpha1.AWSConfig, error)
@@ -114,6 +115,22 @@ func (c *aWSConfigs) Update(aWSConfig *v1alpha1.AWSConfig) (result *v1alpha1.AWS
 		Namespace(c.ns).
 		Resource("awsconfigs").
 		Name(aWSConfig.Name).
+		Body(aWSConfig).
+		Do().
+		Into(result)
+	return
+}
+
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+
+func (c *aWSConfigs) UpdateStatus(aWSConfig *v1alpha1.AWSConfig) (result *v1alpha1.AWSConfig, err error) {
+	result = &v1alpha1.AWSConfig{}
+	err = c.client.Put().
+		Namespace(c.ns).
+		Resource("awsconfigs").
+		Name(aWSConfig.Name).
+		SubResource("status").
 		Body(aWSConfig).
 		Do().
 		Into(result)
