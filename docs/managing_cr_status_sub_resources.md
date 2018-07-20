@@ -17,3 +17,9 @@ this occur to be relevant or dramatically different than in other projects. As a
 guideline the approach of the separated resources should be considered the
 default for now because it keeps different responsibilities separated not mixed
 them up.
+
+A common design guideline of an operator architecture is the **delegation and
+propagation principle**. The visualization below depicts how **desired state is
+delegated** and **current state is propagated**.
+
+![Delegation And Propagation](images/delegation_and_propagation.png)
