@@ -75,6 +75,8 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	// We start the controllers.
 	go controllerA.Boot()
 	go controllerB.Boot()
+	<-controllerA.Booted()
+	<-controllerB.Booted()
 
 	// We create an object without any finalizers.
 	// Creation is retried because the existance of a CRD might have to be ensured.
@@ -116,7 +118,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 			return microerror.Maskf(countMismatchError, "EnsureCreated of controller A was hit %v times, want atleast %v", trA.CreateCount(), 2)
 		}
 		if trA.DeleteCount() != 0 {
-			return microerror.Maskf(countMismatchError, "EnsureDeleted of controller A was hit %v times, want %v", trB.DeleteCount(), 0)
+			return microerror.Maskf(countMismatchError, "EnsureDeleted of controller A was hit %v times, want %v", trA.DeleteCount(), 0)
 		}
 		if trB.CreateCount() < 2 {
 			return microerror.Maskf(countMismatchError, "EnsureCreated of controller B was hit %v times, want atleast %v", trB.CreateCount(), 2)

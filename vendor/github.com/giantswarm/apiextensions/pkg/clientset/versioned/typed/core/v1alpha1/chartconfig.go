@@ -37,6 +37,7 @@ type ChartConfigsGetter interface {
 type ChartConfigInterface interface {
 	Create(*v1alpha1.ChartConfig) (*v1alpha1.ChartConfig, error)
 	Update(*v1alpha1.ChartConfig) (*v1alpha1.ChartConfig, error)
+	UpdateStatus(*v1alpha1.ChartConfig) (*v1alpha1.ChartConfig, error)
 	Delete(name string, options *v1.DeleteOptions) error
 	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
 	Get(name string, options v1.GetOptions) (*v1alpha1.ChartConfig, error)
@@ -114,6 +115,22 @@ func (c *chartConfigs) Update(chartConfig *v1alpha1.ChartConfig) (result *v1alph
 		Namespace(c.ns).
 		Resource("chartconfigs").
 		Name(chartConfig.Name).
+		Body(chartConfig).
+		Do().
+		Into(result)
+	return
+}
+
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+
+func (c *chartConfigs) UpdateStatus(chartConfig *v1alpha1.ChartConfig) (result *v1alpha1.ChartConfig, err error) {
+	result = &v1alpha1.ChartConfig{}
+	err = c.client.Put().
+		Namespace(c.ns).
+		Resource("chartconfigs").
+		Name(chartConfig.Name).
+		SubResource("status").
 		Body(chartConfig).
 		Do().
 		Into(result)

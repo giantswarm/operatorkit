@@ -4,36 +4,26 @@ package testresource
 
 import (
 	"context"
+	"sync"
 
 	"github.com/giantswarm/microerror"
-	"github.com/giantswarm/micrologger"
-	"k8s.io/client-go/kubernetes"
 )
 
 type Config struct {
-	K8sClient kubernetes.Interface
-	Logger    micrologger.Logger
-	Name      string
 }
 
 type Resource struct {
-	k8sClient kubernetes.Interface
-	logger    micrologger.Logger
-
 	createCount int
 	deleteCount int
-	name        string
+	mutex       sync.Mutex
 	returnError bool
 }
 
 func New(config Config) (*Resource, error) {
 	r := &Resource{
-		k8sClient: config.K8sClient,
-		logger:    config.Logger,
-
 		createCount: 0,
 		deleteCount: 0,
-		name:        config.Name,
+		mutex:       sync.Mutex{},
 		returnError: false,
 	}
 
@@ -41,10 +31,14 @@ func New(config Config) (*Resource, error) {
 }
 
 func (r *Resource) CreateCount() int {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	return r.createCount
 }
 
 func (r *Resource) DeleteCount() int {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	return r.deleteCount
 }
 
@@ -73,9 +67,13 @@ func (r *Resource) ReturnError(returnError bool) {
 }
 
 func (r *Resource) incrementCreateCount() {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	r.createCount++
 }
 
 func (r *Resource) incrementDeleteCount() {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	r.deleteCount++
 }
