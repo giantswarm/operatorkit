@@ -19,6 +19,8 @@ var knownTypes = []runtime.Object{
 	&CertConfigList{},
 	&ChartConfig{},
 	&ChartConfigList{},
+	&DrainerConfig{},
+	&DrainerConfigList{},
 	&AWSClusterConfig{},
 	&AWSClusterConfigList{},
 	&AzureClusterConfig{},

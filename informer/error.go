@@ -21,6 +21,20 @@ func IsAlreadyRegisteredError(err error) bool {
 	return false
 }
 
+var contextCanceledError = microerror.New("context canceled")
+
+// IsContextCanceled asserts contextCanceledError.
+func IsContextCanceled(err error) bool {
+	return microerror.Cause(err) == contextCanceledError
+}
+
+var initializationTimedOutError = microerror.New("initialization timed out")
+
+// IsInitializationTimedOut asserts initializationTimedOutError.
+func IsInitializationTimedOut(err error) bool {
+	return microerror.Cause(err) == initializationTimedOutError
+}
+
 var invalidConfigError = microerror.New("invalid config")
 
 // IsInvalidConfig asserts invalidConfigError.

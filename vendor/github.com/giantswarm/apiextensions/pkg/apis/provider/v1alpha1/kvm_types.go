@@ -20,6 +20,8 @@ import (
 //         kind: KVMConfig
 //         plural: kvmconfigs
 //         singular: kvmconfig
+//       subresources:
+//         status: {}
 //
 func NewKVMConfigCRD() *apiextensionsv1beta1.CustomResourceDefinition {
 	return &apiextensionsv1beta1.CustomResourceDefinition{
@@ -39,18 +41,21 @@ func NewKVMConfigCRD() *apiextensionsv1beta1.CustomResourceDefinition {
 				Plural:   "kvmconfigs",
 				Singular: "kvmconfig",
 			},
+			Subresources: &apiextensionsv1beta1.CustomResourceSubresources{
+				Status: &apiextensionsv1beta1.CustomResourceSubresourceStatus{},
+			},
 		},
 	}
 }
 
 // +genclient
-// +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 type KVMConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata"`
-	Spec              KVMConfigSpec `json:"spec"`
+	Spec              KVMConfigSpec   `json:"spec"`
+	Status            KVMConfigStatus `json:"status" yaml:"status"`
 }
 
 type KVMConfigSpec struct {
@@ -112,6 +117,10 @@ type KVMConfigSpecKVMNodeControllerDocker struct {
 
 type KVMConfigSpecVersionBundle struct {
 	Version string `json:"version" yaml:"version"`
+}
+
+type KVMConfigStatus struct {
+	Cluster StatusCluster `json:"cluster" yaml:"cluster"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

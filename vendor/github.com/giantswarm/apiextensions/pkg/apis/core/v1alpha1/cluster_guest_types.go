@@ -9,6 +9,7 @@ type ClusterGuestConfig struct {
 	ID             string                            `json:"id" yaml:"id"`
 	Name           string                            `json:"name,omitempty" yaml:"name,omitempty"`
 	Owner          string                            `json:"owner,omitempty" yaml:"owner,omitempty"`
+	ReleaseVersion string                            `json:"releaseVersion,omitempty" yaml:"releaseVersion,omitempty"`
 	VersionBundles []ClusterGuestConfigVersionBundle `json:"versionBundles,omitempty" yaml:"versionBundles,omitempty"`
 }
 

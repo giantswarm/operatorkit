@@ -19,9 +19,11 @@ package informer
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
+	"github.com/cenkalti/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/prometheus/client_golang/prometheus"
@@ -64,8 +66,8 @@ type Informer struct {
 	watcher Watcher
 
 	// Internals.
-	cache       *sync.Map
-	initializer chan struct{}
+	cache  *sync.Map
+	filled chan struct{}
 
 	// Settings.
 	listOptions  metav1.ListOptions
@@ -91,8 +93,8 @@ func New(config Config) (*Informer, error) {
 		watcher: config.Watcher,
 
 		// Internals.
-		cache:       &sync.Map{},
-		initializer: make(chan struct{}),
+		cache:  &sync.Map{},
+		filled: make(chan struct{}),
 
 		// Settings.
 		listOptions:  config.ListOptions,
@@ -195,7 +197,6 @@ func (i *Informer) Watch(ctx context.Context) (chan watch.Event, chan watch.Even
 				watchEventCounter.WithLabelValues("error").Inc()
 				errChan <- microerror.Mask(err)
 			}
-			close(i.initializer)
 			i.sendCachedEvents(ctx, deleteChan, updateChan, errChan)
 		}
 
@@ -238,6 +239,14 @@ func (i *Informer) Watch(ctx context.Context) (chan watch.Event, chan watch.Even
 		close(updateChan)
 		close(errChan)
 	}()
+
+	// Before returning the event channels we wait for the cached being filled.
+	// The implication of an initial cache fill is a set up watcher connection to
+	// the remote Kubernetes watch API. It can happen that this setup takes longer
+	// due to retries after broken initial connections. Waiting for this setup to
+	// be properly done ensures users of the informer do not experience broken
+	// event processing due to initial connection issues.
+	<-i.filled
 
 	return deleteChan, updateChan, errChan
 }
@@ -290,7 +299,7 @@ func (i *Informer) cacheAndSendIfNotExists(event watch.Event, updateChan chan wa
 	}
 
 	_, ok := i.cache.Load(k)
-	if !ok && i.isCachedFilled() {
+	if !ok && i.isCacheFilled() {
 		watchEventCounter.WithLabelValues("create").Inc()
 		updateChan <- event
 	}
@@ -304,11 +313,13 @@ func (i *Informer) cacheAndSendIfNotExists(event watch.Event, updateChan chan wa
 // initialization. As soon as the watcher does not receive any event objects
 // anymore, the cache is filled and the usual event watching process can begin.
 func (i *Informer) fillCache(ctx context.Context, eventChan chan watch.Event) error {
-	watcher, err := i.watcher.Watch(i.listOptions)
-	if err != nil {
+	watcher, err := i.newWatcher(ctx)
+	if IsContextCanceled(err) {
+		return nil
+	} else if err != nil {
 		return microerror.Mask(err)
 	}
-
+	defer close(i.filled)
 	defer watcher.Stop()
 
 	for {
@@ -327,16 +338,62 @@ func (i *Informer) fillCache(ctx context.Context, eventChan chan watch.Event) er
 	}
 }
 
-// isCachedFilled checks whether the informer cache is filled.
-func (i *Informer) isCachedFilled() bool {
+// isCacheFilled checks whether the informer cache is filled.
+func (i *Informer) isCacheFilled() bool {
 	select {
-	case <-i.initializer:
+	case <-i.filled:
 		return true
 	default:
 		// fall thorugh
 	}
 
 	return false
+}
+
+func (i *Informer) newWatcher(ctx context.Context) (watch.Interface, error) {
+	var err error
+
+	var watcher watch.Interface
+	{
+		o := func() error {
+			failed := make(chan error, 1)
+			found := make(chan struct{}, 1)
+
+			go func() {
+				watcher, err = i.watcher.Watch(i.listOptions)
+				if err != nil {
+					failed <- microerror.Mask(err)
+					return
+				}
+
+				found <- struct{}{}
+			}()
+
+			select {
+			case <-ctx.Done():
+				return backoff.Permanent(microerror.Mask(contextCanceledError))
+			case err := <-failed:
+				return microerror.Mask(err)
+			case <-found:
+				// fall through
+			case <-time.After(time.Second):
+				return microerror.Mask(initializationTimedOutError)
+			}
+
+			return nil
+		}
+		b := backoff.NewExponentialBackOff()
+		n := func(err error, d time.Duration) {
+			i.logger.LogCtx(ctx, "level", "warning", "message", "retrying watcher initialization due to error", "stack", fmt.Sprintf("%#v", err))
+		}
+
+		err = backoff.RetryNotify(o, b, n)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+	}
+
+	return watcher, nil
 }
 
 // sendCachedEvents sends all cached event objects to the provided delete or
@@ -396,11 +453,12 @@ func (i *Informer) sendCachedEvents(ctx context.Context, deleteChan, updateChan 
 // canceled via the done channel of the provided context, streamEvents returns
 // and stops blocking.
 func (i *Informer) streamEvents(ctx context.Context, eventChan chan watch.Event) error {
-	watcher, err := i.watcher.Watch(i.listOptions)
-	if err != nil {
+	watcher, err := i.newWatcher(ctx)
+	if IsContextCanceled(err) {
+		return nil
+	} else if err != nil {
 		return microerror.Mask(err)
 	}
-
 	defer watcher.Stop()
 
 	for {

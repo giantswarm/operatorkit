@@ -33,8 +33,7 @@ type ClusterDocker struct {
 }
 
 type ClusterDockerDaemon struct {
-	CIDR      string `json:"cidr" yaml:"cidr"`
-	ExtraArgs string `json:"extraArgs" yaml:"extraArgs"`
+	CIDR string `json:"cidr" yaml:"cidr"`
 }
 
 type ClusterEtcd struct {

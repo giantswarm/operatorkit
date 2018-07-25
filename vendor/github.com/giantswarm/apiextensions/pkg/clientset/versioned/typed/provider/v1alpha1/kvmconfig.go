@@ -37,6 +37,7 @@ type KVMConfigsGetter interface {
 type KVMConfigInterface interface {
 	Create(*v1alpha1.KVMConfig) (*v1alpha1.KVMConfig, error)
 	Update(*v1alpha1.KVMConfig) (*v1alpha1.KVMConfig, error)
+	UpdateStatus(*v1alpha1.KVMConfig) (*v1alpha1.KVMConfig, error)
 	Delete(name string, options *v1.DeleteOptions) error
 	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
 	Get(name string, options v1.GetOptions) (*v1alpha1.KVMConfig, error)
@@ -114,6 +115,22 @@ func (c *kVMConfigs) Update(kVMConfig *v1alpha1.KVMConfig) (result *v1alpha1.KVM
 		Namespace(c.ns).
 		Resource("kvmconfigs").
 		Name(kVMConfig.Name).
+		Body(kVMConfig).
+		Do().
+		Into(result)
+	return
+}
+
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+
+func (c *kVMConfigs) UpdateStatus(kVMConfig *v1alpha1.KVMConfig) (result *v1alpha1.KVMConfig, err error) {
+	result = &v1alpha1.KVMConfig{}
+	err = c.client.Put().
+		Namespace(c.ns).
+		Resource("kvmconfigs").
+		Name(kVMConfig.Name).
+		SubResource("status").
 		Body(kVMConfig).
 		Do().
 		Into(result)

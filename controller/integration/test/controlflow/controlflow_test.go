@@ -6,28 +6,29 @@ import (
 	"reflect"
 	"testing"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/cenkalti/backoff"
 	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/microerror"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/giantswarm/operatorkit/controller"
 	"github.com/giantswarm/operatorkit/controller/integration/testresource"
 	"github.com/giantswarm/operatorkit/controller/integration/wrapper"
 	"github.com/giantswarm/operatorkit/controller/integration/wrapper/nodeconfig"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 )
 
-// Test_Finalizer_Integration_Controlflow is a integration test to
-// check that errors during deletion prevent the finalizer from removal.
+// Test_Finalizer_Integration_Controlflow is an integration test to check that
+// errors during deletion prevent the finalizer from removal.
 func Test_Finalizer_Integration_Controlflow(t *testing.T) {
+	var err error
+
 	objName := "test-obj"
 	testFinalizer := "operatorkit.giantswarm.io/test-operator"
 	testNamespace := "finalizer-integration-reconciliation-test"
 	operatorName := "test-operator"
 
-	var err error
 	var tr *testresource.Resource
 	{
 		c := testresource.Config{}
@@ -38,51 +39,55 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 		}
 	}
 
-	resources := []controller.Resource{
-		controller.Resource(tr),
+	// We setup and start the controller.
+	var testWrapper wrapper.Interface
+	{
+		c := nodeconfig.Config{
+			Resources: []controller.Resource{
+				tr,
+			},
+
+			Name:      operatorName,
+			Namespace: testNamespace,
+		}
+
+		testWrapper, err = nodeconfig.New(c)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
+		}
+
+		testWrapper.MustSetup(testNamespace)
+		defer testWrapper.MustTeardown(testNamespace)
+		newController := testWrapper.Controller()
+		go newController.Boot()
+		<-newController.Booted()
 	}
-
-	c := nodeconfig.Config{
-		Resources: resources,
-
-		Name:      operatorName,
-		Namespace: testNamespace,
-	}
-
-	nodeconfigWrapper, err := nodeconfig.New(c)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
-
-	testWrapper := wrapper.Interface(nodeconfigWrapper)
-
-	testWrapper.MustSetup(testNamespace)
-	defer testWrapper.MustTeardown(testNamespace)
-
-	controller := testWrapper.Controller()
-
-	// We start the controller.
-	go controller.Boot()
 
 	// We create an object which is valid and wait for the framework to add a
 	// finalizer.
-	obj := &v1alpha1.NodeConfig{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      objName,
-			Namespace: testNamespace,
-		},
-	}
 	var createdObj interface{}
-	operation := func() error {
-		createdObj, err = testWrapper.CreateObject(testNamespace, obj)
-		if err != nil {
-			return microerror.Mask(err)
+	{
+		o := func() error {
+			nodeConfig := &v1alpha1.NodeConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      objName,
+					Namespace: testNamespace,
+				},
+			}
+
+			createdObj, err = testWrapper.CreateObject(testNamespace, nodeConfig)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+
+			return nil
 		}
-		return nil
-	}
-	err = backoff.Retry(operation, backoff.NewExponentialBackOff())
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
+		b := backoff.NewExponentialBackOff()
+
+		err = backoff.Retry(o, b)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
+		}
 	}
 
 	// We use backoff with the absolute maximum amount:
@@ -96,7 +101,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	//
 	// 		EnsureCreated: 2, EnsureDeleted: 0
 	//
-	operation = func() error {
+	operation := func() error {
 		if tr.CreateCount() != 2 {
 			return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 2)
 		}

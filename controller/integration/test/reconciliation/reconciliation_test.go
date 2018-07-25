@@ -63,6 +63,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 
 	// We start the controller.
 	go controller.Boot()
+	<-controller.Booted()
 
 	// We create an object, but add a finalizer of another operator. This will
 	// cause the object to continue existing after the controller removes its own
