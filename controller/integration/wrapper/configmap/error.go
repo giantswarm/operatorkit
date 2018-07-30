@@ -4,7 +4,9 @@ package configmap
 
 import "github.com/giantswarm/microerror"
 
-var wrongTypeError = microerror.New("wrong type")
+var wrongTypeError = &microerror.Error{
+	Kind: "wrongTypeError",
+}
 
 // IsWrongTypeError asserts wrongTypeError.
 func IsWrongTypeError(err error) bool {

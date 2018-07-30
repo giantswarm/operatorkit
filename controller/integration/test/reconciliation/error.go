@@ -6,7 +6,9 @@ import (
 	"github.com/giantswarm/microerror"
 )
 
-var countMismatchError = microerror.New("count mismatch")
+var countMismatchError = &microerror.Error{
+	Kind: "countMismatchError",
+}
 
 // IsCountMismatch asserts countMismatchError.
 func IsCountMismatch(err error) bool {
