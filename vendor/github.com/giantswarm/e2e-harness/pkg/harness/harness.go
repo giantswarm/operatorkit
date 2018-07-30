@@ -24,7 +24,8 @@ type Harness struct {
 }
 
 type Config struct {
-	RemoteCluster bool `yaml:"remoteCluster"`
+	ExistingCluster bool `yaml:"existingCluster"`
+	RemoteCluster   bool `yaml:"remoteCluster"`
 }
 
 func New(logger micrologger.Logger, fs afero.Fs, cfg Config) *Harness {
