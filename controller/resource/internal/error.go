@@ -2,7 +2,9 @@ package internal
 
 import "github.com/giantswarm/microerror"
 
-var loopDetectedError = microerror.New("loop detected")
+var loopDetectedError = &microerror.Error{
+	Kind: "loopDetectedError",
+}
 
 // IsLoopDetected asserts loopDetectedError.
 func IsLoopDetected(err error) bool {

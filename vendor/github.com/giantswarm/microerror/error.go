@@ -1,43 +1,47 @@
-// Package microerror provides project wide helper functions for a more convenient
-// and efficient error handling.
 package microerror
 
-var (
-	handler Handler = NewErrgoHandler(ErrgoHandlerConfig{
-		CallDepth: 1,
-	})
-)
+import "encoding/json"
 
-// New returns a new error with the given error message. It is a drop-in
-// replacement for errors.New from the standard library.
-func New(s string) error {
-	return handler.New(s)
-}
-
-// Newf returns a new error with the given printf-formatted error message.
-func Newf(f string, v ...interface{}) error {
-	return handler.Newf(f, v...)
-}
-
-// Cause returns the cause of the given error. If the cause of the err can not
-// be found it returns the err itself.
+// Error is a predefined error structure whose purpose is to act as container
+// for meta information associated to a specific error. The specific error type
+// matching can be used as usual. The usual error masking and cause gathering
+// can be used as usual. Using Error might look as follows. In the beginning is
+// a usual error defined, along with its matcher. This error is the root cause
+// once emitted during runtime.
 //
-// Cause is the usual way to diagnose errors that may have been wrapped by Mask
-// or Maskf.
-func Cause(err error) error {
-	return handler.Cause(err)
+//     var notEnoughWorkersError = &microerror.Error{
+//         Desc: "The amount of requested guest cluster workers exceeds the available number of host cluster nodes.",
+//         Docs: "https://github.com/giantswarm/ops-recipes/blob/master/349-not-enough-workers.md",
+//         Kind: "notEnoughWorkersError",
+//     }
+//
+//     func IsNotEnoughWorkers(err error) bool {
+//         return microerror.Cause(err) == notEnoughWorkersError
+//     }
+//
+type Error struct {
+	Desc string `json:"desc"`
+	Docs string `json:"docs"`
+	Kind string `json:"kind"`
 }
 
-// Mask is a simple error masker. Masked errors act as tracers within the
-// source code. Inspecting an masked error shows where the error was passed
-// through within the code base. This is gold for debugging and bug hunting.
-func Mask(err error) error {
-	return handler.Mask(err)
+func (e *Error) Error() string {
+	if e.Desc == "" {
+		return e.String()
+	} else {
+		return e.Desc
+	}
 }
 
-// Maskf is like Mask. In addition to that it takes a format string and
-// variadic arguments like fmt.Sprintf. The format string and variadic
-// arguments are used to annotate the given errgo error.
-func Maskf(err error, f string, v ...interface{}) error {
-	return handler.Maskf(err, f, v...)
+func (e *Error) GoString() string {
+	return e.String()
+}
+
+func (e *Error) String() string {
+	b, err := json.Marshal(e)
+	if err != nil {
+		panic(err)
+	}
+
+	return string(b)
 }

@@ -5,35 +5,45 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 )
 
-var executionFailedError = microerror.New("execution failed")
+var executionFailedError = &microerror.Error{
+	Kind: "executionFailedError",
+}
 
 // IsExecutionFailed asserts executionFailedError.
 func IsExecutionFailed(err error) bool {
 	return microerror.Cause(err) == executionFailedError
 }
 
-var invalidConfigError = microerror.New("invalid config")
+var invalidConfigError = &microerror.Error{
+	Kind: "invalidConfigError",
+}
 
 // IsInvalidConfig asserts invalidConfigError.
 func IsInvalidConfig(err error) bool {
 	return microerror.Cause(err) == invalidConfigError
 }
 
-var invalidRESTClientError = microerror.New("invalid REST client")
+var invalidRESTClientError = &microerror.Error{
+	Kind: "invalidRESTClientError",
+}
 
 // IsInvalidRESTClient asserts invalidRESTClientError.
 func IsInvalidRESTClient(err error) bool {
 	return microerror.Cause(err) == invalidRESTClientError
 }
 
-var noResourceSetError = microerror.New("no resource set")
+var noResourceSetError = &microerror.Error{
+	Kind: "noResourceSetError",
+}
 
 // IsNoResourceSet asserts noResourceSetError.
 func IsNoResourceSet(err error) bool {
 	return microerror.Cause(err) == noResourceSetError
 }
 
-var statusForbiddenError = microerror.New("status forbidden")
+var statusForbiddenError = &microerror.Error{
+	Kind: "statusForbiddenError",
+}
 
 // IsStatusForbiddenError asserts statusForbiddenError and apimachinery
 // StatusError with StatusReasonForbidden.
