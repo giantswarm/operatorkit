@@ -166,9 +166,18 @@ func (c *Controller) DeleteFunc(obj interface{}) {
 
 	resourceSet, err := c.resourceSet(obj)
 	if IsNoResourceSet(err) {
-		// In case there is no resource set for the object. We should
-		// make sure are resources are deleted for the object and then
-		// delete the finalizer manually.
+		// In case the resource router is not able to find any resource set to
+		// handle the reconciled runtime object, we stop here. Note that we just
+		// remove the finalizer regardless because at this point there will never be
+		// a chance to remove it otherwhise because nobody wanted to handle this
+		// runtime object anyway. Otherwise we can end up in deadlock
+		// trying to reconcile this object over and over.
+		err = c.removeFinalizer(obj)
+		if err != nil {
+			c.logger.Log("level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+			return
+		}
+
 		return
 
 	} else if err != nil {
