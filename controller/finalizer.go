@@ -93,7 +93,7 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 
 	if finalizerskeptcontext.IsKept(ctx) {
 		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("did not remove finalizer '%s'", finalizerName))
-		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("finalizer '%s' is requested to be kept in this loop", finalizerName))
+		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("finalizer '%s' is requested to be kept", finalizerName))
 		return nil
 	}
 
