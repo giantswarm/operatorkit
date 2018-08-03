@@ -94,6 +94,7 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 	if finalizerskeptcontext.IsKept(ctx) {
 		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("did not remove finalizer '%s' from runtime object", finalizerName))
 		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("finalizer '%s' is requested to be kept in runtime object in this loop", finalizerName))
+		return nil
 	}
 
 	accessor, err := meta.Accessor(obj)
