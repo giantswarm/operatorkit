@@ -1,13 +1,11 @@
 package controller
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 
 	"github.com/cenkalti/backoff"
 	"github.com/giantswarm/microerror"
-	"github.com/giantswarm/operatorkit/controller/context/finalizerskeptcontext"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -86,29 +84,18 @@ func (f *Controller) addFinalizer(obj interface{}) (bool, error) {
 // removeFinalizer receives an object and tries to remove its finalizer which
 // was set by operatorkit. The removal of a finalizer will be retried and a fresh
 // object will get fetched from k8s if the ResourceVersion is out of date.
-func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error {
-	finalizerName := getFinalizerName(c.name)
-
-	c.logger.Log("level", "debug", "message", fmt.Sprintf("removing finalizer '%s' from runtime object", finalizerName))
-
-	if finalizerskeptcontext.IsKept(ctx) {
-		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("did not remove finalizer '%s' from runtime object", finalizerName))
-		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("finalizer '%s' is requested to be kept in runtime object in this loop", finalizerName))
-	}
-
+func (f *Controller) removeFinalizer(obj interface{}) error {
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
 		return microerror.Mask(err)
 	}
-	if !containsFinalizer(accessor.GetFinalizers(), finalizerName) {
+	if !containsFinalizer(accessor.GetFinalizers(), getFinalizerName(f.name)) {
 		// object has no finalizer set, this could have two reasons:
 		// 1. We are migrating and an old object never got reconciled before deletion.
 		// 2. The operator wasn't running and our first interaction with the object
 		// is its deletion.
 		// 3. The object has another finalizer set and we removed ours already.
 		// All cases should not be harmful in general, so we ignore it.
-		c.logger.Log("level", "debug", "message", fmt.Sprintf("did not remove finalizer '%s' from runtime object", finalizerName))
-		c.logger.Log("level", "debug", "message", fmt.Sprintf("finalizer '%s' not found in runtime object", finalizerName))
 		return nil
 	}
 
@@ -117,14 +104,14 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 	o := func() error {
 		// We get an up to date version of our object from k8s and parse the
 		// response from the RESTClient to runtime object.
-		obj, err := c.restClient.Get().AbsPath(path).Do().Get()
+		obj, err := f.restClient.Get().AbsPath(path).Do().Get()
 		if errors.IsNotFound(err) {
 			return nil // the object is already gone, nothing to do.
 		} else if err != nil {
 			return microerror.Mask(err)
 		}
 
-		patch, err := createRemoveFinalizerPatch(obj, c.name)
+		patch, err := createRemoveFinalizerPatch(obj, f.name)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -136,18 +123,16 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 		if err != nil {
 			return microerror.Mask(err)
 		}
-		err = c.restClient.Patch(types.JSONPatchType).AbsPath(path).Body(p).Do().Error()
+		err = f.restClient.Patch(types.JSONPatchType).AbsPath(path).Body(p).Do().Error()
 		if err != nil {
 			return microerror.Mask(err)
 		}
 		return nil
 	}
-	err = backoff.Retry(o, c.backOffFactory())
+	err = backoff.Retry(o, f.backOffFactory())
 	if err != nil {
 		return microerror.Mask(err)
 	}
-
-	c.logger.Log("level", "debug", "message", fmt.Sprintf("removed finalizer '%s' from runtime object", finalizerName))
 	return nil
 }
 

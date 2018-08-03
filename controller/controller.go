@@ -18,6 +18,7 @@ import (
 	"k8s.io/client-go/rest"
 
 	"github.com/giantswarm/operatorkit/client/k8scrdclient"
+	"github.com/giantswarm/operatorkit/controller/context/finalizerskeptcontext"
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
 	"github.com/giantswarm/operatorkit/informer"
@@ -166,11 +167,23 @@ func (c *Controller) DeleteFunc(obj interface{}) {
 
 	resourceSet, err := c.resourceSet(obj)
 	if IsNoResourceSet(err) {
-		// In case there is no resource set for the object. We should
-		// make sure are resources are deleted for the object and then
-		// delete the finalizer manually.
-		return
+		// In case the resource router is not able to find any resource set to
+		// handle the reconciled runtime object, we stop here. Note that we just
+		// remove the finalizer regardless because at this point there will never be
+		// a chance to remove it otherwhise because nobody wanted to handle this
+		// runtime object anyway.
 
+		c.logger.Log("level", "debug", "message", "removing finalizer from runtime object")
+
+		err = c.removeFinalizer(obj)
+		if err != nil {
+			c.logger.Log("level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+			return
+		}
+
+		c.logger.Log("level", "debug", "message", "removed finalizer from runtime object")
+
+		return
 	} else if err != nil {
 		c.logger.Log("level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
@@ -199,10 +212,18 @@ func (c *Controller) DeleteFunc(obj interface{}) {
 		return
 	}
 
-	err = c.removeFinalizer(ctx, obj)
-	if err != nil {
-		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
-		return
+	if !finalizerskeptcontext.IsKept(ctx) {
+		c.logger.LogCtx(ctx, "level", "debug", "message", "removing finalizer from runtime object")
+
+		err = c.removeFinalizer(obj)
+		if err != nil {
+			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+			return
+		}
+
+		c.logger.LogCtx(ctx, "level", "debug", "message", "removed finalizer from runtime object")
+	} else {
+		c.logger.LogCtx(ctx, "level", "debug", "message", "not removing finalizer from runtime object due to request of keeping it")
 	}
 }
 
