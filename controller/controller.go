@@ -172,7 +172,7 @@ func (c *Controller) DeleteFunc(obj interface{}) {
 		// a chance to remove it otherwhise because nobody wanted to handle this
 		// runtime object anyway. Otherwise we can end up in deadlock
 		// trying to reconcile this object over and over.
-		err = c.removeFinalizer(obj)
+		err = c.removeFinalizer(context.Background(), obj)
 		if err != nil {
 			c.logger.Log("level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 			return
