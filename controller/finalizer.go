@@ -89,11 +89,11 @@ func (f *Controller) addFinalizer(obj interface{}) (bool, error) {
 func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error {
 	finalizerName := getFinalizerName(c.name)
 
-	c.logger.Log("level", "debug", "message", fmt.Sprintf("removing finalizer '%s' from runtime object", finalizerName))
+	c.logger.Log("level", "debug", "message", fmt.Sprintf("removing finalizer '%s'", finalizerName))
 
 	if finalizerskeptcontext.IsKept(ctx) {
-		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("did not remove finalizer '%s' from runtime object", finalizerName))
-		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("finalizer '%s' is requested to be kept in runtime object in this loop", finalizerName))
+		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("did not remove finalizer '%s'", finalizerName))
+		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("finalizer '%s' is requested to be kept in this loop", finalizerName))
 		return nil
 	}
 
@@ -108,8 +108,8 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 		// is its deletion.
 		// 3. The object has another finalizer set and we removed ours already.
 		// All cases should not be harmful in general, so we ignore it.
-		c.logger.Log("level", "debug", "message", fmt.Sprintf("did not remove finalizer '%s' from runtime object", finalizerName))
-		c.logger.Log("level", "debug", "message", fmt.Sprintf("finalizer '%s' not found in runtime object", finalizerName))
+		c.logger.Log("level", "debug", "message", fmt.Sprintf("did not remove finalizer '%s'", finalizerName))
+		c.logger.Log("level", "debug", "message", fmt.Sprintf("finalizer '%s' not found", finalizerName))
 		return nil
 	}
 
@@ -148,7 +148,7 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 		return microerror.Mask(err)
 	}
 
-	c.logger.Log("level", "debug", "message", fmt.Sprintf("removed finalizer '%s' from runtime object", finalizerName))
+	c.logger.Log("level", "debug", "message", fmt.Sprintf("removed finalizer '%s'", finalizerName))
 	return nil
 }
 
