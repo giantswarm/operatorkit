@@ -44,7 +44,7 @@
   branch = "max-retries"
   name = "github.com/giantswarm/backoff"
   packages = ["."]
-  revision = "b8bec45ea6e0b6420d3ccbdee0659f249840a13f"
+  revision = "bc4d9412ae3859320b41747d65c0ceb451e76c36"
 
 [[projects]]
   branch = "master"
