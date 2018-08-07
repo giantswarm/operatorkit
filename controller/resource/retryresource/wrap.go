@@ -1,7 +1,9 @@
 package retryresource
 
 import (
-	"github.com/cenkalti/backoff"
+	"time"
+
+	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 
@@ -12,7 +14,7 @@ import (
 type WrapConfig struct {
 	Logger micrologger.Logger
 
-	BackOffFactory func() backoff.BackOff
+	BackOffFactory func() backoff.Interface
 }
 
 // Wrap wraps each given resource with a retry resource and returns the list of
@@ -23,7 +25,7 @@ func Wrap(resources []controller.Resource, config WrapConfig) ([]controller.Reso
 	}
 
 	if config.BackOffFactory == nil {
-		config.BackOffFactory = func() backoff.BackOff { return backoff.WithMaxTries(backoff.NewExponentialBackOff(), uint64(3)) }
+		config.BackOffFactory = func() backoff.Interface { return backoff.NewMaxRetries(3, 1*time.Second) }
 	}
 
 	var wrapped []controller.Resource

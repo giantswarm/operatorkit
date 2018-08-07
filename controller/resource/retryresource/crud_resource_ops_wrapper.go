@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cenkalti/backoff"
+	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 
@@ -16,14 +16,14 @@ type crudResourceOpsWrapperConfig struct {
 	Logger micrologger.Logger
 	Ops    controller.CRUDResourceOps
 
-	BackOff backoff.BackOff
+	BackOff backoff.Interface
 }
 
 type crudResourceWrapperOps struct {
 	logger     micrologger.Logger
 	underlying controller.CRUDResourceOps
 
-	backOff backoff.BackOff
+	backOff backoff.Interface
 }
 
 func newCRUDResourceWrapperOps(config crudResourceOpsWrapperConfig) (*crudResourceWrapperOps, error) {
@@ -35,7 +35,7 @@ func newCRUDResourceWrapperOps(config crudResourceOpsWrapperConfig) (*crudResour
 	}
 
 	if config.BackOff == nil {
-		config.BackOff = backoff.NewExponentialBackOff()
+		config.BackOff = backoff.NewExponential(2*time.Minute, 10*time.Second)
 	}
 
 	o := &crudResourceWrapperOps{

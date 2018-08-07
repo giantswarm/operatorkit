@@ -8,7 +8,7 @@ package retryresource
 //	"reflect"
 //	"testing"
 //
-//	"github.com/cenkalti/backoff"
+//	"github.com/giantswarm/backoff"
 //	"github.com/giantswarm/micrologger/microloggertest"
 //
 //	"github.com/giantswarm/operatorkit/controller"
@@ -75,7 +75,7 @@ package retryresource
 //		rs := []framework.Resource{
 //			tr,
 //		}
-//		bf := func() backoff.BackOff {
+//		bf := func() backoff.Interface {
 //			return &backoff.ZeroBackOff{}
 //		}
 //
@@ -107,7 +107,7 @@ package retryresource
 //	rs := []framework.Resource{
 //		tr,
 //	}
-//	bf := func() backoff.BackOff {
+//	bf := func() backoff.Interface {
 //		return &backoff.ZeroBackOff{}
 //	}
 //
@@ -199,7 +199,7 @@ package retryresource
 //		rs := []framework.Resource{
 //			tr,
 //		}
-//		bf := func() backoff.BackOff {
+//		bf := func() backoff.Interface {
 //			return &backoff.ZeroBackOff{}
 //		}
 //
@@ -231,7 +231,7 @@ package retryresource
 //	rs := []framework.Resource{
 //		tr,
 //	}
-//	bf := func() backoff.BackOff {
+//	bf := func() backoff.Interface {
 //		return &backoff.ZeroBackOff{}
 //	}
 //

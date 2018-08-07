@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cenkalti/backoff"
+	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 
@@ -17,7 +17,7 @@ type resourceWrapper struct {
 	logger   micrologger.Logger
 	resource controller.Resource
 
-	backOff backoff.BackOff
+	backOff backoff.Interface
 
 	name string
 }
@@ -31,7 +31,7 @@ func newResourceWrapper(config Config) (*resourceWrapper, error) {
 	}
 
 	if config.BackOff == nil {
-		config.BackOff = backoff.NewExponentialBackOff()
+		config.BackOff = backoff.NewExponential(2*time.Minute, 10*time.Second)
 	}
 
 	var name string
