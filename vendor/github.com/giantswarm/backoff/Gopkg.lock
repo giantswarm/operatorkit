@@ -2,10 +2,25 @@
 
 
 [[projects]]
+  name = "github.com/cenkalti/backoff"
+  packages = ["."]
+  revision = "2ea60e5f094469f9e65adb9cd103795b73ae743e"
+  version = "v2.0.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/giantswarm/microerror"
   packages = ["."]
-  revision = "a8d5d4f526c526b4b773062958847fe7e0b7f449"
+  revision = "5e90ca360be950271aab9e13e45dd75293932580"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/giantswarm/micrologger"
+  packages = [
+    ".",
+    "loggermeta"
+  ]
+  revision = "d757f42e4a3efca1fe82e633579b28c586e08698"
 
 [[projects]]
   name = "github.com/go-kit/kit"
@@ -37,9 +52,15 @@
   packages = ["."]
   revision = "b84e30acd515aadc4b783ad4ff83aff3299bdfe0"
 
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/net"
+  packages = ["context"]
+  revision = "f4c29de78a2a91c00474a2e689954305c350adf9"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2adbe8d5ab3a48cdea1da27b9657857aa30d8758cead74b25c92eaa5be867f09"
+  inputs-digest = "9ffc28b924ea890a54de9cb206dd0f3ab185b279a9cf13721abd3fe4a47b3d1a"
   solver-name = "gps-cdcl"
   solver-version = 1

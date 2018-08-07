@@ -22,12 +22,12 @@
 
 
 [[constraint]]
-  name = "github.com/cenkalti/backoff"
-  version = "1.1.0"
+  branch = "master"
+  name = "github.com/giantswarm/apiextensions"
 
 [[constraint]]
   branch = "master"
-  name = "github.com/giantswarm/apiextensions"
+  name = "github.com/giantswarm/backoff"
 
 [[constraint]]
   branch = "master"
