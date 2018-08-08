@@ -26,7 +26,7 @@
   name = "github.com/giantswarm/apiextensions"
 
 [[constraint]]
-  branch = "max-retries"
+  branch = "master"
   name = "github.com/giantswarm/backoff"
 
 [[constraint]]

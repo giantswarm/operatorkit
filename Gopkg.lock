@@ -41,10 +41,10 @@
   revision = "b8a446f6cdfde2c50e005628a22630538956446f"
 
 [[projects]]
-  branch = "max-retries"
+  branch = "master"
   name = "github.com/giantswarm/backoff"
   packages = ["."]
-  revision = "bc4d9412ae3859320b41747d65c0ceb451e76c36"
+  revision = "889af437b4d98f8a1ccb66cb85b93de13d8c666e"
 
 [[projects]]
   branch = "master"
@@ -250,7 +250,7 @@
     "http2/hpack",
     "idna"
   ]
-  revision = "19491d39cadbd9cd33f26ca22cc89ba4ba38251c"
+  revision = "f9ce57c11b242f0f1599cf25c89d8cb02c45295a"
 
 [[projects]]
   branch = "master"
@@ -455,6 +455,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "fdf39fd82f98b09a9da18e34892917a381820eda9b5e543e8c7122a324bb122a"
+  inputs-digest = "01e8abe27659f648a0026ca822bc3e6afc68e07ed2bac86ef96c93076abfa2e5"
   solver-name = "gps-cdcl"
   solver-version = 1
