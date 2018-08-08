@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cenkalti/backoff"
+	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/giantswarm/micrologger/loggermeta"
@@ -56,7 +56,7 @@ type Config struct {
 	//
 	RESTClient rest.Interface
 
-	BackOffFactory func() backoff.BackOff
+	BackOffFactory func() backoff.Interface
 	// Name is the name which the controller uses on finalizers for resources.
 	// The name used should be unique in the kubernetes cluster, to ensure that
 	// two operators which handle the same resource add two distinct finalizers.
@@ -76,7 +76,7 @@ type Controller struct {
 	errorCollector chan error
 	mutex          sync.Mutex
 
-	backOffFactory func() backoff.BackOff
+	backOffFactory func() backoff.Interface
 	name           string
 }
 
@@ -99,7 +99,7 @@ func New(config Config) (*Controller, error) {
 	}
 
 	if config.BackOffFactory == nil {
-		config.BackOffFactory = DefaultBackOffFactory()
+		config.BackOffFactory = func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) }
 	}
 	if config.Name == "" {
 		return nil, microerror.Maskf(invalidConfigError, "config.Name must not be empty")
@@ -138,9 +138,7 @@ func (c *Controller) Boot() {
 			return nil
 		}
 
-		notifier := func(err error, d time.Duration) {
-			c.logger.LogCtx(ctx, "level", "warning", "message", "retrying controller boot due to error", "stack", fmt.Sprintf("%#v", err))
-		}
+		notifier := backoff.NewNotifier(c.logger, ctx)
 
 		err := backoff.RetryNotify(operation, c.backOffFactory(), notifier)
 		if err != nil {
@@ -241,9 +239,7 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 		}
 	}
 
-	notifier := func(err error, d time.Duration) {
-		c.logger.LogCtx(ctx, "level", "warning", "message", "retrying event processing due to error", "stack", fmt.Sprintf("%#v", err))
-	}
+	notifier := backoff.NewNotifier(c.logger, ctx)
 
 	err := backoff.RetryNotify(operation, c.backOffFactory(), notifier)
 	if err != nil {

@@ -4,13 +4,14 @@ package parallel
 
 import (
 	"testing"
+	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/cenkalti/backoff"
 	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
+	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/operatorkit/controller"
 	"github.com/giantswarm/operatorkit/controller/integration/testresource"
@@ -87,16 +88,19 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 		},
 	}
 	var createdObj interface{}
-	operation := func() error {
-		createdObj, err = testWrapperA.CreateObject(testNamespace, obj)
-		if err != nil {
-			return microerror.Mask(err)
+	{
+		o := func() error {
+			createdObj, err = testWrapperA.CreateObject(testNamespace, obj)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+			return nil
 		}
-		return nil
-	}
-	err = backoff.Retry(operation, backoff.NewExponentialBackOff())
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
+		b := backoff.NewExponential(2*time.Minute, 10*time.Second)
+		err = backoff.Retry(o, b)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
+		}
 	}
 
 	// We use backoff with the absolute maximum amount:
@@ -110,7 +114,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	//
 	// 		EnsureCreated: 2, EnsureDeleted: 0
 	//
-	operation = func() error {
+	operation := func() error {
 		// We are more forgiving here compared to other tests, the controllers might
 		// receive events at different times. Checking the count exactly might fail
 		// if a controller is slower and the other one reconciles one more time.
@@ -128,7 +132,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 		}
 		return nil
 	}
-	err = backoff.Retry(operation, newConstantBackoff(uint64(20)))
+	err = backoff.Retry(operation, backoff.NewMaxRetries(20, 1*time.Second))
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -182,7 +186,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 		}
 		return nil
 	}
-	err = backoff.Retry(operation, newConstantBackoff(uint64(20)))
+	err = backoff.Retry(operation, backoff.NewMaxRetries(20, 1*time.Second))
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}

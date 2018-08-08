@@ -5,12 +5,13 @@ package reconciliation
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/cenkalti/backoff"
 	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
+	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/operatorkit/controller"
 	"github.com/giantswarm/operatorkit/controller/integration/testresource"
@@ -80,16 +81,19 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		},
 	}
 	var createdObj interface{}
-	operation := func() error {
-		createdObj, err = testWrapper.CreateObject(testNamespace, obj)
-		if err != nil {
-			return microerror.Mask(err)
+	{
+		o := func() error {
+			createdObj, err = testWrapper.CreateObject(testNamespace, obj)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+			return nil
 		}
-		return nil
-	}
-	err = backoff.Retry(operation, backoff.NewExponentialBackOff())
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
+		b := backoff.NewExponential(2*time.Minute, 10*time.Second)
+		err = backoff.Retry(o, b)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
+		}
 	}
 
 	// We update the object with a meaningless label to ensure a change in the
@@ -126,7 +130,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	//
 	// 		EnsureCreated: 4, EnsureDeleted: 0
 	//
-	operation = func() error {
+	operation := func() error {
 		if tr.CreateCount() != 4 {
 			return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 4)
 		}
@@ -135,7 +139,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		}
 		return nil
 	}
-	err = backoff.Retry(operation, newConstantBackoff(uint64(30)))
+	err = backoff.Retry(operation, backoff.NewMaxRetries(30, 1*time.Second))
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -194,7 +198,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		}
 		return nil
 	}
-	err = backoff.Retry(operation, newConstantBackoff(uint64(30)))
+	err = backoff.Retry(operation, backoff.NewMaxRetries(30, 1*time.Second))
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}

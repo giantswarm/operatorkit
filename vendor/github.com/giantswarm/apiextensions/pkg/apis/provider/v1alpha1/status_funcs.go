@@ -13,6 +13,14 @@ func (s StatusCluster) HasCreatingCondition() bool {
 	return hasCondition(s.Conditions, StatusClusterStatusTrue, StatusClusterTypeCreating)
 }
 
+func (s StatusCluster) HasDeletedCondition() bool {
+	return hasCondition(s.Conditions, StatusClusterStatusTrue, StatusClusterTypeDeleted)
+}
+
+func (s StatusCluster) HasDeletingCondition() bool {
+	return hasCondition(s.Conditions, StatusClusterStatusTrue, StatusClusterTypeDeleting)
+}
+
 func (s StatusCluster) HasUpdatedCondition() bool {
 	return hasCondition(s.Conditions, StatusClusterStatusTrue, StatusClusterTypeUpdated)
 }
@@ -47,6 +55,14 @@ func (s StatusCluster) WithCreatedCondition() []StatusClusterCondition {
 
 func (s StatusCluster) WithCreatingCondition() []StatusClusterCondition {
 	return withCondition(s.Conditions, StatusClusterTypeCreated, StatusClusterTypeCreating, StatusClusterStatusTrue)
+}
+
+func (s StatusCluster) WithDeletedCondition() []StatusClusterCondition {
+	return withCondition(s.Conditions, StatusClusterTypeDeleting, StatusClusterTypeDeleted, StatusClusterStatusTrue)
+}
+
+func (s StatusCluster) WithDeletingCondition() []StatusClusterCondition {
+	return withCondition(s.Conditions, StatusClusterTypeDeleted, StatusClusterTypeDeleting, StatusClusterStatusTrue)
 }
 
 func (s StatusCluster) WithNewVersion(version string) []StatusClusterVersion {

@@ -1,7 +1,9 @@
 package retryresource
 
 import (
-	"github.com/cenkalti/backoff"
+	"time"
+
+	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 
@@ -12,7 +14,7 @@ type Config struct {
 	Logger   micrologger.Logger
 	Resource controller.Resource
 
-	BackOff backoff.BackOff
+	BackOff backoff.Interface
 }
 
 func New(config Config) (controller.Resource, error) {
@@ -24,7 +26,7 @@ func New(config Config) (controller.Resource, error) {
 	}
 
 	if config.BackOff == nil {
-		config.BackOff = backoff.NewExponentialBackOff()
+		config.BackOff = backoff.NewExponential(2*time.Minute, 10*time.Second)
 	}
 
 	var err error

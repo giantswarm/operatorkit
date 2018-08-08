@@ -3,7 +3,7 @@ package k8scrdclient
 import (
 	"context"
 
-	"github.com/cenkalti/backoff"
+	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -40,7 +40,7 @@ func New(config Config) (*CRDClient, error) {
 
 // EnsureCreated ensures the given CRD exists, is active (aka. established) and
 // does not have conflicting names.
-func (c *CRDClient) EnsureCreated(ctx context.Context, customResource *apiextensionsv1beta1.CustomResourceDefinition, backOff backoff.BackOff) error {
+func (c *CRDClient) EnsureCreated(ctx context.Context, customResource *apiextensionsv1beta1.CustomResourceDefinition, backOff backoff.Interface) error {
 	_, err := c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Create(customResource)
 	if errors.IsAlreadyExists(err) {
 		// Fall trough. We need to check CRD status.
@@ -89,7 +89,7 @@ func (c *CRDClient) EnsureCreated(ctx context.Context, customResource *apiextens
 }
 
 // EnsureDeleted ensures the given CRD does not exist.
-func (c *CRDClient) EnsureDeleted(ctx context.Context, customResource *apiextensionsv1beta1.CustomResourceDefinition, backOff backoff.BackOff) error {
+func (c *CRDClient) EnsureDeleted(ctx context.Context, customResource *apiextensionsv1beta1.CustomResourceDefinition, backOff backoff.Interface) error {
 	operation := func() error {
 		err := c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(customResource.Name, nil)
 		if errors.IsNotFound(err) {
@@ -112,7 +112,7 @@ func (c *CRDClient) EnsureDeleted(ctx context.Context, customResource *apiextens
 // ensureStatusSubresourceCreated ensures if the CRD has a status subresource
 // it is created. This is needed if a previous version of the CRD without the
 // status subresource is present.
-func (c *CRDClient) ensureStatusSubresourceCreated(ctx context.Context, customResource *apiextensionsv1beta1.CustomResourceDefinition, backOff backoff.BackOff) error {
+func (c *CRDClient) ensureStatusSubresourceCreated(ctx context.Context, customResource *apiextensionsv1beta1.CustomResourceDefinition, backOff backoff.Interface) error {
 	if customResource.Spec.Subresources == nil || customResource.Spec.Subresources.Status == nil {
 		// Nothing to do.
 		return nil

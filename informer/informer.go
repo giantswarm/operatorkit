@@ -19,11 +19,10 @@ package informer
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
-	"github.com/cenkalti/backoff"
+	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/prometheus/client_golang/prometheus"
@@ -382,10 +381,8 @@ func (i *Informer) newWatcher(ctx context.Context) (watch.Interface, error) {
 
 			return nil
 		}
-		b := backoff.NewExponentialBackOff()
-		n := func(err error, d time.Duration) {
-			i.logger.LogCtx(ctx, "level", "warning", "message", "retrying watcher initialization due to error", "stack", fmt.Sprintf("%#v", err))
-		}
+		b := backoff.NewExponential(2*time.Minute, 10*time.Second)
+		n := backoff.NewNotifier(i.logger, ctx)
 
 		err = backoff.RetryNotify(o, b, n)
 		if err != nil {

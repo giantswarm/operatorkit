@@ -5,9 +5,10 @@ package controlflow
 import (
 	"reflect"
 	"testing"
+	"time"
 
-	"github.com/cenkalti/backoff"
 	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
+	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -82,7 +83,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 			return nil
 		}
-		b := backoff.NewExponentialBackOff()
+		b := backoff.NewExponential(2*time.Minute, 10*time.Second)
 
 		err = backoff.Retry(o, b)
 		if err != nil {
@@ -110,7 +111,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 		}
 		return nil
 	}
-	err = backoff.Retry(operation, newConstantBackoff(uint64(20)))
+	err = backoff.Retry(operation, backoff.NewMaxRetries(20, 1*time.Second))
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -172,7 +173,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 		}
 		return nil
 	}
-	err = backoff.Retry(operation, newConstantBackoff(uint64(20)))
+	err = backoff.Retry(operation, backoff.NewMaxRetries(20, 1*time.Second))
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -223,7 +224,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 		}
 		return nil
 	}
-	err = backoff.Retry(operation, newConstantBackoff(uint64(20)))
+	err = backoff.Retry(operation, backoff.NewMaxRetries(20, 1*time.Second))
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}

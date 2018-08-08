@@ -2,8 +2,9 @@ package retryresource
 
 import (
 	"context"
+	"time"
 
-	"github.com/cenkalti/backoff"
+	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 
@@ -17,7 +18,7 @@ type crudResourceWrapper struct {
 	logger   micrologger.Logger
 	resource controller.Resource
 
-	backOff backoff.BackOff
+	backOff backoff.Interface
 }
 
 func newCRUDResourceWrapper(config Config) (*crudResourceWrapper, error) {
@@ -29,7 +30,7 @@ func newCRUDResourceWrapper(config Config) (*crudResourceWrapper, error) {
 	}
 
 	if config.BackOff == nil {
-		config.BackOff = backoff.NewExponentialBackOff()
+		config.BackOff = backoff.NewExponential(2*time.Minute, 10*time.Second)
 	}
 
 	// Wrap underlying resource Ops with retry logic. Underlying resource

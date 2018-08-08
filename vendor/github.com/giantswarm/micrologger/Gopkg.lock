@@ -5,7 +5,7 @@
   branch = "master"
   name = "github.com/giantswarm/microerror"
   packages = ["."]
-  revision = "ec5f66bb657662031c0d651504fee6908cdf28d9"
+  revision = "a8d5d4f526c526b4b773062958847fe7e0b7f449"
 
 [[projects]]
   name = "github.com/go-kit/kit"
@@ -40,6 +40,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "06b035b38c0b3a64b3ca722013548b3c5fd21ad58db782c6b1c1920bb15d9f8c"
+  inputs-digest = "2adbe8d5ab3a48cdea1da27b9657857aa30d8758cead74b25c92eaa5be867f09"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -1,12 +1,14 @@
 package micrologger
 
 import (
-	"github.com/juju/errgo"
+	"github.com/giantswarm/microerror"
 )
 
-var invalidConfigError = errgo.New("invalid config")
+var invalidConfigError = &microerror.Error{
+	Kind: "invalidConfigError",
+}
 
 // IsInvalidConfig asserts invalidConfigError.
 func IsInvalidConfig(err error) bool {
-	return errgo.Cause(err) == invalidConfigError
+	return microerror.Cause(err) == invalidConfigError
 }

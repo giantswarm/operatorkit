@@ -26,11 +26,7 @@ type Error struct {
 }
 
 func (e *Error) Error() string {
-	if e.Desc == "" {
-		return e.String()
-	} else {
-		return e.Desc
-	}
+	return toStringCase(e.Kind)
 }
 
 func (e *Error) GoString() string {
