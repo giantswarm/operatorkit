@@ -15,6 +15,7 @@ e2eTest: &e2eTest
       when: always
 
 
+
 version: 2
 jobs:
   build:
@@ -37,11 +38,6 @@ jobs:
 
 
 
-  e2eTestInformerIntegration:
-    environment:
-      TEST_DIR: "informer/integration"
-    <<: *e2eTest
-
   e2eTestControllerIntegrationBasic:
     environment:
       TEST_DIR: "controller/integration/test/basic"
@@ -50,6 +46,11 @@ jobs:
   e2eTestControllerIntegrationControlflow:
     environment:
       TEST_DIR: "controller/integration/test/controlflow"
+    <<: *e2eTest
+
+  e2eTestControllerIntegrationError:
+    environment:
+      TEST_DIR: "controller/integration/test/error"
     <<: *e2eTest
 
   e2eTestControllerIntegrationParallel:
@@ -62,6 +63,11 @@ jobs:
       TEST_DIR: "controller/integration/test/reconciliation"
     <<: *e2eTest
 
+  e2eTestInformerIntegration:
+    environment:
+      TEST_DIR: "informer/integration"
+    <<: *e2eTest
+
 
 
 workflows:
@@ -69,10 +75,6 @@ workflows:
   build_e2e:
     jobs:
       - build
-
-      - e2eTestInformerIntegration:
-          requires:
-          - build
 
       - e2eTestControllerIntegrationBasic:
           requires:
@@ -82,10 +84,18 @@ workflows:
           requires:
           - build
 
+      - e2eTestControllerIntegrationError:
+          requires:
+          - build
+
       - e2eTestControllerIntegrationParallel:
           requires:
           - build
 
       - e2eTestControllerIntegrationReconciliation:
+          requires:
+          - build
+
+      - e2eTestInformerIntegration:
           requires:
           - build

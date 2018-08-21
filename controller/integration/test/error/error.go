@@ -1,6 +1,6 @@
 // +build k8srequired
 
-package controlflow
+package error
 
 import (
 	"github.com/giantswarm/microerror"

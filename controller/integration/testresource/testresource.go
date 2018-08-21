@@ -10,21 +10,29 @@ import (
 )
 
 type Config struct {
+	Name            string
+	ReturnErrorFunc func(obj interface{}) error
 }
 
 type Resource struct {
-	createCount int
-	deleteCount int
-	mutex       sync.Mutex
-	returnError bool
+	createCount     int
+	deleteCount     int
+	mutex           sync.Mutex
+	name            string
+	returnErrorFunc func(obj interface{}) error
 }
 
 func New(config Config) (*Resource, error) {
+	if config.Name == "" {
+		config.Name = "test-resource"
+	}
+
 	r := &Resource{
-		createCount: 0,
-		deleteCount: 0,
-		mutex:       sync.Mutex{},
-		returnError: false,
+		createCount:     0,
+		deleteCount:     0,
+		mutex:           sync.Mutex{},
+		name:            config.Name,
+		returnErrorFunc: config.ReturnErrorFunc,
 	}
 
 	return r, nil
@@ -44,26 +52,36 @@ func (r *Resource) DeleteCount() int {
 
 func (r *Resource) EnsureCreated(ctx context.Context, obj interface{}) error {
 	r.incrementCreateCount()
-	if r.returnError {
-		return microerror.Mask(testError)
+
+	if r.returnErrorFunc != nil {
+		err := r.returnErrorFunc(obj)
+		if err != nil {
+			return microerror.Mask(err)
+		}
 	}
+
 	return nil
 }
 
 func (r *Resource) EnsureDeleted(ctx context.Context, obj interface{}) error {
 	r.incrementDeleteCount()
-	if r.returnError {
-		return microerror.Mask(testError)
+
+	if r.returnErrorFunc != nil {
+		err := r.returnErrorFunc(obj)
+		if err != nil {
+			return microerror.Mask(err)
+		}
 	}
+
 	return nil
 }
 
 func (r *Resource) Name() string {
-	return "testresource"
+	return r.name
 }
 
-func (r *Resource) ReturnError(returnError bool) {
-	r.returnError = returnError
+func (r *Resource) SetReturnErrorFunc(f func(obj interface{}) error) {
+	r.returnErrorFunc = f
 }
 
 func (r *Resource) incrementCreateCount() {

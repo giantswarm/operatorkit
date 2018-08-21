@@ -15,6 +15,13 @@ import (
 	"github.com/giantswarm/operatorkit/controller/integration/wrapper/configmap"
 )
 
+const (
+	configMapName = "test-cm"
+	operatorName  = "test-operator"
+	testFinalizer = "operatorkit.giantswarm.io/test-operator"
+	testNamespace = "finalizer-integration-basic-test"
+)
+
 // Test_Finalizer_Integration_Basic is a integration test for basic finalizer
 // operations. The test verifies that finalizers are added and removed as
 // expected. It does not cover correct behavior with reconciliation.
@@ -22,12 +29,9 @@ import (
 // !!! This test does not work with CRs, the controller is not booted !!!
 //
 func Test_Finalizer_Integration_Basic(t *testing.T) {
-	configMapName := "test-cm"
 	expectedFinalizers := []string{
-		"operatorkit.giantswarm.io/test-operator",
+		testFinalizer,
 	}
-	operatorName := "test-operator"
-	testNamespace := "finalizer-integration-basic-test"
 
 	c := configmap.Config{
 		Name:      operatorName,
@@ -131,5 +135,4 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	if !errors.IsNotFound(err) {
 		t.Fatalf("error == %#v, want NotFound error", err)
 	}
-
 }

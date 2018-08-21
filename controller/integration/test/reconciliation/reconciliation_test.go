@@ -19,16 +19,19 @@ import (
 	"github.com/giantswarm/operatorkit/controller/integration/wrapper/nodeconfig"
 )
 
+const (
+	objName            = "test-obj"
+	operatorName       = "test-operator"
+	testFinalizer      = "operatorkit.giantswarm.io/test-operator"
+	testNamespace      = "finalizer-integration-reconciliation-test"
+	testOtherFinalizer = "operatorkit.giantswarm.io/other-operator"
+)
+
 // Test_Finalizer_Integration_Reconciliation is a integration test for
 // the proper replay and reconciliation of delete events with finalizers.
 func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
-	objName := "test-obj"
-	testFinalizer := "operatorkit.giantswarm.io/test-operator"
-	testNamespace := "finalizer-integration-reconciliation-test"
-	testOtherFinalizer := "operatorkit.giantswarm.io/other-operator"
-	operatorName := "test-operator"
-
 	var err error
+
 	var tr *testresource.Resource
 	{
 		c := testresource.Config{}
