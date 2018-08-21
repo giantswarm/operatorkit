@@ -14,3 +14,12 @@ var countMismatchError = &microerror.Error{
 func IsCountMismatch(err error) bool {
 	return microerror.Cause(err) == countMismatchError
 }
+
+var testError = &microerror.Error{
+	Kind: "testError",
+}
+
+// IsTestError asserts testError.
+func IsTestError(err error) bool {
+	return microerror.Cause(err) == testError
+}

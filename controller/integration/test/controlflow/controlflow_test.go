@@ -20,15 +20,17 @@ import (
 	"github.com/giantswarm/operatorkit/controller/integration/wrapper/nodeconfig"
 )
 
+const (
+	objName       = "test-obj"
+	operatorName  = "test-operator"
+	testFinalizer = "operatorkit.giantswarm.io/test-operator"
+	testNamespace = "finalizer-integration-reconciliation-test"
+)
+
 // Test_Finalizer_Integration_Controlflow is an integration test to check that
 // errors during deletion prevent the finalizer from removal.
 func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	var err error
-
-	objName := "test-obj"
-	testFinalizer := "operatorkit.giantswarm.io/test-operator"
-	testNamespace := "finalizer-integration-reconciliation-test"
-	operatorName := "test-operator"
 
 	var tr *testresource.Resource
 	{
@@ -142,9 +144,12 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 		t.Fatalf("finalizers == %v, want %v", resultObjAccessor.GetFinalizers(), expectedFinalizers)
 	}
 
-	// We set ReturnError to true, this causes the resource to always return an error
-	// and should therefor prevent thr removal of our finalizer.
-	tr.ReturnError(true)
+	// We set an error function to return an error. This causes the resource to
+	// always return an error and should therefor prevent the removal of our
+	// finalizer.
+	tr.SetReturnErrorFunc(func(obj interface{}) error {
+		return microerror.Mask(testError)
+	})
 
 	// We delete the object now.
 	err = testWrapper.DeleteObject(objName, testNamespace)
@@ -204,9 +209,9 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 		t.Fatalf("finalizers == %v, want %v", resultObjAccessor.GetFinalizers(), expectedFinalizers)
 	}
 
-	// We set ReturnError to false, our finalizer should be removed with the next
-	// reconciliation now.
-	tr.ReturnError(false)
+	// We set the error function to nil to not return any error anymore. Our
+	// finalizer should be removed with the next reconciliation now.
+	tr.SetReturnErrorFunc(nil)
 
 	// We use backoff with the absolute maximum amount:
 	// 10 second ResyncPeriod + 2 second RateWait + 8 second for safety.
@@ -234,5 +239,4 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	if !errors.IsNotFound(err) {
 		t.Fatalf("error == %#v, want NotFound error", err)
 	}
-
 }

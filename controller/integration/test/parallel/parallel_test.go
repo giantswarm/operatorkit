@@ -6,31 +6,34 @@ import (
 	"testing"
 	"time"
 
+	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
+	"github.com/giantswarm/backoff"
+	"github.com/giantswarm/microerror"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
-	"github.com/giantswarm/backoff"
-	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/operatorkit/controller"
 	"github.com/giantswarm/operatorkit/controller/integration/testresource"
 	"github.com/giantswarm/operatorkit/controller/integration/wrapper"
 	"github.com/giantswarm/operatorkit/controller/integration/wrapper/nodeconfig"
 )
 
+const (
+	objName       = "test-obj"
+	testNamespace = "finalizer-integration-parallel-test"
+
+	operatorNameA  = "test-operator-a"
+	testFinalizerA = "operatorkit.giantswarm.io/test-operator-a"
+
+	operatorNameB  = "test-operator-b"
+	testFinalizerB = "operatorkit.giantswarm.io/test-operator-b"
+)
+
 // Test_Finalizer_Integration_Parallel is a integration test to
 // check that multiple controllers can function in parallel.
 func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	var err error
-	objName := "test-obj"
-	testNamespace := "finalizer-integration-parallel-test"
-
-	testFinalizerA := "operatorkit.giantswarm.io/test-operator-a"
-	operatorNameA := "test-operator-a"
-
-	testFinalizerB := "operatorkit.giantswarm.io/test-operator-b"
-	operatorNameB := "test-operator-b"
 
 	// We create the first resource "A" here with its own resource.
 	var trA *testresource.Resource
