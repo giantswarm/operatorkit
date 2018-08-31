@@ -30,6 +30,9 @@ jobs:
 
     - run: ./architect build
 
+    - store_test_results:
+        path: /tmp/results
+
     - deploy:
         command: |
           if [ "${CIRCLE_BRANCH}" == "master" ]; then
