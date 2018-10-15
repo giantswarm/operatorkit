@@ -14,6 +14,9 @@ import (
 )
 
 type ConfigMapConfig struct {
+	//
+	// TODO describe & handle DesiredFn returning nil when it can't perpare desired state because there are some dependencies still missing.
+	//
 	// DesiredFn is function returning a desired ConfigMap object for the
 	// given custom resource object. Returned ConfigMap must have name and
 	// namespace equal to the values of Name and Namespace fields.
