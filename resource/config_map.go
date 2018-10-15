@@ -176,17 +176,17 @@ func (c *ConfigMap) EnsureDeleted(ctx context.Context, obj interface{}) error {
 func newConfigMapToUpdate(current, desired *corev1.ConfigMap) *corev1.ConfigMap {
 	merged := current.DeepCopy()
 
-	if reflect.DeepEqual(current.Annotations, desired.Annotations) {
+	if !reflect.DeepEqual(current.Annotations, desired.Annotations) {
 		merged.Labels = desired.Annotations
 	}
-	if reflect.DeepEqual(current.Labels, desired.Labels) {
+	if !reflect.DeepEqual(current.Labels, desired.Labels) {
 		merged.Labels = desired.Labels
 	}
 
-	if reflect.DeepEqual(current.BinaryData, desired.BinaryData) {
+	if !reflect.DeepEqual(current.BinaryData, desired.BinaryData) {
 		merged.BinaryData = desired.BinaryData
 	}
-	if reflect.DeepEqual(current.Data, desired.Data) {
+	if !reflect.DeepEqual(current.Data, desired.Data) {
 		merged.Data = desired.Data
 	}
 
