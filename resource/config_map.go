@@ -180,7 +180,7 @@ func newConfigMapToUpdate(current, desired *corev1.ConfigMap) *corev1.ConfigMap 
 	merged := current.DeepCopy()
 
 	if !reflect.DeepEqual(current.Annotations, desired.Annotations) {
-		merged.Labels = desired.Annotations
+		merged.Annotations = desired.Annotations
 	}
 	if !reflect.DeepEqual(current.Labels, desired.Labels) {
 		merged.Labels = desired.Labels
