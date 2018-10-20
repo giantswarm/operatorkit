@@ -14,34 +14,26 @@ import (
 )
 
 type ConfigMapConfig struct {
-	//
-	// TODO describe & handle DesiredFn returning nil when it can't perpare desired state because there are some dependencies still missing.
-	//
-	// DesiredFn is function returning a desired ConfigMap object for the
-	// given custom resource object. Returned ConfigMap must have name and
-	// namespace equal to the values of Name and Namespace fields.
-	DesiredFn func(context.Context, interface{}) (*corev1.ConfigMap, error)
+	// DesiredFn is function returning a desired ConfigMap objects for the
+	// given custom resource object.
+	DesiredFn func(context.Context, interface{}) ([]corev1.ConfigMap, error)
 	K8sClient kubernetes.Interface
 	Logger    micrologger.Logger
 
-	// Name of the reconciled ConfigMap. It must be the same name as in
-	// ConfigMap returned by DesiredFn.
+	// DeleteOptions to use when deleting created objects. It is useful for
+	// setting a grace period. This setting is optional.
+	DeleteOptions metav1.DeleteOptions
+	// Name is a name returned by Name method of the resource.
 	Name string
-	// Namespace of the reconciled ConfigMap. It must be the same namespace
-	// is in ConfigMap returned by DesiredFn.
-	Namespace string
-	// ResourceName is a name returned by Name method of the resource.
-	ResourceName string
 }
 
 type ConfigMap struct {
-	desiredFn func(context.Context, interface{}) (*corev1.ConfigMap, error)
+	desiredFn func(context.Context, interface{}) ([]corev1.ConfigMap, error)
 	k8sClient kubernetes.Interface
 	logger    micrologger.Logger
 
-	name         string
-	namespace    string
-	resourceName string
+	deleteOptions metav1.DeleteOptions
+	name          string
 }
 
 func NewConfigMap(config ConfigMapConfig) (*ConfigMap, error) {
@@ -58,57 +50,71 @@ func NewConfigMap(config ConfigMapConfig) (*ConfigMap, error) {
 	if config.Name == "" {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Name must not be empty", config)
 	}
-	if config.Namespace == "" {
-		return nil, microerror.Maskf(invalidConfigError, "%T.Namespace must not be empty", config)
-	}
-	if config.ResourceName == "" {
-		return nil, microerror.Maskf(invalidConfigError, "%T.ResourceName must not be empty", config)
-	}
 
 	c := &ConfigMap{
 		desiredFn: config.DesiredFn,
 		k8sClient: config.K8sClient,
 		logger:    config.Logger,
 
-		name:         config.Name,
-		namespace:    config.Namespace,
-		resourceName: config.ResourceName,
+		deleteOptions: config.DeleteOptions,
+		name:          config.Name,
 	}
 
 	return c, nil
 }
 
 func (c *ConfigMap) Name() string {
-	return c.resourceName
+	return c.name
 }
 
 func (c *ConfigMap) EnsureCreated(ctx context.Context, obj interface{}) error {
 	var err error
 
-	printName := newPrintName(c.namespace, c.name)
-
-	var desired *corev1.ConfigMap
+	var desired []corev1.ConfigMap
 	{
-		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("finding desired ConfigMap %#q", printName))
+		c.logger.LogCtx(ctx, "level", "debug", "message", "finding desired ConfigMap objects")
 
 		desired, err = c.desiredFn(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
-		validateDesiredObject(desired, c.namespace, c.name)
+		// Enrich desired objects with annotation to be able to select
+		// and clean them during the deletion.
+		for _, d := range desired {
+			err = setAnnotation(&d, annotationResource, valueConfigMap)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+		}
+
+		c.logger.LogCtx(ctx, "level", "debug", "message", "found desired ConfigMap objects")
+	}
+
+	for _, d := range desired {
+		err := c.ensureCreated(ctx, &d)
 		if err != nil {
 			return microerror.Mask(err)
 		}
-
-		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("found desired ConfigMap %#q", printName))
 	}
+
+	return nil
+}
+
+func (c *ConfigMap) ensureCreated(ctx context.Context, desired *corev1.ConfigMap) error {
+	var err error
+
+	printName := newPrintName(desired)
 
 	var current *corev1.ConfigMap
 	{
 		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("finding current ConfigMap %#q", printName))
 
-		current, err = c.k8sClient.CoreV1().ConfigMaps(c.namespace).Get(c.name, metav1.GetOptions{})
+		opts := metav1.GetOptions{
+			IncludeUninitialized: true,
+		}
+
+		current, err = c.k8sClient.CoreV1().ConfigMaps(desired.Namespace).Get(desired.Name, opts)
 		if apierrors.IsNotFound(err) {
 			c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("did not find current ConfigMap %#q", printName))
 
@@ -123,10 +129,17 @@ func (c *ConfigMap) EnsureCreated(ctx context.Context, obj interface{}) error {
 	if current != nil {
 		c.logger.LogCtx(ctx, "level", "info", "message", fmt.Sprintf("updating ConfigMap %#q", printName))
 
+		// Make sure the object is managed by this resource by checking
+		// annotations.
+		err = assertAnnoatation(current, annotationResource, valueConfigMap)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
 		toUpdate := newConfigMapToUpdate(current, desired)
 
 		if toUpdate != nil {
-			_, err := c.k8sClient.CoreV1().ConfigMaps(c.namespace).Update(toUpdate)
+			_, err := c.k8sClient.CoreV1().ConfigMaps(toUpdate.Namespace).Update(toUpdate)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -140,7 +153,7 @@ func (c *ConfigMap) EnsureCreated(ctx context.Context, obj interface{}) error {
 	} else {
 		c.logger.LogCtx(ctx, "level", "info", "message", fmt.Sprintf("creating ConfigMap %#q", printName))
 
-		_, err := c.k8sClient.CoreV1().ConfigMaps(c.namespace).Create(desired)
+		_, err := c.k8sClient.CoreV1().ConfigMaps(desired.Namespace).Create(desired)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -154,21 +167,43 @@ func (c *ConfigMap) EnsureCreated(ctx context.Context, obj interface{}) error {
 func (c *ConfigMap) EnsureDeleted(ctx context.Context, obj interface{}) error {
 	var err error
 
-	printName := newPrintName(c.namespace, c.name)
+	labelSelector := annotationResource + "=" + valueConfigMap
 
+	var currentObjects []corev1.ConfigMap
 	{
-		c.logger.LogCtx(ctx, "level", "info", "message", fmt.Sprintf("deleting ConfigMap %#q", printName))
+		c.logger.LogCtx(ctx, "level", "info", "message", fmt.Sprintf("finding ConfigMap objects for selector %#q", labelSelector))
 
-		err = c.k8sClient.CoreV1().ConfigMaps(c.namespace).Delete(c.name, &metav1.DeleteOptions{})
-		if apierrors.IsNotFound(err) {
-			c.logger.LogCtx(ctx, "level", "info", "message", fmt.Sprintf("ConfigMap %#q already deleted", printName))
-
-		} else if err != nil {
-			return microerror.Mask(err)
-
-		} else {
-			c.logger.LogCtx(ctx, "level", "info", "message", fmt.Sprintf("deleted ConfigMap %#q", printName))
+		opts := metav1.ListOptions{
+			LabelSelector: labelSelector,
+			// We don't want orphaned uninitialized objects.
+			IncludeUninitialized: true,
 		}
+
+		list, err := c.k8sClient.CoreV1().ConfigMaps("").List(opts)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
+		currentObjects = list.Items
+
+		if len(currentObjects) == 0 {
+			c.logger.LogCtx(ctx, "level", "info", "message", fmt.Sprintf("did not find ConfigMap objects for selector %#q", labelSelector))
+		} else {
+			c.logger.LogCtx(ctx, "level", "info", "message", fmt.Sprintf("found ConfigMap objects for selector %#q", labelSelector))
+		}
+	}
+
+	for _, current := range currentObjects {
+		printName := newPrintName(&current)
+
+		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("deleting ConfigMap %#q", printName))
+
+		err = c.k8sClient.CoreV1().ConfigMaps(current.Namespace).Delete(current.Name, &c.deleteOptions)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
+		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("deleting ConfigMap %#q", printName))
 	}
 
 	return nil
