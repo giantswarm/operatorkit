@@ -79,10 +79,10 @@ func (c *ConfigMap) EnsureCreated(ctx context.Context, obj interface{}) error {
 			return microerror.Mask(err)
 		}
 
-		// Enrich desired objects with annotation to be able to select
-		// and clean them during the deletion.
+		// Enrich desired objects with labels to be able to select and
+		// clean them during the deletion.
 		for _, d := range desired {
-			err = setAnnotation(&d, annotationResource, valueConfigMap)
+			err = setLabels(&d, obj, c.Name())
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -92,7 +92,7 @@ func (c *ConfigMap) EnsureCreated(ctx context.Context, obj interface{}) error {
 	}
 
 	for _, d := range desired {
-		err := c.ensureCreated(ctx, &d)
+		err := c.ensureCreated(ctx, &d, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -101,7 +101,7 @@ func (c *ConfigMap) EnsureCreated(ctx context.Context, obj interface{}) error {
 	return nil
 }
 
-func (c *ConfigMap) ensureCreated(ctx context.Context, desired *corev1.ConfigMap) error {
+func (c *ConfigMap) ensureCreated(ctx context.Context, desired *corev1.ConfigMap, obj interface{}) error {
 	var err error
 
 	printName := newPrintName(desired)
@@ -130,8 +130,8 @@ func (c *ConfigMap) ensureCreated(ctx context.Context, desired *corev1.ConfigMap
 		c.logger.LogCtx(ctx, "level", "info", "message", fmt.Sprintf("updating ConfigMap %#q", printName))
 
 		// Make sure the object is managed by this resource by checking
-		// annotations.
-		err = assertAnnoatation(current, annotationResource, valueConfigMap)
+		// labels.
+		err = assertLabels(current, obj, c.Name())
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -167,9 +167,19 @@ func (c *ConfigMap) ensureCreated(ctx context.Context, desired *corev1.ConfigMap
 func (c *ConfigMap) EnsureDeleted(ctx context.Context, obj interface{}) error {
 	var err error
 
-	labelSelector := annotationResource + "=" + valueConfigMap
+	var labelSelector string
+	{
+		c.logger.LogCtx(ctx, "level", "info", "message", "creating label selector")
 
-	var currentObjects []corev1.ConfigMap
+		labelSelector, err = newLabelSelector(obj, c.Name())
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
+		c.logger.LogCtx(ctx, "level", "info", "message", "created label selector")
+	}
+
+	var current []corev1.ConfigMap
 	{
 		c.logger.LogCtx(ctx, "level", "info", "message", fmt.Sprintf("finding ConfigMap objects for selector %#q", labelSelector))
 
@@ -184,18 +194,31 @@ func (c *ConfigMap) EnsureDeleted(ctx context.Context, obj interface{}) error {
 			return microerror.Mask(err)
 		}
 
-		currentObjects = list.Items
+		current = list.Items
 
-		if len(currentObjects) == 0 {
+		if len(current) == 0 {
 			c.logger.LogCtx(ctx, "level", "info", "message", fmt.Sprintf("did not find ConfigMap objects for selector %#q", labelSelector))
 		} else {
 			c.logger.LogCtx(ctx, "level", "info", "message", fmt.Sprintf("found ConfigMap objects for selector %#q", labelSelector))
 		}
 	}
 
-	for _, current := range currentObjects {
-		printName := newPrintName(&current)
+	for _, cm := range current {
+		err := c.ensureDeleted(ctx, &cm, obj)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+	}
 
+	return nil
+}
+
+func (c *ConfigMap) ensureDeleted(ctx context.Context, current *corev1.ConfigMap, obj interface{}) error {
+	var err error
+
+	printName := newPrintName(current)
+
+	{
 		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("deleting ConfigMap %#q", printName))
 
 		err = c.k8sClient.CoreV1().ConfigMaps(current.Namespace).Delete(current.Name, &c.deleteOptions)

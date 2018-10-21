@@ -1,36 +1,85 @@
 package resource
 
-import "github.com/giantswarm/microerror"
+import (
+	"strings"
 
-const (
-	// annotationResource is annotation added to all objects created by
-	// resources of this package. It is used for deletion purposes. E.g.
-	// all ConfigMap objects created by this package will have
-	// "operatorkit.giantswarm.io/resource=ConfigMap" annotation set.
-	annotationResource = "operatorkit.giantswarm.io/resource"
-
-	valueConfigMap = "ConfigMap"
+	"github.com/giantswarm/microerror"
+	"k8s.io/apimachinery/pkg/api/meta"
 )
 
-type assertAnnotationType interface {
+const (
+	// labelObject is a label added to all objects created by resoucres of
+	// this package. It is used for deletion purposes. The value of the
+	// label is namespace and name of watched object. Together with
+	// labelResource it allows to find objects created by a resource.
+	labelObject = "operatorkit.giantswarm.io/object"
+	// labelResource is label added to all objects created by resources of
+	// this package. It is used for deletion purposes. The value of the
+	// label is the Name property of the setting resource. Together with
+	// labelObject it allows to find objects created by a resource.
+	labelResource = "operatorkit.giantswarm.io/resource"
+)
+
+type assertLabelsType interface {
 	printNameType
-	GetAnnotations() map[string]string
+	GetLabels() map[string]string
 }
 
-func assertAnnoatation(obj assertAnnotationType, key, value string) error {
-	a := obj.GetAnnotations()
-	if a == nil {
-		return microerror.Maskf(executionFailedError, " %#q object %#q annotation is not set", newPrintName(obj), key)
+func assertLabels(obj assertLabelsType, watchedObj interface{}, resourceName string) error {
+	desired, err := newLabels(watchedObj, resourceName)
+	if err != nil {
+		return microerror.Mask(err)
 	}
-	v, ok := a[key]
-	if !ok {
-		return microerror.Maskf(executionFailedError, " %#q object %#q annotation is not set", newPrintName(obj), key)
-	}
-	if v != value {
-		return microerror.Maskf(executionFailedError, " %#q object %#q annotation has value %#q but want %#q", newPrintName(obj), key, v, value)
+
+	for k, v := range desired {
+		current := obj.GetLabels()
+		if current == nil {
+			return microerror.Maskf(executionFailedError, " %#q object %#q label is not set", newPrintName(obj), k)
+		}
+		value, ok := current[k]
+		if !ok {
+			return microerror.Maskf(executionFailedError, " %#q object %#q label is not set", newPrintName(obj), k)
+		}
+		if value != v {
+			return microerror.Maskf(executionFailedError, " %#q object %#q label has value %#q but want %#q", newPrintName(obj), k, value, v)
+		}
 	}
 
 	return nil
+}
+
+func newLabels(watchedObj interface{}, resourceName string) (map[string]string, error) {
+	var labelObjectValue string
+	{
+		accessor, err := meta.Accessor(watchedObj)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+
+		labelObjectValue = accessor.GetNamespace() + "-" + accessor.GetName()
+	}
+
+	labels := map[string]string{
+		labelObject:   labelObjectValue,
+		labelResource: resourceName,
+	}
+
+	return labels, nil
+}
+
+func newLabelSelector(watchedObj interface{}, resourceName string) (string, error) {
+	labels, err := newLabels(watchedObj, resourceName)
+	if err != nil {
+		return "", microerror.Mask(err)
+	}
+
+	var selectors []string
+	for k, v := range labels {
+		s := k + "=" + v
+		selectors = append(selectors, s)
+	}
+
+	return strings.Join(selectors, ","), nil
 }
 
 type printNameType interface {
@@ -45,25 +94,33 @@ func newPrintName(obj printNameType) string {
 	return obj.GetNamespace() + "/" + obj.GetName()
 }
 
-type setAnnotationType interface {
+type setLabelsType interface {
 	printNameType
-	GetAnnotations() map[string]string
-	SetAnnotations(map[string]string)
+	GetLabels() map[string]string
+	SetLabels(map[string]string)
 }
 
-func setAnnotation(obj setAnnotationType, key, value string) error {
-	a := obj.GetAnnotations()
-	if a == nil {
-		a = make(map[string]string, 1)
+func setLabels(obj setLabelsType, watchedObj interface{}, resourceName string) error {
+	desired, err := newLabels(watchedObj, resourceName)
+	if err != nil {
+		return microerror.Mask(err)
 	}
 
-	_, ok := a[key]
-	if ok {
-		return microerror.Maskf(executionFailedError, " %#q object %#q annotation already exists", newPrintName(obj), key)
+	current := obj.GetLabels()
+
+	if current == nil {
+		obj.SetLabels(desired)
+		return nil
 	}
 
-	a[key] = value
-	obj.SetAnnotations(a)
+	for k, v := range desired {
+		_, ok := current[k]
+		if ok {
+			return microerror.Maskf(executionFailedError, " %#q object %#q label already exists", newPrintName(obj), k)
+		}
+		current[k] = v
+	}
 
+	obj.SetLabels(current)
 	return nil
 }
