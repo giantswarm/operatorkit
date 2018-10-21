@@ -14,11 +14,11 @@ import (
 )
 
 type ConfigMapConfig struct {
-	// DesiredFn is function returning a desired ConfigMap objects for the
-	// given custom resource object.
-	DesiredFn func(context.Context, interface{}) ([]corev1.ConfigMap, error)
-	K8sClient kubernetes.Interface
-	Logger    micrologger.Logger
+	// DesiredFunc is function returning a desired ConfigMap objects for
+	// the given custom resource object.
+	DesiredFunc func(context.Context, interface{}) ([]corev1.ConfigMap, error)
+	K8sClient   kubernetes.Interface
+	Logger      micrologger.Logger
 
 	// DeleteOptions to use when deleting created objects. It is useful for
 	// setting a grace period. This setting is optional.
@@ -28,16 +28,16 @@ type ConfigMapConfig struct {
 }
 
 type ConfigMap struct {
-	desiredFn func(context.Context, interface{}) ([]corev1.ConfigMap, error)
-	k8sClient kubernetes.Interface
-	logger    micrologger.Logger
+	desiredFunc func(context.Context, interface{}) ([]corev1.ConfigMap, error)
+	k8sClient   kubernetes.Interface
+	logger      micrologger.Logger
 
 	deleteOptions metav1.DeleteOptions
 	name          string
 }
 
 func NewConfigMap(config ConfigMapConfig) (*ConfigMap, error) {
-	if config.DesiredFn == nil {
+	if config.DesiredFunc == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.DesiredFn must not be empty", config)
 	}
 	if config.K8sClient == nil {
@@ -52,9 +52,9 @@ func NewConfigMap(config ConfigMapConfig) (*ConfigMap, error) {
 	}
 
 	c := &ConfigMap{
-		desiredFn: config.DesiredFn,
-		k8sClient: config.K8sClient,
-		logger:    config.Logger,
+		desiredFunc: config.DesiredFunc,
+		k8sClient:   config.K8sClient,
+		logger:      config.Logger,
 
 		deleteOptions: config.DeleteOptions,
 		name:          config.Name,
@@ -74,7 +74,7 @@ func (c *ConfigMap) EnsureCreated(ctx context.Context, obj interface{}) error {
 	{
 		c.logger.LogCtx(ctx, "level", "debug", "message", "finding desired ConfigMap objects")
 
-		desired, err = c.desiredFn(ctx, obj)
+		desired, err = c.desiredFunc(ctx, obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
