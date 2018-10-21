@@ -10,8 +10,9 @@ import (
 const (
 	// labelObject is a label added to all objects created by resoucres of
 	// this package. It is used for deletion purposes. The value of the
-	// label is namespace and name of watched object. Together with
-	// labelResource it allows to find objects created by a resource.
+	// label is namespace and name of watched object in format
+	// "${namespace}-${name}". Together with labelResource it allows to
+	// find objects created by a resource.
 	labelObject = "operatorkit.giantswarm.io/object"
 	// labelResource is label added to all objects created by resources of
 	// this package. It is used for deletion purposes. The value of the
@@ -56,7 +57,13 @@ func newLabels(watchedObj interface{}, resourceName string) (map[string]string, 
 			return nil, microerror.Mask(err)
 		}
 
-		labelObjectValue = accessor.GetNamespace() + "-" + accessor.GetName()
+		n := accessor.GetName()
+		ns := accessor.GetNamespace()
+		if ns == "" {
+			ns = "default"
+		}
+
+		labelObjectValue = ns + "-" + n
 	}
 
 	labels := map[string]string{
