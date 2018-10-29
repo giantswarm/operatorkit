@@ -83,26 +83,26 @@ type Controller struct {
 // New creates a new configured operator controller.
 func New(config Config) (*Controller, error) {
 	if config.CRD != nil && config.CRDClient == nil || config.CRD == nil && config.CRDClient != nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.CRD and config.CRDClient must not be empty when either given")
+		return nil, microerror.Maskf(invalidConfigError, "%T.CRD and %T.CRDClient must not be empty when either given", config, config)
 	}
 	if config.Informer == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.Informer must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "%T.Informer must not be empty", config)
 	}
 	if config.RESTClient == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.K8sClient must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "%T.K8sClient must not be empty", config)
 	}
 	if config.Logger == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "%T.Logger must not be empty", config)
 	}
 	if len(config.ResourceSets) == 0 {
-		return nil, microerror.Maskf(invalidConfigError, "config.ResourceSets must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "%T.ResourceSets must not be empty", config)
 	}
 
 	if config.BackOffFactory == nil {
 		config.BackOffFactory = func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) }
 	}
 	if config.Name == "" {
-		return nil, microerror.Maskf(invalidConfigError, "config.Name must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "%T.Name must not be empty", config)
 	}
 
 	c := &Controller{
