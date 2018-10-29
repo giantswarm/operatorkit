@@ -86,6 +86,7 @@ func (r *ResourceSet) InitCtx(ctx context.Context, obj interface{}) (context.Con
 			meta = loggermeta.New()
 		}
 		meta.KeyVals["object"] = accessor.GetSelfLink()
+		meta.KeyVals["version"] = accessor.GetResourceVersion()
 
 		ctx = loggermeta.NewContext(ctx, meta)
 	}
