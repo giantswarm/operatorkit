@@ -11,15 +11,15 @@ func Test_Controller_UpdateNecessaryContext(t *testing.T) {
 		ExpectedIsUpdateNecessary bool
 	}{
 		{
-			Ctx: context.TODO(),
+			Ctx:                       context.TODO(),
 			ExpectedIsUpdateNecessary: false,
 		},
 		{
-			Ctx: NewContext(context.Background(), nil),
+			Ctx:                       NewContext(context.Background(), nil),
 			ExpectedIsUpdateNecessary: false,
 		},
 		{
-			Ctx: NewContext(context.Background(), make(chan struct{})),
+			Ctx:                       NewContext(context.Background(), make(chan struct{})),
 			ExpectedIsUpdateNecessary: false,
 		},
 		{
