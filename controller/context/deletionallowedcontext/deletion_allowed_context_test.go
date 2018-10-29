@@ -11,15 +11,15 @@ func Test_Controller_DeletionAllowedContext(t *testing.T) {
 		ExpectedIsDeletionAllowed bool
 	}{
 		{
-			Ctx: context.TODO(),
+			Ctx:                       context.TODO(),
 			ExpectedIsDeletionAllowed: false,
 		},
 		{
-			Ctx: NewContext(context.Background(), nil),
+			Ctx:                       NewContext(context.Background(), nil),
 			ExpectedIsDeletionAllowed: false,
 		},
 		{
-			Ctx: NewContext(context.Background(), make(chan struct{})),
+			Ctx:                       NewContext(context.Background(), make(chan struct{})),
 			ExpectedIsDeletionAllowed: false,
 		},
 		{
