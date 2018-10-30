@@ -13,7 +13,6 @@ import (
 	"github.com/giantswarm/micrologger/loggermeta"
 	"github.com/prometheus/client_golang/prometheus"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/rest"
 
@@ -83,26 +82,26 @@ type Controller struct {
 // New creates a new configured operator controller.
 func New(config Config) (*Controller, error) {
 	if config.CRD != nil && config.CRDClient == nil || config.CRD == nil && config.CRDClient != nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.CRD and config.CRDClient must not be empty when either given")
+		return nil, microerror.Maskf(invalidConfigError, "%T.CRD and %T.CRDClient must not be empty when either given", config, config)
 	}
 	if config.Informer == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.Informer must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "%T.Informer must not be empty", config)
 	}
 	if config.RESTClient == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.K8sClient must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "%T.K8sClient must not be empty", config)
 	}
 	if config.Logger == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "%T.Logger must not be empty", config)
 	}
 	if len(config.ResourceSets) == 0 {
-		return nil, microerror.Maskf(invalidConfigError, "config.ResourceSets must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "%T.ResourceSets must not be empty", config)
 	}
 
 	if config.BackOffFactory == nil {
 		config.BackOffFactory = func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) }
 	}
 	if config.Name == "" {
-		return nil, microerror.Maskf(invalidConfigError, "config.Name must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "%T.Name must not be empty", config)
 	}
 
 	c := &Controller{
@@ -126,7 +125,7 @@ func New(config Config) (*Controller, error) {
 }
 
 func (c *Controller) Boot() {
-	ctx := context.TODO()
+	ctx := context.Background()
 
 	c.bootOnce.Do(func() {
 		operation := func() error {
@@ -154,6 +153,8 @@ func (c *Controller) Booted() chan struct{} {
 
 // DeleteFunc executes the controller's ProcessDelete function.
 func (c *Controller) DeleteFunc(obj interface{}) {
+	ctx := context.Background()
+
 	// DeleteFunc/UpdateFunc is synchronized to make sure only one of them is
 	// executed at a time. DeleteFunc/UpdateFunc is not thread safe. This is
 	// important because the source of truth for an operator are the reconciled
@@ -162,7 +163,7 @@ func (c *Controller) DeleteFunc(obj interface{}) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	resourceSet, err := c.resourceSet(obj)
+	rs, err := c.resourceSet(obj)
 	if IsNoResourceSet(err) {
 		// In case the resource router is not able to find any resource set to
 		// handle the reconciled runtime object, we stop here. Note that we just
@@ -170,12 +171,14 @@ func (c *Controller) DeleteFunc(obj interface{}) {
 		// a chance to remove it otherwhise because nobody wanted to handle this
 		// runtime object anyway. Otherwise we can end up in deadlock
 		// trying to reconcile this object over and over.
-		err = c.removeFinalizer(context.Background(), obj)
+		err = c.removeFinalizer(ctx, obj)
 		if err != nil {
 			c.logger.Log("level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 			return
 		}
 
+		c.logger.Log("level", "debug", "message", "did not find any resource set")
+		c.logger.Log("level", "debug", "message", "canceling reconciliation")
 		return
 
 	} else if err != nil {
@@ -183,7 +186,7 @@ func (c *Controller) DeleteFunc(obj interface{}) {
 		return
 	}
 
-	ctx, err := resourceSet.InitCtx(context.Background(), obj)
+	ctx, err = rs.InitCtx(ctx, obj)
 	if err != nil {
 		c.logger.Log("level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
@@ -199,7 +202,7 @@ func (c *Controller) DeleteFunc(obj interface{}) {
 		ctx = loggermeta.NewContext(ctx, meta)
 	}
 
-	err = ProcessDelete(ctx, obj, resourceSet.Resources())
+	err = ProcessDelete(ctx, obj, rs.Resources())
 	if err != nil {
 		c.errorCollector <- err
 		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
@@ -251,6 +254,7 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 
 // UpdateFunc executes the controller's ProcessUpdate function.
 func (c *Controller) UpdateFunc(oldObj, newObj interface{}) {
+	ctx := context.Background()
 	obj := newObj
 
 	// DeleteFunc/UpdateFunc is synchronized to make sure only one of them is
@@ -261,17 +265,20 @@ func (c *Controller) UpdateFunc(oldObj, newObj interface{}) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	resourceSet, err := c.resourceSet(obj)
+	rs, err := c.resourceSet(obj)
 	if IsNoResourceSet(err) {
 		// In case the resource router is not able to find any resource set to
 		// handle the reconciled runtime object, we stop here.
+		c.logger.Log("level", "debug", "message", "did not find any resource set")
+		c.logger.Log("level", "debug", "message", "canceling reconciliation")
 		return
+
 	} else if err != nil {
 		c.logger.Log("level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
 
-	ctx, err := resourceSet.InitCtx(context.Background(), obj)
+	ctx, err = rs.InitCtx(ctx, obj)
 	if err != nil {
 		c.logger.Log("level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
@@ -294,6 +301,7 @@ func (c *Controller) UpdateFunc(oldObj, newObj interface{}) {
 		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
+
 	if ok {
 		// A finalizer was added, this causes a new update event, so we stop
 		// reconciling here and will pick up the new event.
@@ -301,7 +309,7 @@ func (c *Controller) UpdateFunc(oldObj, newObj interface{}) {
 		return
 	}
 
-	err = ProcessUpdate(ctx, obj, resourceSet.Resources())
+	err = ProcessUpdate(ctx, obj, rs.Resources())
 	if err != nil {
 		c.errorCollector <- err
 		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
@@ -380,17 +388,10 @@ func (c *Controller) resourceSet(obj interface{}) (*ResourceSet, error) {
 	}
 
 	if len(found) == 0 {
-		accessor, err := meta.Accessor(obj)
-		if err != nil {
-			c.logger.Log("level", "warning", "message", "cannot create accessor for object", "object", fmt.Sprintf("%#v", obj), "stack", fmt.Sprintf("%#v", err))
-		} else {
-			c.logger.Log("level", "debug", "message", "no resource set for reconciled object", "object", accessor.GetSelfLink())
-		}
-
 		return nil, microerror.Mask(noResourceSetError)
 	}
 	if len(found) > 1 {
-		return nil, microerror.Maskf(executionFailedError, "multiple handling resource sets found; only single allowed")
+		return nil, microerror.Mask(tooManyResourceSetsError)
 	}
 
 	return found[0], nil
