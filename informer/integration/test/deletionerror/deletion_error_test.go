@@ -4,7 +4,6 @@ package deletionerror
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 )
@@ -57,8 +56,6 @@ func Test_Informer_Integration_DeletionError(t *testing.T) {
 		}
 	}()
 
-	fmt.Printf("1\n")
-
 	// Due to the two created config maps we get two events in the informer which
 	// we simply drain here because they stand in our way of testing the actual
 	// matter of delete events. When anything else is weird with the informer and
@@ -67,13 +64,9 @@ func Test_Informer_Integration_DeletionError(t *testing.T) {
 	<-updateChan
 	<-updateChan
 
-	fmt.Printf("2\n")
-
 	// We disable the event dispatching in the filter watcher immediately before
 	// any config maps are created in the Kubernetes API.
 	filterWatcher.SetDispatchEvents(false)
-
-	fmt.Printf("3\n")
 
 	// Now we delete a the first config map. This event is expected to be received
 	// immediately in normal circumstances. For this test though, we disabled
@@ -82,12 +75,10 @@ func Test_Informer_Integration_DeletionError(t *testing.T) {
 	// the delete event go through the whole stack. This may takes a while so we
 	// simply set it to 5 seconds.
 	{
-		fmt.Printf("4\n")
 		err := deleteConfigMap(idOne)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}
-		fmt.Printf("5\n")
 
 		time.Sleep(5 * time.Second)
 
@@ -99,7 +90,6 @@ func Test_Informer_Integration_DeletionError(t *testing.T) {
 		default:
 			// fall through
 		}
-		fmt.Printf("6\n")
 	}
 
 	// Now the first config map got deleted and we ignored the delete event. The
