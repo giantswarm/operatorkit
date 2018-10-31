@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	namespace = "informer-integration-test"
+	namespace = "test-informer-integration-basic"
 )
 
 var (
