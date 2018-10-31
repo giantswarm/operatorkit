@@ -3,8 +3,6 @@
 package deletionerror
 
 import (
-	"fmt"
-
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/operatorkit/informer"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,9 +36,6 @@ func NewFilterWatcher(config FilterWatcherConfig) (*FilterWatcher, error) {
 }
 
 func (w *FilterWatcher) SetDispatchEvents(dispatchEvents bool) {
-	fmt.Printf("\n")
-	fmt.Printf("SetDispatchEvents: %#v\n", dispatchEvents)
-	fmt.Printf("\n")
 	w.dispatchEvents = dispatchEvents
 }
 
@@ -54,11 +49,5 @@ func (w *FilterWatcher) Watch(listOptions metav1.ListOptions) (watch.Interface, 
 }
 
 func (w *FilterWatcher) filterFunc(e watch.Event) (watch.Event, bool) {
-	fmt.Printf("\n")
-	fmt.Printf("filterFunc: %#v\n", e)
-	fmt.Printf("\n")
-	fmt.Printf("\n")
-	fmt.Printf("filterFunc: %#v\n", w.dispatchEvents)
-	fmt.Printf("\n")
 	return e, w.dispatchEvents
 }
