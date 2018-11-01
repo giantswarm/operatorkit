@@ -68,7 +68,6 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 	// We create an object which is valid and wait for the framework to add a
 	// finalizer.
-	var createdObj interface{}
 	{
 		o := func() error {
 			nodeConfig := &v1alpha1.NodeConfig{
@@ -78,7 +77,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 				},
 			}
 
-			createdObj, err = testWrapper.CreateObject(testNamespace, nodeConfig)
+			_, err := testWrapper.CreateObject(testNamespace, nodeConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
