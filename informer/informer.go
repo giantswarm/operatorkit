@@ -77,6 +77,9 @@ type Informer struct {
 // New creates a new Informer.
 func New(config Config) (*Informer, error) {
 	// Dependencies.
+	if config.Logger == nil {
+		return nil, microerror.Maskf(invalidConfigError, "%T.Logger must not be empty", config)
+	}
 	if config.Watcher == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Watcher must not be empty", config)
 	}
