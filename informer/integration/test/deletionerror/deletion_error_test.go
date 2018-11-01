@@ -87,7 +87,7 @@ func Test_Informer_Integration_DeletionError(t *testing.T) {
 			t.Fatalf("did not expect any event but got delete event")
 		case <-updateChan:
 			t.Fatalf("did not expect any event but got update event")
-		default:
+		case <-time.After(time.Second):
 			// fall through
 		}
 	}
@@ -100,8 +100,8 @@ func Test_Informer_Integration_DeletionError(t *testing.T) {
 
 	// After enabling the event dispatching in the filter watcher again, we should
 	// start to receive events again from the informer. Since the first config map
-	// got deleted in the Kubernetes API, we should only receive an update event
-	// anymore, due to the second config map. Note that we loop over the event
+	// got deleted in the Kubernetes API, the only event we should receive is an
+	// update event for the second config map. Note that we loop over the event
 	// channels because of a potential bug that could make the test succeed
 	// occasionally. In case the filter watcher is buggy and dispatches events
 	// even though we do not want or expect that, there would be two config maps
@@ -121,8 +121,8 @@ func Test_Informer_Integration_DeletionError(t *testing.T) {
 				t.Fatalf("expected update event got delete event")
 			case e := <-updateChan:
 				mustAssertWithIDs(e, idTwo)
-			case <-time.After(time.Second):
-				// fall through
+			case <-time.After(5 * time.Second):
+				return
 			}
 		}
 	}

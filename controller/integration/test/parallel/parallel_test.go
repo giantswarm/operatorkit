@@ -84,16 +84,16 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 
 	// We create an object without any finalizers.
 	// Creation is retried because the existance of a CRD might have to be ensured.
-	obj := &v1alpha1.NodeConfig{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      objName,
-			Namespace: testNamespace,
-		},
-	}
-	var createdObj interface{}
 	{
 		o := func() error {
-			createdObj, err = testWrapperA.CreateObject(testNamespace, obj)
+			nodeConfig := &v1alpha1.NodeConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      objName,
+					Namespace: testNamespace,
+				},
+			}
+
+			_, err := testWrapperA.CreateObject(testNamespace, nodeConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
