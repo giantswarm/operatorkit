@@ -164,19 +164,19 @@ func (i *Informer) Watch(ctx context.Context) (chan watch.Event, chan watch.Even
 
 				switch event.Type {
 				case watch.Added:
-					err := i.cacheAndSendIfNotExists(event, updateChan)
+					err := i.cacheAndSendIfNotExists(ctx, event, updateChan)
 					if err != nil {
 						watchEventCounter.WithLabelValues("error").Inc()
 						errChan <- microerror.Mask(err)
 					}
 				case watch.Deleted:
-					err := i.uncacheAndSend(event, deleteChan)
+					err := i.uncacheAndSend(ctx, event, deleteChan)
 					if err != nil {
 						watchEventCounter.WithLabelValues("error").Inc()
 						errChan <- microerror.Mask(err)
 					}
 				case watch.Modified:
-					err := i.cacheAndSend(event, deleteChan, updateChan)
+					err := i.cacheAndSend(ctx, event, deleteChan, updateChan)
 					if err != nil {
 						watchEventCounter.WithLabelValues("error").Inc()
 						errChan <- microerror.Mask(err)
@@ -258,7 +258,7 @@ func (i *Informer) Watch(ctx context.Context) (chan watch.Event, chan watch.Even
 // object to the provided update channel in case the event object has no
 // deletion timestamp. In case the deletion timestamp of the provided event
 // object is non-nil, it is send to the provided delete channel.
-func (i *Informer) cacheAndSend(event watch.Event, deleteChan, updateChan chan watch.Event) error {
+func (i *Informer) cacheAndSend(ctx context.Context, event watch.Event, deleteChan, updateChan chan watch.Event) error {
 	k, err := cache.MetaNamespaceKeyFunc(event.Object)
 	if err != nil {
 		return microerror.Mask(err)
@@ -294,7 +294,7 @@ func (i *Informer) cacheAndSend(event watch.Event, deleteChan, updateChan chan w
 // reconciled. The reconciliation has to make sure the event object is created
 // and/or updated accordingly. In any case cacheAndSendIfNotExists adds the
 // provided event object to the informer cache.
-func (i *Informer) cacheAndSendIfNotExists(event watch.Event, updateChan chan watch.Event) error {
+func (i *Informer) cacheAndSendIfNotExists(ctx context.Context, event watch.Event, updateChan chan watch.Event) error {
 	k, err := cache.MetaNamespaceKeyFunc(event.Object)
 	if err != nil {
 		return microerror.Mask(err)
@@ -478,7 +478,7 @@ func (i *Informer) streamEvents(ctx context.Context, eventChan chan watch.Event)
 
 // uncacheAndSend sends the received event to the provided delete channel and
 // removes the event object from the internal informer cache.
-func (i *Informer) uncacheAndSend(event watch.Event, deleteChan chan watch.Event) error {
+func (i *Informer) uncacheAndSend(ctx context.Context, event watch.Event, deleteChan chan watch.Event) error {
 	watchEventCounter.WithLabelValues("delete").Inc()
 	deleteChan <- event
 
