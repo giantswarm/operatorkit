@@ -87,7 +87,7 @@ func Test_Informer_Integration_DeletionError(t *testing.T) {
 			t.Fatalf("did not expect any event but got delete event")
 		case <-updateChan:
 			t.Fatalf("did not expect any event but got update event")
-		default:
+		case <-time.After(time.Second):
 			// fall through
 		}
 	}
@@ -121,8 +121,8 @@ func Test_Informer_Integration_DeletionError(t *testing.T) {
 				t.Fatalf("expected update event got delete event")
 			case e := <-updateChan:
 				mustAssertWithIDs(e, idTwo)
-			case <-time.After(time.Second):
-				// fall through
+			case <-time.After(5 * time.Second):
+				return
 			}
 		}
 	}

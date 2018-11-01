@@ -7,6 +7,7 @@ import (
 
 	"github.com/giantswarm/e2e-harness/pkg/harness"
 	"github.com/giantswarm/microerror"
+	"github.com/giantswarm/micrologger"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -62,9 +63,20 @@ func newOperatorkitInformerAndWatcher(rateWait, resyncPeriod time.Duration) (*in
 		}
 	}
 
+	var newLogger micrologger.Logger
+	{
+		c := micrologger.Config{}
+
+		newLogger, err = micrologger.New(c)
+		if err != nil {
+			return nil, nil, microerror.Mask(err)
+		}
+	}
+
 	var operatorkitInformer *informer.Informer
 	{
 		c := informer.Config{
+			Logger:  newLogger,
 			Watcher: filterWatcher,
 
 			RateWait:     rateWait,
