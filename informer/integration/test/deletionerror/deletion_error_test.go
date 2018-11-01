@@ -100,7 +100,7 @@ func Test_Informer_Integration_DeletionError(t *testing.T) {
 
 	// After enabling the event dispatching in the filter watcher again, we should
 	// start to receive events again from the informer. Since the first config map
-	// got deleted in the Kubernetes API, we should only receive an update event
+	// got deleted in the Kubernetes API, the only event we should receive is an
 	// anymore, due to the second config map. Note that we loop over the event
 	// channels because of a potential bug that could make the test succeed
 	// occasionally. In case the filter watcher is buggy and dispatches events
