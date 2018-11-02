@@ -68,7 +68,7 @@ func Test_Informer_Integration_DeletionError(t *testing.T) {
 	// any config maps are created in the Kubernetes API.
 	filterWatcher.SetDispatchEvents(false)
 
-	// Now we delete a the first config map. This event is expected to be received
+	// Now we delete the first config map. This event is expected to be received
 	// immediately in normal circumstances. For this test though, we disabled
 	// event dispatching in the filter watcher. Thus we check if there was any
 	// event at all. Note that we sleep a bit after deleting the config map to let
