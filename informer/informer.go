@@ -292,9 +292,9 @@ func (i *Informer) newWatcher(ctx context.Context) (watch.Interface, error) {
 	return watcher, nil
 }
 
-// refillCache is similar to streamEvents but is only used during informer cache
-// initialization. As soon as the watcher does not receive any event objects
-// anymore, the cache is filled and the usual event watching process can begin.
+// refillCache is called during each reconciliation loop to refill the cache
+// freshly from scratch. As soon as the internally used watcher does not receive
+// any event objects anymore, the cache is considered filled.
 func (i *Informer) refillCache(ctx context.Context) error {
 	// The first thing we do to refill the cache is to empty it. That is the
 	// foundation for computing the fresh version of the informer cache.
