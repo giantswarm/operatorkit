@@ -61,14 +61,26 @@ func Test_Informer_Integration_DeletionError(t *testing.T) {
 	// matter of delete events. When anything else is weird with the informer and
 	// the channels hang on this stage then the test will time out due to the
 	// safety goroutine above.
-	<-updateChan
-	<-updateChan
+	{
+		t.Logf("draining update channel")
+
+		<-updateChan
+		<-updateChan
+
+		t.Logf("drained update channel")
+	}
 
 	// We disable the event dispatching in the filter watcher immediately before
 	// any config maps are created in the Kubernetes API.
-	filterWatcher.SetDispatchEvents(false)
+	{
+		t.Logf("disabling informer event dispatching")
 
-	// Now we delete a the first config map. This event is expected to be received
+		filterWatcher.SetDispatchEvents(false)
+
+		t.Logf("disabled informer event dispatching")
+	}
+
+	// Now we delete the first config map. This event is expected to be received
 	// immediately in normal circumstances. For this test though, we disabled
 	// event dispatching in the filter watcher. Thus we check if there was any
 	// event at all. Note that we sleep a bit after deleting the config map to let
@@ -96,7 +108,13 @@ func Test_Informer_Integration_DeletionError(t *testing.T) {
 	// informer did not have any chance to perceive the deletion on its own. We
 	// enable the event dispatching again to check what config maps the informer
 	// still knows about.
-	filterWatcher.SetDispatchEvents(true)
+	{
+		t.Logf("enabling informer event dispatching")
+
+		filterWatcher.SetDispatchEvents(true)
+
+		t.Logf("enabled informer event dispatching")
+	}
 
 	// After enabling the event dispatching in the filter watcher again, we should
 	// start to receive events again from the informer. Since the first config map
