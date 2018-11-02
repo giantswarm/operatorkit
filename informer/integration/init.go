@@ -7,6 +7,7 @@ import (
 
 	"github.com/giantswarm/e2e-harness/pkg/harness"
 	"github.com/giantswarm/microerror"
+	"github.com/giantswarm/micrologger/microloggertest"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,6 +50,7 @@ func newK8sClient() (kubernetes.Interface, error) {
 
 func newOperatorkitInformer(rateWait, resyncPeriod time.Duration) (*informer.Informer, error) {
 	c := informer.Config{
+		Logger:  microloggertest.New(),
 		Watcher: k8sClient.CoreV1().ConfigMaps(namespace),
 
 		RateWait:     rateWait,
@@ -63,8 +65,10 @@ func newOperatorkitInformer(rateWait, resyncPeriod time.Duration) (*informer.Inf
 	return operatorkitInformer, nil
 }
 
-func mustSetup() {
-	mustTeardown()
+func mustSetup() error {
+	if err := mustTeardown(); err != nil {
+		return microerror.Mask(err)
+	}
 
 	ns := &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
@@ -79,15 +83,19 @@ func mustSetup() {
 
 	_, err := k8sClient.CoreV1().Namespaces().Create(ns)
 	if err != nil {
-		panic(err)
+		return microerror.Mask(err)
 	}
+
+	return nil
 }
 
-func mustTeardown() {
+func mustTeardown() error {
 	err := k8sClient.CoreV1().Namespaces().Delete(namespace, nil)
 	if errors.IsNotFound(err) {
 		// fall though
 	} else if err != nil {
-		panic(err)
+		return microerror.Mask(err)
 	}
+
+	return nil
 }

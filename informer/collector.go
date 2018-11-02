@@ -51,8 +51,11 @@ func (i *Informer) Collect(ch chan<- prometheus.Metric) {
 	defer watcher.Stop()
 
 	for {
+		fmt.Println("loop start")
 		select {
 		case event, ok := <-watcher.ResultChan():
+			fmt.Println(event)
+
 			if !ok {
 				continue
 			}
@@ -67,6 +70,10 @@ func (i *Informer) Collect(ch chan<- prometheus.Metric) {
 				i.logger.Log("level", "error", "message", "could not get type accessor for object", "stack", fmt.Sprintf("%#v", err))
 				break
 			}
+
+			fmt.Println("kind:", t.GetKind())
+			fmt.Println("name:", m.GetName())
+			fmt.Println("namespace:", m.GetNamespace())
 
 			ch <- prometheus.MustNewConstMetric(
 				creationTimestampDescription,
@@ -88,6 +95,9 @@ func (i *Informer) Collect(ch chan<- prometheus.Metric) {
 				)
 			}
 		case <-time.After(time.Second):
+			fmt.Println("second")
+
+			close(ch)
 			i.logger.Log("level", "debug", "message", "finished collecting metrics")
 			return
 		}

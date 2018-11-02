@@ -11,8 +11,10 @@ import (
 // Test_Informer_Integration_Basic is a integration test for basic cache
 // informer operations. The test verifies the informer is operating as expected
 // when processing basic sequences of creating and deleting runtime objects.
-func Test_Informer_Integration_Basic(t *testing.T) {
-	mustSetup()
+func Informer_Integration_Basic(t *testing.T) {
+	if err := mustSetup(); err != nil {
+		t.Fatal("expected", nil, "got", err)
+	}
 	defer mustTeardown()
 
 	idOne := "al7qy"
