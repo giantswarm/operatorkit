@@ -66,9 +66,14 @@ jobs:
       TEST_DIR: "controller/integration/test/reconciliation"
     <<: *e2eTest
 
-  e2eTestInformerIntegration:
+  e2eTestInformerIntegrationBasic:
     environment:
-      TEST_DIR: "informer/integration"
+      TEST_DIR: "informer/integration/test/basic"
+    <<: *e2eTest
+
+  e2eTestInformerIntegrationDeletionError:
+    environment:
+      TEST_DIR: "informer/integration/test/deletionerror"
     <<: *e2eTest
 
 
@@ -99,6 +104,10 @@ workflows:
           requires:
           - build
 
-      - e2eTestInformerIntegration:
+      - e2eTestInformerIntegrationBasic:
+          requires:
+          - build
+
+      - e2eTestInformerIntegrationDeletionError:
           requires:
           - build

@@ -77,6 +77,9 @@ type Informer struct {
 // New creates a new Informer.
 func New(config Config) (*Informer, error) {
 	// Dependencies.
+	if config.Logger == nil {
+		return nil, microerror.Maskf(invalidConfigError, "%T.Logger must not be empty", config)
+	}
 	if config.Watcher == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Watcher must not be empty", config)
 	}
@@ -161,19 +164,19 @@ func (i *Informer) Watch(ctx context.Context) (chan watch.Event, chan watch.Even
 
 				switch event.Type {
 				case watch.Added:
-					err := i.cacheAndSendIfNotExists(event, updateChan)
+					err := i.sendEventIfNotCached(ctx, event, updateChan)
 					if err != nil {
 						watchEventCounter.WithLabelValues("error").Inc()
 						errChan <- microerror.Mask(err)
 					}
 				case watch.Deleted:
-					err := i.uncacheAndSend(event, deleteChan)
+					err := i.sendEventAndUncache(ctx, event, deleteChan)
 					if err != nil {
 						watchEventCounter.WithLabelValues("error").Inc()
 						errChan <- microerror.Mask(err)
 					}
 				case watch.Modified:
-					err := i.cacheAndSend(event, deleteChan, updateChan)
+					err := i.sendEvent(ctx, event, deleteChan, updateChan)
 					if err != nil {
 						watchEventCounter.WithLabelValues("error").Inc()
 						errChan <- microerror.Mask(err)
@@ -187,23 +190,19 @@ func (i *Informer) Watch(ctx context.Context) (chan watch.Event, chan watch.Even
 	}()
 
 	go func() {
-		// Here we fill the informer cache initially and release the event objects
-		// the very first time after the program started. This is a special case and
-		// guarantees any configured rate limitting is properly done.
-		{
-			err := i.fillCache(ctx, eventChan)
-			if err != nil {
-				watchEventCounter.WithLabelValues("error").Inc()
-				errChan <- microerror.Mask(err)
-			}
-			i.sendCachedEvents(ctx, deleteChan, updateChan, errChan)
-		}
-
 		for {
 			select {
 			case <-done:
 				return
 			default:
+				err := i.refillCache(ctx)
+				if err != nil {
+					watchEventCounter.WithLabelValues("error").Inc()
+					errChan <- microerror.Mask(err)
+				}
+
+				i.sendCachedEvents(ctx, deleteChan, updateChan, errChan)
+
 				ctx, cancelFunc := context.WithCancel(ctx)
 				go func() {
 					for {
@@ -222,7 +221,6 @@ func (i *Informer) Watch(ctx context.Context) (chan watch.Event, chan watch.Even
 
 				<-time.After(i.resyncPeriod)
 
-				i.sendCachedEvents(ctx, deleteChan, updateChan, errChan)
 				cancelFunc()
 			}
 		}
@@ -248,105 +246,6 @@ func (i *Informer) Watch(ctx context.Context) (chan watch.Event, chan watch.Even
 	<-i.filled
 
 	return deleteChan, updateChan, errChan
-}
-
-// cacheAndSend stores the provided event object in the informer cache and
-// dispatches it based on its properties. cacheAndSend sends the provided event
-// object to the provided update channel in case the event object has no
-// deletion timestamp. In case the deletion timestamp of the provided event
-// object is non-nil, it is send to the provided delete channel.
-func (i *Informer) cacheAndSend(event watch.Event, deleteChan, updateChan chan watch.Event) error {
-	k, err := cache.MetaNamespaceKeyFunc(event.Object)
-	if err != nil {
-		return microerror.Mask(err)
-	}
-	i.cache.Store(k, event)
-
-	m, err := meta.Accessor(event.Object)
-	if err != nil {
-		return microerror.Mask(err)
-	}
-	t := m.GetDeletionTimestamp()
-	if t == nil {
-		watchEventCounter.WithLabelValues("update").Inc()
-		updateChan <- event
-	} else {
-		watchEventCounter.WithLabelValues("delete").Inc()
-		deleteChan <- event
-	}
-
-	return nil
-}
-
-// cacheAndSendIfNotExists handles watch.ADDED events. These events can happen
-// because of different reasons.
-//
-//     - The watcher may receives a new event object because a new object was
-//       created in the API.
-//     - The watcher may syncs the very first time on programm start.
-//     - The watcher may resyncs and receives an event object we already know.
-//
-// In case the provided event object does not exist in the informer cache, this
-// means we send it to the provided update channel because it should be
-// reconciled. The reconciliation has to make sure the event object is created
-// and/or updated accordingly. In any case cacheAndSendIfNotExists adds the
-// provided event object to the informer cache.
-func (i *Informer) cacheAndSendIfNotExists(event watch.Event, updateChan chan watch.Event) error {
-	k, err := cache.MetaNamespaceKeyFunc(event.Object)
-	if err != nil {
-		return microerror.Mask(err)
-	}
-
-	_, ok := i.cache.Load(k)
-	if !ok && i.isCacheFilled() {
-		watchEventCounter.WithLabelValues("create").Inc()
-		updateChan <- event
-	}
-
-	i.cache.Store(k, event)
-
-	return nil
-}
-
-// fillCache is similar to streamEvents but is only used during informer cache
-// initialization. As soon as the watcher does not receive any event objects
-// anymore, the cache is filled and the usual event watching process can begin.
-func (i *Informer) fillCache(ctx context.Context, eventChan chan watch.Event) error {
-	watcher, err := i.newWatcher(ctx)
-	if IsContextCanceled(err) {
-		return nil
-	} else if err != nil {
-		return microerror.Mask(err)
-	}
-	defer close(i.filled)
-	defer watcher.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case event, ok := <-watcher.ResultChan():
-			if ok {
-				eventChan <- event
-			} else {
-				return nil
-			}
-		case <-time.After(time.Second):
-			return nil
-		}
-	}
-}
-
-// isCacheFilled checks whether the informer cache is filled.
-func (i *Informer) isCacheFilled() bool {
-	select {
-	case <-i.filled:
-		return true
-	default:
-		// fall thorugh
-	}
-
-	return false
 }
 
 func (i *Informer) newWatcher(ctx context.Context) (watch.Interface, error) {
@@ -393,6 +292,50 @@ func (i *Informer) newWatcher(ctx context.Context) (watch.Interface, error) {
 	return watcher, nil
 }
 
+// refillCache is called during each reconciliation loop to refill the cache
+// freshly from scratch. As soon as the internally used watcher does not receive
+// any event objects anymore, the cache is considered filled.
+func (i *Informer) refillCache(ctx context.Context) error {
+	// The first thing we do to refill the cache is to empty it. That is the
+	// foundation for computing the fresh version of the informer cache.
+	i.cache = &sync.Map{}
+
+	// Once the cache refilling is done, we signal the the cache being filled via
+	// the according channel. Then we set it up again for the next round and keep
+	// the process idempotent.
+	defer func() {
+		close(i.filled)
+		i.filled = make(chan struct{})
+	}()
+
+	watcher, err := i.newWatcher(ctx)
+	if IsContextCanceled(err) {
+		return nil
+	} else if err != nil {
+		return microerror.Mask(err)
+	}
+	defer watcher.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case event, ok := <-watcher.ResultChan():
+			if ok {
+				k, err := cache.MetaNamespaceKeyFunc(event.Object)
+				if err != nil {
+					return microerror.Mask(err)
+				}
+				i.cache.Store(k, event)
+			} else {
+				return nil
+			}
+		case <-time.After(time.Second):
+			return nil
+		}
+	}
+}
+
 // sendCachedEvents sends all cached event objects to the provided delete or
 // update channel. sendCachedEvents sends the provided event object to the
 // provided update channel in case the event object has no deletion timestamp.
@@ -411,8 +354,6 @@ func (i *Informer) sendCachedEvents(ctx context.Context, deleteChan, updateChan 
 	i.cache.Range(func(k, v interface{}) bool {
 		count++
 
-		e := v.(watch.Event)
-
 		if useRateWait && i.rateWait != 0 {
 			<-time.After(i.rateWait)
 		}
@@ -422,19 +363,10 @@ func (i *Informer) sendCachedEvents(ctx context.Context, deleteChan, updateChan 
 		case <-ctx.Done():
 			return false
 		default:
-			m, err := meta.Accessor(e.Object)
+			err := i.sendEvent(ctx, v.(watch.Event), deleteChan, updateChan)
 			if err != nil {
 				watchEventCounter.WithLabelValues("error").Inc()
 				errChan <- microerror.Mask(err)
-			} else {
-				t := m.GetDeletionTimestamp()
-				if t == nil {
-					watchEventCounter.WithLabelValues("update").Inc()
-					updateChan <- e
-				} else {
-					watchEventCounter.WithLabelValues("delete").Inc()
-					deleteChan <- e
-				}
 			}
 		}
 
@@ -442,6 +374,71 @@ func (i *Informer) sendCachedEvents(ctx context.Context, deleteChan, updateChan 
 	})
 
 	cacheSizeGauge.Set(float64(count))
+}
+
+// sendEvent stores the provided event object in the informer cache and
+// dispatches it based on its properties. sendEvent sends the provided event
+// object to the provided update channel in case the event object has no
+// deletion timestamp. In case the deletion timestamp of the provided event
+// object is non-nil, it is send to the provided delete channel.
+func (i *Informer) sendEvent(ctx context.Context, event watch.Event, deleteChan, updateChan chan watch.Event) error {
+	m, err := meta.Accessor(event.Object)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	if m.GetDeletionTimestamp() == nil {
+		watchEventCounter.WithLabelValues("update").Inc()
+		updateChan <- event
+	} else {
+		watchEventCounter.WithLabelValues("delete").Inc()
+		deleteChan <- event
+	}
+
+	return nil
+}
+
+// sendEventAndUncache sends the received event to the provided delete channel and
+// removes the event object from the internal informer cache.
+func (i *Informer) sendEventAndUncache(ctx context.Context, event watch.Event, deleteChan chan watch.Event) error {
+	watchEventCounter.WithLabelValues("delete").Inc()
+	deleteChan <- event
+
+	k, err := cache.MetaNamespaceKeyFunc(event.Object)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	i.cache.Delete(k)
+
+	return nil
+}
+
+// sendEventIfNotCached handles watch.ADDED events. These events can happen
+// because of different reasons.
+//
+//     - The watcher may receives a new event object because a new object was
+//       created in the API.
+//     - The watcher may syncs the very first time on programm start.
+//     - The watcher may resyncs and receives an event object we already know.
+//
+// In case the provided event object does not exist in the informer cache, this
+// means we send it to the provided update channel because it should be
+// reconciled. The reconciliation has to make sure the event object is created
+// and/or updated accordingly.
+func (i *Informer) sendEventIfNotCached(ctx context.Context, event watch.Event, updateChan chan watch.Event) error {
+	k, err := cache.MetaNamespaceKeyFunc(event.Object)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	_, ok := i.cache.Load(k)
+	if !ok {
+		watchEventCounter.WithLabelValues("create").Inc()
+		updateChan <- event
+	}
+
+	return nil
 }
 
 // streamEvents creates a new watcher and sends event objects the watcher
@@ -471,20 +468,4 @@ func (i *Informer) streamEvents(ctx context.Context, eventChan chan watch.Event)
 			}
 		}
 	}
-}
-
-// uncacheAndSend sends the received event to the provided delete channel and
-// removes the event object from the internal informer cache.
-func (i *Informer) uncacheAndSend(event watch.Event, deleteChan chan watch.Event) error {
-	watchEventCounter.WithLabelValues("delete").Inc()
-	deleteChan <- event
-
-	k, err := cache.MetaNamespaceKeyFunc(event.Object)
-	if err != nil {
-		return microerror.Mask(err)
-	}
-
-	i.cache.Delete(k)
-
-	return nil
 }

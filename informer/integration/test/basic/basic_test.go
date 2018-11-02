@@ -1,6 +1,6 @@
 // +build k8srequired
 
-package integration
+package basic
 
 import (
 	"context"
@@ -59,11 +59,18 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 	// This should give us the runtime object we created before starting the
 	// watch.
 	{
+		start := time.Now()
+
 		select {
 		case <-deleteChan:
 			t.Fatalf("expected update event got delete event")
 		case e := <-updateChan:
 			mustAssertWithIDs(e, idOne)
+		}
+
+		d := time.Since(start)
+		if !durationEquals(0, d, timeDelta) {
+			t.Fatalf("expected %#v got %#v", "round about 0 seconds", d.String())
 		}
 	}
 
@@ -84,8 +91,8 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 		}
 
 		d := time.Since(start)
-		if !durationEquals(0, d, timeDelta) {
-			t.Fatalf("expected %#v got %#v", "round about 0 seconds", d.Seconds())
+		if !durationEquals(2, d, timeDelta) {
+			t.Fatalf("expected %#v got %#v", "round about 2 seconds", d.String())
 		}
 	}
 
@@ -105,7 +112,7 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 
 		d := time.Since(start)
 		if !durationEquals(10*time.Second, d, timeDelta) {
-			t.Fatalf("expected %#v got %#v", "round about 10 seconds", d.Seconds())
+			t.Fatalf("expected %#v got %#v", "round about 10 seconds", d.String())
 		}
 	}
 
@@ -125,7 +132,7 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 
 		d := time.Since(start)
 		if !durationEquals(2*time.Second, d, timeDelta) {
-			t.Fatalf("expected %#v got %#v", "round about 2 seconds", d.Seconds())
+			t.Fatalf("expected %#v got %#v", "round about 2 seconds", d.String())
 		}
 	}
 
@@ -148,7 +155,7 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 
 		d := time.Since(start)
 		if !durationEquals(0, d, timeDelta) {
-			t.Fatalf("expected %#v got %#v", "round about 0 seconds", d.Seconds())
+			t.Fatalf("expected %#v got %#v", "round about 0 seconds", d.String())
 		}
 	}
 
@@ -166,7 +173,7 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 
 		d := time.Since(start)
 		if !durationEquals(10*time.Second, d, timeDelta) {
-			t.Fatalf("expected %#v got %#v", "round about 10 seconds", d.Seconds())
+			t.Fatalf("expected %#v got %#v", "round about 10 seconds", d.String())
 		}
 	}
 
@@ -174,12 +181,12 @@ func Test_Informer_Integration_Basic(t *testing.T) {
 }
 
 func durationEquals(expected, actual, delta time.Duration) bool {
-	var diff time.Duration
-	if expected > actual {
-		diff = expected - actual
-	} else {
-		diff = actual - expected
+	if actual < expected+delta {
+		return true
+	}
+	if expected-delta < actual {
+		return true
 	}
 
-	return diff < delta
+	return false
 }

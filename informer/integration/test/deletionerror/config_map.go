@@ -1,6 +1,6 @@
 // +build k8srequired
 
-package integration
+package deletionerror
 
 import (
 	"fmt"

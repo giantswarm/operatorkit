@@ -1,12 +1,13 @@
 // +build k8srequired
 
-package integration
+package basic
 
 import (
 	"time"
 
 	"github.com/giantswarm/e2e-harness/pkg/harness"
 	"github.com/giantswarm/microerror"
+	"github.com/giantswarm/micrologger"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,7 +18,7 @@ import (
 )
 
 const (
-	namespace = "informer-integration-test"
+	namespace = "test-informer-integration-basic"
 )
 
 var (
@@ -48,16 +49,32 @@ func newK8sClient() (kubernetes.Interface, error) {
 }
 
 func newOperatorkitInformer(rateWait, resyncPeriod time.Duration) (*informer.Informer, error) {
-	c := informer.Config{
-		Watcher: k8sClient.CoreV1().ConfigMaps(namespace),
+	var err error
 
-		RateWait:     rateWait,
-		ResyncPeriod: resyncPeriod,
+	var newLogger micrologger.Logger
+	{
+		c := micrologger.Config{}
+
+		newLogger, err = micrologger.New(c)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
 	}
 
-	operatorkitInformer, err := informer.New(c)
-	if err != nil {
-		return nil, microerror.Mask(err)
+	var operatorkitInformer *informer.Informer
+	{
+		c := informer.Config{
+			Logger:  newLogger,
+			Watcher: k8sClient.CoreV1().ConfigMaps(namespace),
+
+			RateWait:     rateWait,
+			ResyncPeriod: resyncPeriod,
+		}
+
+		operatorkitInformer, err = informer.New(c)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
 	}
 
 	return operatorkitInformer, nil
