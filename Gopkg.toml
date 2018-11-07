@@ -35,6 +35,10 @@
 
 [[constraint]]
   branch = "master"
+  name = "github.com/giantswarm/exporterkit"
+
+[[constraint]]
+  branch = "master"
   name = "github.com/giantswarm/microerror"
 
 [[constraint]]

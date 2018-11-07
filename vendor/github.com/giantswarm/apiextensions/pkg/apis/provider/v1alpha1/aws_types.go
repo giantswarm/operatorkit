@@ -65,10 +65,32 @@ type AWSConfigSpec struct {
 }
 
 type AWSConfigSpecAWS struct {
-	API              AWSConfigSpecAWSAPI  `json:"api" yaml:"api"`
-	AZ               string               `json:"az" yaml:"az"`
-	CredentialSecret CredentialSecret     `json:"credentialSecret" yaml:"credentialSecret"`
-	Etcd             AWSConfigSpecAWSEtcd `json:"etcd" yaml:"etcd"`
+	API AWSConfigSpecAWSAPI `json:"api" yaml:"api"`
+	// TODO remove the deprecated AZ field due to AvailabilityZones.
+	//
+	//     https://github.com/giantswarm/giantswarm/issues/4507
+	//
+	AZ string `json:"az" yaml:"az"`
+	// AvailabilityZones is the number of AWS availability zones used to spread
+	// the tenant cluster's worker nodes across. There are limitations on
+	// availability zone settings due to binary IP range splitting and provider
+	// specific region capabilities. When for instance choosing 3 availability
+	// zones, the configured IP range will be split into 4 ranges and thus one of
+	// it will not be able to be utilized. Such limitations have to be considered
+	// when designing the network topology and configuring tenant cluster HA via
+	// AvailabilityZones.
+	//
+	// The selection and usage of the actual availability zones for the created
+	// tenant cluster is randomized. In case there are 4 availability zones
+	// provided in the used region and the user selects 2 availability zones, the
+	// actually used availability zones in which tenant cluster workload is put
+	// into will tend to be different across tenant cluster creations. This is
+	// done in order to provide more HA during single availability zone failures.
+	// In case a specific availability zone fails, not all tenant clusters will be
+	// affected due to the described selection process.
+	AvailabilityZones int                  `json:"availabilityZones" yaml:"availabilityZones"`
+	CredentialSecret  CredentialSecret     `json:"credentialSecret" yaml:"credentialSecret"`
+	Etcd              AWSConfigSpecAWSEtcd `json:"etcd" yaml:"etcd"`
 
 	// HostedZones is AWS hosted zones names in the host cluster account.
 	// For each zone there will be "CLUSTER_ID.k8s" NS record created in
@@ -132,8 +154,9 @@ type AWSConfigSpecAWSIngressELB struct {
 }
 
 type AWSConfigSpecAWSNode struct {
-	ImageID      string `json:"imageID" yaml:"imageID"`
-	InstanceType string `json:"instanceType" yaml:"instanceType"`
+	ImageID            string `json:"imageID" yaml:"imageID"`
+	InstanceType       string `json:"instanceType" yaml:"instanceType"`
+	DockerVolumeSizeGB int    `json:"dockerVolumeSizeGB" yaml:"dockerVolumeSizeGB"`
 }
 
 type AWSConfigSpecAWSVPC struct {
@@ -149,7 +172,30 @@ type AWSConfigSpecVersionBundle struct {
 }
 
 type AWSConfigStatus struct {
-	Cluster StatusCluster `json:"cluster" yaml:"cluster"`
+	AWS     AWSConfigStatusAWS `json:"aws" yaml:"aws"`
+	Cluster StatusCluster      `json:"cluster" yaml:"cluster"`
+}
+
+type AWSConfigStatusAWS struct {
+	AvailabilityZones []AWSConfigStatusAWSAvailabilityZone `json:"availabilityZones" yaml:"availabilityZones"`
+}
+
+type AWSConfigStatusAWSAvailabilityZone struct {
+	Name   string                                   `json:"name" yaml:"name"`
+	Subnet AWSConfigStatusAWSAvailabilityZoneSubnet `json:"subnet" yaml:"subnet"`
+}
+
+type AWSConfigStatusAWSAvailabilityZoneSubnet struct {
+	Private AWSConfigStatusAWSAvailabilityZoneSubnetPrivate `json:"private" yaml:"private"`
+	Public  AWSConfigStatusAWSAvailabilityZoneSubnetPublic  `json:"public" yaml:"public"`
+}
+
+type AWSConfigStatusAWSAvailabilityZoneSubnetPrivate struct {
+	CIDR string `json:"cidr" yaml:"cidr"`
+}
+
+type AWSConfigStatusAWSAvailabilityZoneSubnetPublic struct {
+	CIDR string `json:"cidr" yaml:"cidr"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

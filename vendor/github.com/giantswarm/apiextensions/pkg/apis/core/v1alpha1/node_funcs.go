@@ -1,5 +1,7 @@
 package v1alpha1
 
+import "time"
+
 const (
 	NodeConfigStatusStatusTrue  = "True"
 	NodeConfigStatusTypeDrained = "Drained"
@@ -17,7 +19,8 @@ func (s NodeConfigStatus) HasFinalCondition() bool {
 
 func (s NodeConfigStatus) NewFinalCondition() NodeConfigStatusCondition {
 	return NodeConfigStatusCondition{
-		Status: NodeConfigStatusStatusTrue,
-		Type:   NodeConfigStatusTypeDrained,
+		LastTransitionTime: DeepCopyTime{time.Now()},
+		Status:             NodeConfigStatusStatusTrue,
+		Type:               NodeConfigStatusTypeDrained,
 	}
 }

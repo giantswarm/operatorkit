@@ -1,5 +1,7 @@
 package v1alpha1
 
+import "time"
+
 func (s DrainerConfigStatus) HasDrainedCondition() bool {
 	return hasDrainerConfigCondition(s.Conditions, DrainerConfigStatusStatusTrue, DrainerConfigStatusTypeDrained)
 }
@@ -10,15 +12,17 @@ func (s DrainerConfigStatus) HasTimeoutCondition() bool {
 
 func (s DrainerConfigStatus) NewDrainedCondition() DrainerConfigStatusCondition {
 	return DrainerConfigStatusCondition{
-		Status: DrainerConfigStatusStatusTrue,
-		Type:   DrainerConfigStatusTypeDrained,
+		LastTransitionTime: DeepCopyTime{time.Now()},
+		Status:             DrainerConfigStatusStatusTrue,
+		Type:               DrainerConfigStatusTypeDrained,
 	}
 }
 
 func (s DrainerConfigStatus) NewTimeoutCondition() DrainerConfigStatusCondition {
 	return DrainerConfigStatusCondition{
-		Status: DrainerConfigStatusStatusTrue,
-		Type:   DrainerConfigStatusTypeDrained,
+		LastTransitionTime: DeepCopyTime{time.Now()},
+		Status:             DrainerConfigStatusStatusTrue,
+		Type:               DrainerConfigStatusTypeTimeout,
 	}
 }
 
