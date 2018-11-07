@@ -3,204 +3,94 @@
 package collector
 
 import (
-	"fmt"
+	"context"
 	"testing"
 	"time"
 
-	"github.com/giantswarm/microerror"
-	"github.com/giantswarm/operatorkit/informer"
+	"github.com/giantswarm/operatorkit/informer/collector"
 	"github.com/prometheus/client_golang/prometheus"
-	prommodel "github.com/prometheus/client_model/go"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
-const (
-	grace int64 = 500
-)
+func Test_Informer_Collector_MultipleEvents(t *testing.T) {
+	mustSetup()
+	defer mustTeardown()
 
-var (
-	configMapName = "test-configmap"
-	configmap     = &corev1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "ConfigMap",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      configMapName,
-			Namespace: namespace,
-		},
-		Data: map[string]string{},
+	var err error
+
+	// We run the creation, update and deletion of a configmap multiple times to
+	// simulate multiple occuring events in the informer watcher. When the
+	// collector implementation using the informer watcher is correct and prevents
+	// duplicates, no error should be produced gathering metrics below.
+	{
+		ctx, cancelFunc := context.WithCancel(context.Background())
+
+		go func() {
+			time.Sleep(5 * time.Second)
+			cancelFunc()
+		}()
+
+		go func() {
+			idOne := "al7qy"
+
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+					err := createConfigMap(idOne)
+					if err != nil {
+						t.Fatal("expected", nil, "got", err)
+					}
+					err = updateConfigMap(idOne)
+					if err != nil {
+						t.Fatal("expected", nil, "got", err)
+					}
+					err = deleteConfigMap(idOne)
+					if err != nil {
+						t.Fatal("expected", nil, "got", err)
+					}
+				}
+			}
+		}()
 	}
 
-	kindLabel      = "kind"
-	nameLabel      = "name"
-	namespaceLabel = "namespace"
-	emptyValue     = ""
-)
-
-// Test_Informer_Collector_Basic is an integration test for basic collector operations.
-// The test verifies the metrics emitted by the collector.
-func Test_Informer_Collector_Basic(t *testing.T) {
-	testCases := []struct {
-		name string
-
-		// Events to run before starting the collector.
-		setupEvents []func(kubernetes.Interface) error
-		// Events to run just after starting the collector.
-		events []func(kubernetes.Interface) error
-
-		// Descriptions of the metrics we expect to be emitted.
-		expectedMetrics []*prometheus.Desc
-	}{
-		{
-			name: "Test one create and one update event emits only one creation_timestamp metric",
-
-			setupEvents: []func(kubernetes.Interface) error{
-				// Create the configmap to force a create event.
-				func(k8sClient kubernetes.Interface) error {
-					if _, err := k8sClient.CoreV1().ConfigMaps(namespace).Create(configmap); err != nil {
-						return microerror.Mask(err)
-					}
-
-					return nil
-				},
-			},
-
-			events: []func(kubernetes.Interface) error{
-				// Update the configmap to force an update event,
-				// within the 1 second of the collector watching for events.
-				func(k8sClient kubernetes.Interface) error {
-					configmap.Data["foo"] = "bar"
-					if _, err := k8sClient.CoreV1().ConfigMaps(namespace).Update(configmap); err != nil {
-						return microerror.Mask(err)
-					}
-					delete(configmap.Data, "foo") // Be a good house guest.
-
-					return nil
-				},
-			},
-
-			// Check that only one metric is returned, as we only have one resource,
-			// despite there being both a create and an update event.
-			expectedMetrics: []*prometheus.Desc{
-				informer.CreationTimestampDescription,
-			},
-		},
-
-		{
-			name: "Test X",
-
-			setupEvents: []func(kubernetes.Interface) error{},
-
-			events: []func(kubernetes.Interface) error{
-				func(k8sClient kubernetes.Interface) error {
-					if _, err := k8sClient.CoreV1().ConfigMaps(namespace).Create(configmap); err != nil {
-						return microerror.Mask(err)
-					}
-					return nil
-				},
-				func(k8sClient kubernetes.Interface) error {
-					if err := k8sClient.CoreV1().ConfigMaps(namespace).Delete(configMapName, nil); err != nil {
-						return microerror.Mask(err)
-					}
-					return nil
-				},
-				func(k8sClient kubernetes.Interface) error {
-					if _, err := k8sClient.CoreV1().ConfigMaps(namespace).Create(configmap); err != nil {
-						return microerror.Mask(err)
-					}
-					return nil
-				},
-				func(k8sClient kubernetes.Interface) error {
-					if err := k8sClient.CoreV1().ConfigMaps(namespace).Delete(configMapName, nil); err != nil {
-						return microerror.Mask(err)
-					}
-					return nil
-				},
-			},
-
-			// Check that only one metric is returned, as we only had one resource,
-			// despite there being both a create and a delete event.
-			expectedMetrics: []*prometheus.Desc{
-				informer.CreationTimestampDescription,
-			},
-		},
+	// We create a Prometheus registry that registers and gathers metrics from the
+	// collector implementation we want to ensure works properly.
+	var r *prometheus.Registry
+	{
+		r = prometheus.NewRegistry()
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			k8sClient, err := newK8sClient()
-			if err != nil {
-				t.Fatal("expected", nil, "got", err)
-			}
+	// The collector implementation initialized below is used by the informer.
+	var c *collector.Set
+	{
+		c, err = newInformerCollector()
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
+		}
+	}
 
-			if err := mustSetup(k8sClient); err != nil {
-				t.Fatal("expected", nil, "got", err)
-			}
-			defer mustTeardown(k8sClient)
-
-			operatorkitInformer, err := newOperatorkitInformer(k8sClient)
-			if err != nil {
-				t.Fatal("expected", nil, "got", err)
-			}
-
-			for _, setupEvent := range tc.setupEvents {
-				if err := setupEvent(k8sClient); err != nil {
-					t.Fatal("expected", nil, "got", err)
-				}
-			}
-
-			metrics := []prometheus.Metric{}
-			metricsChan := make(chan prometheus.Metric)
-
-			go func() {
-				operatorkitInformer.Collect(metricsChan)
-				close(metricsChan)
-			}()
-
-			for _, event := range tc.events {
-				if err := event(k8sClient); err != nil {
-					t.Fatal("expected", nil, "got", err)
-				}
-			}
-
-			for metric := range metricsChan {
-				metrics = append(metrics, metric)
-			}
-
-			// Check that the correct number of metrics were returned.
-			if len(metrics) != len(tc.expectedMetrics) {
-				descs := []*prometheus.Desc{}
-				for _, m := range metrics {
-					descs = append(descs, m.Desc())
-				}
-				t.Fatal("expected", tc.expectedMetrics, "got", descs)
-			}
-
-			for i, metric := range metrics {
-				t.Logf("saw metric: %v", metric.Desc())
-
-				// Check the correct metric was returned.
-				if metric.Desc() != tc.expectedMetrics[i] {
-					t.Fatal("expected", tc.expectedMetrics[i], "got", metric.Desc())
-				}
-
-				// Check that the timestamp is recent enough.
-				modelMetric := prommodel.Metric{}
-				if err := metric.Write(&modelMetric); err != nil {
-					t.Fatal("expected", nil, "got", err)
-				}
-
-				timestamp := int64(*modelMetric.GetGauge().Value)
-				now := time.Now().Unix()
-				t.Logf("metric value: %v", now)
-
-				if timestamp < now-grace || timestamp > now+grace {
-					t.Fatal("expected", fmt.Sprintf("value between %v and %v", now-grace, now+grace), "got", timestamp)
-				}
-			}
-		})
+	// We register the collector in our test registry so the registry can gather
+	// metrics from the collector. When the collector implementation produces e.g.
+	// duplicated metrics in terms of duplicated label pairs, the call ro Gather()
+	// below will return an error. Note the 26 errors reported in the example
+	// below are caused during the 5 second period of creating, updating, and
+	// deleting the same configmap over and over again during the test.
+	//
+	//     --- FAIL: Test_Informer_Collector_MultipleEvents (6.62s)
+	//         collector_test.go:93: expected <nil> got 26 error(s) occurred:
+	//             * collected metric "operatorkit_informer_creation_timestamp" { label:<name:"kind" value:"" > label:<name:"name" value:"al7qy" > label:<name:"namespace" value:"test-informer-integration-collector" > gauge:<value:1.541631308e+09 > } was collected before with the same name and label values
+	//             * collected metric "operatorkit_informer_creation_timestamp" { label:<name:"kind" value:"" > label:<name:"name" value:"al7qy" > label:<name:"namespace" value:"test-informer-integration-collector" > gauge:<value:1.541631308e+09 > } was collected before with the same name and label values
+	//             ...
+	//
+	{
+		err := r.Register(c)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
+		}
+		_, err = r.Gather()
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
+		}
 	}
 }

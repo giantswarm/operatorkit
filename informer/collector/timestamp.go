@@ -92,10 +92,10 @@ func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
 				return microerror.Mask(err)
 			}
 
-			// In the case we have multiple events for the same resource, we track
-			// which metrics we have emitted already, simply by indexing their labels
-			// as map key, to not emit the same metric for the same runtime object
-			// twice, which is an error for Prometheus.
+			// In the case we have multiple events for the same runtime object, we
+			// track which metrics we have emitted already, simply by indexing their
+			// labels as map key, to not emit the same metric for the same runtime
+			// object twice, which is an error for Prometheus.
 			{
 				k := fmt.Sprintf("%s-%s-%s", t.GetKind(), m.GetName(), m.GetNamespace())
 				_, ok := alreadyEmitted[k]
