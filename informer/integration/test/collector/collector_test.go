@@ -72,7 +72,7 @@ func Test_Informer_Collector_MultipleEvents(t *testing.T) {
 
 	// We register the collector in our test registry so the registry can gather
 	// metrics from the collector. When the collector implementation produces e.g.
-	// duplicated metrics in terms of duplicated label pairs, the call ro Gather()
+	// duplicated metrics in terms of duplicated label pairs, the Gather() call
 	// below will return an error. Note the 26 errors reported in the example
 	// below are caused during the 5 second period of creating, updating, and
 	// deleting the same configmap over and over again during the test before
