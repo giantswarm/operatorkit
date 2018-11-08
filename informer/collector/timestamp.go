@@ -97,24 +97,33 @@ func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
 			// labels as map key, to not emit the same metric for the same runtime
 			// object twice, which is an error for Prometheus.
 			{
-				k := fmt.Sprintf("%s-%s-%s", t.GetKind(), m.GetName(), m.GetNamespace())
+				k := fmt.Sprintf("creation-%s-%s-%s", t.GetKind(), m.GetName(), m.GetNamespace())
 				_, ok := alreadyEmitted[k]
 				if ok {
 					continue
 				}
 				alreadyEmitted[k] = struct{}{}
+
+				ch <- prometheus.MustNewConstMetric(
+					creationTimestampDesc,
+					prometheus.GaugeValue,
+					float64(m.GetCreationTimestamp().Unix()),
+					t.GetKind(),
+					m.GetName(),
+					m.GetNamespace(),
+				)
 			}
 
-			ch <- prometheus.MustNewConstMetric(
-				creationTimestampDesc,
-				prometheus.GaugeValue,
-				float64(m.GetCreationTimestamp().Unix()),
-				t.GetKind(),
-				m.GetName(),
-				m.GetNamespace(),
-			)
-
+			// We do the same verification with delete events as with create and
+			// update events above in order to prevent emitting duplicated metrics.
 			if m.GetDeletionTimestamp() != nil {
+				k := fmt.Sprintf("deletion-%s-%s-%s", t.GetKind(), m.GetName(), m.GetNamespace())
+				_, ok := alreadyEmitted[k]
+				if ok {
+					continue
+				}
+				alreadyEmitted[k] = struct{}{}
+
 				ch <- prometheus.MustNewConstMetric(
 					deletionTimestampDesc,
 					prometheus.GaugeValue,
