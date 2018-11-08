@@ -75,7 +75,8 @@ func Test_Informer_Collector_MultipleEvents(t *testing.T) {
 	// duplicated metrics in terms of duplicated label pairs, the call ro Gather()
 	// below will return an error. Note the 26 errors reported in the example
 	// below are caused during the 5 second period of creating, updating, and
-	// deleting the same configmap over and over again during the test.
+	// deleting the same configmap over and over again during the test before
+	// the fix was introduced.
 	//
 	//     --- FAIL: Test_Informer_Collector_MultipleEvents (6.62s)
 	//         collector_test.go:93: expected <nil> got 26 error(s) occurred:
