@@ -3,12 +3,10 @@
 package collector
 
 import (
-	"time"
-
 	"github.com/giantswarm/e2e-harness/pkg/harness"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-	"github.com/giantswarm/operatorkit/informer"
+	"github.com/giantswarm/operatorkit/informer/collector"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,8 +15,21 @@ import (
 )
 
 var (
-	namespace = "test-informer-collector"
+	namespace = "test-informer-integration-collector"
 )
+
+var (
+	err error
+
+	k8sClient kubernetes.Interface
+)
+
+func init() {
+	k8sClient, err = newK8sClient()
+	if err != nil {
+		panic(err)
+	}
+}
 
 func newK8sClient() (kubernetes.Interface, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", harness.DefaultKubeConfig)
@@ -34,32 +45,37 @@ func newK8sClient() (kubernetes.Interface, error) {
 	return k8sClient, nil
 }
 
-func newOperatorkitInformer(k8sClient kubernetes.Interface) (*informer.Informer, error) {
-	logger, err := micrologger.New(micrologger.Config{})
-	if err != nil {
-		return nil, microerror.Mask(err)
+func newInformerCollector() (*collector.Set, error) {
+	var newLogger micrologger.Logger
+	{
+		c := micrologger.Config{}
+
+		newLogger, err = micrologger.New(c)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
 	}
 
-	operatorkitInformer, err := informer.New(informer.Config{
-		Logger:  logger,
-		Watcher: k8sClient.CoreV1().ConfigMaps(namespace),
+	var informerCollector *collector.Set
+	{
+		c := collector.SetConfig{
+			Logger:  newLogger,
+			Watcher: k8sClient.CoreV1().ConfigMaps(namespace),
+		}
 
-		RateWait:     time.Second * 2,
-		ResyncPeriod: time.Second * 10,
-	})
-	if err != nil {
-		return nil, microerror.Mask(err)
+		informerCollector, err = collector.NewSet(c)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
 	}
 
-	return operatorkitInformer, nil
+	return informerCollector, nil
 }
 
-func mustSetup(k8sClient kubernetes.Interface) error {
-	if err := mustTeardown(k8sClient); err != nil {
-		return microerror.Mask(err)
-	}
+func mustSetup() {
+	mustTeardown()
 
-	namespace := &corev1.Namespace{
+	ns := &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Namespace",
@@ -70,20 +86,17 @@ func mustSetup(k8sClient kubernetes.Interface) error {
 		Spec: corev1.NamespaceSpec{},
 	}
 
-	if _, err := k8sClient.CoreV1().Namespaces().Create(namespace); err != nil {
-		return err
+	_, err := k8sClient.CoreV1().Namespaces().Create(ns)
+	if err != nil {
+		panic(err)
 	}
-
-	return nil
 }
 
-func mustTeardown(k8sClient kubernetes.Interface) error {
-	if err := k8sClient.CoreV1().Namespaces().Delete(namespace, nil); err != nil && !errors.IsNotFound(err) {
-		return microerror.Mask(err)
+func mustTeardown() {
+	err := k8sClient.CoreV1().Namespaces().Delete(namespace, nil)
+	if errors.IsNotFound(err) {
+		// fall though
+	} else if err != nil {
+		panic(err)
 	}
-
-	// TODO: Wait on the namespace being actually deleted, this is a hack.
-	time.Sleep(10 * time.Second)
-
-	return nil
 }

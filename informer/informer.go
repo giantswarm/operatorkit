@@ -25,7 +25,7 @@ import (
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/giantswarm/operatorkit/informer/collector"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -65,8 +65,9 @@ type Informer struct {
 	watcher Watcher
 
 	// Internals.
-	cache  *sync.Map
-	filled chan struct{}
+	cache             *sync.Map
+	filled            chan struct{}
+	informerCollector *collector.Set
 
 	// Settings.
 	listOptions  metav1.ListOptions
@@ -89,14 +90,32 @@ func New(config Config) (*Informer, error) {
 		config.ResyncPeriod = DefaultResyncPeriod
 	}
 
+	var err error
+
+	var informerCollector *collector.Set
+	{
+		c := collector.SetConfig{
+			Logger:  config.Logger,
+			Watcher: config.Watcher,
+
+			ListOptions: config.ListOptions,
+		}
+
+		informerCollector, err = collector.NewSet(c)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+	}
+
 	i := &Informer{
 		// Dependencies.
 		logger:  config.Logger,
 		watcher: config.Watcher,
 
 		// Internals.
-		cache:  &sync.Map{},
-		filled: make(chan struct{}),
+		cache:             &sync.Map{},
+		filled:            make(chan struct{}),
+		informerCollector: informerCollector,
 
 		// Settings.
 		listOptions:  config.ListOptions,
@@ -108,17 +127,9 @@ func New(config Config) (*Informer, error) {
 }
 
 func (i *Informer) Boot(ctx context.Context) error {
-	{
-		i.logger.LogCtx(ctx, "level", "debug", "message", "registering informer collector")
-
-		err := prometheus.Register(prometheus.Collector(i))
-		if IsAlreadyRegisteredError(err) {
-			i.logger.LogCtx(ctx, "level", "debug", "message", "informer collector already registered")
-		} else if err != nil {
-			return microerror.Mask(err)
-		} else {
-			i.logger.LogCtx(ctx, "level", "debug", "message", "registered informer collector")
-		}
+	err := i.informerCollector.Boot(ctx)
+	if err != nil {
+		return microerror.Mask(err)
 	}
 
 	return nil
