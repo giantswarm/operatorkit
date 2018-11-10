@@ -50,19 +50,19 @@ func (s StatusCluster) LatestVersion() string {
 }
 
 func (s StatusCluster) WithCreatedCondition() []StatusClusterCondition {
-	return withCondition(s.Conditions, StatusClusterTypeCreating, StatusClusterTypeCreated, StatusClusterStatusTrue)
+	return withCondition(s.Conditions, StatusClusterTypeCreating, StatusClusterTypeCreated, StatusClusterStatusTrue, time.Now())
 }
 
 func (s StatusCluster) WithCreatingCondition() []StatusClusterCondition {
-	return withCondition(s.Conditions, StatusClusterTypeCreated, StatusClusterTypeCreating, StatusClusterStatusTrue)
+	return withCondition(s.Conditions, StatusClusterTypeCreated, StatusClusterTypeCreating, StatusClusterStatusTrue, time.Now())
 }
 
 func (s StatusCluster) WithDeletedCondition() []StatusClusterCondition {
-	return withCondition(s.Conditions, StatusClusterTypeDeleting, StatusClusterTypeDeleted, StatusClusterStatusTrue)
+	return withCondition(s.Conditions, StatusClusterTypeDeleting, StatusClusterTypeDeleted, StatusClusterStatusTrue, time.Now())
 }
 
 func (s StatusCluster) WithDeletingCondition() []StatusClusterCondition {
-	return withCondition(s.Conditions, StatusClusterTypeDeleted, StatusClusterTypeDeleting, StatusClusterStatusTrue)
+	return withCondition(s.Conditions, StatusClusterTypeDeleted, StatusClusterTypeDeleting, StatusClusterStatusTrue, time.Now())
 }
 
 func (s StatusCluster) WithNewVersion(version string) []StatusClusterVersion {
@@ -70,11 +70,11 @@ func (s StatusCluster) WithNewVersion(version string) []StatusClusterVersion {
 }
 
 func (s StatusCluster) WithUpdatedCondition() []StatusClusterCondition {
-	return withCondition(s.Conditions, StatusClusterTypeUpdating, StatusClusterTypeUpdated, StatusClusterStatusTrue)
+	return withCondition(s.Conditions, StatusClusterTypeUpdating, StatusClusterTypeUpdated, StatusClusterStatusTrue, time.Now())
 }
 
 func (s StatusCluster) WithUpdatingCondition() []StatusClusterCondition {
-	return withCondition(s.Conditions, StatusClusterTypeUpdated, StatusClusterTypeUpdating, StatusClusterStatusTrue)
+	return withCondition(s.Conditions, StatusClusterTypeUpdated, StatusClusterTypeUpdating, StatusClusterStatusTrue, time.Now())
 }
 
 func hasCondition(conditions []StatusClusterCondition, s string, t string) bool {
@@ -97,11 +97,12 @@ func hasVersion(versions []StatusClusterVersion, search string) bool {
 	return false
 }
 
-func withCondition(conditions []StatusClusterCondition, search string, replace string, status string) []StatusClusterCondition {
+func withCondition(conditions []StatusClusterCondition, search string, replace string, status string, t time.Time) []StatusClusterCondition {
 	newConditions := []StatusClusterCondition{
 		{
-			Status: status,
-			Type:   replace,
+			LastTransitionTime: DeepCopyTime{t},
+			Status:             status,
+			Type:               replace,
 		},
 	}
 
@@ -120,6 +121,10 @@ func withCondition(conditions []StatusClusterCondition, search string, replace s
 // version structure to append. withVersion also limits total amount of elements
 // in the list by cutting off the tail with respect to the limit parameter.
 func withVersion(versions []StatusClusterVersion, version StatusClusterVersion, limit int) []StatusClusterVersion {
+	if hasVersion(versions, version.Semver) {
+		return versions
+	}
+
 	var newVersions []StatusClusterVersion
 
 	start := 0
