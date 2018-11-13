@@ -15,7 +15,7 @@ type SetConfig struct {
 }
 
 // Set is basically only a wrapper for the informer's collector implementations.
-// It eases the iniitialization and prevents some weird import mess so we do not
+// It eases the initialization and prevents some weird import mess so we do not
 // have to alias packages.
 type Set struct {
 	*collector.Set
