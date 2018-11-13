@@ -1,8 +1,6 @@
 package v1alpha1
 
 import (
-	"time"
-
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -111,18 +109,15 @@ type DrainerConfigStatus struct {
 
 // DrainerConfigStatusCondition expresses a condition in which a node may is.
 type DrainerConfigStatusCondition struct {
-	// Date is the time of the given condition being updated.
-	Date time.Time `json:"date" yaml:"date"`
+	// LastHeartbeatTime is the last time we got an update on a given condition.
+	LastHeartbeatTime DeepCopyTime `json:"lastHeartbeatTime" yaml:"lastHeartbeatTime"`
+	// LastTransitionTime is the last time the condition transitioned from one
+	// status to another.
+	LastTransitionTime DeepCopyTime `json:"lastTransitionTime" yaml:"lastTransitionTime"`
 	// Status may be True, False or Unknown.
 	Status string `json:"status" yaml:"status"`
 	// Type may be Pending, Ready, Draining, Drained.
 	Type string `json:"type" yaml:"type"`
-}
-
-// DeepCopyInto implements the deep copy magic the k8s codegen is not able to
-// generate out of the box.
-func (in *DrainerConfigStatusCondition) DeepCopyInto(out *DrainerConfigStatusCondition) {
-	*out = *in
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

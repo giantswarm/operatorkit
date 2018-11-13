@@ -31,12 +31,14 @@ type CoreV1alpha1Interface interface {
 	AzureClusterConfigsGetter
 	CertConfigsGetter
 	ChartConfigsGetter
+	ClustersGetter
 	DrainerConfigsGetter
 	DraughtsmanConfigsGetter
 	FlannelConfigsGetter
 	IngressConfigsGetter
 	KVMClusterConfigsGetter
 	NodeConfigsGetter
+	ReleasesGetter
 	StorageConfigsGetter
 }
 
@@ -61,6 +63,10 @@ func (c *CoreV1alpha1Client) ChartConfigs(namespace string) ChartConfigInterface
 	return newChartConfigs(c, namespace)
 }
 
+func (c *CoreV1alpha1Client) Clusters(namespace string) ClusterInterface {
+	return newClusters(c, namespace)
+}
+
 func (c *CoreV1alpha1Client) DrainerConfigs(namespace string) DrainerConfigInterface {
 	return newDrainerConfigs(c, namespace)
 }
@@ -83,6 +89,10 @@ func (c *CoreV1alpha1Client) KVMClusterConfigs(namespace string) KVMClusterConfi
 
 func (c *CoreV1alpha1Client) NodeConfigs(namespace string) NodeConfigInterface {
 	return newNodeConfigs(c, namespace)
+}
+
+func (c *CoreV1alpha1Client) Releases(namespace string) ReleaseInterface {
+	return newReleases(c, namespace)
 }
 
 func (c *CoreV1alpha1Client) StorageConfigs(namespace string) StorageConfigInterface {

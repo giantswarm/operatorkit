@@ -47,6 +47,11 @@ type StatusCluster struct {
 // StatusClusterCondition expresses the conditions in which a guest cluster may
 // is.
 type StatusClusterCondition struct {
+	// LastHeartbeatTime is the last time we got an update on a given condition.
+	LastHeartbeatTime DeepCopyTime `json:"lastHeartbeatTime" yaml:"lastHeartbeatTime"`
+	// LastTransitionTime is the last time the condition transitioned from one
+	// status to another.
+	LastTransitionTime DeepCopyTime `json:"lastTransitionTime" yaml:"lastTransitionTime"`
 	// Status may be True, False or Unknown.
 	Status string `json:"status" yaml:"status"`
 	// Type may be Creating, Created, Scaling, Scaled, Draining, Drained,
@@ -79,6 +84,11 @@ type StatusClusterResource struct {
 // StatusClusterResourceCondition expresses the conditions in which an
 // operatorkit resource may is.
 type StatusClusterResourceCondition struct {
+	// LastHeartbeatTime is the last time we got an update on a given condition.
+	LastHeartbeatTime DeepCopyTime `json:"lastHeartbeatTime" yaml:"lastHeartbeatTime"`
+	// LastTransitionTime is the last time the condition transitioned from one
+	// status to another.
+	LastTransitionTime DeepCopyTime `json:"lastTransitionTime" yaml:"lastTransitionTime"`
 	// Status may be True, False or Unknown.
 	Status string `json:"status" yaml:"status"`
 	// Type may be anything an operatorkit resource may define.

@@ -12,7 +12,6 @@ type Cluster struct {
 	ID         string            `json:"id" yaml:"id"`
 	Kubernetes ClusterKubernetes `json:"kubernetes" yaml:"kubernetes"`
 	Masters    []ClusterNode     `json:"masters" yaml:"masters"`
-	Vault      ClusterVault      `json:"vault" yaml:"vault"`
 	Version    string            `json:"version" yaml:"version"`
 	Workers    []ClusterNode     `json:"workers" yaml:"workers"`
 }
@@ -114,9 +113,4 @@ type ClusterKubernetesSSHUser struct {
 
 type ClusterNode struct {
 	ID string `json:"id" yaml:"id"`
-}
-
-type ClusterVault struct {
-	Address string `json:"address" yaml:"address"`
-	Token   string `json:"token" yaml:"token"`
 }

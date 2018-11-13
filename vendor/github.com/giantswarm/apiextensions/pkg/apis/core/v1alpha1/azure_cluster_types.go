@@ -60,8 +60,17 @@ type AzureClusterConfigSpec struct {
 
 type AzureClusterConfigSpecGuest struct {
 	ClusterGuestConfig `json:",inline" yaml:",inline"`
-	Masters            []AzureClusterConfigSpecGuestMaster `json:"masters,omitempty" yaml:"masters,omitempty"`
-	Workers            []AzureClusterConfigSpecGuestWorker `json:"workers,omitempty" yaml:"workers,omitempty"`
+	CredentialSecret   AzureClusterConfigSpecGuestCredentialSecret `json:"credentialSecret" yaml:"credentialSecret"`
+	Masters            []AzureClusterConfigSpecGuestMaster         `json:"masters,omitempty" yaml:"masters,omitempty"`
+	Workers            []AzureClusterConfigSpecGuestWorker         `json:"workers,omitempty" yaml:"workers,omitempty"`
+}
+
+// AzureClusterConfigSpecGuestCredentialSecret points to the K8s Secret
+// containing credentials for an Azure subscription in which the tenant cluster
+// should be created.
+type AzureClusterConfigSpecGuestCredentialSecret struct {
+	Name      string `json:"name" yaml:"name"`
+	Namespace string `json:"namespace" yaml:"namespace"`
 }
 
 type AzureClusterConfigSpecGuestMaster struct {

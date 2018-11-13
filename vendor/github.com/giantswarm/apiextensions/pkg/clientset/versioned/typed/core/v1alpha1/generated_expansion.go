@@ -26,6 +26,8 @@ type CertConfigExpansion interface{}
 
 type ChartConfigExpansion interface{}
 
+type ClusterExpansion interface{}
+
 type DrainerConfigExpansion interface{}
 
 type DraughtsmanConfigExpansion interface{}
@@ -37,5 +39,7 @@ type IngressConfigExpansion interface{}
 type KVMClusterConfigExpansion interface{}
 
 type NodeConfigExpansion interface{}
+
+type ReleaseExpansion interface{}
 
 type StorageConfigExpansion interface{}
