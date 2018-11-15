@@ -3,7 +3,6 @@
 package reconciliation
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -107,9 +106,8 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 			createdNodeConfig.SetLabels(map[string]string{"testlabel": "testlabel"})
 
 			_, err = nodeConfigWrapper.UpdateObject(testNamespace, createdNodeConfig)
-			fmt.Printf("%#v\n", err)
 			if err != nil {
-				t.Fatal("expected", nil, "got", err)
+				return microerror.Mask(err)
 			}
 
 			return nil
