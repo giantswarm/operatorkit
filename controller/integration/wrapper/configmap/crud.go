@@ -5,6 +5,7 @@ package configmap
 import (
 	"github.com/giantswarm/microerror"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -32,7 +33,9 @@ func (w Wrapper) DeleteObject(name, namespace string) error {
 
 func (w Wrapper) GetObject(name, namespace string) (interface{}, error) {
 	configMap, err := w.k8sClient.CoreV1().ConfigMaps(namespace).Get(name, metav1.GetOptions{})
-	if err != nil {
+	if errors.IsNotFound(err) {
+		return nil, microerror.Mask(notFoundError)
+	} else if err != nil {
 		return nil, microerror.Mask(err)
 	}
 
