@@ -15,7 +15,6 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/operatorkit/controller"
 	"github.com/giantswarm/operatorkit/controller/integration/testresource"
-	"github.com/giantswarm/operatorkit/controller/integration/wrapper"
 	"github.com/giantswarm/operatorkit/controller/integration/wrapper/nodeconfig"
 )
 
@@ -53,17 +52,15 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		Namespace: testNamespace,
 	}
 
-	nodeconfigWrapper, err := nodeconfig.New(c)
+	nodeConfigWrapper, err := nodeconfig.New(c)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
 
-	testWrapper := wrapper.Interface(nodeconfigWrapper)
+	nodeConfigWrapper.MustSetup(testNamespace)
+	defer nodeConfigWrapper.MustTeardown(testNamespace)
 
-	testWrapper.MustSetup(testNamespace)
-	defer testWrapper.MustTeardown(testNamespace)
-
-	controller := testWrapper.Controller()
+	controller := nodeConfigWrapper.Controller()
 
 	// We start the controller.
 	go controller.Boot()
@@ -74,25 +71,28 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	// finalizer.
 	//
 	//Creation is retried because the existance of a CRD might have to be ensured.
-	obj := &v1alpha1.NodeConfig{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      objName,
-			Namespace: testNamespace,
-			Finalizers: []string{
-				testOtherFinalizer,
-			},
-		},
-	}
-	var createdObj interface{}
+	var createdNodeConfig *v1alpha1.NodeConfig
 	{
 		o := func() error {
-			createdObj, err = testWrapper.CreateObject(testNamespace, obj)
+			nodeConfig := &v1alpha1.NodeConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      objName,
+					Namespace: testNamespace,
+					Finalizers: []string{
+						testOtherFinalizer,
+					},
+				},
+			}
+			v, err := nodeConfigWrapper.CreateObject(testNamespace, nodeConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
+			createdNodeConfig = v.(*v1alpha1.NodeConfig)
+
 			return nil
 		}
-		b := backoff.NewExponential(2*time.Minute, 10*time.Second)
+		b := backoff.NewExponential(backoff.ShortMaxWait, backoff.ShortMaxInterval)
+
 		err = backoff.Retry(o, b)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
@@ -101,20 +101,23 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 
 	// We update the object with a meaningless label to ensure a change in the
 	// ResourceVersion of the object.
-	createdObjAccessor, err := meta.Accessor(createdObj)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
-	createdObjAccessor.SetLabels(
-		map[string]string{
-			"testlabel": "testlabel",
-		},
-	)
-	// Setting the labels on createdObj works through the magic or accessors and
-	// pointers here.
-	_, err = testWrapper.UpdateObject(testNamespace, createdObj)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
+	{
+		o := func() error {
+			createdNodeConfig.SetLabels(map[string]string{"testlabel": "testlabel"})
+
+			_, err = nodeConfigWrapper.UpdateObject(testNamespace, createdNodeConfig)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+
+			return nil
+		}
+		b := backoff.NewExponential(backoff.ShortMaxWait, backoff.ShortMaxInterval)
+
+		err = backoff.Retry(o, b)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
+		}
 	}
 
 	// We use backoff with the absolute maximum amount:
@@ -133,22 +136,26 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	//
 	// 		EnsureCreated: 4, EnsureDeleted: 0
 	//
-	operation := func() error {
-		if tr.CreateCount() != 4 {
-			return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 4)
+	{
+		o := func() error {
+			if tr.CreateCount() != 4 {
+				return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 4)
+			}
+			if tr.DeleteCount() != 0 {
+				return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 0)
+			}
+			return nil
 		}
-		if tr.DeleteCount() != 0 {
-			return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 0)
+		b := backoff.NewMaxRetries(30, 1*time.Second)
+
+		err = backoff.Retry(o, b)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
 		}
-		return nil
-	}
-	err = backoff.Retry(operation, backoff.NewMaxRetries(30, 1*time.Second))
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
 	}
 
 	// We get the object after the controller has been started.
-	resultObj, err := testWrapper.GetObject(objName, testNamespace)
+	resultObj, err := nodeConfigWrapper.GetObject(objName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -175,7 +182,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	}
 
 	// We delete the object now.
-	err = testWrapper.DeleteObject(objName, testNamespace)
+	err = nodeConfigWrapper.DeleteObject(objName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -192,22 +199,26 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	//
 	// 		EnsureCreated: 4, EnsureDeleted: 4
 	//
-	operation = func() error {
-		if tr.CreateCount() != 4 {
-			return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 4)
+	{
+		o := func() error {
+			if tr.CreateCount() != 4 {
+				return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 4)
+			}
+			if tr.DeleteCount() != 4 {
+				return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 4)
+			}
+			return nil
 		}
-		if tr.DeleteCount() != 4 {
-			return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 4)
+		b := backoff.NewMaxRetries(30, 1*time.Second)
+
+		err = backoff.Retry(o, b)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
 		}
-		return nil
-	}
-	err = backoff.Retry(operation, backoff.NewMaxRetries(30, 1*time.Second))
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
 	}
 
 	// We get the object after the controller has handled the deletion event.
-	resultObj, err = testWrapper.GetObject(objName, testNamespace)
+	resultObj, err = nodeConfigWrapper.GetObject(objName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}

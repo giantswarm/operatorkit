@@ -11,11 +11,11 @@ import (
 func (w Wrapper) CreateObject(namespace string, obj interface{}) (interface{}, error) {
 	configMap, err := toCustomObject(obj)
 	if err != nil {
-		return nil, err
+		return nil, microerror.Mask(err)
 	}
 	createConfigMap, err := w.k8sClient.CoreV1().ConfigMaps(namespace).Create(&configMap)
 	if err != nil {
-		return nil, err
+		return nil, microerror.Mask(err)
 	}
 
 	return createConfigMap, nil
@@ -24,7 +24,7 @@ func (w Wrapper) CreateObject(namespace string, obj interface{}) (interface{}, e
 func (w Wrapper) DeleteObject(name, namespace string) error {
 	err := w.k8sClient.CoreV1().ConfigMaps(namespace).Delete(name, nil)
 	if err != nil {
-		return err
+		return microerror.Mask(err)
 	}
 
 	return nil
@@ -33,7 +33,7 @@ func (w Wrapper) DeleteObject(name, namespace string) error {
 func (w Wrapper) GetObject(name, namespace string) (interface{}, error) {
 	configMap, err := w.k8sClient.CoreV1().ConfigMaps(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
-		return nil, err
+		return nil, microerror.Mask(err)
 	}
 
 	return configMap, nil
@@ -42,11 +42,18 @@ func (w Wrapper) GetObject(name, namespace string) (interface{}, error) {
 func (w Wrapper) UpdateObject(namespace string, obj interface{}) (interface{}, error) {
 	configMap, err := toCustomObject(obj)
 	if err != nil {
-		return nil, err
+		return nil, microerror.Mask(err)
 	}
+
+	m, err := w.k8sClient.CoreV1().ConfigMaps(namespace).Get(configMap.GetName(), metav1.GetOptions{})
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+	configMap.SetResourceVersion(m.GetResourceVersion())
+
 	updateConfigMap, err := w.k8sClient.CoreV1().ConfigMaps(configMap.Namespace).Update(&configMap)
 	if err != nil {
-		return nil, err
+		return nil, microerror.Mask(err)
 	}
 
 	return updateConfigMap, nil
