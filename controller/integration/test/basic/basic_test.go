@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -132,7 +131,7 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 
 	// We verify that our object is completely gone now.
 	_, err = testWrapper.GetObject(configMapName, testNamespace)
-	if !errors.IsNotFound(err) {
+	if !configmap.IsNotFound(err) {
 		t.Fatalf("error == %#v, want NotFound error", err)
 	}
 }

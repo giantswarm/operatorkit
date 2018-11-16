@@ -10,7 +10,6 @@ import (
 	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -235,7 +234,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 	// We verify that our object is completely gone now.
 	_, err = testWrapper.GetObject(objName, testNamespace)
-	if !errors.IsNotFound(err) {
+	if !nodeconfig.IsNotFound(err) {
 		t.Fatalf("error == %#v, want NotFound error", err)
 	}
 }
