@@ -5,6 +5,7 @@ package nodeconfig
 import (
 	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/microerror"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -32,7 +33,9 @@ func (w Wrapper) DeleteObject(name, namespace string) error {
 
 func (w Wrapper) GetObject(name, namespace string) (interface{}, error) {
 	nodeConfig, err := w.g8sClient.CoreV1alpha1().NodeConfigs(namespace).Get(name, metav1.GetOptions{})
-	if err != nil {
+	if errors.IsNotFound(err) {
+		return nil, microerror.Mask(notFoundError)
+	} else if err != nil {
 		return nil, microerror.Mask(err)
 	}
 
