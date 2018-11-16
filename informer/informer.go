@@ -384,6 +384,7 @@ func (i *Informer) sendCachedEvents(ctx context.Context, deleteChan, updateChan 
 		return true
 	})
 
+	cacheLastUpdatedGauge.Set(float64(time.Now().Unix()))
 	cacheSizeGauge.Set(float64(count))
 }
 
