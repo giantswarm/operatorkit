@@ -7,8 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/giantswarm/operatorkit/informer/collector"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/giantswarm/operatorkit/informer/collector"
 )
 
 func Test_Informer_Collector_MultipleEvents(t *testing.T) {
