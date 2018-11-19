@@ -4,9 +4,10 @@ package deletionerror
 
 import (
 	"github.com/giantswarm/microerror"
-	"github.com/giantswarm/operatorkit/informer"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
+
+	"github.com/giantswarm/operatorkit/informer"
 )
 
 type FilterWatcherConfig struct {
