@@ -2,17 +2,15 @@ e2eTest: &e2eTest
   machine: true
   working_directory: /home/circleci/.go_workspace/src/github.com/giantswarm/operatorkit
   steps:
-  - checkout
-
-  - run: |
-      wget -q $(curl -sS https://api.github.com/repos/giantswarm/e2e-harness/releases/latest | grep browser_download_url | head -n 1 | cut -d '"' -f 4)
-      chmod +x ./e2e-harness
-  - run: ./e2e-harness localkube
-  - run: ./e2e-harness setup --remote=false
-  - run: ./e2e-harness test --test-dir=${TEST_DIR}
-  - run:
-      command: ./e2e-harness teardown
-      when: always
+    - checkout
+    - run: wget -q $(curl -sS https://api.github.com/repos/giantswarm/e2e-harness/releases/latest?no-cache-$(date +%s) | grep browser_download_url | head -n 1 | cut -d '"' -f 4)
+    - run: chmod +x ./e2e-harness
+    - run: ./e2e-harness localkube
+    - run: ./e2e-harness setup --remote=false
+    - run: ./e2e-harness test --test-dir=${TEST_DIR}
+    - run:
+        command: ./e2e-harness teardown
+        when: always
 
 
 
