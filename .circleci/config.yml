@@ -3,7 +3,8 @@ e2eTest: &e2eTest
   working_directory: /home/circleci/.go_workspace/src/github.com/giantswarm/operatorkit
   steps:
     - checkout
-    - run: wget -q $(curl -sS https://api.github.com/repos/giantswarm/e2e-harness/releases/latest?no-cache-$(date +%s) | grep browser_download_url | head -n 1 | cut -d '"' -f 4)
+    - run: |
+        wget -q $(curl -sS https://api.github.com/repos/giantswarm/e2e-harness/releases/latest | grep browser_download_url | head -n 1 | cut -d '"' -f 4)
     - run: chmod +x ./e2e-harness
     - run: ./e2e-harness localkube
     - run: ./e2e-harness setup --remote=false
@@ -20,7 +21,8 @@ jobs:
     machine: true
     steps:
       - checkout
-      - run: wget -q $(curl -sS -H "Authorization: token $RELEASE_TOKEN" https://api.github.com/repos/giantswarm/architect/releases/latest | grep browser_download_url | head -n 1 | cut -d '"' -f 4)
+      - run: |
+          wget -q $(curl -sS -H "Authorization: token $RELEASE_TOKEN" https://api.github.com/repos/giantswarm/architect/releases/latest | grep browser_download_url | head -n 1 | cut -d '"' -f 4)
       - run: chmod +x ./architect
       - run: ./architect version
       - run: ./architect build
