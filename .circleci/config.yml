@@ -24,7 +24,7 @@ jobs:
       # -- Remove
       # -- Remove
       # -- Remove
-      - run: go verion
+      - run: go version
       - run: which go
       - run: echo $PATH
       # -- Remove
