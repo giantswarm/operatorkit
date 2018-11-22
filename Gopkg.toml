@@ -21,8 +21,8 @@
 
 
 
-[[constraint]]
-  branch = "master"
+[[override]]
+  branch = "extend-status-methods"
   name = "github.com/giantswarm/apiextensions"
 
 [[constraint]]

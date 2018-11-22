@@ -17,6 +17,10 @@ const (
 	DrainerConfigStatusTypeTimeout = "Timeout"
 )
 
+const (
+	kindDrainer = "DrainerConfig"
+)
+
 // NewDrainerConfigCRD returns a new custom resource definition for
 // DrainerConfig. This might look something like the following.
 //
@@ -32,6 +36,8 @@ const (
 //         kind: DrainerConfig
 //         plural: drainerconfigs
 //         singular: drainerconfig
+//       subresources:
+//         status: {}
 //
 func NewDrainerConfigCRD() *apiextensionsv1beta1.CustomResourceDefinition {
 	return &apiextensionsv1beta1.CustomResourceDefinition{
@@ -51,12 +57,21 @@ func NewDrainerConfigCRD() *apiextensionsv1beta1.CustomResourceDefinition {
 				Plural:   "drainerconfigs",
 				Singular: "drainerconfig",
 			},
+			Subresources: &apiextensionsv1beta1.CustomResourceSubresources{
+				Status: &apiextensionsv1beta1.CustomResourceSubresourceStatus{},
+			},
 		},
 	}
 }
 
+func NewDrainerTypeMeta() metav1.TypeMeta {
+	return metav1.TypeMeta{
+		APIVersion: version,
+		Kind:       kindDrainer,
+	}
+}
+
 // +genclient
-// +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 type DrainerConfig struct {

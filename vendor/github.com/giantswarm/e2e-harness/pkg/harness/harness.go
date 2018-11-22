@@ -1,6 +1,7 @@
 package harness
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -37,7 +38,7 @@ func New(logger micrologger.Logger, fs afero.Fs, cfg Config) *Harness {
 }
 
 // Init initializes the harness.
-func (h *Harness) Init() error {
+func (h *Harness) Init(ctx context.Context) error {
 	h.logger.Log("info", "starting harness initialization")
 	baseDir, err := BaseDir()
 	if err != nil {
@@ -68,7 +69,7 @@ func (h *Harness) Init() error {
 }
 
 // WriteConfig is a Task that persists the current config to a file.
-func (h *Harness) WriteConfig() error {
+func (h *Harness) WriteConfig(ctx context.Context) error {
 	dir, err := BaseDir()
 	if err != nil {
 		return microerror.Mask(err)
