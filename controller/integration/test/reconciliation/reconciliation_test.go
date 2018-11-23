@@ -7,16 +7,14 @@ import (
 	"testing"
 	"time"
 
-	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
-
 	"github.com/giantswarm/operatorkit/controller"
 	"github.com/giantswarm/operatorkit/controller/integration/testresource"
 	"github.com/giantswarm/operatorkit/controller/integration/wrapper/nodeconfig"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -243,5 +241,4 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	if !reflect.DeepEqual(resultObjAccessor.GetFinalizers(), expectedFinalizers) {
 		t.Fatalf("finalizers == %v, want %v", resultObjAccessor.GetFinalizers(), expectedFinalizers)
 	}
-
 }

@@ -7,9 +7,6 @@ import "context"
 // reconciling the same object in the chain. In that case they are guaranteed
 // to be executed in order one after another.
 type Resource interface {
-	// Name returns the resource's name used for identification.
-	Name() string
-
 	// EnsureCreated is called when observed object is created or updated.
 	// The object is in state after cration or modification. This method must
 	// be idempotent.
@@ -18,4 +15,6 @@ type Resource interface {
 	// is in last observed state before the deletion. This method must be
 	// idempotent.
 	EnsureDeleted(ctx context.Context, obj interface{}) error
+	// Name returns the resource's name used for identification.
+	Name() string
 }
