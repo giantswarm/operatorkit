@@ -88,13 +88,13 @@ func (r *Resource) EnsureCreated(ctx context.Context, obj interface{}) error {
 		}
 	} else {
 		if len(customResource.Status.Conditions) != 1 {
-			r.t.Fatal("expected one status condition")
+			r.t.Fatalf("expected one status condition but got %#d", len(customResource.Status.Conditions))
 		}
 		if customResource.Status.Conditions[0].Status != conditionStatus {
-			r.t.Fatalf("expected status condition status %#q", conditionStatus)
+			r.t.Fatalf("expected status condition status %#q but got %#q", conditionStatus, customResource.Status.Conditions[0].Status)
 		}
 		if customResource.Status.Conditions[0].Type != conditionType {
-			r.t.Fatalf("expected status condition type %#q", conditionType)
+			r.t.Fatalf("expected status condition type %#q but got %#q", conditionType, customResource.Status.Conditions[0].Type)
 		}
 	}
 
