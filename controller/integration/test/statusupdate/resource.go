@@ -88,7 +88,7 @@ func (r *Resource) EnsureCreated(ctx context.Context, obj interface{}) error {
 		}
 	} else {
 		if len(customResource.Status.Conditions) != 1 {
-			r.t.Fatalf("expected one status condition but got %#d", len(customResource.Status.Conditions))
+			r.t.Fatalf("expected one status condition but got %d", len(customResource.Status.Conditions))
 		}
 		if customResource.Status.Conditions[0].Status != conditionStatus {
 			r.t.Fatalf("expected status condition status %#q but got %#q", conditionStatus, customResource.Status.Conditions[0].Status)
