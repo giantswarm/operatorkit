@@ -15,11 +15,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-const (
-	conditionStatus = "testStatus"
-	conditionType   = "testType"
-)
-
 type ResourceConfig struct {
 	T *testing.T
 }

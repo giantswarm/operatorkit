@@ -15,12 +15,17 @@ import (
 )
 
 const (
-	nameObj      = "test-obj"
-	nameOperator = "test-operator"
+	conditionStatus = "testStatus"
+	conditionType   = "testType"
 )
 
 const (
-	namespaceTest = "finalizer-integration-statusupdate-test"
+	nameObj      = "test-obj"
+	operatorName = "test-operator"
+)
+
+const (
+	testNamespace = "finalizer-integration-statusupdate-test"
 )
 
 func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
@@ -45,8 +50,8 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 				r,
 			},
 
-			Name:      nameOperator,
-			Namespace: namespaceTest,
+			Name:      operatorName,
+			Namespace: testNamespace,
 		}
 
 		nodeConfigWrapper, err = nodeconfig.New(c)
@@ -54,8 +59,8 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 			t.Fatal("expected", nil, "got", err)
 		}
 
-		nodeConfigWrapper.MustSetup(namespaceTest)
-		defer nodeConfigWrapper.MustTeardown(namespaceTest)
+		nodeConfigWrapper.MustSetup(testNamespace)
+		defer nodeConfigWrapper.MustTeardown(testNamespace)
 	}
 
 	{
@@ -70,11 +75,11 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 			nodeConfig := &v1alpha1.NodeConfig{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      nameObj,
-					Namespace: namespaceTest,
+					Namespace: testNamespace,
 				},
 				TypeMeta: v1alpha1.NewNodeTypeMeta(),
 			}
-			_, err := nodeConfigWrapper.CreateObject(namespaceTest, nodeConfig)
+			_, err := nodeConfigWrapper.CreateObject(testNamespace, nodeConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -92,7 +97,7 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	{
-		newObj, err := nodeConfigWrapper.GetObject(nameObj, namespaceTest)
+		newObj, err := nodeConfigWrapper.GetObject(nameObj, testNamespace)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}
@@ -101,6 +106,12 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 
 		if len(customResource.Status.Conditions) != 1 {
 			t.Fatal("expected one status condition")
+		}
+		if customResource.Status.Conditions[0].Status != conditionStatus {
+			t.Fatalf("expected status condition status %#q", conditionStatus)
+		}
+		if customResource.Status.Conditions[0].Type != conditionType {
+			t.Fatalf("expected status condition type %#q", conditionType)
 		}
 	}
 }
