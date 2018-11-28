@@ -66,6 +66,11 @@ jobs:
       TEST_DIR: "controller/integration/test/reconciliation"
     <<: *e2eTest
 
+  e2eTestControllerStatusUpdate:
+    environment:
+      TEST_DIR: "controller/integration/test/statusupdate"
+    <<: *e2eTest
+
   e2eTestInformerBasic:
     environment:
       TEST_DIR: "informer/integration/test/basic"
@@ -106,6 +111,10 @@ workflows:
           - build
 
       - e2eTestControllerReconciliation:
+          requires:
+          - build
+
+      - e2eTestControllerStatusUpdate:
           requires:
           - build
 

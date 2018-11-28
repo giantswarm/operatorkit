@@ -1,16 +1,12 @@
 package microloggertest
 
 import (
-	"io/ioutil"
-
 	"github.com/giantswarm/micrologger"
 )
 
-// New returns a Logger intance configured to discard its output.
+// New returns a Logger intance or panics if the creation fails.
 func New() micrologger.Logger {
-	c := micrologger.Config{
-		IOWriter: ioutil.Discard,
-	}
+	c := micrologger.Config{}
 
 	logger, err := micrologger.New(c)
 	if err != nil {

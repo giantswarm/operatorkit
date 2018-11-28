@@ -47,7 +47,6 @@ type ClusterKubernetes struct {
 	CloudProvider     string                             `json:"cloudProvider" yaml:"cloudProvider"`
 	DNS               ClusterKubernetesDNS               `json:"dns" yaml:"dns"`
 	Domain            string                             `json:"domain" yaml:"domain"`
-	Hyperkube         ClusterKubernetesHyperkube         `json:"hyperkube" yaml:"hyperkube"`
 	IngressController ClusterKubernetesIngressController `json:"ingressController" yaml:"ingressController"`
 	Kubelet           ClusterKubernetesKubelet           `json:"kubelet" yaml:"kubelet"`
 	NetworkSetup      ClusterKubernetesNetworkSetup      `json:"networkSetup" yaml:"networkSetup"`
@@ -65,14 +64,6 @@ type ClusterKubernetesAPI struct {
 
 type ClusterKubernetesDNS struct {
 	IP net.IP `json:"ip" yaml:"ip"`
-}
-
-type ClusterKubernetesHyperkube struct {
-	Docker ClusterKubernetesHyperkubeDocker `json:"docker" yaml:"docker"`
-}
-
-type ClusterKubernetesHyperkubeDocker struct {
-	Image string `json:"image" yaml:"image"`
 }
 
 type ClusterKubernetesIngressController struct {
