@@ -20,7 +20,7 @@ const (
 )
 
 const (
-	nameObj      = "test-obj"
+	objName      = "test-obj"
 	operatorName = "test-operator"
 )
 
@@ -74,7 +74,7 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 		o := func() error {
 			nodeConfig := &v1alpha1.NodeConfig{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      nameObj,
+					Name:      objName,
 					Namespace: testNamespace,
 				},
 				TypeMeta: v1alpha1.NewNodeTypeMeta(),
@@ -97,7 +97,7 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	{
-		newObj, err := nodeConfigWrapper.GetObject(nameObj, testNamespace)
+		newObj, err := nodeConfigWrapper.GetObject(objName, testNamespace)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}
