@@ -34,7 +34,7 @@
   version = "v1.0.0"
 
 [[projects]]
-  branch = "extend-status-methods"
+  branch = "master"
   digest = "1:6067579e266d65be3aeb6d6977aca302c2a5d0435a3b2b3e3fcc14531f0b12a6"
   name = "github.com/giantswarm/apiextensions"
   packages = [
@@ -48,7 +48,7 @@
     "pkg/clientset/versioned/typed/provider/v1alpha1",
   ]
   pruneopts = "UT"
-  revision = "3c631b76375bf8f9f5680833e2db8045af6be349"
+  revision = "43587e392cc73ed2416631ff51a12d57c7c14f07"
 
 [[projects]]
   branch = "master"
@@ -64,7 +64,7 @@
   name = "github.com/giantswarm/e2e-harness"
   packages = ["pkg/harness"]
   pruneopts = "UT"
-  revision = "04e8817eb5f820eb7afe94ecb7e259664d32797a"
+  revision = "b78e68dabfb7e3736e644b97256080d102ecc4b8"
 
 [[projects]]
   branch = "master"
@@ -84,7 +84,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:4ddd1df6c63413a6686c91013ff2d7646fd0a51f507c820c87dd1be419abaadc"
+  digest = "1:694999f80715134bfa36a3783e55140386f75039f5dae165fd8b2d024ac4b933"
   name = "github.com/giantswarm/micrologger"
   packages = [
     ".",
@@ -92,7 +92,7 @@
     "microloggertest",
   ]
   pruneopts = "UT"
-  revision = "22dc3b5565d150e1f94fbed50df3baf6cd40fac9"
+  revision = "39ed6a99d31b8962e38dfaff287125fb756e8b2a"
 
 [[projects]]
   digest = "1:0cfcded8689c2c964c223650009c5dd9e283c22d57f18f2335aafa16cc22acf1"
@@ -275,7 +275,7 @@
     "model",
   ]
   pruneopts = "UT"
-  revision = "aeab699e26f4d4089dba5e522e5d9babd2adbaf7"
+  revision = "4724e9255275ce38f7179b2478abeae4e28c904f"
 
 [[projects]]
   branch = "master"
@@ -288,7 +288,7 @@
     "xfs",
   ]
   pruneopts = "UT"
-  revision = "185b4288413d2a0dd0806f78c90dde719829e5ae"
+  revision = "619930b0b4713cc1280189bf0a4c54b3fb506f60"
 
 [[projects]]
   digest = "1:6a4a11ba764a56d2758899ec6f3848d24698d48442ebce85ee7a3f63284526cd"
@@ -311,11 +311,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:3f3a05ae0b95893d90b9b3b5afdb79a9b3d96e4e36e099d841ae602e4aca0da8"
+  digest = "1:38f553aff0273ad6f367cb0a0f8b6eecbaef8dc6cb8b50e57b6a81c1d5b1e332"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = "UT"
-  revision = "3d3f9f413869b949e48070b5bc593aa22cc2b8f2"
+  revision = "eb0de9b17e854e9b1ccd9963efafc79862359959"
 
 [[projects]]
   branch = "master"
@@ -333,14 +333,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f343f077a5b0bc3a3788b3a04e24dd417e3e25b2acb529c413e212d2c42416ef"
+  digest = "1:0c7cb58af944f9690af91474a75371eecfe54c1ce3771a8dc08924430ee785d3"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "UT"
-  revision = "62eef0e2fa9b2c385f7b2778e763486da6880d37"
+  revision = "4ed8d59d0b35e1e29334a206d1b3f38b1e5dfb31"
 
 [[projects]]
   digest = "1:a2ab62866c75542dd18d2b069fec854577a20211d7c0ea6ae746072a1dccdd18"
