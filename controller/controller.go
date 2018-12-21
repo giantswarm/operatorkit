@@ -23,7 +23,12 @@ import (
 )
 
 const (
-	loggerResourceKey = "resource"
+	// removedFinalizersCacheSize should be bigger than number of reconciled
+	// objects times number of controllers to handle all deletions at the
+	// same time. Even if it is too small in the worst case scenario we
+	// will get deletion event for already deleted object.
+	removedFinalizersCacheSize = 1000
+	loggerResourceKey          = "resource"
 )
 
 type Config struct {
@@ -70,10 +75,11 @@ type Controller struct {
 	logger       micrologger.Logger
 	resourceSets []*ResourceSet
 
-	bootOnce       sync.Once
-	booted         chan struct{}
-	errorCollector chan error
-	mutex          sync.Mutex
+	bootOnce               sync.Once
+	booted                 chan struct{}
+	errorCollector         chan error
+	removedFinalizersCache *pairCache
+	mutex                  sync.Mutex
 
 	backOffFactory func() backoff.Interface
 	name           string
@@ -112,10 +118,11 @@ func New(config Config) (*Controller, error) {
 		logger:       config.Logger,
 		resourceSets: config.ResourceSets,
 
-		bootOnce:       sync.Once{},
-		booted:         make(chan struct{}),
-		errorCollector: make(chan error, 1),
-		mutex:          sync.Mutex{},
+		bootOnce:               sync.Once{},
+		booted:                 make(chan struct{}),
+		errorCollector:         make(chan error, 1),
+		removedFinalizersCache: newPairCache(removedFinalizersCacheSize),
+		mutex:                  sync.Mutex{},
 
 		backOffFactory: config.BackOffFactory,
 		name:           config.Name,

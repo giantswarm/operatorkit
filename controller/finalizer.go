@@ -91,6 +91,11 @@ func (c *Controller) hasFinalizer(ctx context.Context, obj interface{}) (bool, e
 		return false, microerror.Mask(err)
 	}
 	finalizerName := getFinalizerName(c.name)
+	selfLink := accessor.GetSelfLink()
+
+	if c.removedFinalizersCache.Contains(finalizerName, selfLink) {
+		return false, nil
+	}
 
 	return containsString(accessor.GetFinalizers(), finalizerName), nil
 }
@@ -177,6 +182,7 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 		}
 
 		c.logger.Log("level", "debug", "message", fmt.Sprintf("removed finalizer '%s'", finalizerName))
+		c.removedFinalizersCache.Put(finalizerName, selfLink)
 	}
 
 	return nil
