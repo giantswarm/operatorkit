@@ -173,18 +173,15 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 
 	// We use backoff with the absolute maximum amount:
 	// 2 second RateWait + 18 second to ensure that both finalizers were removed.
-	// The controllers should now remove the finalizer and EnsureDeleted should be
-	// hit four times immediatly.
-	// See https://github.com/giantswarm/giantswarm/issues/2897
 	//
-	// 		EnsureDeleted: 4
+	// 		EnsureDeleted: 1
 	//
 	operation = func() error {
-		if trA.DeleteCount() != 3 {
-			return microerror.Maskf(countMismatchError, "EnsureDeleted of controller A was hit %v times, want %v", trA.DeleteCount(), 3)
+		if trA.DeleteCount() != 1 {
+			return microerror.Maskf(countMismatchError, "EnsureDeleted of controller A was hit %v times, want %v", trA.DeleteCount(), 1)
 		}
-		if trB.DeleteCount() != 3 {
-			return microerror.Maskf(countMismatchError, "EnsureDeleted of controller B was hit %v times, want %v", trB.DeleteCount(), 3)
+		if trB.DeleteCount() != 1 {
+			return microerror.Maskf(countMismatchError, "EnsureDeleted of controller B was hit %v times, want %v", trB.DeleteCount(), 1)
 		}
 		return nil
 	}
