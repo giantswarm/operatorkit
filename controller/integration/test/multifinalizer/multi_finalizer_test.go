@@ -93,7 +93,7 @@ func Test_MultiFinalizer(t *testing.T) {
 			},
 		}
 
-		resourceB, err = testresource.New(c)
+		resourceC, err = testresource.New(c)
 		if err != nil {
 			t.Fatalf("failed to create resource: %#v", err)
 		}
