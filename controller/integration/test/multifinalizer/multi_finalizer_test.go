@@ -246,11 +246,11 @@ func Test_MultiFinalizer(t *testing.T) {
 			if hasFinalizerA {
 				return microerror.Maskf(waitError, "finalizer %#q is still present in %#v", testFinalizerA, cm.Finalizers)
 			}
-			if hasFinalizerB {
-				return microerror.Maskf(waitError, "finalizer %#q is still present in %#v", testFinalizerB, cm.Finalizers)
-			}
 			if !hasFinalizerB {
 				t.Fatalf("expected finalizer %#q in %#v", testFinalizerB, cm.Finalizers)
+			}
+			if hasFinalizerC {
+				return microerror.Maskf(waitError, "finalizer %#q is still present in %#v", testFinalizerC, cm.Finalizers)
 			}
 
 			return nil
@@ -259,13 +259,13 @@ func Test_MultiFinalizer(t *testing.T) {
 		n := backoff.NewNotifier(logger, ctx)
 		err = backoff.RetryNotify(o, b, n)
 		if err != nil {
-			t.Fatalf("failed to wait for ConfigMap to have %#q finalizer removed: %#v", testFinalizerB, err)
+			t.Fatalf("failed to wait for ConfigMap to have all but %#q finalizer removed: %#v", testFinalizerB, err)
 		}
 	}
 
-	// Reset the resource and check if deletion counter stays 1 in resource
-	// A and increases in resource B. That means only the controller with
-	// coresponding finalizer receives deletion events.
+	// Verify that deletion counter stays 1 in resource A and increases in
+	// resource B, and it is 2 in resource C. That means only the
+	// controller with coresponding finalizer receives deletion events.
 	{
 		o := func() error {
 			if resourceA.DeleteCount() != 1 {
