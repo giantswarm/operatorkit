@@ -83,7 +83,7 @@ func Test_MultiFinalizer(t *testing.T) {
 			ReturnErrorFunc: func(obj interface{}) error {
 				var err error
 				once.Do(func() {
-					err := microerror.Maskf(executionError, "I fail to keep the finalizer once")
+					err = microerror.Maskf(executionError, "I fail to keep the finalizer once")
 				})
 
 				if err != nil {
