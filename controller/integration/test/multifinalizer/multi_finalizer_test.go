@@ -4,6 +4,7 @@ package multifinalizer
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -29,6 +30,10 @@ const (
 	controllerNameB = "test-controller-b"
 	resourceNameB   = "test-resource-b"
 	testFinalizerB  = "operatorkit.giantswarm.io/test-controller-b"
+
+	controllerNameC = "test-controller-c"
+	resourceNameC   = "test-resource-c"
+	testFinalizerC  = "operatorkit.giantswarm.io/test-controller-c"
 )
 
 func Test_MultiFinalizer(t *testing.T) {
@@ -39,6 +44,7 @@ func Test_MultiFinalizer(t *testing.T) {
 		logger = microloggertest.New()
 	)
 
+	// resourceA always passes.
 	var resourceA *testresource.Resource
 	{
 		c := testresource.Config{
@@ -51,6 +57,7 @@ func Test_MultiFinalizer(t *testing.T) {
 		}
 	}
 
+	// resourceB errors constantly.
 	var resourceB *testresource.Resource
 	{
 		c := testresource.Config{
@@ -66,7 +73,33 @@ func Test_MultiFinalizer(t *testing.T) {
 		}
 	}
 
-	var harnessA, harnessB *configmap.Wrapper
+	// resourceC errors once.
+	var resourceC *testresource.Resource
+	{
+		var once sync.Once
+
+		c := testresource.Config{
+			Name: resourceNameB,
+			ReturnErrorFunc: func(obj interface{}) error {
+				var err error
+				once.Do(func() {
+					err := microerror.Maskf(executionError, "I fail to keep the finalizer once")
+				})
+
+				if err != nil {
+					return microerror.Mask(err)
+				}
+				return nil
+			},
+		}
+
+		resourceB, err = testresource.New(c)
+		if err != nil {
+			t.Fatalf("failed to create resource: %#v", err)
+		}
+	}
+
+	var harnessA, harnessB, harnessC *configmap.Wrapper
 	{
 		harnessA, err = setupHarness(controllerNameA, resourceA)
 		if err != nil {
@@ -76,15 +109,21 @@ func Test_MultiFinalizer(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to setup controller %#q: %#v", controllerNameB, err)
 		}
+		harnessC, err = setupHarness(controllerNameC, resourceC)
+		if err != nil {
+			t.Fatalf("failed to setup controller %#q: %#v", controllerNameC, err)
+		}
 	}
 
 	// Start controllers.
 	{
 		controllerA := harnessA.Controller()
 		controllerB := harnessB.Controller()
+		controllerC := harnessC.Controller()
 
 		go controllerA.Boot()
 		go controllerB.Boot()
+		go controllerC.Boot()
 		select {
 		case <-controllerA.Booted():
 		case <-time.After(30 * time.Second):
@@ -95,10 +134,15 @@ func Test_MultiFinalizer(t *testing.T) {
 		case <-time.After(30 * time.Second):
 			t.Fatalf("failed to wait for controllerB to boot")
 		}
+		select {
+		case <-controllerC.Booted():
+		case <-time.After(30 * time.Second):
+			t.Fatalf("failed to wait for controllerC to boot")
+		}
 	}
 
 	// We setup the namespace in which we test. We use the harness A. It
-	// makes no difference if we use the harness A or B.
+	// makes no difference if we use the harness A, B or C.
 	{
 		harnessA.MustSetup(testNamespace)
 		defer harnessA.MustTeardown(testNamespace)
@@ -134,7 +178,7 @@ func Test_MultiFinalizer(t *testing.T) {
 				t.Fatalf("failed to convert the object to ConfigMap: %#v", err)
 			}
 
-			var hasFinalizerA, hasFinalizerB bool
+			var hasFinalizerA, hasFinalizerB, hasFinalizerC bool
 			{
 				for _, f := range cm.Finalizers {
 					switch f {
@@ -142,6 +186,8 @@ func Test_MultiFinalizer(t *testing.T) {
 						hasFinalizerA = true
 					case testFinalizerB:
 						hasFinalizerB = true
+					case testFinalizerC:
+						hasFinalizerC = true
 					}
 				}
 			}
@@ -151,6 +197,9 @@ func Test_MultiFinalizer(t *testing.T) {
 			}
 			if !hasFinalizerB {
 				return microerror.Maskf(waitError, "finalizer %#q is not present in %#v", testFinalizerB, cm.Finalizers)
+			}
+			if !hasFinalizerC {
+				return microerror.Maskf(waitError, "finalizer %#q is not present in %#v", testFinalizerC, cm.Finalizers)
 			}
 
 			return nil
@@ -197,6 +246,9 @@ func Test_MultiFinalizer(t *testing.T) {
 			if hasFinalizerA {
 				return microerror.Maskf(waitError, "finalizer %#q is still present in %#v", testFinalizerA, cm.Finalizers)
 			}
+			if hasFinalizerB {
+				return microerror.Maskf(waitError, "finalizer %#q is still present in %#v", testFinalizerB, cm.Finalizers)
+			}
 			if !hasFinalizerB {
 				t.Fatalf("expected finalizer %#q in %#v", testFinalizerB, cm.Finalizers)
 			}
@@ -219,8 +271,12 @@ func Test_MultiFinalizer(t *testing.T) {
 			if resourceA.DeleteCount() != 1 {
 				t.Fatalf("resourceA.DeleteCount == %d, want 1", resourceA.DeleteCount())
 			}
-			if resourceB.DeleteCount() < 4 {
+			if resourceB.DeleteCount() < 5 {
 				return microerror.Maskf(waitError, "resourceB.DeleteCount() is still less than 4")
+			}
+			// TODO != 2
+			if resourceC.DeleteCount() != 3 {
+				t.Fatalf("resourceA.DeleteCount == %d, want 2", resourceC.DeleteCount())
 			}
 
 			return nil
@@ -229,7 +285,7 @@ func Test_MultiFinalizer(t *testing.T) {
 		n := backoff.NewNotifier(logger, ctx)
 		err := backoff.RetryNotify(o, b, n)
 		if err != nil {
-			t.Fatalf("failed to wait for resourceB.DeleteCount() being bigger than 3: %#v", err)
+			t.Fatalf("failed to wait for resourceB.DeleteCount() being bigger than 4: %#v", err)
 		}
 	}
 }
