@@ -202,11 +202,18 @@ func (c *Controller) DeleteFunc(obj interface{}) {
 		ctx = loggermeta.NewContext(ctx, meta)
 	}
 
-	err = ProcessDelete(ctx, obj, rs.Resources())
+	hasFinalizer, err := c.hasFinalizer(ctx, obj)
 	if err != nil {
-		c.errorCollector <- err
 		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
+	}
+	if hasFinalizer {
+		err = ProcessDelete(ctx, obj, rs.Resources())
+		if err != nil {
+			c.errorCollector <- err
+			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+			return
+		}
 	}
 
 	err = c.removeFinalizer(ctx, obj)
