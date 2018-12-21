@@ -231,7 +231,7 @@ func Test_MultiFinalizer(t *testing.T) {
 				t.Fatalf("failed to convert the object to ConfigMap: %#v", err)
 			}
 
-			var hasFinalizerA, hasFinalizerB, hasFinalizerC bool
+			var hasFinalizerA, hasFinalizerB bool
 			{
 				for _, f := range cm.Finalizers {
 					switch f {
@@ -239,8 +239,6 @@ func Test_MultiFinalizer(t *testing.T) {
 						hasFinalizerA = true
 					case testFinalizerB:
 						hasFinalizerB = true
-					case testFinalizerC:
-						hasFinalizerC = true
 					}
 				}
 			}
@@ -248,11 +246,11 @@ func Test_MultiFinalizer(t *testing.T) {
 			if hasFinalizerA {
 				return microerror.Maskf(waitError, "finalizer %#q is still present in %#v", testFinalizerA, cm.Finalizers)
 			}
+			if hasFinalizerB {
+				return microerror.Maskf(waitError, "finalizer %#q is still present in %#v", testFinalizerB, cm.Finalizers)
+			}
 			if !hasFinalizerB {
 				t.Fatalf("expected finalizer %#q in %#v", testFinalizerB, cm.Finalizers)
-			}
-			if hasFinalizerC {
-				return microerror.Maskf(waitError, "finalizer %#q is still present in %#v", testFinalizerC, cm.Finalizers)
 			}
 
 			return nil
@@ -261,7 +259,7 @@ func Test_MultiFinalizer(t *testing.T) {
 		n := backoff.NewNotifier(logger, ctx)
 		err = backoff.RetryNotify(o, b, n)
 		if err != nil {
-			t.Fatalf("failed to wait for ConfigMap to have all but %#q finalizer removed: %#v", testFinalizerB, err)
+			t.Fatalf("failed to wait for ConfigMap to have %#q finalizer removed: %#v", testFinalizerB, err)
 		}
 	}
 
@@ -276,8 +274,7 @@ func Test_MultiFinalizer(t *testing.T) {
 			if resourceB.DeleteCount() < 5 {
 				return microerror.Maskf(waitError, "resourceB.DeleteCount() is still less than 4")
 			}
-			// TODO != 2
-			if resourceC.DeleteCount() != 3 {
+			if resourceC.DeleteCount() != 2 {
 				t.Fatalf("resourceA.DeleteCount == %d, want 2", resourceC.DeleteCount())
 			}
 
