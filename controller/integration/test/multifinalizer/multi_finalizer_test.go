@@ -231,7 +231,7 @@ func Test_MultiFinalizer(t *testing.T) {
 				t.Fatalf("failed to convert the object to ConfigMap: %#v", err)
 			}
 
-			var hasFinalizerA, hasFinalizerB bool
+			var hasFinalizerA, hasFinalizerB, hasFinalizerC bool
 			{
 				for _, f := range cm.Finalizers {
 					switch f {
@@ -239,6 +239,8 @@ func Test_MultiFinalizer(t *testing.T) {
 						hasFinalizerA = true
 					case testFinalizerB:
 						hasFinalizerB = true
+					case testFinalizerC:
+						hasFinalizerC = true
 					}
 				}
 			}
