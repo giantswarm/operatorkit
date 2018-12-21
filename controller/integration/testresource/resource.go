@@ -24,7 +24,7 @@ type Resource struct {
 
 func New(config Config) (*Resource, error) {
 	if config.Name == "" {
-		config.Name = "test-resource"
+		config.Name = "testresource"
 	}
 
 	r := &Resource{

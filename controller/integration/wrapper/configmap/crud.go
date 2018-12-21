@@ -10,7 +10,7 @@ import (
 )
 
 func (w Wrapper) CreateObject(namespace string, obj interface{}) (interface{}, error) {
-	configMap, err := toCustomObject(obj)
+	configMap, err := ToCustomObject(obj)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
@@ -43,7 +43,7 @@ func (w Wrapper) GetObject(name, namespace string) (interface{}, error) {
 }
 
 func (w Wrapper) UpdateObject(namespace string, obj interface{}) (interface{}, error) {
-	configMap, err := toCustomObject(obj)
+	configMap, err := ToCustomObject(obj)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
@@ -62,7 +62,7 @@ func (w Wrapper) UpdateObject(namespace string, obj interface{}) (interface{}, e
 	return updateConfigMap, nil
 }
 
-func toCustomObject(v interface{}) (corev1.ConfigMap, error) {
+func ToCustomObject(v interface{}) (corev1.ConfigMap, error) {
 	if v == nil {
 		return corev1.ConfigMap{}, microerror.Maskf(wrongTypeError, "expected '%T', got '%T'", &corev1.ConfigMap{}, v)
 	}

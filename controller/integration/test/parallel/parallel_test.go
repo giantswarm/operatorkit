@@ -20,13 +20,13 @@ import (
 
 const (
 	objName       = "test-obj"
-	testNamespace = "finalizer-integration-parallel-test"
+	testNamespace = "integration-parallel-test"
 
-	operatorNameA  = "test-operator-a"
-	testFinalizerA = "operatorkit.giantswarm.io/test-operator-a"
+	controllerNameA = "test-controller-a"
+	testFinalizerA  = "operatorkit.giantswarm.io/test-controller-a"
 
-	operatorNameB  = "test-operator-b"
-	testFinalizerB = "operatorkit.giantswarm.io/test-operator-b"
+	controllerNameB = "test-controller-b"
+	testFinalizerB  = "operatorkit.giantswarm.io/test-controller-b"
 )
 
 // Test_Finalizer_Integration_Parallel is a integration test to
@@ -45,7 +45,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 		}
 	}
 
-	testWrapperA, err := setupController(testNamespace, operatorNameA, trA)
+	testWrapperA, err := setupController(testNamespace, controllerNameA, trA)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -63,7 +63,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 		}
 	}
 
-	testWrapperB, err := setupController(testNamespace, operatorNameB, trB)
+	testWrapperB, err := setupController(testNamespace, controllerNameB, trB)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
