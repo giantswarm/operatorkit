@@ -121,16 +121,16 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 		// receive events at different times. Checking the count exactly might fail
 		// if a controller is slower and the other one reconciles one more time.
 		if trA.CreateCount() < 2 {
-			return microerror.Maskf(countMismatchError, "EnsureCreated of controller A was hit %v times, want atleast %v", trA.CreateCount(), 2)
+			return microerror.Maskf(waitError, "EnsureCreated of controller A was hit %v times, want atleast %v", trA.CreateCount(), 2)
 		}
 		if trA.DeleteCount() != 0 {
-			return microerror.Maskf(countMismatchError, "EnsureDeleted of controller A was hit %v times, want %v", trA.DeleteCount(), 0)
+			return microerror.Maskf(waitError, "EnsureDeleted of controller A was hit %v times, want %v", trA.DeleteCount(), 0)
 		}
 		if trB.CreateCount() < 2 {
-			return microerror.Maskf(countMismatchError, "EnsureCreated of controller B was hit %v times, want atleast %v", trB.CreateCount(), 2)
+			return microerror.Maskf(waitError, "EnsureCreated of controller B was hit %v times, want atleast %v", trB.CreateCount(), 2)
 		}
 		if trB.DeleteCount() != 0 {
-			return microerror.Maskf(countMismatchError, "EnsureDeleted of controller B was hit %v times, want %v", trB.DeleteCount(), 0)
+			return microerror.Maskf(waitError, "EnsureDeleted of controller B was hit %v times, want %v", trB.DeleteCount(), 0)
 		}
 		return nil
 	}
@@ -171,61 +171,33 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 		t.Fatal("expected", nil, "got", err)
 	}
 
-	// Verify that our resources received single delete events.
-	{
-		o := func() error {
-			if trA.DeleteCount() != 1 {
-				return microerror.Maskf(waitError, "EnsureDeleted of controller A was hit %v times, want %v", trA.DeleteCount(), 1)
-			}
-			if trB.DeleteCount() != 1 {
-				return microerror.Maskf(waitError, "EnsureDeleted of controller B was hit %v times, want %v", trB.DeleteCount(), 1)
-			}
-
-			return nil
-		}
-		b := backoff.NewExponential(backoff.ShortMaxWait, backoff.ShortMaxInterval)
-		backoff.Retry(o, b)
-		err := backoff.RetryNotify(o, b, n)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-	}
-
 	// Verify that our object is completely gone now.
 	{
 		o := func() error {
 			_, err := testWrapperA.GetObject(objName, testNamespace)
-			if !nodeconfig.IsNotFound(err) {
-				return microerror.Maskf(waitError, "object %#q in namespace %#q still exists", objName, testNamespace)
+			if nodeconfig.IsNotFound(err) {
+				return nil
+			} else if err != nil {
+				return microerror.Mask(err)
 			}
 
-			return nil
+			return microerror.Maskf(waitError, "object %#q in namespace %#q still exists", objName, testNamespace)
 		}
 		b := backoff.NewExponential(backoff.ShortMaxWait, backoff.ShortMaxInterval)
 		err := backoff.Retry(o, b)
 		if err != nil {
-			return microerror.Mask(err)
+			t.Fatalf("failed to wait for object deletion: %#v", err)
 		}
 	}
 
-	// Veryfy resources didn't receive more deletion events after
+	// Veryfy resources received exactly one deletion event after
 	// successful deleteion.
 	{
-		o := func() error {
-			if trA.DeleteCount() != 1 {
-				return microerror.Maskf(waitError, "EnsureDeleted of controller A was hit %v times, want %v", trA.DeleteCount(), 1)
-			}
-			if trB.DeleteCount() != 1 {
-				return microerror.Maskf(waitError, "EnsureDeleted of controller B was hit %v times, want %v", trB.DeleteCount(), 1)
-			}
-
-			return nil
+		if trA.DeleteCount() != 1 {
+			t.Fatalf("EnsureDeleted of controller A was hit %v times, want %v", trA.DeleteCount(), 1)
 		}
-		b := backoff.NewExponential(backoff.ShortMaxWait, backoff.ShortMaxInterval)
-		backoff.Retry(o, b)
-		err := backoff.RetryNotify(o, b, n)
-		if err != nil {
-			return microerror.Mask(err)
+		if trB.DeleteCount() != 1 {
+			t.Fatalf("EnsureDeleted of controller B was hit %v times, want %v", trB.DeleteCount(), 1)
 		}
 	}
 }
