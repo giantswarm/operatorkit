@@ -11,6 +11,8 @@ type pairCache struct {
 
 func newPairCache(size int) *pairCache {
 	if size < 1 {
+		// Yes this panics. But if size is less than 0 it will panic
+		// anyway in slice creation.
 		panic("size must be bigger than 0")
 	}
 
@@ -22,14 +24,7 @@ func newPairCache(size int) *pairCache {
 	return p
 }
 
-// TODO test for len 1;
-// TODO test for len 0;
-// TODO test empty string
-
 // Put inserts and item into the cache.
-//
-// NOTE: Put may insert the same item twice.
-//
 func (p *pairCache) Put(a, b string) {
 	p.dataMutex.Lock()
 	defer p.dataMutex.Unlock()
