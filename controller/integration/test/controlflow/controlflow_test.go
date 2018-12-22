@@ -247,7 +247,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 			return microerror.Maskf(waitError, "object %#q in namespace %#q is still not deleted", objName, testNamespace)
 		}
-		b := backoff.NewExponential(1*time.Second, 20*time.Second)
+		b := backoff.NewExponential(1*time.Second, 30*time.Second)
 		err := backoff.Retry(o, b)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
