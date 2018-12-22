@@ -83,7 +83,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 			return nil
 		}
-		b := backoff.NewExponential(2*time.Minute, 10*time.Second)
+		b := backoff.NewExponential(2*time.Second, 10*time.Second)
 
 		err = backoff.Retry(o, b)
 		if err != nil {
@@ -102,57 +102,65 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	//
 	// 		EnsureCreated: 2, EnsureDeleted: 0
 	//
-	operation := func() error {
-		if tr.CreateCount() != 2 {
-			return microerror.Maskf(waitError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 2)
+	{
+		o := func() error {
+			if tr.CreateCount() != 2 {
+				return microerror.Maskf(waitError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 2)
+			}
+			if tr.DeleteCount() != 0 {
+				return microerror.Maskf(waitError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 0)
+			}
+
+			return nil
 		}
-		if tr.DeleteCount() != 0 {
-			return microerror.Maskf(waitError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 0)
+		b := backoff.NewMaxRetries(20, 1*time.Second)
+
+		err := backoff.Retry(operation, b)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
 		}
-		return nil
-	}
-	err = backoff.Retry(operation, backoff.NewMaxRetries(20, 1*time.Second))
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
 	}
 
-	// We get the object after the controller has been started.
-	resultObj, err := testWrapper.GetObject(objName, testNamespace)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
+	// Verify deletion timestamp and finalizer.
+	{
+		obj, err := testWrapper.GetObject(objName, testNamespace)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
+		}
+
+		accessor, err := meta.Accessor(obj)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
+		}
+
+		if accessor.GetDeletionTimestamp() != nil {
+			t.Fatalf("DeletionTimestamp != nil, want nil")
+		}
+
+		finalizers := accessor.GetFinalizers()
+		expectedFinalizers := []string{
+			testFinalizer,
+		}
+		if !reflect.DeepEqual(finalizers, expectedFinalizers) {
+			t.Fatalf("finalizers == %v, want %v", finalizers, expectedFinalizers)
+		}
 	}
 
-	resultObjAccessor, err := meta.Accessor(resultObj)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
+	// We set an error function to return an error. This causes the
+	// resource to always return an error and should therefore prevent the
+	// removal of our finalizer.
+	{
+		tr.SetReturnErrorFunc(func(obj interface{}) error {
+			return microerror.Mask(testError)
+		})
 	}
-
-	// We verify, that the DeletionTimestamp has not been set.
-	if resultObjAccessor.GetDeletionTimestamp() != nil {
-		t.Fatalf("DeletionTimestamp != nil, want nil")
-	}
-
-	// We define which finalizers we currently expect.
-	expectedFinalizers := []string{
-		testFinalizer,
-	}
-
-	// We verify, that our finalizer is still set.
-	if !reflect.DeepEqual(resultObjAccessor.GetFinalizers(), expectedFinalizers) {
-		t.Fatalf("finalizers == %v, want %v", resultObjAccessor.GetFinalizers(), expectedFinalizers)
-	}
-
-	// We set an error function to return an error. This causes the resource to
-	// always return an error and should therefor prevent the removal of our
-	// finalizer.
-	tr.SetReturnErrorFunc(func(obj interface{}) error {
-		return microerror.Mask(testError)
-	})
 
 	// We delete the object now.
-	err = testWrapper.DeleteObject(objName, testNamespace)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
+	{
+		err := testWrapper.DeleteObject(objName, testNamespace)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
+		}
 	}
 
 	// We use backoff with the absolute maximum amount:
@@ -167,44 +175,48 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	//
 	// 		EnsureCreated: 2, EnsureDeleted: 2
 	//
-	operation = func() error {
-		if tr.CreateCount() != 2 {
-			return microerror.Maskf(waitError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 2)
+	{
+		o := func() error {
+			if tr.CreateCount() != 2 {
+				return microerror.Maskf(waitError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 2)
+			}
+			if tr.DeleteCount() != 2 {
+				return microerror.Maskf(waitError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 2)
+			}
+
+			return nil
 		}
-		if tr.DeleteCount() != 2 {
-			return microerror.Maskf(waitError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 2)
+		b := backoff.NewMaxRetries(20, 1*time.Second)
+
+		err := backoff.Retry(o, b)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
 		}
-		return nil
-	}
-	err = backoff.Retry(operation, backoff.NewMaxRetries(20, 1*time.Second))
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
 	}
 
-	// We get the object after the controller has handled the deletion event.
-	resultObj, err = testWrapper.GetObject(objName, testNamespace)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
+	// Verify deletion timestamp and finalizer again.
+	{
+		obj, err := testWrapper.GetObject(objName, testNamespace)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
+		}
 
-	resultObjAccessor, err = meta.Accessor(resultObj)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
+		accessor, err := meta.Accessor(obj)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
+		}
 
-	// We verify, that our object still exists, but has a DeletionTimestamp set.
-	if resultObjAccessor.GetDeletionTimestamp() == nil {
-		t.Fatalf("DeletionTimestamp == nil, want non-nil")
-	}
+		if accessor.GetDeletionTimestamp() != nil {
+			t.Fatalf("DeletionTimestamp != nil, want nil")
+		}
 
-	// We define which finalizers we currently expect.
-	expectedFinalizers = []string{
-		testFinalizer,
-	}
-
-	// We verify, that our finalizer is still set.
-	if !reflect.DeepEqual(resultObjAccessor.GetFinalizers(), expectedFinalizers) {
-		t.Fatalf("finalizers == %v, want %v", resultObjAccessor.GetFinalizers(), expectedFinalizers)
+		finalizers := accessor.GetFinalizers()
+		expectedFinalizers := []string{
+			testFinalizer,
+		}
+		if !reflect.DeepEqual(finalizers, expectedFinalizers) {
+			t.Fatalf("finalizers == %v, want %v", finalizers, expectedFinalizers)
+		}
 	}
 
 	// We use backoff with the absolute maximum amount:
@@ -220,9 +232,11 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 			if tr.DeleteCount() > 3 {
 				return microerror.Maskf(waitError, "EnsureDeleted was hit %v times, want more than %v", tr.DeleteCount(), 3)
 			}
+
 			return nil
 		}
 		b := backoff.NewExponential(1*time.Second, 20*time.Second)
+
 		err := backoff.Retry(o, b)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
@@ -248,6 +262,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 			return microerror.Maskf(waitError, "object %#q in namespace %#q is still not deleted", objName, testNamespace)
 		}
 		b := backoff.NewExponential(1*time.Second, 30*time.Second)
+
 		err := backoff.Retry(o, b)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
