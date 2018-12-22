@@ -246,7 +246,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 
 			return nil
 		}
-		b := backoff.NewExponential(500, 3*time.Second)
+		b := backoff.NewExponential(1*time.Second, 20*time.Second)
 
 		err := backoff.Retry(o, b)
 		if err != nil {
