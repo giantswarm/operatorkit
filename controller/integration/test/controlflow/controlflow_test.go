@@ -229,7 +229,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 			if tr.CreateCount() != 2 {
 				return microerror.Maskf(waitError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 2)
 			}
-			if tr.DeleteCount() > 3 {
+			if tr.DeleteCount() < 4 {
 				return microerror.Maskf(waitError, "EnsureDeleted was hit %v times, want more than %v", tr.DeleteCount(), 3)
 			}
 
