@@ -162,6 +162,17 @@ func (c *Controller) Booted() chan struct{} {
 func (c *Controller) DeleteFunc(obj interface{}) {
 	ctx := context.Background()
 
+	// TODO move that to ProcessEvents and do not expose DeleteFunc.
+	{
+		meta, ok := loggermeta.FromContext(ctx)
+		if !ok {
+			meta = loggermeta.New()
+		}
+		meta.KeyVals["controller"] = c.name
+
+		ctx = loggermeta.NewContext(ctx, meta)
+	}
+
 	// DeleteFunc/UpdateFunc is synchronized to make sure only one of them is
 	// executed at a time. DeleteFunc/UpdateFunc is not thread safe. This is
 	// important because the source of truth for an operator are the reconciled
@@ -221,6 +232,7 @@ func (c *Controller) DeleteFunc(obj interface{}) {
 			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 			return
 		}
+	} else {
 	}
 
 	err = c.removeFinalizer(ctx, obj)
@@ -270,6 +282,17 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 func (c *Controller) UpdateFunc(oldObj, newObj interface{}) {
 	ctx := context.Background()
 	obj := newObj
+
+	// TODO move that to ProcessEvents and do not expose UpdateFunc.
+	{
+		meta, ok := loggermeta.FromContext(ctx)
+		if !ok {
+			meta = loggermeta.New()
+		}
+		meta.KeyVals["controller"] = c.name
+
+		ctx = loggermeta.NewContext(ctx, meta)
+	}
 
 	// DeleteFunc/UpdateFunc is synchronized to make sure only one of them is
 	// executed at a time. DeleteFunc/UpdateFunc is not thread safe. This is
