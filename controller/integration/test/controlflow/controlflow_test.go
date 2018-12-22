@@ -207,34 +207,50 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 		t.Fatalf("finalizers == %v, want %v", resultObjAccessor.GetFinalizers(), expectedFinalizers)
 	}
 
-	// We set the error function to nil to not return any error anymore. Our
-	// finalizer should be removed with the next reconciliation now.
-	tr.SetReturnErrorFunc(nil)
-
 	// We use backoff with the absolute maximum amount:
 	// 10 second ResyncPeriod + 2 second RateWait + 8 second for safety.
-	// The controller should now remove the finalizer and EnsureDeleted should be
-	// hit twice immediatly. See https://github.com/giantswarm/giantswarm/issues/2897
 	//
-	// 		EnsureCreated: 2, EnsureDeleted: 4
+	// 		EnsureCreated: 2, EnsureDeleted: >3
 	//
-	operation = func() error {
-		if tr.CreateCount() != 2 {
-			return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 2)
+	{
+		o := func() error {
+			if tr.CreateCount() != 2 {
+				return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 2)
+			}
+			if tr.DeleteCount() > 3 {
+				return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want more than %v", tr.DeleteCount(), 3)
+			}
+			return nil
 		}
-		if tr.DeleteCount() != 4 {
-			return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 4)
+		b := backoff.NewExponential(1*time.Second, 20*time.Second)
+		err := backoff.Retry(o, b)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
 		}
-		return nil
 	}
-	err = backoff.Retry(operation, backoff.NewMaxRetries(20, 1*time.Second))
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
+
+	// We set the error function to nil to not return any error anymore. Our
+	// finalizer should be removed with the next reconciliation now.
+	{
+		tr.SetReturnErrorFunc(nil)
 	}
 
 	// We verify that our object is completely gone now.
-	_, err = testWrapper.GetObject(objName, testNamespace)
-	if !nodeconfig.IsNotFound(err) {
-		t.Fatalf("error == %#v, want NotFound error", err)
+	{
+		o := func() error {
+			_, err = testWrapper.GetObject(objName, testNamespace)
+			if nodeconfig.IsNotFound(err) {
+				return nil
+			} else if err != nil {
+				return microerror.Mask(err)
+			}
+
+			return microerror.Maskf(waitError, "object %#q in namespace %#q is still not deleted", objName, testNamespace)
+		}
+		b := backoff.NewExponential(1*time.Second, 20*time.Second)
+		err := backoff.Retry(o, b)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
+		}
 	}
 }
