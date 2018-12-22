@@ -115,7 +115,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 		}
 		b := backoff.NewMaxRetries(20, 1*time.Second)
 
-		err := backoff.Retry(operation, b)
+		err := backoff.Retry(o, b)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}
