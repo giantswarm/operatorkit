@@ -25,7 +25,7 @@ type patchSpec struct {
 	Value interface{} `json:"value"`
 }
 
-func (f *Controller) addFinalizer(obj interface{}) (bool, error) {
+func (f *Controller) addFinalizer(ctx context.Context, obj interface{}) (bool, error) {
 	// We get the accessor of the object which we got passed from the framework.
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
@@ -117,14 +117,14 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 	//     - The object has another finalizer set and we removed ours already.
 	//
 	if !containsFinalizer(accessor.GetFinalizers(), finalizerName) {
-		c.logger.Log("level", "debug", "message", fmt.Sprintf("did not remove finalizer '%s'", finalizerName))
-		c.logger.Log("level", "debug", "message", fmt.Sprintf("finalizer '%s' not found", finalizerName))
+		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("did not remove finalizer '%s'", finalizerName))
+		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("finalizer '%s' not found", finalizerName))
 
 		return nil
 	}
 
 	{
-		c.logger.Log("level", "debug", "message", fmt.Sprintf("removing finalizer '%s'", finalizerName))
+		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("removing finalizer '%s'", finalizerName))
 
 		o := func() error {
 			newObject, err := c.restClient.Get().AbsPath(selfLink).Do().Get()
@@ -165,7 +165,7 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 			return microerror.Mask(err)
 		}
 
-		c.logger.Log("level", "debug", "message", fmt.Sprintf("removed finalizer '%s'", finalizerName))
+		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("removed finalizer '%s'", finalizerName))
 	}
 
 	return nil
