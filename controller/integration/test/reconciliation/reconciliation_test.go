@@ -138,10 +138,10 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	{
 		o := func() error {
 			if tr.CreateCount() != 4 {
-				return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 4)
+				return microerror.Maskf(waitError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 4)
 			}
 			if tr.DeleteCount() != 0 {
-				return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 0)
+				return microerror.Maskf(waitError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 0)
 			}
 			return nil
 		}
@@ -153,31 +153,29 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		}
 	}
 
-	// We get the object after the controller has been started.
-	resultObj, err := nodeConfigWrapper.GetObject(objName, testNamespace)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
+	// Verify finalizers are set.
+	{
+		obj, err := nodeConfigWrapper.GetObject(objName, testNamespace)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
+		}
+		accessor, err := meta.Accessor(obj)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
+		}
 
-	resultObjAccessor, err := meta.Accessor(resultObj)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
+		if accessor.GetDeletionTimestamp() != nil {
+			t.Fatalf("DeletionTimestamp != nil, want nil")
+		}
 
-	// We verify, that the DeletionTimestamp has not been set.
-	if resultObjAccessor.GetDeletionTimestamp() != nil {
-		t.Fatalf("DeletionTimestamp != nil, want nil")
-	}
-
-	// We define which finalizers we currently expect.
-	expectedFinalizers := []string{
-		testOtherFinalizer,
-		testFinalizer,
-	}
-
-	// We verify, that our finalizer is still set.
-	if !reflect.DeepEqual(resultObjAccessor.GetFinalizers(), expectedFinalizers) {
-		t.Fatalf("finalizers == %v, want %v", resultObjAccessor.GetFinalizers(), expectedFinalizers)
+		finalizers := accessor.GetFinalizers()
+		expectedFinalizers := []string{
+			testOtherFinalizer,
+			testFinalizer,
+		}
+		if !reflect.DeepEqual(finalizers, expectedFinalizers) {
+			t.Fatalf("finalizers == %v, want %v", finalizers, expectedFinalizers)
+		}
 	}
 
 	// We delete the object now.
@@ -194,10 +192,10 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	{
 		o := func() error {
 			if tr.CreateCount() != 4 {
-				return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 4)
+				return microerror.Maskf(waitError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 4)
 			}
 			if tr.DeleteCount() != 1 {
-				return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 1)
+				return microerror.Maskf(waitError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 1)
 			}
 			return nil
 		}
@@ -205,33 +203,54 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 
 		err = backoff.Retry(o, b)
 		if err != nil {
-			t.Fatal("expected", nil, "got", err)
+			t.Fatalf("err == %#v, want nil", err)
 		}
 	}
 
-	// We get the object after the controller has handled the deletion event.
-	resultObj, err = nodeConfigWrapper.GetObject(objName, testNamespace)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
-
-	resultObjAccessor, err = meta.Accessor(resultObj)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
-
 	// We verify, that our object still exists, but has a DeletionTimestamp set.
-	if resultObjAccessor.GetDeletionTimestamp() == nil {
-		t.Fatalf("DeletionTimestamp == nil, want non-nil")
-	}
+	{
+		obj, err := nodeConfigWrapper.GetObject(objName, testNamespace)
+		if err != nil {
+			t.Fatalf("err == %#v, want nil", err)
+		}
 
-	// We define which finalizers we currently expect.
-	expectedFinalizers = []string{
-		testOtherFinalizer,
+		accessor, err := meta.Accessor(obj)
+		if err != nil {
+			t.Fatalf("err == %#v, want nil", err)
+		}
+
+		if accessor.GetDeletionTimestamp() == nil {
+			t.Fatalf("DeletionTimestamp == nil, want non-nil")
+		}
 	}
 
 	// We verify, that our finalizer is still set.
-	if !reflect.DeepEqual(resultObjAccessor.GetFinalizers(), expectedFinalizers) {
-		t.Fatalf("finalizers == %v, want %v", resultObjAccessor.GetFinalizers(), expectedFinalizers)
+	{
+		o := func() error {
+			obj, err := nodeConfigWrapper.GetObject(objName, testNamespace)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+			accessor, err := meta.Accessor(obj)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+
+			finalizers := accessor.GetFinalizers()
+			expectedFinalizers := []string{
+				testOtherFinalizer,
+			}
+			if !reflect.DeepEqual(finalizers, expectedFinalizers) {
+				return microerror.Maskf(waitError, "finalizers == %v, want %v", finalizers, expectedFinalizers)
+			}
+
+			return nil
+		}
+		b := backoff.NewExponential(500, 3*time.Second)
+
+		err := backoff.Retry(o, b)
+		if err != nil {
+			t.Fatalf("err == %#v, want nil", err)
+		}
 	}
 }

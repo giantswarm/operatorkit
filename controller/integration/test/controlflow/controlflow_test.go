@@ -104,10 +104,10 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	//
 	operation := func() error {
 		if tr.CreateCount() != 2 {
-			return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 2)
+			return microerror.Maskf(waitError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 2)
 		}
 		if tr.DeleteCount() != 0 {
-			return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 0)
+			return microerror.Maskf(waitError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 0)
 		}
 		return nil
 	}
@@ -169,10 +169,10 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	//
 	operation = func() error {
 		if tr.CreateCount() != 2 {
-			return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 2)
+			return microerror.Maskf(waitError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 2)
 		}
 		if tr.DeleteCount() != 2 {
-			return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 2)
+			return microerror.Maskf(waitError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 2)
 		}
 		return nil
 	}
@@ -215,10 +215,10 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	{
 		o := func() error {
 			if tr.CreateCount() != 2 {
-				return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 2)
+				return microerror.Maskf(waitError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 2)
 			}
 			if tr.DeleteCount() > 3 {
-				return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want more than %v", tr.DeleteCount(), 3)
+				return microerror.Maskf(waitError, "EnsureDeleted was hit %v times, want more than %v", tr.DeleteCount(), 3)
 			}
 			return nil
 		}
