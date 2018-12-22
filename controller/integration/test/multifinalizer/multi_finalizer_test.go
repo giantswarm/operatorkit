@@ -12,6 +12,7 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger/microloggertest"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/giantswarm/operatorkit/controller"
@@ -81,14 +82,29 @@ func Test_MultiFinalizer(t *testing.T) {
 		c := testresource.Config{
 			Name: resourceNameB,
 			ReturnErrorFunc: func(obj interface{}) error {
-				var err error
-				once.Do(func() {
-					err = microerror.Maskf(executionError, "I fail to keep the finalizer once")
-				})
-
-				if err != nil {
-					return microerror.Mask(err)
+				// Do not return error for update events.
+				{
+					accessor, err := meta.Accessor(obj)
+					if err != nil {
+						return microerror.Mask(err)
+					}
+					if accessor.GetDeletionTimestamp() == nil {
+						return nil
+					}
 				}
+
+				// Return error for first deletion event.
+				{
+					var err error
+					once.Do(func() {
+						err = microerror.Maskf(executionError, "I fail to keep the finalizer once")
+					})
+
+					if err != nil {
+						return microerror.Mask(err)
+					}
+				}
+
 				return nil
 			},
 		}
@@ -277,7 +293,7 @@ func Test_MultiFinalizer(t *testing.T) {
 				return microerror.Maskf(waitError, "resourceB.DeleteCount() is still less than 4")
 			}
 			if resourceC.DeleteCount() != 2 {
-				t.Fatalf("resourceA.DeleteCount == %d, want 2", resourceC.DeleteCount())
+				t.Fatalf("resourceC.DeleteCount == %d, want 2", resourceC.DeleteCount())
 			}
 
 			return nil
