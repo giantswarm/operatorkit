@@ -180,22 +180,22 @@ func (c *Controller) DeleteFunc(obj interface{}) {
 		// trying to reconcile this object over and over.
 		err = c.removeFinalizer(ctx, obj)
 		if err != nil {
-			c.logger.Log("level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 			return
 		}
 
-		c.logger.Log("level", "debug", "message", "did not find any resource set")
-		c.logger.Log("level", "debug", "message", "canceling reconciliation")
+		c.logger.LogCtx(ctx, "level", "debug", "message", "did not find any resource set")
+		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 		return
 
 	} else if err != nil {
-		c.logger.Log("level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
 
 	ctx, err = rs.InitCtx(ctx, obj)
 	if err != nil {
-		c.logger.Log("level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
 
@@ -283,18 +283,18 @@ func (c *Controller) UpdateFunc(oldObj, newObj interface{}) {
 	if IsNoResourceSet(err) {
 		// In case the resource router is not able to find any resource set to
 		// handle the reconciled runtime object, we stop here.
-		c.logger.Log("level", "debug", "message", "did not find any resource set")
-		c.logger.Log("level", "debug", "message", "canceling reconciliation")
+		c.logger.LogCtx(ctx, "level", "debug", "message", "did not find any resource set")
+		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 		return
 
 	} else if err != nil {
-		c.logger.Log("level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
 
 	ctx, err = rs.InitCtx(ctx, obj)
 	if err != nil {
-		c.logger.Log("level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
 
@@ -308,7 +308,7 @@ func (c *Controller) UpdateFunc(oldObj, newObj interface{}) {
 		ctx = loggermeta.NewContext(ctx, meta)
 	}
 
-	ok, err := c.addFinalizer(obj)
+	ok, err := c.addFinalizer(ctx, obj)
 	if IsInvalidRESTClient(err) {
 		panic("invalid REST client configured for controller")
 	} else if err != nil {
