@@ -2,12 +2,9 @@ package controller
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-	"github.com/giantswarm/micrologger/loggermeta"
-	"k8s.io/apimachinery/pkg/api/meta"
 
 	"github.com/giantswarm/operatorkit/controller/context/finalizerskeptcontext"
 	"github.com/giantswarm/operatorkit/controller/context/updateallowedcontext"
@@ -73,20 +70,6 @@ func (r *ResourceSet) InitCtx(ctx context.Context, obj interface{}) (context.Con
 	ctx, err := r.initCtx(ctx, obj)
 	if err != nil {
 		return nil, microerror.Mask(err)
-	}
-
-	accessor, err := meta.Accessor(obj)
-	if err != nil {
-		r.logger.LogCtx(ctx, "level", "warning", "message", "cannot create accessor for object", "stack", fmt.Sprintf("%#v", err))
-	} else {
-		meta, ok := loggermeta.FromContext(ctx)
-		if !ok {
-			meta = loggermeta.New()
-		}
-		meta.KeyVals["object"] = accessor.GetSelfLink()
-		meta.KeyVals["version"] = accessor.GetResourceVersion()
-
-		ctx = loggermeta.NewContext(ctx, meta)
 	}
 
 	return ctx, nil
