@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -26,6 +27,7 @@ import (
 const (
 	loggerKeyController = "controller"
 	loggerKeyEvent      = "event"
+	loggerKeyLoop       = "loop"
 	loggerKeyObject     = "object"
 	loggerKeyResource   = "resource"
 	loggerKeyVersion    = "version"
@@ -224,7 +226,7 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 			loop++
 
 			ctx = setLoggerCtxValue(ctx, loggerKeyController, c.name)
-			ctx = setLoggerCtxValue(ctx, loggerKeyLoop, loop)
+			ctx = setLoggerCtxValue(ctx, loggerKeyLoop, strconv.Itoa(loop))
 
 			select {
 			case e := <-deleteChan:
@@ -236,9 +238,9 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 				{
 					ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
 
-					accessor, err := meta.Accessor(obj)
+					accessor, err := meta.Accessor(e.Object)
 					if err != nil {
-						r.logger.LogCtx(ctx, "level", "warning", "message", fmt.Sprintf("cannot create accessor %T", obj), "stack", fmt.Sprintf("%#v", err))
+						c.logger.LogCtx(ctx, "level", "warning", "message", fmt.Sprintf("cannot create accessor %T", e.Object), "stack", fmt.Sprintf("%#v", err))
 					} else {
 						ctx = setLoggerCtxValue(ctx, loggerKeyObject, accessor.GetSelfLink())
 						ctx = setLoggerCtxValue(ctx, loggerKeyVersion, accessor.GetResourceVersion())
@@ -257,9 +259,9 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 				{
 					ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
 
-					accessor, err := meta.Accessor(obj)
+					accessor, err := meta.Accessor(e.Object)
 					if err != nil {
-						r.logger.LogCtx(ctx, "level", "warning", "message", fmt.Sprintf("cannot create accessor %T", obj), "stack", fmt.Sprintf("%#v", err))
+						c.logger.LogCtx(ctx, "level", "warning", "message", fmt.Sprintf("cannot create accessor %T", e.Object), "stack", fmt.Sprintf("%#v", err))
 					} else {
 						ctx = setLoggerCtxValue(ctx, loggerKeyObject, accessor.GetSelfLink())
 						ctx = setLoggerCtxValue(ctx, loggerKeyVersion, accessor.GetResourceVersion())
@@ -452,7 +454,7 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 	ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
 
 	for _, r := range resources {
-		ctx = setLoggerCtxValue(ctx, loggerResourceKey, r.Name())
+		ctx = setLoggerCtxValue(ctx, loggerKeyResource, r.Name())
 		ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 
 		err := r.EnsureDeleted(ctx, obj)
@@ -493,7 +495,7 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 	ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
 
 	for _, r := range resources {
-		ctx = setLoggerCtxValue(ctx, loggerResourceKey, r.Name())
+		ctx = setLoggerCtxValue(ctx, loggerKeyResource, r.Name())
 		ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 
 		err := r.EnsureCreated(ctx, obj)
