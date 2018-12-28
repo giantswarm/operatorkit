@@ -328,7 +328,6 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 	}
 
 	ok, err := c.addFinalizer(ctx, obj)
-
 	if IsInvalidRESTClient(err) {
 		panic("invalid REST client configured for controller")
 	} else if err != nil {
