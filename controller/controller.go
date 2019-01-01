@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/giantswarm/micrologger/loggermeta"
 	"github.com/prometheus/client_golang/prometheus"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/rest"
 
@@ -23,12 +25,18 @@ import (
 )
 
 const (
-	// removedFinalizersCacheSize should be bigger than number of reconciled
+	loggerKeyController = "controller"
+	loggerKeyEvent      = "event"
+	loggerKeyLoop       = "loop"
+	loggerKeyObject     = "object"
+	loggerKeyResource   = "resource"
+	loggerKeyVersion    = "version"
+
+  // removedFinalizersCacheSize should be bigger than number of reconciled
 	// objects times number of controllers to handle all deletions at the
 	// same time. Even if it is too small in the worst case scenario we
 	// will get deletion event for already deleted object.
 	removedFinalizersCacheSize = 1000
-	loggerResourceKey          = "resource"
 )
 
 type Config struct {
@@ -161,18 +169,10 @@ func (c *Controller) Booted() chan struct{} {
 // DeleteFunc executes the controller's ProcessDelete function.
 func (c *Controller) DeleteFunc(obj interface{}) {
 	ctx := context.Background()
+	c.deleteFunc(ctx, obj)
+}
 
-	// TODO move that to ProcessEvents and do not expose DeleteFunc.
-	{
-		meta, ok := loggermeta.FromContext(ctx)
-		if !ok {
-			meta = loggermeta.New()
-		}
-		meta.KeyVals["controller"] = c.name
-
-		ctx = loggermeta.NewContext(ctx, meta)
-	}
-
+func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 	// DeleteFunc/UpdateFunc is synchronized to make sure only one of them is
 	// executed at a time. DeleteFunc/UpdateFunc is not thread safe. This is
 	// important because the source of truth for an operator are the reconciled
@@ -210,16 +210,6 @@ func (c *Controller) DeleteFunc(obj interface{}) {
 		return
 	}
 
-	{
-		meta, ok := loggermeta.FromContext(ctx)
-		if !ok {
-			meta = loggermeta.New()
-		}
-		meta.KeyVals["event"] = "delete"
-
-		ctx = loggermeta.NewContext(ctx, meta)
-	}
-
 	hasFinalizer, err := c.hasFinalizer(ctx, obj)
 	if err != nil {
 		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
@@ -232,7 +222,8 @@ func (c *Controller) DeleteFunc(obj interface{}) {
 			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 			return
 		}
-	} else {
+  } else {
+		// TODO log.
 	}
 
 	err = c.removeFinalizer(ctx, obj)
@@ -245,16 +236,57 @@ func (c *Controller) DeleteFunc(obj interface{}) {
 // ProcessEvents takes the event channels created by the operatorkit informer
 // and executes the controller's event functions accordingly.
 func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Event, updateChan chan watch.Event, errChan chan error) error {
+	loop := -1
+
 	operation := func() error {
 		for {
+			loop++
+
+			ctx = setLoggerCtxValue(ctx, loggerKeyController, c.name)
+			ctx = setLoggerCtxValue(ctx, loggerKeyLoop, strconv.Itoa(loop))
+
 			select {
 			case e := <-deleteChan:
-				t := prometheus.NewTimer(controllerHistogram.WithLabelValues("delete"))
-				c.DeleteFunc(e.Object)
+				event := "delete"
+
+				t := prometheus.NewTimer(controllerHistogram.WithLabelValues(event))
+
+				// Set logger context.
+				{
+					ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
+
+					accessor, err := meta.Accessor(e.Object)
+					if err != nil {
+						c.logger.LogCtx(ctx, "level", "warning", "message", fmt.Sprintf("cannot create accessor %T", e.Object), "stack", fmt.Sprintf("%#v", err))
+					} else {
+						ctx = setLoggerCtxValue(ctx, loggerKeyObject, accessor.GetSelfLink())
+						ctx = setLoggerCtxValue(ctx, loggerKeyVersion, accessor.GetResourceVersion())
+					}
+				}
+
+				c.deleteFunc(ctx, e.Object)
+
 				t.ObserveDuration()
 			case e := <-updateChan:
-				t := prometheus.NewTimer(controllerHistogram.WithLabelValues("update"))
-				c.UpdateFunc(nil, e.Object)
+				event := "update"
+
+				t := prometheus.NewTimer(controllerHistogram.WithLabelValues(event))
+
+				// Set logger context.
+				{
+					ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
+
+					accessor, err := meta.Accessor(e.Object)
+					if err != nil {
+						c.logger.LogCtx(ctx, "level", "warning", "message", fmt.Sprintf("cannot create accessor %T", e.Object), "stack", fmt.Sprintf("%#v", err))
+					} else {
+						ctx = setLoggerCtxValue(ctx, loggerKeyObject, accessor.GetSelfLink())
+						ctx = setLoggerCtxValue(ctx, loggerKeyVersion, accessor.GetResourceVersion())
+					}
+				}
+
+				c.updateFunc(ctx, e.Object)
+
 				t.ObserveDuration()
 			case err := <-errChan:
 				if IsStatusForbidden(err) {
@@ -281,19 +313,10 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 // UpdateFunc executes the controller's ProcessUpdate function.
 func (c *Controller) UpdateFunc(oldObj, newObj interface{}) {
 	ctx := context.Background()
-	obj := newObj
+	c.updateFunc(ctx, newObj)
+}
 
-	// TODO move that to ProcessEvents and do not expose UpdateFunc.
-	{
-		meta, ok := loggermeta.FromContext(ctx)
-		if !ok {
-			meta = loggermeta.New()
-		}
-		meta.KeyVals["controller"] = c.name
-
-		ctx = loggermeta.NewContext(ctx, meta)
-	}
-
+func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 	// DeleteFunc/UpdateFunc is synchronized to make sure only one of them is
 	// executed at a time. DeleteFunc/UpdateFunc is not thread safe. This is
 	// important because the source of truth for an operator are the reconciled
@@ -319,16 +342,6 @@ func (c *Controller) UpdateFunc(oldObj, newObj interface{}) {
 	if err != nil {
 		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
-	}
-
-	{
-		meta, ok := loggermeta.FromContext(ctx)
-		if !ok {
-			meta = loggermeta.New()
-		}
-		meta.KeyVals["event"] = "update"
-
-		ctx = loggermeta.NewContext(ctx, meta)
 	}
 
 	ok, err := c.addFinalizer(ctx, obj)
@@ -457,10 +470,8 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 
 	ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
 
-	defer unsetLoggerCtxValue(ctx, loggerResourceKey)
-
 	for _, r := range resources {
-		ctx = setLoggerCtxValue(ctx, loggerResourceKey, r.Name())
+		ctx = setLoggerCtxValue(ctx, loggerKeyResource, r.Name())
 		ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 
 		err := r.EnsureDeleted(ctx, obj)
@@ -500,10 +511,8 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 
 	ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
 
-	defer unsetLoggerCtxValue(ctx, loggerResourceKey)
-
 	for _, r := range resources {
-		ctx = setLoggerCtxValue(ctx, loggerResourceKey, r.Name())
+		ctx = setLoggerCtxValue(ctx, loggerKeyResource, r.Name())
 		ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 
 		err := r.EnsureCreated(ctx, obj)
@@ -525,16 +534,6 @@ func setLoggerCtxValue(ctx context.Context, key, value string) context.Context {
 		m = loggermeta.New()
 	}
 	m.KeyVals[key] = value
-
-	return loggermeta.NewContext(ctx, m)
-}
-
-func unsetLoggerCtxValue(ctx context.Context, key string) context.Context {
-	m, ok := loggermeta.FromContext(ctx)
-	if !ok {
-		m = loggermeta.New()
-	}
-	delete(m.KeyVals, key)
 
 	return loggermeta.NewContext(ctx, m)
 }
