@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/giantswarm/micrologger/loggermeta"
 	"github.com/prometheus/client_golang/prometheus"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/rest"
 
@@ -23,7 +25,12 @@ import (
 )
 
 const (
-	loggerResourceKey = "resource"
+	loggerKeyController = "controller"
+	loggerKeyEvent      = "event"
+	loggerKeyLoop       = "loop"
+	loggerKeyObject     = "object"
+	loggerKeyResource   = "resource"
+	loggerKeyVersion    = "version"
 )
 
 type Config struct {
@@ -154,7 +161,10 @@ func (c *Controller) Booted() chan struct{} {
 // DeleteFunc executes the controller's ProcessDelete function.
 func (c *Controller) DeleteFunc(obj interface{}) {
 	ctx := context.Background()
+	c.deleteFunc(ctx, obj)
+}
 
+func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 	// DeleteFunc/UpdateFunc is synchronized to make sure only one of them is
 	// executed at a time. DeleteFunc/UpdateFunc is not thread safe. This is
 	// important because the source of truth for an operator are the reconciled
@@ -173,33 +183,23 @@ func (c *Controller) DeleteFunc(obj interface{}) {
 		// trying to reconcile this object over and over.
 		err = c.removeFinalizer(ctx, obj)
 		if err != nil {
-			c.logger.Log("level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 			return
 		}
 
-		c.logger.Log("level", "debug", "message", "did not find any resource set")
-		c.logger.Log("level", "debug", "message", "canceling reconciliation")
+		c.logger.LogCtx(ctx, "level", "debug", "message", "did not find any resource set")
+		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 		return
 
 	} else if err != nil {
-		c.logger.Log("level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
 
 	ctx, err = rs.InitCtx(ctx, obj)
 	if err != nil {
-		c.logger.Log("level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
-	}
-
-	{
-		meta, ok := loggermeta.FromContext(ctx)
-		if !ok {
-			meta = loggermeta.New()
-		}
-		meta.KeyVals["event"] = "delete"
-
-		ctx = loggermeta.NewContext(ctx, meta)
 	}
 
 	err = ProcessDelete(ctx, obj, rs.Resources())
@@ -219,16 +219,57 @@ func (c *Controller) DeleteFunc(obj interface{}) {
 // ProcessEvents takes the event channels created by the operatorkit informer
 // and executes the controller's event functions accordingly.
 func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Event, updateChan chan watch.Event, errChan chan error) error {
+	loop := -1
+
 	operation := func() error {
 		for {
+			loop++
+
+			ctx = setLoggerCtxValue(ctx, loggerKeyController, c.name)
+			ctx = setLoggerCtxValue(ctx, loggerKeyLoop, strconv.Itoa(loop))
+
 			select {
 			case e := <-deleteChan:
-				t := prometheus.NewTimer(controllerHistogram.WithLabelValues("delete"))
-				c.DeleteFunc(e.Object)
+				event := "delete"
+
+				t := prometheus.NewTimer(controllerHistogram.WithLabelValues(event))
+
+				// Set logger context.
+				{
+					ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
+
+					accessor, err := meta.Accessor(e.Object)
+					if err != nil {
+						c.logger.LogCtx(ctx, "level", "warning", "message", fmt.Sprintf("cannot create accessor %T", e.Object), "stack", fmt.Sprintf("%#v", err))
+					} else {
+						ctx = setLoggerCtxValue(ctx, loggerKeyObject, accessor.GetSelfLink())
+						ctx = setLoggerCtxValue(ctx, loggerKeyVersion, accessor.GetResourceVersion())
+					}
+				}
+
+				c.deleteFunc(ctx, e.Object)
+
 				t.ObserveDuration()
 			case e := <-updateChan:
-				t := prometheus.NewTimer(controllerHistogram.WithLabelValues("update"))
-				c.UpdateFunc(nil, e.Object)
+				event := "update"
+
+				t := prometheus.NewTimer(controllerHistogram.WithLabelValues(event))
+
+				// Set logger context.
+				{
+					ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
+
+					accessor, err := meta.Accessor(e.Object)
+					if err != nil {
+						c.logger.LogCtx(ctx, "level", "warning", "message", fmt.Sprintf("cannot create accessor %T", e.Object), "stack", fmt.Sprintf("%#v", err))
+					} else {
+						ctx = setLoggerCtxValue(ctx, loggerKeyObject, accessor.GetSelfLink())
+						ctx = setLoggerCtxValue(ctx, loggerKeyVersion, accessor.GetResourceVersion())
+					}
+				}
+
+				c.updateFunc(ctx, e.Object)
+
 				t.ObserveDuration()
 			case err := <-errChan:
 				if IsStatusForbidden(err) {
@@ -255,8 +296,10 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 // UpdateFunc executes the controller's ProcessUpdate function.
 func (c *Controller) UpdateFunc(oldObj, newObj interface{}) {
 	ctx := context.Background()
-	obj := newObj
+	c.updateFunc(ctx, newObj)
+}
 
+func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 	// DeleteFunc/UpdateFunc is synchronized to make sure only one of them is
 	// executed at a time. DeleteFunc/UpdateFunc is not thread safe. This is
 	// important because the source of truth for an operator are the reconciled
@@ -269,32 +312,22 @@ func (c *Controller) UpdateFunc(oldObj, newObj interface{}) {
 	if IsNoResourceSet(err) {
 		// In case the resource router is not able to find any resource set to
 		// handle the reconciled runtime object, we stop here.
-		c.logger.Log("level", "debug", "message", "did not find any resource set")
-		c.logger.Log("level", "debug", "message", "canceling reconciliation")
+		c.logger.LogCtx(ctx, "level", "debug", "message", "did not find any resource set")
+		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 		return
 
 	} else if err != nil {
-		c.logger.Log("level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
 
 	ctx, err = rs.InitCtx(ctx, obj)
 	if err != nil {
-		c.logger.Log("level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
 
-	{
-		meta, ok := loggermeta.FromContext(ctx)
-		if !ok {
-			meta = loggermeta.New()
-		}
-		meta.KeyVals["event"] = "update"
-
-		ctx = loggermeta.NewContext(ctx, meta)
-	}
-
-	ok, err := c.addFinalizer(obj)
+	ok, err := c.addFinalizer(ctx, obj)
 	if IsInvalidRESTClient(err) {
 		panic("invalid REST client configured for controller")
 	} else if err != nil {
@@ -420,10 +453,8 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 
 	ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
 
-	defer unsetLoggerCtxValue(ctx, loggerResourceKey)
-
 	for _, r := range resources {
-		ctx = setLoggerCtxValue(ctx, loggerResourceKey, r.Name())
+		ctx = setLoggerCtxValue(ctx, loggerKeyResource, r.Name())
 		ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 
 		err := r.EnsureDeleted(ctx, obj)
@@ -463,10 +494,8 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) e
 
 	ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
 
-	defer unsetLoggerCtxValue(ctx, loggerResourceKey)
-
 	for _, r := range resources {
-		ctx = setLoggerCtxValue(ctx, loggerResourceKey, r.Name())
+		ctx = setLoggerCtxValue(ctx, loggerKeyResource, r.Name())
 		ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 
 		err := r.EnsureCreated(ctx, obj)
@@ -488,16 +517,6 @@ func setLoggerCtxValue(ctx context.Context, key, value string) context.Context {
 		m = loggermeta.New()
 	}
 	m.KeyVals[key] = value
-
-	return loggermeta.NewContext(ctx, m)
-}
-
-func unsetLoggerCtxValue(ctx context.Context, key string) context.Context {
-	m, ok := loggermeta.FromContext(ctx)
-	if !ok {
-		m = loggermeta.New()
-	}
-	delete(m.KeyVals, key)
 
 	return loggermeta.NewContext(ctx, m)
 }
