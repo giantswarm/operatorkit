@@ -32,7 +32,7 @@ const (
 	loggerKeyResource   = "resource"
 	loggerKeyVersion    = "version"
 
-  // removedFinalizersCacheSize should be bigger than number of reconciled
+	// removedFinalizersCacheSize should be bigger than number of reconciled
 	// objects times number of controllers to handle all deletions at the
 	// same time. Even if it is too small in the worst case scenario we
 	// will get deletion event for already deleted object.
@@ -222,7 +222,7 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 			return
 		}
-  } else {
+	} else {
 		// TODO log.
 	}
 
