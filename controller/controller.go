@@ -173,7 +173,7 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	c.logger.LogCtx(ctx, "level", "debug", "message", "start reconciliation", "stack", fmt.Sprintf("%#v", err))
+	c.logger.LogCtx(ctx, "level", "debug", "message", "start reconciliation")
 
 	rs, err := c.resourceSet(obj)
 	if IsNoResourceSet(err) {
@@ -310,7 +310,7 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	c.logger.LogCtx(ctx, "level", "debug", "message", "start reconciliation", "stack", fmt.Sprintf("%#v", err))
+	c.logger.LogCtx(ctx, "level", "debug", "message", "start reconciliation")
 
 	rs, err := c.resourceSet(obj)
 	if IsNoResourceSet(err) {
