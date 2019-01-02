@@ -160,7 +160,8 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 	// Verify we reconcile deletion of that object. We should have also
 	// 2 ResyncPeriods in 30 seconds so we check if there were more than
-	// 2 delete events because of there error we return in our resource.
+	// 2 delete events because of there error the resource returns for
+	// deletion events.
 	//
 	// 		EnsureCreated: >2, EnsureDeleted: >2
 	//
@@ -195,8 +196,8 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 			t.Fatal("expected", nil, "got", err)
 		}
 
-		if accessor.GetDeletionTimestamp() != nil {
-			t.Fatalf("DeletionTimestamp != nil, want nil")
+		if accessor.GetDeletionTimestamp() == nil {
+			t.Fatalf("DeletionTimestamp == nil, want non nil")
 		}
 
 		finalizers := accessor.GetFinalizers()
