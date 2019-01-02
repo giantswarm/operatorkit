@@ -91,21 +91,16 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 		}
 	}
 
-	// We use backoff with the absolute maximum amount:
-	// 10 second ResyncPeriod + 2 second RateWait + 8 second for safety.
-	// The controller should now add the finalizer and EnsureCreated should be hit
-	// once immediatly.
+	// Verify we reconcile creation of that object. We should have also
+	// 2 ResyncPeriods in 30 seconds so we check if there were more than
+	// 2 create events.
 	//
-	// 		EnsureCreated: 1, EnsureDeleted: 0
-	//
-	// The controller should reconcile once in this period.
-	//
-	// 		EnsureCreated: 2, EnsureDeleted: 0
+	// 		EnsureCreated: >2, EnsureDeleted: =0
 	//
 	{
 		o := func() error {
-			if tr.CreateCount() != 2 {
-				return microerror.Maskf(waitError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 2)
+			if tr.CreateCount() <= 2 {
+				return microerror.Maskf(waitError, "EnsureCreated was hit %v times, want more than %v", tr.CreateCount(), 2)
 			}
 			if tr.DeleteCount() != 0 {
 				return microerror.Maskf(waitError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 0)
@@ -113,7 +108,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 			return nil
 		}
-		b := backoff.NewMaxRetries(20, 1*time.Second)
+		b := backoff.NewMaxRetries(30, 1*time.Second)
 
 		err := backoff.Retry(o, b)
 		if err != nil {
@@ -163,30 +158,24 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 		}
 	}
 
-	// We use backoff with the absolute maximum amount:
-	// 10 second ResyncPeriod + 2 second RateWait + 8 second for safety.
-	// The controller should get the deletion event immediatly but not remove the
-	// finalizer because of the error we return in our resource.
+	// Verify we reconcile deletion of that object. We should have also
+	// 2 ResyncPeriods in 30 seconds so we check if there were more than
+	// 2 delete events because of there error we return in our resource.
 	//
-	// 		EnsureCreated: 2, EnsureDeleted: 1
-	//
-	// The controller should also reconcile once in this period. (The other
-	// finalizer is still set, so we reconcile.)
-	//
-	// 		EnsureCreated: 2, EnsureDeleted: 2
+	// 		EnsureCreated: >2, EnsureDeleted: >2
 	//
 	{
 		o := func() error {
-			if tr.CreateCount() != 2 {
-				return microerror.Maskf(waitError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 2)
+			if tr.CreateCount() <= 2 {
+				return microerror.Maskf(waitError, "EnsureCreated was hit %v times, want more than %v", tr.CreateCount(), 2)
 			}
-			if tr.DeleteCount() != 2 {
-				return microerror.Maskf(waitError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 2)
+			if tr.DeleteCount() <= 2 {
+				return microerror.Maskf(waitError, "EnsureDeleted was hit %v times, want more than %v", tr.DeleteCount(), 2)
 			}
 
 			return nil
 		}
-		b := backoff.NewMaxRetries(20, 1*time.Second)
+		b := backoff.NewMaxRetries(30, 1*time.Second)
 
 		err := backoff.Retry(o, b)
 		if err != nil {
@@ -194,7 +183,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 		}
 	}
 
-	// Verify deletion timestamp and finalizer again.
+	// Verify deletion timestamp and finalizer.
 	{
 		obj, err := testWrapper.GetObject(objName, testNamespace)
 		if err != nil {
@@ -216,30 +205,6 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 		}
 		if !reflect.DeepEqual(finalizers, expectedFinalizers) {
 			t.Fatalf("finalizers == %v, want %v", finalizers, expectedFinalizers)
-		}
-	}
-
-	// We use backoff with the absolute maximum amount:
-	// 10 second ResyncPeriod + 2 second RateWait + 8 second for safety.
-	//
-	// 		EnsureCreated: 2, EnsureDeleted: >3
-	//
-	{
-		o := func() error {
-			if tr.CreateCount() != 2 {
-				return microerror.Maskf(waitError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 2)
-			}
-			if tr.DeleteCount() < 4 {
-				return microerror.Maskf(waitError, "EnsureDeleted was hit %v times, want more than %v", tr.DeleteCount(), 3)
-			}
-
-			return nil
-		}
-		b := backoff.NewExponential(1*time.Second, 20*time.Second)
-
-		err := backoff.Retry(o, b)
-		if err != nil {
-			t.Fatal("expected", nil, "got", err)
 		}
 	}
 
