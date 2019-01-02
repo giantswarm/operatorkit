@@ -86,7 +86,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 			return nil
 		}
-		b := backoff.NewExponential(2*time.Second, 10*time.Second)
+		b := backoff.NewExponential(10*time.Second, 1*time.Second)
 
 		err = backoff.Retry(o, b)
 		if err != nil {
@@ -246,7 +246,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 			return microerror.Maskf(waitError, "object %#q in namespace %#q is still not deleted", objName, testNamespace)
 		}
-		b := backoff.NewExponential(1*time.Second, 30*time.Second)
+		b := backoff.NewMaxRetries(30, 1*time.Second)
 
 		err := backoff.Retry(o, b)
 		if err != nil {
