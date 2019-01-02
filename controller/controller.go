@@ -173,6 +173,8 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
+	c.logger.LogCtx(ctx, "level", "debug", "message", "start reconciliation", "stack", fmt.Sprintf("%#v", err))
+
 	rs, err := c.resourceSet(obj)
 	if IsNoResourceSet(err) {
 		// In case the resource router is not able to find any resource set to
@@ -307,6 +309,8 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 	// run into race conditions.
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
+
+	c.logger.LogCtx(ctx, "level", "debug", "message", "start reconciliation", "stack", fmt.Sprintf("%#v", err))
 
 	rs, err := c.resourceSet(obj)
 	if IsNoResourceSet(err) {
