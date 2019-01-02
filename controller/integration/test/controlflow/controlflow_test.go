@@ -3,7 +3,6 @@
 package controlflow
 
 import (
-	"log"
 	"reflect"
 	"testing"
 	"time"
@@ -69,8 +68,6 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	// We create an object which is valid and wait for the framework to add a
 	// finalizer.
 	{
-		log.Printf("creating NodeConfig object %#q in namespace %#q", objName, testNamespace)
-
 		o := func() error {
 			nodeConfig := &v1alpha1.NodeConfig{
 				ObjectMeta: metav1.ObjectMeta{
@@ -101,8 +98,6 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	// 		EnsureCreated: >2, EnsureDeleted: =0
 	//
 	{
-		log.Printf("verifying reconciliation of object creation")
-
 		o := func() error {
 			if tr.CreateCount() <= 2 {
 				return microerror.Maskf(waitError, "EnsureCreated was hit %v times, want more than %v", tr.CreateCount(), 2)
@@ -123,8 +118,6 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 	// Verify deletion timestamp and finalizer.
 	{
-		log.Printf("verifying object's does not have deletion timestamp and has a finalizer")
-
 		obj, err := testWrapper.GetObject(objName, testNamespace)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
@@ -152,8 +145,6 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	// resource to always return an error and should therefore prevent the
 	// removal of our finalizer.
 	{
-		log.Printf("setting resource's return error func to return error")
-
 		tr.SetReturnErrorFunc(func(obj interface{}) error {
 			return microerror.Mask(testError)
 		})
@@ -161,8 +152,6 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 	// We delete the object now.
 	{
-		log.Printf("deleting NodeConfig object %#q in namespace %#q", objName, testNamespace)
-
 		err := testWrapper.DeleteObject(objName, testNamespace)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
@@ -177,8 +166,6 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	// 		EnsureCreated: >2, EnsureDeleted: >2
 	//
 	{
-		log.Printf("verifying reconciliation of object deletion")
-
 		o := func() error {
 			if tr.CreateCount() <= 2 {
 				return microerror.Maskf(waitError, "EnsureCreated was hit %v times, want more than %v", tr.CreateCount(), 2)
@@ -199,8 +186,6 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 	// Verify deletion timestamp and finalizer.
 	{
-		log.Printf("verifying object's does has a deletion timestamp and still has the finalizer")
-
 		obj, err := testWrapper.GetObject(objName, testNamespace)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
@@ -227,15 +212,11 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	// We set the error function to nil to not return any error anymore. Our
 	// finalizer should be removed with the next reconciliation now.
 	{
-		log.Printf("setting resource's return error func to return nil")
-
 		tr.SetReturnErrorFunc(nil)
 	}
 
 	// We verify that our object is completely gone now.
 	{
-		log.Printf("verifying NodeConfig object %#q in namespace %#q is completely gone", objName, testNamespace)
-
 		o := func() error {
 			_, err = testWrapper.GetObject(objName, testNamespace)
 			if nodeconfig.IsNotFound(err) {
