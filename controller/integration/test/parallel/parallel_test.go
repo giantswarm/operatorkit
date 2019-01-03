@@ -208,7 +208,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	}
 
  	// Verify resources received exactly one deletion event after
-	// successful deleteion.
+ 	// successful deletion.
 	{
 		if resourceA.DeleteCount() > 0 {
 			t.Fatalf("resourceA.DeleteCount() == %v, want more than %v", resourceA.DeleteCount(), 0)
