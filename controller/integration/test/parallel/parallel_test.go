@@ -207,7 +207,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 		}
 	}
 
-	// Veryfy resources received exactly one deletion event after
+ 	// Verify resources received exactly one deletion event after
 	// successful deleteion.
 	{
 		if resourceA.DeleteCount() > 0 {
