@@ -210,11 +210,11 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	// Veryfy resources received exactly one deletion event after
 	// successful deleteion.
 	{
-		if resourceA.DeleteCount() != 1 {
-			t.Fatalf("resourceA.DeleteCount() == %v, want more than %v", resourceA.DeleteCount(), 2)
+		if resourceA.DeleteCount() > 0 {
+			t.Fatalf("resourceA.DeleteCount() == %v, want more than %v", resourceA.DeleteCount(), 0)
 		}
-		if resourceB.DeleteCount() != 1 {
-			t.Fatalf("resourceB.DeleteCount() == %v, want more than %v", resourceB.DeleteCount(), 2)
+		if resourceB.DeleteCount() > 0 {
+			t.Fatalf("resourceB.DeleteCount() == %v, want more than %v", resourceB.DeleteCount(), 0)
 		}
 	}
 }
