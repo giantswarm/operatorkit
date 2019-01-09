@@ -59,16 +59,17 @@ operators][operators].
 
 ## Projects using operatorkit
 
+- https://github.com/giantswarm/app-operator
 - https://github.com/giantswarm/aws-operator
 - https://github.com/giantswarm/azure-operator
 - https://github.com/giantswarm/cert-operator
 - https://github.com/giantswarm/cluster-operator
 - https://github.com/giantswarm/chart-operator
 - https://github.com/giantswarm/flannel-operator
-- https://github.com/giantswarm/ingress-operator
 - https://github.com/giantswarm/kvm-operator
 - https://github.com/giantswarm/node-operator
 - https://github.com/giantswarm/prometheus-config-controller
+- https://github.com/giantswarm/release-operator
 - more to come
 
 ## Contact
