@@ -65,6 +65,12 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 		}
 	}
 
+	// Setup the test namespace.
+	{
+		harness.MustSetup(objNamespace)
+		defer harness.MustTeardown(objNamespace)
+	}
+
 	// Create an object and wait for the controller to add a finalizer.
 	// Creation is retried because the CRD might still not be ensured.
 	{
