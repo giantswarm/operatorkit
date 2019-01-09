@@ -186,25 +186,16 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		t.Fatal("expected", nil, "got", err)
 	}
 
-	// We use backoff with the absolute maximum amount:
-	// 20 second ResyncPeriod + 2 second RateWait + 8 second for safety.
-	// The controller should now remove the finalizer and EnsureDeleted should be
-	// hit twice immediatly. See https://github.com/giantswarm/giantswarm/issues/2897
+	// Verify the deletion event was processed.
 	//
-	// 		EnsureCreated: 4, EnsureDeleted: 2
-	//
-	// The controller should also reconcile twice in this period. (The other
-	// finalizer is still set, so we reconcile.)
-	//
-	// 		EnsureCreated: 4, EnsureDeleted: 4
-	//
+	// 		EnsureCreated: 4, EnsureDeleted: 1
 	{
 		o := func() error {
 			if tr.CreateCount() != 4 {
 				return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 4)
 			}
-			if tr.DeleteCount() != 4 {
-				return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 4)
+			if tr.DeleteCount() != 1 {
+				return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 1)
 			}
 			return nil
 		}
