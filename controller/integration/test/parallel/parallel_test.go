@@ -99,8 +99,8 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 		defer harnessA.MustTeardown(objNamespace)
 	}
 
-	// We create an object without any finalizers.
-	// Creation is retried because the existance of a CRD might have to be ensured.
+	// Create an object and wait for the controllers to add finalizers.
+	// Creation is retried because the CRD might still not be ensured.
 	{
 		o := func() error {
 			nodeConfig := &v1alpha1.NodeConfig{
@@ -116,16 +116,20 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 			}
 			return nil
 		}
-		b := backoff.NewExponential(2*time.Minute, 10*time.Second)
+		b := backoff.NewMaxRetries(20, 1*time.Second)
+
 		err = backoff.Retry(o, b)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
 	}
 
-	// Verify we reconcile creation of that object. We should have also
-	// 2 ResyncPeriods in 30 seconds so we check if there were more than
+	// Verify controllers reconcile creation of that object. There should
+	// be 2 ResyncPeriods in 30 seconds so verify there were more than
 	// 2 create events.
+	//
+	// 		EnsureCreated: >2, EnsureDeleted: =0
+	//
 	{
 		o := func() error {
 			if resourceA.CreateCount() < 2 {
@@ -219,7 +223,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	}
 }
 
-func newHarness(namespace string, operatorName string, resource *testresource.Resource) (*nodeconfig.Wrapper, error) {
+func newHarness(namespace string, controllerName string, resource *testresource.Resource) (*nodeconfig.Wrapper, error) {
 	resources := []controller.Resource{
 		controller.Resource(resource),
 	}
@@ -227,7 +231,7 @@ func newHarness(namespace string, operatorName string, resource *testresource.Re
 	c := nodeconfig.Config{
 		Resources: resources,
 
-		Name:      operatorName,
+		Name:      controllerName,
 		Namespace: namespace,
 	}
 
