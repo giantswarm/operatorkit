@@ -86,7 +86,7 @@ type Controller struct {
 	bootOnce               sync.Once
 	booted                 chan struct{}
 	errorCollector         chan error
-	removedFinalizersCache *pairCache
+	removedFinalizersCache *fifoCache
 	mutex                  sync.Mutex
 
 	backOffFactory func() backoff.Interface
@@ -129,7 +129,7 @@ func New(config Config) (*Controller, error) {
 		bootOnce:               sync.Once{},
 		booted:                 make(chan struct{}),
 		errorCollector:         make(chan error, 1),
-		removedFinalizersCache: newPairCache(removedFinalizersCacheSize),
+		removedFinalizersCache: newFifoCache(removedFinalizersCacheSize),
 		mutex:                  sync.Mutex{},
 
 		backOffFactory: config.BackOffFactory,

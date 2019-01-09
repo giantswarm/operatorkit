@@ -93,7 +93,10 @@ func (c *Controller) hasFinalizer(ctx context.Context, obj interface{}) (bool, e
 	finalizerName := getFinalizerName(c.name)
 	selfLink := accessor.GetSelfLink()
 
-	if c.removedFinalizersCache.Contains(finalizerName, selfLink) {
+	// Checking if the finalizer exists is not sufficient as there may be
+	// other event caused by other controller or user interaction queued
+	// during the deletion.
+	if c.removedFinalizersCache.Contains(selfLink) {
 		return false, nil
 	}
 
@@ -182,7 +185,7 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 		}
 
 		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("removed finalizer '%s'", finalizerName))
-		c.removedFinalizersCache.Put(finalizerName, selfLink)
+		c.removedFinalizersCache.Put(selfLink)
 	}
 
 	return nil
