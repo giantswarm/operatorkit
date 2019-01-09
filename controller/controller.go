@@ -31,6 +31,12 @@ const (
 	loggerKeyObject     = "object"
 	loggerKeyResource   = "resource"
 	loggerKeyVersion    = "version"
+
+	// removedFinalizersCacheSize should be bigger than number of reconciled
+	// objects times number of controllers to handle all deletions at the
+	// same time. Even if it is too small in the worst case scenario we
+	// will get deletion event for already deleted object.
+	removedFinalizersCacheSize = 1000
 )
 
 type Config struct {
@@ -77,10 +83,11 @@ type Controller struct {
 	logger       micrologger.Logger
 	resourceSets []*ResourceSet
 
-	bootOnce       sync.Once
-	booted         chan struct{}
-	errorCollector chan error
-	mutex          sync.Mutex
+	bootOnce               sync.Once
+	booted                 chan struct{}
+	errorCollector         chan error
+	removedFinalizersCache *pairCache
+	mutex                  sync.Mutex
 
 	backOffFactory func() backoff.Interface
 	name           string
@@ -119,10 +126,11 @@ func New(config Config) (*Controller, error) {
 		logger:       config.Logger,
 		resourceSets: config.ResourceSets,
 
-		bootOnce:       sync.Once{},
-		booted:         make(chan struct{}),
-		errorCollector: make(chan error, 1),
-		mutex:          sync.Mutex{},
+		bootOnce:               sync.Once{},
+		booted:                 make(chan struct{}),
+		errorCollector:         make(chan error, 1),
+		removedFinalizersCache: newPairCache(removedFinalizersCacheSize),
+		mutex:                  sync.Mutex{},
 
 		backOffFactory: config.BackOffFactory,
 		name:           config.Name,
@@ -202,10 +210,20 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 		return
 	}
 
-	err = ProcessDelete(ctx, obj, rs.Resources())
+	hasFinalizer, err := c.hasFinalizer(ctx, obj)
 	if err != nil {
-		c.errorCollector <- err
 		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		return
+	}
+	if hasFinalizer {
+		err = ProcessDelete(ctx, obj, rs.Resources())
+		if err != nil {
+			c.errorCollector <- err
+			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+			return
+		}
+	} else {
+		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to lack of finalizer", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
 
@@ -225,11 +243,8 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 		for {
 			loop++
 
-			// Set loop specific logger context.
-			{
-				ctx = setLoggerCtxValue(ctx, loggerKeyController, c.name)
-				ctx = setLoggerCtxValue(ctx, loggerKeyLoop, strconv.Itoa(loop))
-			}
+			ctx = setLoggerCtxValue(ctx, loggerKeyController, c.name)
+			ctx = setLoggerCtxValue(ctx, loggerKeyLoop, strconv.Itoa(loop))
 
 			select {
 			case e := <-deleteChan:
@@ -237,7 +252,7 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 
 				t := prometheus.NewTimer(controllerHistogram.WithLabelValues(event))
 
-				// Set event specific logger context.
+				// Set logger context.
 				{
 					ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
 
@@ -258,7 +273,7 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 
 				t := prometheus.NewTimer(controllerHistogram.WithLabelValues(event))
 
-				// Set event specific logger context.
+				// Set logger context.
 				{
 					ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
 
