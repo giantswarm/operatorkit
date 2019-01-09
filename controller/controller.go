@@ -32,10 +32,11 @@ const (
 	loggerKeyResource   = "resource"
 	loggerKeyVersion    = "version"
 
-	// removedFinalizersCacheSize should be bigger than number of reconciled
-	// objects times number of controllers to handle all deletions at the
-	// same time. Even if it is too small in the worst case scenario we
-	// will get deletion event for already deleted object.
+	// removedFinalizersCacheSize should be bigger than number of
+	// reconciled objects to handle all deletions at the same time. Even if
+	// it is too small in the worst case scenario we will get deletion
+	// event for already deleted object. 1000 seems to be plenty. It's hard
+	// to imagine deletion of 1000 reconciled objects at a time.
 	removedFinalizersCacheSize = 1000
 )
 
