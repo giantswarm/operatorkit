@@ -273,8 +273,8 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 				t.Fatalf("err == %v, want %v", err, nil)
 			}
 
-			if accessor.GetDeletionTimestamp() != nil {
-				t.Fatalf("DeletionTimestamp == %v, want %v", accessor.GetDeletionTimestamp(), nil)
+			if accessor.GetDeletionTimestamp() == nil {
+				t.Fatalf("DeletionTimestamp == %v, want non nil", accessor.GetDeletionTimestamp())
 			}
 
 			finalizers := accessor.GetFinalizers()
