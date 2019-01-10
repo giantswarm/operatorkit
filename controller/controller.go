@@ -133,8 +133,8 @@ func New(config Config) (*Controller, error) {
 	return c, nil
 }
 
-func (c *Controller) Boot() {
-	ctx := context.Background()
+func (c *Controller) Boot(ctx context.Context) {
+	ctx = setLoggerCtxValue(ctx, loggerKeyController, c.name)
 
 	c.bootOnce.Do(func() {
 		operation := func() error {
@@ -239,7 +239,6 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 
 			// Set loop specific logger context.
 			{
-				ctx = setLoggerCtxValue(ctx, loggerKeyController, c.name)
 				ctx = setLoggerCtxValue(ctx, loggerKeyLoop, strconv.Itoa(loop))
 			}
 
