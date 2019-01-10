@@ -31,13 +31,6 @@ const (
 	loggerKeyObject     = "object"
 	loggerKeyResource   = "resource"
 	loggerKeyVersion    = "version"
-
-	// removedFinalizersCacheSize should be bigger than number of
-	// reconciled objects to handle all deletions at the same time. Even if
-	// it is too small in the worst case scenario we will get deletion
-	// event for already deleted object. 1000 seems to be plenty. It's hard
-	// to imagine deletion of 1000 reconciled objects at a time.
-	removedFinalizersCacheSize = 1000
 )
 
 type Config struct {
@@ -87,7 +80,7 @@ type Controller struct {
 	bootOnce               sync.Once
 	booted                 chan struct{}
 	errorCollector         chan error
-	removedFinalizersCache *fifoCache
+	removedFinalizersCache *stringCache
 	mutex                  sync.Mutex
 
 	backOffFactory func() backoff.Interface
@@ -130,7 +123,7 @@ func New(config Config) (*Controller, error) {
 		bootOnce:               sync.Once{},
 		booted:                 make(chan struct{}),
 		errorCollector:         make(chan error, 1),
-		removedFinalizersCache: newFifoCache(removedFinalizersCacheSize),
+		removedFinalizersCache: newStringCache(config.Informer.ResyncPeriod() * 3),
 		mutex:                  sync.Mutex{},
 
 		backOffFactory: config.BackOffFactory,

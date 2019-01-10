@@ -15,9 +15,8 @@ operators in production.
   as any Kubernetes runtime object.
 - Managing [finalizers][finalizers] on reconciled objects, making sure the code
   is executed at least once for each create/delete/update event.
-- Trying to reduce number of deletion events after successful deletion event
-  reconciliation to avoid unnecessary, possibly expensive interactions with
-  third party systems.
+- Guarantees to perform only one successful deletion event reconciliation to
+  avoid unnecessary, possibly expensive interactions with third party systems.
 - A deterministic informer implementation that guarantees the expected behaviour
   of configured resync periods and rate waits.
 - Convenient client library helpers for simpler client creation.

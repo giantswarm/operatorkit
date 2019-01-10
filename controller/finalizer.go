@@ -185,7 +185,7 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 		}
 
 		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("removed finalizer '%s'", finalizerName))
-		c.removedFinalizersCache.Put(selfLink)
+		c.removedFinalizersCache.Set(selfLink)
 	}
 
 	return nil
