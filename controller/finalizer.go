@@ -94,7 +94,7 @@ func (c *Controller) hasFinalizer(ctx context.Context, obj interface{}) (bool, e
 	selfLink := accessor.GetSelfLink()
 
 	// Checking if the finalizer exists is not sufficient as there may be
-	// other event caused by other controller or user interaction queued
+	// other events caused by other controllers or user interactions queued
 	// during the deletion.
 	if c.removedFinalizersCache.Contains(selfLink) {
 		return false, nil
