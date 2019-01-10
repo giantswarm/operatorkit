@@ -3,6 +3,7 @@
 package reconciliation
 
 import (
+	"context"
 	"reflect"
 	"testing"
 	"time"
@@ -29,6 +30,8 @@ const (
 // the proper replay and reconciliation of delete events with finalizers.
 func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	var err error
+
+	ctx := context.Background()
 
 	var tr *testresource.Resource
 	{
@@ -62,7 +65,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	controller := nodeConfigWrapper.Controller()
 
 	// We start the controller.
-	go controller.Boot()
+	go controller.Boot(ctx)
 	<-controller.Booted()
 
 	// We create an object, but add a finalizer of another operator. This will

@@ -3,6 +3,7 @@
 package parallel
 
 import (
+	"context"
 	"reflect"
 	"sort"
 	"sync"
@@ -41,6 +42,8 @@ const (
 // check that multiple controllers can function in parallel.
 func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	var err error
+
+	ctx := context.Background()
 
 	var resourceA *testresource.Resource
 	{
@@ -133,9 +136,9 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 		controllerB := harnessB.Controller()
 		controllerC := harnessC.Controller()
 
-		go controllerA.Boot()
-		go controllerB.Boot()
-		go controllerC.Boot()
+		go controllerA.Boot(ctx)
+		go controllerB.Boot(ctx)
+		go controllerC.Boot(ctx)
 		select {
 		case <-controllerA.Booted():
 		case <-time.After(30 * time.Second):
