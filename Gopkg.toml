@@ -46,6 +46,10 @@
   name = "github.com/giantswarm/micrologger"
 
 [[constraint]]
+  name = "github.com/patrickmn/go-cache"
+  version = "=2.1.0"
+
+[[constraint]]
   branch = "master"
   name = "github.com/prometheus/client_golang"
 

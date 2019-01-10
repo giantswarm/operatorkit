@@ -5,6 +5,7 @@ package parallel
 import (
 	"reflect"
 	"sort"
+	"sync"
 	"testing"
 	"time"
 
@@ -30,6 +31,10 @@ const (
 	controllerNameB = "test-controller-b"
 	finalizerB      = "operatorkit.giantswarm.io/test-controller-b"
 	resourceNameB   = "test-resource-b"
+
+	controllerNameC = "test-controller-c"
+	resourceNameC   = "test-resource-c"
+	finalizerC      = "operatorkit.giantswarm.io/test-controller-c"
 )
 
 // Test_Finalizer_Integration_Parallel is a integration test to
@@ -49,10 +54,39 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 		}
 	}
 
+	// resourceB errors once during the deletion.
 	var resourceB *testresource.Resource
 	{
+		var once sync.Once
+
 		c := testresource.Config{
 			Name: resourceNameB,
+			ReturnErrorFunc: func(obj interface{}) error {
+				// Do not return error for update events.
+				{
+					accessor, err := meta.Accessor(obj)
+					if err != nil {
+						return microerror.Mask(err)
+					}
+					if accessor.GetDeletionTimestamp() == nil {
+						return nil
+					}
+				}
+
+				// Return error for first deletion event.
+				{
+					var err error
+					once.Do(func() {
+						err = microerror.Maskf(testError, "I fail once during the deletion")
+					})
+
+					if err != nil {
+						return microerror.Mask(err)
+					}
+				}
+
+				return nil
+			},
 		}
 
 		resourceB, err = testresource.New(c)
@@ -61,7 +95,23 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 		}
 	}
 
-	var harnessA, harnessB *nodeconfig.Wrapper
+	// resourceC fails all the time.
+	var resourceC *testresource.Resource
+	{
+		c := testresource.Config{
+			Name: resourceNameC,
+			ReturnErrorFunc: func(obj interface{}) error {
+				return microerror.Maskf(testError, "I fail all the time")
+			},
+		}
+
+		resourceC, err = testresource.New(c)
+		if err != nil {
+			t.Fatalf("err == %v, want %v", err, nil)
+		}
+	}
+
+	var harnessA, harnessB, harnessC *nodeconfig.Wrapper
 	{
 		harnessA, err = newHarness(objNamespace, controllerNameA, resourceA)
 		if err != nil {
@@ -71,15 +121,21 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
+		harnessC, err = newHarness(objNamespace, controllerNameC, resourceC)
+		if err != nil {
+			t.Fatalf("err == %v, want %v", err, nil)
+		}
 	}
 
 	// Start controllers.
 	{
 		controllerA := harnessA.Controller()
 		controllerB := harnessB.Controller()
+		controllerC := harnessC.Controller()
 
 		go controllerA.Boot()
 		go controllerB.Boot()
+		go controllerC.Boot()
 		select {
 		case <-controllerA.Booted():
 		case <-time.After(30 * time.Second):
@@ -90,6 +146,11 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 		case <-time.After(30 * time.Second):
 			t.Fatalf("failed to wait for controllerB to boot")
 		}
+		select {
+		case <-controllerC.Booted():
+		case <-time.After(30 * time.Second):
+			t.Fatalf("failed to wait for controllerC to boot")
+		}
 	}
 
 	// Setup the test namespace. We use the harness A. It makes no
@@ -99,8 +160,8 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 		defer harnessA.MustTeardown(objNamespace)
 	}
 
-	// Create an object and wait for the controllers to add finalizers.
-	// Creation is retried because the CRD might still not be ensured.
+	// Create an object. Creation is retried because the CRD might still
+	// not be ensured.
 	{
 		o := func() error {
 			nodeConfig := &v1alpha1.NodeConfig{
@@ -132,17 +193,23 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	//
 	{
 		o := func() error {
-			if resourceA.CreateCount() < 2 {
+			if resourceA.CreateCount() <= 2 {
 				return microerror.Maskf(waitError, "resourceA.CreateCount() == %v, want more than %v", resourceA.CreateCount(), 2)
 			}
 			if resourceA.DeleteCount() != 0 {
 				return microerror.Maskf(waitError, "resourceA.DeleteCount() == %v, want %v", resourceA.DeleteCount(), 0)
 			}
-			if resourceB.CreateCount() < 2 {
+			if resourceB.CreateCount() <= 2 {
 				return microerror.Maskf(waitError, "resourceB.CreateCount() == %v, want more than %v", resourceB.CreateCount(), 2)
 			}
 			if resourceB.DeleteCount() != 0 {
 				return microerror.Maskf(waitError, "resourceB.DeleteCount() == %v, want %v", resourceB.DeleteCount(), 0)
+			}
+			if resourceC.CreateCount() <= 2 {
+				return microerror.Maskf(waitError, "resourceC.CreateCount() == %v, want more than %v", resourceC.CreateCount(), 2)
+			}
+			if resourceC.DeleteCount() != 0 {
+				return microerror.Maskf(waitError, "resourceC.DeleteCount() == %v, want %v", resourceC.DeleteCount(), 0)
 			}
 
 			return nil
@@ -172,11 +239,12 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 		}
 
 		finalizers := accessor.GetFinalizers()
-		sort.Strings(finalizers)
 		expectedFinalizers := []string{
 			finalizerA,
 			finalizerB,
+			finalizerC,
 		}
+		sort.Strings(finalizers)
 		sort.Strings(expectedFinalizers)
 		if !reflect.DeepEqual(finalizers, expectedFinalizers) {
 			t.Fatalf("finalizers == %v, want %v", finalizers, expectedFinalizers)
@@ -189,6 +257,83 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
+	}
+
+	// Verify deletion timestamp and check there is only finzalierC left
+	// from constantly failing resource.
+	{
+		o := func() error {
+			obj, err := harnessA.GetObject(objName, objNamespace)
+			if err != nil {
+				t.Fatalf("err == %v, want %v", err, nil)
+			}
+
+			accessor, err := meta.Accessor(obj)
+			if err != nil {
+				t.Fatalf("err == %v, want %v", err, nil)
+			}
+
+			if accessor.GetDeletionTimestamp() == nil {
+				t.Fatalf("DeletionTimestamp == %v, want non nil", accessor.GetDeletionTimestamp())
+			}
+
+			finalizers := accessor.GetFinalizers()
+			expectedFinalizers := []string{
+				finalizerC,
+			}
+			sort.Strings(finalizers)
+			sort.Strings(expectedFinalizers)
+			if !reflect.DeepEqual(finalizers, expectedFinalizers) {
+				return microerror.Maskf(waitError, "finalizers == %v, want %v", finalizers, expectedFinalizers)
+			}
+
+			return nil
+		}
+		b := backoff.NewMaxRetries(30, 1*time.Second)
+
+		err := backoff.Retry(o, b)
+		if err != nil {
+			t.Fatalf("err == %v, want %v", err, nil)
+		}
+	}
+
+	// Verify that:
+	//
+	//	- resourceA received exactly 1 deletion event as it never
+	//	  fails.
+	//	- resourceB received exectly 2 deletion events as it fails
+	//	  during the deletion once.
+	//	- resourceB received more than 3 deletion events as it fails
+	//	  all the time.
+	//
+	{
+		o := func() error {
+			if resourceA.DeleteCount() != 1 {
+				microerror.Maskf(waitError, "resourceA.DeleteCount() == %v, want %v", resourceA.DeleteCount(), 1)
+			}
+			if resourceB.DeleteCount() != 2 {
+				microerror.Maskf(waitError, "resourceB.DeleteCount() == %v, want %v", resourceB.DeleteCount(), 2)
+			}
+			if resourceC.DeleteCount() <= 3 {
+				microerror.Maskf(waitError, "resourceC.DeleteCount() == %v, want more than %v", resourceC.DeleteCount(), 3)
+			}
+
+			return nil
+		}
+
+		b := backoff.NewMaxRetries(30, 1*time.Second)
+
+		err := backoff.Retry(o, b)
+		if err != nil {
+			t.Fatalf("err == %v, want %v", err, nil)
+		}
+	}
+
+	// Set the resourceC error function to nil to not return any error
+	// anymore. The finalizer should be removed with the next
+	// reconciliation now.
+	{
+		resourceC.SetReturnErrorFunc(nil)
 	}
 
 	// Verify that the object is completely gone now.
@@ -211,14 +356,24 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 		}
 	}
 
-	// Verify resources received exactly one deletion event after
-	// successful deletion.
+	// Verify **again** that:
+	//
+	//	- resourceA received exactly 1 deletion event as it never
+	//	  fails.
+	//	- resourceB received exectly 2 deletion events as it fails
+	//	  during the deletion once.
+	//	- resourceB received more than 3 deletion events as it was
+	//	  failing all the time till SetReturnErrorFunc(nil) was called.
+	//
 	{
-		if resourceA.DeleteCount() == 0 {
-			t.Fatalf("resourceA.DeleteCount() == %v, want more than %v", resourceA.DeleteCount(), 0)
+		if resourceA.DeleteCount() != 1 {
+			t.Fatalf("resourceA.DeleteCount() == %v, want %v", resourceA.DeleteCount(), 1)
 		}
-		if resourceB.DeleteCount() == 0 {
-			t.Fatalf("resourceB.DeleteCount() == %v, want more than %v", resourceB.DeleteCount(), 0)
+		if resourceB.DeleteCount() != 2 {
+			t.Fatalf("resourceB.DeleteCount() == %v, want %v", resourceB.DeleteCount(), 2)
+		}
+		if resourceC.DeleteCount() <= 3 {
+			t.Fatalf("resourceC.DeleteCount() == %v, want more than %v", resourceC.DeleteCount(), 3)
 		}
 	}
 }

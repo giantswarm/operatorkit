@@ -15,11 +15,13 @@ operators in production.
   as any Kubernetes runtime object.
 - Managing [finalizers][finalizers] on reconciled objects, making sure the code
   is executed at least once for each create/delete/update event.
+- Guarantees to perform only one successful deletion event reconciliation to
+  avoid unnecessary, possibly expensive interactions with third party systems.
 - A deterministic informer implementation that guarantees the expected behaviour
   of configured resync periods and rate waits.
 - Convenient client library helpers for simpler client creation.
 - Resource wrapping to gain ability of composing resources like middlewares.
-- Control flow primitives that allow cancelation and repetition of resource
+- Control flow primitives that allow cancellation and repetition of resource
   implementations.
 - Independent packages. It is possible to use only certain parts of the library
   without being bound to all primitives it provides.

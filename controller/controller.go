@@ -77,10 +77,11 @@ type Controller struct {
 	logger       micrologger.Logger
 	resourceSets []*ResourceSet
 
-	bootOnce       sync.Once
-	booted         chan struct{}
-	errorCollector chan error
-	mutex          sync.Mutex
+	bootOnce               sync.Once
+	booted                 chan struct{}
+	errorCollector         chan error
+	removedFinalizersCache *stringCache
+	mutex                  sync.Mutex
 
 	backOffFactory func() backoff.Interface
 	name           string
@@ -119,10 +120,11 @@ func New(config Config) (*Controller, error) {
 		logger:       config.Logger,
 		resourceSets: config.ResourceSets,
 
-		bootOnce:       sync.Once{},
-		booted:         make(chan struct{}),
-		errorCollector: make(chan error, 1),
-		mutex:          sync.Mutex{},
+		bootOnce:               sync.Once{},
+		booted:                 make(chan struct{}),
+		errorCollector:         make(chan error, 1),
+		removedFinalizersCache: newStringCache(config.Informer.ResyncPeriod() * 3),
+		mutex:                  sync.Mutex{},
 
 		backOffFactory: config.BackOffFactory,
 		name:           config.Name,
@@ -202,10 +204,20 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 		return
 	}
 
-	err = ProcessDelete(ctx, obj, rs.Resources())
+	hasFinalizer, err := c.hasFinalizer(ctx, obj)
 	if err != nil {
-		c.errorCollector <- err
 		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		return
+	}
+	if hasFinalizer {
+		err = ProcessDelete(ctx, obj, rs.Resources())
+		if err != nil {
+			c.errorCollector <- err
+			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+			return
+		}
+	} else {
+		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to lack of finalizer", "stack", fmt.Sprintf("%#v", err))
 		return
 	}
 
