@@ -247,6 +247,14 @@
   version = "1.0.1"
 
 [[projects]]
+  digest = "1:808cdddf087fb64baeae67b8dfaee2069034d9704923a3cb8bd96a995421a625"
+  name = "github.com/patrickmn/go-cache"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "a3647f8e31d79543b2d0f0ae2fe5c379d72cedc0"
+  version = "v2.1.0"
+
+[[projects]]
   branch = "master"
   digest = "1:60550d27cee0a4d6f3ef35c169b9f0cf596636f77df11e2acea8626ce76d959c"
   name = "github.com/prometheus/client_golang"
@@ -563,6 +571,7 @@
     "github.com/giantswarm/micrologger",
     "github.com/giantswarm/micrologger/loggermeta",
     "github.com/giantswarm/micrologger/microloggertest",
+    "github.com/patrickmn/go-cache",
     "github.com/prometheus/client_golang/prometheus",
     "github.com/spf13/pflag",
     "k8s.io/api/apps/v1",

@@ -33,7 +33,7 @@ func (f *Controller) addFinalizer(ctx context.Context, obj interface{}) (bool, e
 	}
 	// We check if the object has a finalizer here, to avoid unnecessary calls to
 	// the k8s api.
-	if containsFinalizer(accessor.GetFinalizers(), getFinalizerName(f.name)) {
+	if containsString(accessor.GetFinalizers(), getFinalizerName(f.name)) {
 		return false, nil // object already has the finalizer.
 	}
 
@@ -84,6 +84,25 @@ func (f *Controller) addFinalizer(ctx context.Context, obj interface{}) (bool, e
 	return stopReconciliation, nil
 }
 
+// hasFinalizer checks if the object has finalizer for this controller.
+func (c *Controller) hasFinalizer(ctx context.Context, obj interface{}) (bool, error) {
+	accessor, err := meta.Accessor(obj)
+	if err != nil {
+		return false, microerror.Mask(err)
+	}
+	finalizerName := getFinalizerName(c.name)
+	selfLink := accessor.GetSelfLink()
+
+	// Checking if the finalizer exists is not sufficient as there may be
+	// other events caused by other controllers or user interactions queued
+	// during the deletion.
+	if c.removedFinalizersCache.Contains(selfLink) {
+		return false, nil
+	}
+
+	return containsString(accessor.GetFinalizers(), finalizerName), nil
+}
+
 // removeFinalizer receives an object and tries to remove its finalizer which
 // was set by operatorkit. The removal of a finalizer will be retried and a fresh
 // object will get fetched from k8s if the ResourceVersion is out of date.
@@ -116,7 +135,7 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 	//       is its deletion.
 	//     - The object has another finalizer set and we removed ours already.
 	//
-	if !containsFinalizer(accessor.GetFinalizers(), finalizerName) {
+	if !containsString(accessor.GetFinalizers(), finalizerName) {
 		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("did not remove finalizer '%s'", finalizerName))
 		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("finalizer '%s' not found", finalizerName))
 
@@ -166,14 +185,15 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 		}
 
 		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("removed finalizer '%s'", finalizerName))
+		c.removedFinalizersCache.Set(selfLink)
 	}
 
 	return nil
 }
 
-func containsFinalizer(finalizers []string, finalizer string) bool {
-	for _, f := range finalizers {
-		if f == finalizer {
+func containsString(slice []string, s string) bool {
+	for _, x := range slice {
+		if x == s {
 			return true
 		}
 	}
@@ -189,7 +209,7 @@ func createAddFinalizerPatch(obj interface{}, operatorName string) (patch []patc
 		return nil, true, nil // object has been marked for deletion, we should ignore it.
 	}
 	finalizerName := getFinalizerName(operatorName)
-	if containsFinalizer(accessor.GetFinalizers(), finalizerName) {
+	if containsString(accessor.GetFinalizers(), finalizerName) {
 		return nil, false, nil // object already has the finalizer.
 	}
 	patch = []patchSpec{}
