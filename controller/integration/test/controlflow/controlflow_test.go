@@ -3,6 +3,7 @@
 package controlflow
 
 import (
+	"context"
 	"reflect"
 	"testing"
 	"time"
@@ -33,6 +34,8 @@ const (
 func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	var err error
 
+	ctx := context.Background()
+
 	var resource *testresource.Resource
 	{
 		c := testresource.Config{
@@ -57,7 +60,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	{
 		controller := harness.Controller()
 
-		go controller.Boot()
+		go controller.Boot(ctx)
 		select {
 		case <-controller.Booted():
 		case <-time.After(30 * time.Second):

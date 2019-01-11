@@ -3,6 +3,7 @@
 package statusupdate
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -30,6 +31,8 @@ const (
 
 func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 	var err error
+
+	ctx := context.Background()
 
 	var r controller.Resource
 	{
@@ -66,7 +69,7 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 	{
 		c := nodeConfigWrapper.Controller()
 
-		go c.Boot()
+		go c.Boot(ctx)
 		<-c.Booted()
 	}
 
