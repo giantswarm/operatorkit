@@ -15,6 +15,14 @@ import (
 const (
 	defaultConfigFile = "config.yaml"
 
+	// DefaultKubeConfig is the file path of the testing cluster
+	// kubeconfig.
+	//
+	// NOTE: This value is used in its raw form in helmclient repo. When it
+	// changes we need to change it in helmclient too.
+	//
+	//	See https://github.com/giantswarm/helmclient/pull/63
+	//
 	DefaultKubeConfig = "/workdir/.shipyard/config"
 )
 
