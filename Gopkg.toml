@@ -69,6 +69,10 @@
   name = "k8s.io/client-go"
   version = "kubernetes-1.10.4"
 
+[[constraint]]
+  name = "github.com/getsentry/raven-go"
+  version = "v0.2.0"
+
 
 
 [prune]

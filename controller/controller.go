@@ -21,6 +21,7 @@ import (
 	"github.com/giantswarm/operatorkit/client/k8scrdclient"
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
+	"github.com/giantswarm/operatorkit/controller/sentry"
 	"github.com/giantswarm/operatorkit/informer"
 )
 
@@ -61,12 +62,15 @@ type Config struct {
 	// 		g8sClient.CoreV1alpha1().RESTClient()
 	//
 	RESTClient rest.Interface
+	Sentry     *sentry.Service
 
 	BackOffFactory func() backoff.Interface
 	// Name is the name which the controller uses on finalizers for resources.
 	// The name used should be unique in the kubernetes cluster, to ensure that
 	// two operators which handle the same resource add two distinct finalizers.
 	Name string
+	// SentryEnabled determines whether we use Sentry, or not.
+	SentryEnabled bool
 }
 
 type Controller struct {
@@ -76,6 +80,7 @@ type Controller struct {
 	restClient   rest.Interface
 	logger       micrologger.Logger
 	resourceSets []*ResourceSet
+	sentry       *sentry.Service
 
 	bootOnce               sync.Once
 	booted                 chan struct{}
@@ -85,6 +90,7 @@ type Controller struct {
 
 	backOffFactory func() backoff.Interface
 	name           string
+	sentryEnabled  bool
 }
 
 // New creates a new configured operator controller.
@@ -104,12 +110,21 @@ func New(config Config) (*Controller, error) {
 	if len(config.ResourceSets) == 0 {
 		return nil, microerror.Maskf(invalidConfigError, "%T.ResourceSets must not be empty", config)
 	}
+	if config.SentryEnabled && config.Sentry == nil {
+		return nil, microerror.Maskf(invalidConfigError, "%T.Sentry must not be empty", config)
+	}
 
 	if config.BackOffFactory == nil {
 		config.BackOffFactory = func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) }
 	}
 	if config.Name == "" {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Name must not be empty", config)
+	}
+
+	if config.SentryEnabled {
+		config.Logger.Log("level", "info", "message", fmt.Sprintf("Sentry is enabled for controller: %s", config.Name))
+	} else {
+		config.Logger.Log("level", "info", "message", fmt.Sprintf("Sentry is not enabled for controller: %s", config.Name))
 	}
 
 	c := &Controller{
@@ -119,6 +134,7 @@ func New(config Config) (*Controller, error) {
 		restClient:   config.RESTClient,
 		logger:       config.Logger,
 		resourceSets: config.ResourceSets,
+		sentry:       config.Sentry,
 
 		bootOnce:               sync.Once{},
 		booted:                 make(chan struct{}),
@@ -128,6 +144,7 @@ func New(config Config) (*Controller, error) {
 
 		backOffFactory: config.BackOffFactory,
 		name:           config.Name,
+		sentryEnabled:  config.SentryEnabled,
 	}
 
 	return c, nil
@@ -212,6 +229,9 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 	if hasFinalizer {
 		err = ProcessDelete(ctx, obj, rs.Resources())
 		if err != nil {
+			if c.sentryEnabled {
+				c.sentry.Capture(ctx, err)
+			}
 			c.errorCollector <- err
 			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 			return
@@ -359,6 +379,9 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 
 	err = ProcessUpdate(ctx, obj, rs.Resources())
 	if err != nil {
+		if c.sentryEnabled {
+			c.sentry.Capture(ctx, err)
+		}
 		c.errorCollector <- err
 		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return
