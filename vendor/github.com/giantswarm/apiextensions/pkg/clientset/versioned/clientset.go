@@ -1,5 +1,5 @@
 /*
-Copyright 2018 Giant Swarm GmbH.
+Copyright 2019 Giant Swarm GmbH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@ limitations under the License.
 package versioned
 
 import (
+	applicationv1alpha1 "github.com/giantswarm/apiextensions/pkg/clientset/versioned/typed/application/v1alpha1"
 	corev1alpha1 "github.com/giantswarm/apiextensions/pkg/clientset/versioned/typed/core/v1alpha1"
 	examplev1alpha1 "github.com/giantswarm/apiextensions/pkg/clientset/versioned/typed/example/v1alpha1"
 	providerv1alpha1 "github.com/giantswarm/apiextensions/pkg/clientset/versioned/typed/provider/v1alpha1"
-	glog "github.com/golang/glog"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -30,6 +30,9 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
+	ApplicationV1alpha1() applicationv1alpha1.ApplicationV1alpha1Interface
+	// Deprecated: please explicitly pick a version if possible.
+	Application() applicationv1alpha1.ApplicationV1alpha1Interface
 	CoreV1alpha1() corev1alpha1.CoreV1alpha1Interface
 	// Deprecated: please explicitly pick a version if possible.
 	Core() corev1alpha1.CoreV1alpha1Interface
@@ -45,9 +48,21 @@ type Interface interface {
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	coreV1alpha1     *corev1alpha1.CoreV1alpha1Client
-	exampleV1alpha1  *examplev1alpha1.ExampleV1alpha1Client
-	providerV1alpha1 *providerv1alpha1.ProviderV1alpha1Client
+	applicationV1alpha1 *applicationv1alpha1.ApplicationV1alpha1Client
+	coreV1alpha1        *corev1alpha1.CoreV1alpha1Client
+	exampleV1alpha1     *examplev1alpha1.ExampleV1alpha1Client
+	providerV1alpha1    *providerv1alpha1.ProviderV1alpha1Client
+}
+
+// ApplicationV1alpha1 retrieves the ApplicationV1alpha1Client
+func (c *Clientset) ApplicationV1alpha1() applicationv1alpha1.ApplicationV1alpha1Interface {
+	return c.applicationV1alpha1
+}
+
+// Deprecated: Application retrieves the default version of ApplicationClient.
+// Please explicitly pick a version.
+func (c *Clientset) Application() applicationv1alpha1.ApplicationV1alpha1Interface {
+	return c.applicationV1alpha1
 }
 
 // CoreV1alpha1 retrieves the CoreV1alpha1Client
@@ -99,6 +114,10 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	}
 	var cs Clientset
 	var err error
+	cs.applicationV1alpha1, err = applicationv1alpha1.NewForConfig(&configShallowCopy)
+	if err != nil {
+		return nil, err
+	}
 	cs.coreV1alpha1, err = corev1alpha1.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
@@ -114,7 +133,6 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 
 	cs.DiscoveryClient, err = discovery.NewDiscoveryClientForConfig(&configShallowCopy)
 	if err != nil {
-		glog.Errorf("failed to create the DiscoveryClient: %v", err)
 		return nil, err
 	}
 	return &cs, nil
@@ -124,6 +142,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 // panics if there is an error in the config.
 func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
+	cs.applicationV1alpha1 = applicationv1alpha1.NewForConfigOrDie(c)
 	cs.coreV1alpha1 = corev1alpha1.NewForConfigOrDie(c)
 	cs.exampleV1alpha1 = examplev1alpha1.NewForConfigOrDie(c)
 	cs.providerV1alpha1 = providerv1alpha1.NewForConfigOrDie(c)
@@ -135,6 +154,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
+	cs.applicationV1alpha1 = applicationv1alpha1.New(c)
 	cs.coreV1alpha1 = corev1alpha1.New(c)
 	cs.exampleV1alpha1 = examplev1alpha1.New(c)
 	cs.providerV1alpha1 = providerv1alpha1.New(c)
