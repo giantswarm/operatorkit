@@ -217,7 +217,8 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 			return
 		}
 	} else {
-		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to lack of finalizer", "stack", fmt.Sprintf("%#v", err))
+		c.logger.LogCtx(ctx, "level", "debug", "message", "did not find any finalizer")
+		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 		return
 	}
 
