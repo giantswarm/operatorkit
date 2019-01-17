@@ -6,12 +6,16 @@ several resources exist. As a means of measurement and safety net it is a good
 practise to implement metrics providers that emit metrics about the managed
 system and its resources.
 
-In [`aws-operator` we implement a Prometheus collector](https://github.com/giantswarm/aws-operator/blob/845afd245b0ace5cc6b37a1bd4f5da6c7e1d12d6/service/collector/collector.go)
-to emit metrics about e.g. VPCs. These metrics are used for verifying each guest
-cluster has a VPC assigned and no VPC is orphaned without having any guest
-cluster assigned.
+In [`aws-operator` we implement a Prometheus collector](https://github.com/giantswarm/aws-operator/tree/master/service/collector)
+to emit metrics about e.g. VPCs. These metrics are used for verifying each
+tenant cluster has a VPC assigned and no VPC is orphaned without having any
+tenant cluster assigned.
 
-In [`operatorkit` we implement a Prometheus collector](https://github.com/giantswarm/operatorkit/blob/929bed01204f9a210f4589b4f3282e7f8028cce0/informer/collector.go)
+In [`azure-operator` we implement a Prometheus collector](https://github.com/giantswarm/azure-operator/tree/master/service/collector)
+to emit metrics about e.g. ARM Deployments. These metrics are used for alerting
+on deployments being in failed state or stuck in upgrading.
+
+In [`operatorkit` we implement a Prometheus collector](https://github.com/giantswarm/operatorkit/tree/master/informer/collector)
 to emit metrics about the creation and deletion timestamps of watched runtime
 objects. These metrics are used for various purposes within our monitoring and
 alerting system.
