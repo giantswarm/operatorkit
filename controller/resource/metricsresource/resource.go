@@ -8,20 +8,11 @@ import (
 
 type Config struct {
 	Resource controller.Resource
-
-	// Name is name of the service using the controller. This may be the
-	// name of the executing operator or controller. The service name will
-	// be used to label metrics.
-	Name string
 }
 
 func New(config Config) (controller.Resource, error) {
 	if config.Resource == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.Resource must not be empty")
-	}
-
-	if config.Name == "" {
-		return nil, microerror.Maskf(invalidConfigError, "config.Name must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "%T.Resource must not be empty", config)
 	}
 
 	var err error

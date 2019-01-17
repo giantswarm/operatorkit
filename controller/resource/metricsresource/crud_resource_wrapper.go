@@ -17,11 +17,7 @@ type crudResourceWrapper struct {
 
 func newCRUDResourceWrapper(config Config) (*crudResourceWrapper, error) {
 	if config.Resource == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.Resource must not be empty")
-	}
-
-	if config.Name == "" {
-		return nil, microerror.Maskf(invalidConfigError, "config.Name must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "%T.Resource must not be empty", config)
 	}
 
 	// Wrap underlying resource Ops with retry logic. Underlying resource
@@ -40,7 +36,6 @@ func newCRUDResourceWrapper(config Config) (*crudResourceWrapper, error) {
 		c := crudResourceOpsWrapperConfig{
 			Ops: underlyingCRUD.CRUDResourceOps,
 
-			ServiceName:  config.Name,
 			ResourceName: config.Resource.Name(),
 		}
 

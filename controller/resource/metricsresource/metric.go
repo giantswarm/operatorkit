@@ -15,7 +15,7 @@ var (
 			Name:      "operation_total",
 			Help:      "Number of processed reconciliation operations.",
 		},
-		[]string{"service", "resource", "operation"},
+		[]string{"resource", "operation"},
 	)
 
 	operationHistogram = prometheus.NewHistogramVec(
@@ -24,8 +24,9 @@ var (
 			Subsystem: PrometheusSubsystem,
 			Name:      "operation",
 			Help:      "Time taken to process a single reconciliation operation.",
+			Buckets:   []float64{1, 2, 5, 10, 20, 40, 60, 120},
 		},
-		[]string{"service", "resource", "operation"},
+		[]string{"resource", "operation"},
 	)
 )
 
