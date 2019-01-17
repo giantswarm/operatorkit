@@ -20,7 +20,7 @@
   version = "v1.1.1"
 
 [[projects]]
-  branch = "kubernetes-1.13.2"
+  branch = "master"
   name = "github.com/giantswarm/apiextensions"
   packages = [
     "pkg/apis/application/v1alpha1",
@@ -34,7 +34,7 @@
     "pkg/clientset/versioned/typed/example/v1alpha1",
     "pkg/clientset/versioned/typed/provider/v1alpha1"
   ]
-  revision = "243452e56259a3c7e00616ef89d97b912c63e776"
+  revision = "0584389c4f82e52ba980c14dc31434d922245a46"
 
 [[projects]]
   branch = "master"
@@ -46,7 +46,7 @@
   branch = "master"
   name = "github.com/giantswarm/e2e-harness"
   packages = ["pkg/harness"]
-  revision = "a462aefc0b47e0a1641a0cf6c8c4f1b8587ff004"
+  revision = "2debfbcd1495b5cc719a9191a940da58025b9cbc"
 
 [[projects]]
   branch = "master"
@@ -216,13 +216,13 @@
     "prometheus",
     "prometheus/internal"
   ]
-  revision = "d2ead25884778582e740573999f7b07f47e171b4"
+  revision = "26e258bb9c9a94c26d4a46ff302ec7e855b82e10"
 
 [[projects]]
   branch = "master"
   name = "github.com/prometheus/client_model"
   packages = ["go"]
-  revision = "f287a105a20ec685d797f65cd0ce8fbeaef42da1"
+  revision = "56726106282f1985ea77d5305743db7231b0c0a8"
 
 [[projects]]
   branch = "master"
@@ -286,7 +286,7 @@
     ".",
     "internal"
   ]
-  revision = "36a7019397c4c86cf59eeab3bc0d188bac444277"
+  revision = "5dab4167f31cbd76b407f1486c86b40748bc5073"
 
 [[projects]]
   branch = "master"
@@ -301,7 +301,7 @@
     "unix",
     "windows"
   ]
-  revision = "2be51725563103c17124a318f1745b66f2347acb"
+  revision = "11f53e03133963fb11ae0588e08b5e0b85be8be5"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -534,6 +534,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b5a4e3b3c71e57d7536440f896eb68c13a8fcf40cd7fa0222b502e9d093fcc8c"
+  inputs-digest = "9ea244fcffc1702c4f71da5d0c471695ab01fad004a5efc07ac6ff3c0d590bab"
   solver-name = "gps-cdcl"
   solver-version = 1

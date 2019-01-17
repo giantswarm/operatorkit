@@ -212,7 +212,7 @@ type RawSockaddrInet6 struct {
 
 type RawSockaddrUnix struct {
 	Family uint16
-	Path   [108]uint8
+	Path   [108]int8
 }
 
 type RawSockaddrLinklayer struct {
@@ -776,6 +776,26 @@ const (
 
 type Sigset_t struct {
 	Val [16]uint64
+}
+
+type SignalfdSiginfo struct {
+	Signo   uint32
+	Errno   int32
+	Code    int32
+	Pid     uint32
+	Uid     uint32
+	Fd      int32
+	Tid     uint32
+	Band    uint32
+	Overrun uint32
+	Trapno  uint32
+	Status  int32
+	Int     int32
+	Ptr     uint64
+	Utime   uint64
+	Stime   uint64
+	Addr    uint64
+	_       [48]uint8
 }
 
 const RNDGETENTCNT = 0x80045200
