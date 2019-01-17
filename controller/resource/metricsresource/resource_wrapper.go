@@ -11,36 +11,27 @@ import (
 
 type resourceWrapper struct {
 	resource controller.Resource
-
-	name string
 }
 
 func newResourceWrapper(config Config) (*resourceWrapper, error) {
 	if config.Resource == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.Resource must not be empty")
-	}
-
-	if config.Name == "" {
-		return nil, microerror.Maskf(invalidConfigError, "config.Name must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "%T.Resource must not be empty", config)
 	}
 
 	r := &resourceWrapper{
 		resource: config.Resource,
-
-		name: toCamelCase(config.Name),
 	}
 
 	return r, nil
 }
 
 func (r *resourceWrapper) EnsureCreated(ctx context.Context, obj interface{}) error {
-	sl := r.name
 	rl := r.resource.Name()
 	ol := "EnsureCreated"
 
-	operationCounter.WithLabelValues(sl, rl, ol).Inc()
+	operationCounter.WithLabelValues(rl, ol).Inc()
 
-	t := prometheus.NewTimer(operationHistogram.WithLabelValues(sl, rl, ol))
+	t := prometheus.NewTimer(operationHistogram.WithLabelValues(rl, ol))
 	defer t.ObserveDuration()
 
 	err := r.resource.EnsureCreated(ctx, obj)
@@ -52,13 +43,12 @@ func (r *resourceWrapper) EnsureCreated(ctx context.Context, obj interface{}) er
 }
 
 func (r *resourceWrapper) EnsureDeleted(ctx context.Context, obj interface{}) error {
-	sl := r.name
 	rl := r.resource.Name()
 	ol := "EnsureDeleted"
 
-	operationCounter.WithLabelValues(sl, rl, ol).Inc()
+	operationCounter.WithLabelValues(rl, ol).Inc()
 
-	t := prometheus.NewTimer(operationHistogram.WithLabelValues(sl, rl, ol))
+	t := prometheus.NewTimer(operationHistogram.WithLabelValues(rl, ol))
 	defer t.ObserveDuration()
 
 	err := r.resource.EnsureDeleted(ctx, obj)
