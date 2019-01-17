@@ -9,6 +9,7 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/prometheus/client_golang/prometheus"
+	"golang.org/x/sync/errgroup"
 )
 
 type SetConfig struct {
@@ -71,11 +72,24 @@ func (s *Set) Boot(ctx context.Context) error {
 func (s *Set) Collect(ch chan<- prometheus.Metric) {
 	s.logger.Log("level", "debug", "message", "collecting metrics")
 
-	for _, c := range s.collectors {
-		err := c.Collect(ch)
-		if err != nil {
-			s.logger.Log("level", "error", "message", "failed collecting metrics", "stack", fmt.Sprintf("%#v", microerror.Mask(err)))
-		}
+	var g errgroup.Group
+
+	for _, item := range s.collectors {
+		c := item
+
+		g.Go(func() error {
+			err := c.Collect(ch)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+
+			return nil
+		})
+	}
+
+	err := g.Wait()
+	if err != nil {
+		s.logger.Log("level", "error", "message", "failed collecting metrics", "stack", fmt.Sprintf("%#v", microerror.Mask(err)))
 	}
 
 	s.logger.Log("level", "debug", "message", "collected metrics")
@@ -84,11 +98,24 @@ func (s *Set) Collect(ch chan<- prometheus.Metric) {
 func (s *Set) Describe(ch chan<- *prometheus.Desc) {
 	s.logger.Log("level", "debug", "message", "describing metrics")
 
-	for _, c := range s.collectors {
-		err := c.Describe(ch)
-		if err != nil {
-			s.logger.Log("level", "error", "message", "failed describing metrics", "stack", fmt.Sprintf("%#v", microerror.Mask(err)))
-		}
+	var g errgroup.Group
+
+	for _, item := range s.collectors {
+		c := item
+
+		g.Go(func() error {
+			err := c.Describe(ch)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+
+			return nil
+		})
+	}
+
+	err := g.Wait()
+	if err != nil {
+		s.logger.Log("level", "error", "message", "failed describing metrics", "stack", fmt.Sprintf("%#v", microerror.Mask(err)))
 	}
 
 	s.logger.Log("level", "debug", "message", "described metrics")
