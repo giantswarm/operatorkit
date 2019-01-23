@@ -234,78 +234,69 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Event, updateChan chan watch.Event, errChan chan error) error {
 	loop := -1
 
-	operation := func() error {
-		for {
-			loop++
+	for {
+		loop++
 
-			// Set loop specific logger context.
+		// Set loop specific logger context.
+		{
+			ctx = setLoggerCtxValue(ctx, loggerKeyLoop, strconv.Itoa(loop))
+		}
+
+		select {
+		case e := <-deleteChan:
+			event := "delete"
+
+			t := prometheus.NewTimer(controllerHistogram.WithLabelValues(event))
+
+			// Set event specific logger context.
 			{
-				ctx = setLoggerCtxValue(ctx, loggerKeyLoop, strconv.Itoa(loop))
+				ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
+
+				accessor, err := meta.Accessor(e.Object)
+				if err != nil {
+					c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("cannot create accessor %T", e.Object), "stack", fmt.Sprintf("%#v", err))
+				} else {
+					ctx = setLoggerCtxValue(ctx, loggerKeyObject, accessor.GetSelfLink())
+					ctx = setLoggerCtxValue(ctx, loggerKeyVersion, accessor.GetResourceVersion())
+				}
 			}
 
-			select {
-			case e := <-deleteChan:
-				event := "delete"
+			c.deleteFunc(ctx, e.Object)
 
-				t := prometheus.NewTimer(controllerHistogram.WithLabelValues(event))
+			t.ObserveDuration()
+		case e := <-updateChan:
+			event := "update"
 
-				// Set event specific logger context.
-				{
-					ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
+			t := prometheus.NewTimer(controllerHistogram.WithLabelValues(event))
 
-					accessor, err := meta.Accessor(e.Object)
-					if err != nil {
-						c.logger.LogCtx(ctx, "level", "warning", "message", fmt.Sprintf("cannot create accessor %T", e.Object), "stack", fmt.Sprintf("%#v", err))
-					} else {
-						ctx = setLoggerCtxValue(ctx, loggerKeyObject, accessor.GetSelfLink())
-						ctx = setLoggerCtxValue(ctx, loggerKeyVersion, accessor.GetResourceVersion())
-					}
+			// Set event specific logger context.
+			{
+				ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
+
+				accessor, err := meta.Accessor(e.Object)
+				if err != nil {
+					c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("cannot create accessor %T", e.Object), "stack", fmt.Sprintf("%#v", err))
+				} else {
+					ctx = setLoggerCtxValue(ctx, loggerKeyObject, accessor.GetSelfLink())
+					ctx = setLoggerCtxValue(ctx, loggerKeyVersion, accessor.GetResourceVersion())
 				}
-
-				c.deleteFunc(ctx, e.Object)
-
-				t.ObserveDuration()
-			case e := <-updateChan:
-				event := "update"
-
-				t := prometheus.NewTimer(controllerHistogram.WithLabelValues(event))
-
-				// Set event specific logger context.
-				{
-					ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
-
-					accessor, err := meta.Accessor(e.Object)
-					if err != nil {
-						c.logger.LogCtx(ctx, "level", "warning", "message", fmt.Sprintf("cannot create accessor %T", e.Object), "stack", fmt.Sprintf("%#v", err))
-					} else {
-						ctx = setLoggerCtxValue(ctx, loggerKeyObject, accessor.GetSelfLink())
-						ctx = setLoggerCtxValue(ctx, loggerKeyVersion, accessor.GetResourceVersion())
-					}
-				}
-
-				c.updateFunc(ctx, e.Object)
-
-				t.ObserveDuration()
-			case err := <-errChan:
-				if IsStatusForbidden(err) {
-					return microerror.Maskf(statusForbiddenError, "controller might be missing RBAC rule for %s CRD", c.crd.Name)
-				} else if err != nil {
-					return microerror.Mask(err)
-				}
-			case <-ctx.Done():
-				return nil
 			}
+
+			c.updateFunc(ctx, e.Object)
+
+			t.ObserveDuration()
+		case err := <-errChan:
+			if IsStatusForbidden(err) {
+				c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("controller might be missing RBAC rule for %s CRD", c.crd.Name), "stack", fmt.Sprintf("%#v", err))
+			} else if err != nil {
+				c.logger.LogCtx(ctx, "level", "error", "message", "failed to watch object", "stack", fmt.Sprintf("%#v", err))
+			}
+
+			time.Sleep(time.Second)
+		case <-ctx.Done():
+			return nil
 		}
 	}
-
-	notifier := backoff.NewNotifier(c.logger, ctx)
-
-	err := backoff.RetryNotify(operation, c.backOffFactory(), notifier)
-	if err != nil {
-		return microerror.Mask(err)
-	}
-
-	return nil
 }
 
 // UpdateFunc executes the controller's ProcessUpdate function.
