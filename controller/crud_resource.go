@@ -29,13 +29,13 @@ type CRUDResource struct {
 
 func NewCRUDResource(config CRUDResourceConfig) (*CRUDResource, error) {
 	if config.Logger == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "%T.Logger must not be empty", config)
 	}
 	if config.Ops == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.Ops must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "%T.Ops must not be empty", config)
 	}
 	if config.Ops.Name() == "" {
-		return nil, microerror.Maskf(invalidConfigError, "config.Ops.Name() must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "%T.Ops.Name() must not be empty", config)
 	}
 
 	r := &CRUDResource{

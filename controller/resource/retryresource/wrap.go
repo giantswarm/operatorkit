@@ -21,7 +21,7 @@ type WrapConfig struct {
 // wrapped resources.
 func Wrap(resources []controller.Resource, config WrapConfig) ([]controller.Resource, error) {
 	if config.Logger == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "%T.Logger must not be empty", config)
 	}
 
 	if config.BackOffFactory == nil {
