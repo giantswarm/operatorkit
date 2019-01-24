@@ -300,8 +300,6 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 		case <-ctx.Done():
 			return nil
 		}
-
-		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled event")
 	}
 }
 
@@ -417,7 +415,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 			return microerror.Mask(err)
 		}
 
-		c.logger.LogCtx(ctx, "level", "debug", "message", "stopped processing object events")
+		c.logger.LogCtx(ctx, "level", "debug", "message", "processed processing object events")
 	}
 
 	return nil
