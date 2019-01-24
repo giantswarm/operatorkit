@@ -234,6 +234,9 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Event, updateChan chan watch.Event, errChan chan error) error {
 	loop := -1
 
+	c.logger.LogCtx(ctx, "level", "debug", "message", "processing object events")
+	defer c.logger.LogCtx(ctx, "level", "debug", "message", "stopped processing object events")
+
 	for {
 		loop++
 
@@ -254,14 +257,16 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 
 				accessor, err := meta.Accessor(e.Object)
 				if err != nil {
-					c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("cannot create accessor %T", e.Object), "stack", fmt.Sprintf("%#v", err))
+					c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("failed to create accessor %T", e.Object), "stack", fmt.Sprintf("%#v", err))
 				} else {
 					ctx = setLoggerCtxValue(ctx, loggerKeyObject, accessor.GetSelfLink())
 					ctx = setLoggerCtxValue(ctx, loggerKeyVersion, accessor.GetResourceVersion())
 				}
 			}
 
+			c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
 			c.deleteFunc(ctx, e.Object)
+			c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled object")
 
 			t.ObserveDuration()
 		case e := <-updateChan:
@@ -275,14 +280,16 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 
 				accessor, err := meta.Accessor(e.Object)
 				if err != nil {
-					c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("cannot create accessor %T", e.Object), "stack", fmt.Sprintf("%#v", err))
+					c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("failed to create accessor %T", e.Object), "stack", fmt.Sprintf("%#v", err))
 				} else {
 					ctx = setLoggerCtxValue(ctx, loggerKeyObject, accessor.GetSelfLink())
 					ctx = setLoggerCtxValue(ctx, loggerKeyVersion, accessor.GetResourceVersion())
 				}
 			}
 
+			c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
 			c.updateFunc(ctx, e.Object)
+			c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled object")
 
 			t.ObserveDuration()
 		case err := <-errChan:
@@ -296,6 +303,8 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 		case <-ctx.Done():
 			return nil
 		}
+
+		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled event")
 	}
 }
 
