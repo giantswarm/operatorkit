@@ -254,14 +254,16 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 
 				accessor, err := meta.Accessor(e.Object)
 				if err != nil {
-					c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("cannot create accessor %T", e.Object), "stack", fmt.Sprintf("%#v", err))
+					c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("failed to create accessor %T", e.Object), "stack", fmt.Sprintf("%#v", err))
 				} else {
 					ctx = setLoggerCtxValue(ctx, loggerKeyObject, accessor.GetSelfLink())
 					ctx = setLoggerCtxValue(ctx, loggerKeyVersion, accessor.GetResourceVersion())
 				}
 			}
 
+			c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
 			c.deleteFunc(ctx, e.Object)
+			c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled object")
 
 			t.ObserveDuration()
 		case e := <-updateChan:
@@ -275,14 +277,16 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 
 				accessor, err := meta.Accessor(e.Object)
 				if err != nil {
-					c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("cannot create accessor %T", e.Object), "stack", fmt.Sprintf("%#v", err))
+					c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("failed to create accessor %T", e.Object), "stack", fmt.Sprintf("%#v", err))
 				} else {
 					ctx = setLoggerCtxValue(ctx, loggerKeyObject, accessor.GetSelfLink())
 					ctx = setLoggerCtxValue(ctx, loggerKeyVersion, accessor.GetResourceVersion())
 				}
 			}
 
+			c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
 			c.updateFunc(ctx, e.Object)
+			c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled object")
 
 			t.ObserveDuration()
 		case err := <-errChan:
@@ -403,10 +407,15 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 
 		deleteChan, updateChan, errChan := c.informer.Watch(ctx)
 		close(c.booted)
+
+		c.logger.LogCtx(ctx, "level", "debug", "message", "processing object events")
+
 		err := c.ProcessEvents(ctx, deleteChan, updateChan, errChan)
 		if err != nil {
 			return microerror.Mask(err)
 		}
+
+		c.logger.LogCtx(ctx, "level", "debug", "message", "processed object events")
 	}
 
 	return nil
