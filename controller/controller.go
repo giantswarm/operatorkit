@@ -232,10 +232,10 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 // ProcessEvents takes the event channels created by the operatorkit informer
 // and executes the controller's event functions accordingly.
 func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Event, updateChan chan watch.Event, errChan chan error) error {
-	loop := -1
-
 	c.logger.LogCtx(ctx, "level", "debug", "message", "processing object events")
 	defer c.logger.LogCtx(ctx, "level", "debug", "message", "stopped processing object events")
+
+	loop := -1
 
 	for {
 		loop++
