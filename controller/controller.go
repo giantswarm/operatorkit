@@ -415,7 +415,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 			return microerror.Mask(err)
 		}
 
-		c.logger.LogCtx(ctx, "level", "debug", "message", "processed processing object events")
+		c.logger.LogCtx(ctx, "level", "debug", "message", "processed object events")
 	}
 
 	return nil
