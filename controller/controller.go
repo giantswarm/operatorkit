@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	raven "github.com/getsentry/raven-go"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
@@ -67,6 +68,10 @@ type Config struct {
 	// The name used should be unique in the kubernetes cluster, to ensure that
 	// two operators which handle the same resource add two distinct finalizers.
 	Name string
+
+	SentryDSN         string
+	SentryEnvironment string
+	SentryRelease     string
 }
 
 type Controller struct {
@@ -110,6 +115,22 @@ func New(config Config) (*Controller, error) {
 	}
 	if config.Name == "" {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Name must not be empty", config)
+	}
+
+	if config.SentryDSN != "" {
+		if err := raven.SetDSN(config.SentryDSN); err != nil {
+			return nil, microerror.Mask(err)
+		}
+		if config.SentryEnvironment != "" {
+			raven.SetEnvironment(config.SentryEnvironment)
+		}
+		if config.SentryRelease != "" {
+			raven.SetRelease(config.SentryRelease)
+		}
+
+		config.Logger.Log("info", "Sentry is enabled.")
+	} else {
+		config.Logger.Log("info", "Sentry is not enabled.")
 	}
 
 	c := &Controller{
@@ -212,6 +233,7 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 	if hasFinalizer {
 		err = ProcessDelete(ctx, obj, rs.Resources())
 		if err != nil {
+			raven.CaptureErrorAndWait(err, map[string]string{})
 			c.errorCollector <- err
 			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 			return
@@ -354,6 +376,7 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 
 	err = ProcessUpdate(ctx, obj, rs.Resources())
 	if err != nil {
+		raven.CaptureErrorAndWait(err, map[string]string{})
 		c.errorCollector <- err
 		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
 		return

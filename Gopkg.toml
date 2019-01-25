@@ -46,6 +46,10 @@
   name = "github.com/giantswarm/micrologger"
 
 [[constraint]]
+  name = "github.com/getsentry/raven-go"
+  version = "v0.2.0"
+
+[[constraint]]
   name = "github.com/patrickmn/go-cache"
   version = "=2.1.0"
 
