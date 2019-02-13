@@ -225,11 +225,8 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 		for {
 			loop++
 
-			// Set loop specific logger context.
-			{
-				ctx = setLoggerCtxValue(ctx, loggerKeyController, c.name)
-				ctx = setLoggerCtxValue(ctx, loggerKeyLoop, strconv.Itoa(loop))
-			}
+			ctx = setLoggerCtxValue(ctx, loggerKeyController, c.name)
+			ctx = setLoggerCtxValue(ctx, loggerKeyLoop, strconv.Itoa(loop))
 
 			select {
 			case e := <-deleteChan:
@@ -237,7 +234,7 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 
 				t := prometheus.NewTimer(controllerHistogram.WithLabelValues(event))
 
-				// Set event specific logger context.
+				// Set logger context.
 				{
 					ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
 
@@ -258,7 +255,7 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 
 				t := prometheus.NewTimer(controllerHistogram.WithLabelValues(event))
 
-				// Set event specific logger context.
+				// Set logger context.
 				{
 					ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
 
