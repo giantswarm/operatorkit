@@ -7,7 +7,6 @@ import (
 )
 
 type WrapConfig struct {
-	Name string
 }
 
 // Wrap wraps each given resource with a metrics resource and returns the list
@@ -18,16 +17,14 @@ func Wrap(resources []controller.Resource, config WrapConfig) ([]controller.Reso
 	for _, r := range resources {
 		c := Config{
 			Resource: r,
-
-			Name: config.Name,
 		}
 
-		prometheusResource, err := New(c)
+		metricsResource, err := New(c)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
 
-		wrapped = append(wrapped, prometheusResource)
+		wrapped = append(wrapped, metricsResource)
 	}
 
 	return wrapped, nil

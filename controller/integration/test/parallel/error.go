@@ -6,11 +6,20 @@ import (
 	"github.com/giantswarm/microerror"
 )
 
-var countMismatchError = &microerror.Error{
-	Kind: "countMismatchError",
+var testError = &microerror.Error{
+	Kind: "testError",
 }
 
-// IsCountMismatch asserts countMismatchError.
-func IsCountMismatch(err error) bool {
-	return microerror.Cause(err) == countMismatchError
+// IsTest asserts testError.
+func IsTest(err error) bool {
+	return microerror.Cause(err) == testError
+}
+
+var waitError = &microerror.Error{
+	Kind: "waitError",
+}
+
+// IsWait asserts waitError.
+func IsWait(err error) bool {
+	return microerror.Cause(err) == waitError
 }

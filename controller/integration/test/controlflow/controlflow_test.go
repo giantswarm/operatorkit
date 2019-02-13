@@ -3,6 +3,7 @@
 package controlflow
 
 import (
+	"context"
 	"reflect"
 	"testing"
 	"time"
@@ -20,10 +21,12 @@ import (
 )
 
 const (
-	objName       = "test-obj"
-	operatorName  = "test-operator"
-	testFinalizer = "operatorkit.giantswarm.io/test-operator"
-	testNamespace = "finalizer-integration-reconciliation-test"
+	objName      = "test-obj"
+	objNamespace = "integration-controlflow-test"
+
+	controllerName = "test-controller"
+	finalizer      = "operatorkit.giantswarm.io/test-controller"
+	resourceName   = "test-resource"
 )
 
 // Test_Finalizer_Integration_Controlflow is an integration test to check that
@@ -31,210 +34,232 @@ const (
 func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	var err error
 
-	var tr *testresource.Resource
-	{
-		c := testresource.Config{}
+	ctx := context.Background()
 
-		tr, err = testresource.New(c)
+	var resource *testresource.Resource
+	{
+		c := testresource.Config{
+			Name: resourceName,
+		}
+
+		resource, err = testresource.New(c)
 		if err != nil {
-			t.Fatal("expected", nil, "got", err)
+			t.Fatalf("err == %v, want %v", err, nil)
 		}
 	}
 
-	// We setup and start the controller.
-	var testWrapper wrapper.Interface
+	var harness wrapper.Interface
 	{
-		c := nodeconfig.Config{
-			Resources: []controller.Resource{
-				tr,
-			},
-
-			Name:      operatorName,
-			Namespace: testNamespace,
-		}
-
-		testWrapper, err = nodeconfig.New(c)
+		harness, err = newHarness(objNamespace, controllerName, resource)
 		if err != nil {
-			t.Fatal("expected", nil, "got", err)
+			t.Fatalf("err == %v, want %v", err, nil)
 		}
-
-		testWrapper.MustSetup(testNamespace)
-		defer testWrapper.MustTeardown(testNamespace)
-		newController := testWrapper.Controller()
-		go newController.Boot()
-		<-newController.Booted()
 	}
 
-	// We create an object which is valid and wait for the framework to add a
-	// finalizer.
+	// Start controller.
+	{
+		controller := harness.Controller()
+
+		go controller.Boot(ctx)
+		select {
+		case <-controller.Booted():
+		case <-time.After(30 * time.Second):
+			t.Fatalf("failed to wait for controller to boot")
+		}
+	}
+
+	// Setup the test namespace.
+	{
+		harness.MustSetup(objNamespace)
+		defer harness.MustTeardown(objNamespace)
+	}
+
+	// Create an object and wait for the controller to add a finalizer.
+	// Creation is retried because the CRD might still not be ensured.
 	{
 		o := func() error {
 			nodeConfig := &v1alpha1.NodeConfig{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      objName,
-					Namespace: testNamespace,
+					Namespace: objNamespace,
 				},
 			}
 
-			_, err := testWrapper.CreateObject(testNamespace, nodeConfig)
+			_, err := harness.CreateObject(objNamespace, nodeConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
 
 			return nil
 		}
-		b := backoff.NewExponential(2*time.Minute, 10*time.Second)
+		b := backoff.NewMaxRetries(20, 1*time.Second)
 
 		err = backoff.Retry(o, b)
 		if err != nil {
-			t.Fatal("expected", nil, "got", err)
+			t.Fatalf("err == %v, want %v", err, nil)
 		}
 	}
 
-	// We use backoff with the absolute maximum amount:
-	// 10 second ResyncPeriod + 2 second RateWait + 8 second for safety.
-	// The controller should now add the finalizer and EnsureCreated should be hit
-	// once immediatly.
+	// Verify the controller reconciles creation of that object. There
+	// should be 2 ResyncPeriods in 30 seconds so verify there were more
+	// than 2 create events.
 	//
-	// 		EnsureCreated: 1, EnsureDeleted: 0
+	// 		EnsureCreated: >2, EnsureDeleted: =0
 	//
-	// The controller should reconcile once in this period.
-	//
-	// 		EnsureCreated: 2, EnsureDeleted: 0
-	//
-	operation := func() error {
-		if tr.CreateCount() != 2 {
-			return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 2)
+	{
+		o := func() error {
+			if resource.CreateCount() <= 2 {
+				return microerror.Maskf(waitError, "resource.CreateCount() == %v, want more than %v", resource.CreateCount(), 2)
+			}
+			if resource.DeleteCount() != 0 {
+				return microerror.Maskf(waitError, "resource.DeleteCount() == %v, want %v", resource.DeleteCount(), 0)
+			}
+
+			return nil
 		}
-		if tr.DeleteCount() != 0 {
-			return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 0)
+		b := backoff.NewMaxRetries(30, 1*time.Second)
+
+		err := backoff.Retry(o, b)
+		if err != nil {
+			t.Fatalf("err == %v, want %v", err, nil)
 		}
-		return nil
-	}
-	err = backoff.Retry(operation, backoff.NewMaxRetries(20, 1*time.Second))
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
 	}
 
-	// We get the object after the controller has been started.
-	resultObj, err := testWrapper.GetObject(objName, testNamespace)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
-
-	resultObjAccessor, err := meta.Accessor(resultObj)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
-
-	// We verify, that the DeletionTimestamp has not been set.
-	if resultObjAccessor.GetDeletionTimestamp() != nil {
-		t.Fatalf("DeletionTimestamp != nil, want nil")
-	}
-
-	// We define which finalizers we currently expect.
-	expectedFinalizers := []string{
-		testFinalizer,
-	}
-
-	// We verify, that our finalizer is still set.
-	if !reflect.DeepEqual(resultObjAccessor.GetFinalizers(), expectedFinalizers) {
-		t.Fatalf("finalizers == %v, want %v", resultObjAccessor.GetFinalizers(), expectedFinalizers)
-	}
-
-	// We set an error function to return an error. This causes the resource to
-	// always return an error and should therefor prevent the removal of our
-	// finalizer.
-	tr.SetReturnErrorFunc(func(obj interface{}) error {
-		return microerror.Mask(testError)
-	})
-
-	// We delete the object now.
-	err = testWrapper.DeleteObject(objName, testNamespace)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
-
-	// We use backoff with the absolute maximum amount:
-	// 10 second ResyncPeriod + 2 second RateWait + 8 second for safety.
-	// The controller should get the deletion event immediatly but not remove the
-	// finalizer because of the error we return in our resource.
-	//
-	// 		EnsureCreated: 2, EnsureDeleted: 1
-	//
-	// The controller should also reconcile once in this period. (The other
-	// finalizer is still set, so we reconcile.)
-	//
-	// 		EnsureCreated: 2, EnsureDeleted: 2
-	//
-	operation = func() error {
-		if tr.CreateCount() != 2 {
-			return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 2)
+	// Verify deletion timestamp and finalizer.
+	{
+		obj, err := harness.GetObject(objName, objNamespace)
+		if err != nil {
+			t.Fatalf("err == %v, want %v", err, nil)
 		}
-		if tr.DeleteCount() != 2 {
-			return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 2)
+
+		accessor, err := meta.Accessor(obj)
+		if err != nil {
+			t.Fatalf("err == %v, want %v", err, nil)
 		}
-		return nil
-	}
-	err = backoff.Retry(operation, backoff.NewMaxRetries(20, 1*time.Second))
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
+
+		if accessor.GetDeletionTimestamp() != nil {
+			t.Fatalf("DeletionTimestamp == %v, want %v", accessor.GetDeletionTimestamp(), nil)
+		}
+
+		finalizers := accessor.GetFinalizers()
+		expectedFinalizers := []string{
+			finalizer,
+		}
+		if !reflect.DeepEqual(finalizers, expectedFinalizers) {
+			t.Fatalf("finalizers == %v, want %v", finalizers, expectedFinalizers)
+		}
 	}
 
-	// We get the object after the controller has handled the deletion event.
-	resultObj, err = testWrapper.GetObject(objName, testNamespace)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
+	// Set an error function to return an error. This makes the resource
+	// always return an error and should therefore prevent the removal of
+	// the finalizer.
+	{
+		resource.SetReturnErrorFunc(func(obj interface{}) error {
+			return microerror.Mask(testError)
+		})
 	}
 
-	resultObjAccessor, err = meta.Accessor(resultObj)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
+	// Delete the object.
+	{
+		err := harness.DeleteObject(objName, objNamespace)
+		if err != nil {
+			t.Fatalf("err == %v, want %v", err, nil)
+		}
 	}
 
-	// We verify, that our object still exists, but has a DeletionTimestamp set.
-	if resultObjAccessor.GetDeletionTimestamp() == nil {
-		t.Fatalf("DeletionTimestamp == nil, want non-nil")
+	// Verify the controller reconciles deletion the object. There should
+	// be 2 ResyncPeriods in 30 seconds so verify there were more than
+	// 2 delete events because of there error the resource returns.
+	//
+	// 		EnsureCreated: >2, EnsureDeleted: >2
+	//
+	{
+		o := func() error {
+			if resource.CreateCount() <= 2 {
+				return microerror.Maskf(waitError, "resource.CreateCount() == %v, want more than %v", resource.CreateCount(), 2)
+			}
+			if resource.DeleteCount() <= 2 {
+				return microerror.Maskf(waitError, "resource.DeleteCount() == %v, want more than %v", resource.DeleteCount(), 2)
+			}
+
+			return nil
+		}
+		b := backoff.NewMaxRetries(30, 1*time.Second)
+
+		err := backoff.Retry(o, b)
+		if err != nil {
+			t.Fatalf("err == %v, want %v", err, nil)
+		}
 	}
 
-	// We define which finalizers we currently expect.
-	expectedFinalizers = []string{
-		testFinalizer,
+	// Verify deletion timestamp and finalizer.
+	{
+		obj, err := harness.GetObject(objName, objNamespace)
+		if err != nil {
+			t.Fatalf("err == %v, want %v", err, nil)
+		}
+
+		accessor, err := meta.Accessor(obj)
+		if err != nil {
+			t.Fatalf("err == %v, want %v", err, nil)
+		}
+
+		if accessor.GetDeletionTimestamp() == nil {
+			t.Fatalf("DeletionTimestamp == %v, want non nil", accessor.GetDeletionTimestamp())
+		}
+
+		finalizers := accessor.GetFinalizers()
+		expectedFinalizers := []string{
+			finalizer,
+		}
+		if !reflect.DeepEqual(finalizers, expectedFinalizers) {
+			t.Fatalf("finalizers == %v, want %v", finalizers, expectedFinalizers)
+		}
 	}
 
-	// We verify, that our finalizer is still set.
-	if !reflect.DeepEqual(resultObjAccessor.GetFinalizers(), expectedFinalizers) {
-		t.Fatalf("finalizers == %v, want %v", resultObjAccessor.GetFinalizers(), expectedFinalizers)
-	}
-
-	// We set the error function to nil to not return any error anymore. Our
+	// Set the error function to nil to not return any error anymore. The
 	// finalizer should be removed with the next reconciliation now.
-	tr.SetReturnErrorFunc(nil)
-
-	// We use backoff with the absolute maximum amount:
-	// 10 second ResyncPeriod + 2 second RateWait + 8 second for safety.
-	// The controller should now remove the finalizer and EnsureDeleted should be
-	// hit twice immediatly. See https://github.com/giantswarm/giantswarm/issues/2897
-	//
-	// 		EnsureCreated: 2, EnsureDeleted: 4
-	//
-	operation = func() error {
-		if tr.CreateCount() != 2 {
-			return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 2)
-		}
-		if tr.DeleteCount() != 4 {
-			return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 4)
-		}
-		return nil
+	{
+		resource.SetReturnErrorFunc(nil)
 	}
-	err = backoff.Retry(operation, backoff.NewMaxRetries(20, 1*time.Second))
+
+	// We verify that the object is completely gone now.
+	{
+		o := func() error {
+			_, err = harness.GetObject(objName, objNamespace)
+			if nodeconfig.IsNotFound(err) {
+				return nil
+			} else if err != nil {
+				return microerror.Mask(err)
+			}
+
+			return microerror.Maskf(waitError, "object %#q in namespace %#q still exists", objName, objNamespace)
+		}
+		b := backoff.NewMaxRetries(30, 1*time.Second)
+
+		err := backoff.Retry(o, b)
+		if err != nil {
+			t.Fatalf("failed to wait for object deletion: %#v", err)
+		}
+	}
+}
+
+func newHarness(namespace string, controllerName string, resource *testresource.Resource) (*nodeconfig.Wrapper, error) {
+	resources := []controller.Resource{
+		controller.Resource(resource),
+	}
+
+	c := nodeconfig.Config{
+		Resources: resources,
+
+		Name:      controllerName,
+		Namespace: namespace,
+	}
+
+	harness, err := nodeconfig.New(c)
 	if err != nil {
-		t.Fatal("expected", nil, "got", err)
+		return nil, err
 	}
 
-	// We verify that our object is completely gone now.
-	_, err = testWrapper.GetObject(objName, testNamespace)
-	if !nodeconfig.IsNotFound(err) {
-		t.Fatalf("error == %#v, want NotFound error", err)
-	}
+	return harness, nil
 }

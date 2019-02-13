@@ -286,7 +286,7 @@ func (i *Informer) newWatcher(ctx context.Context) (watch.Interface, error) {
 				return microerror.Mask(err)
 			case <-found:
 				// fall through
-			case <-time.After(time.Second):
+			case <-time.After(5 * time.Second):
 				return microerror.Mask(initializationTimedOutError)
 			}
 

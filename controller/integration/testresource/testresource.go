@@ -53,8 +53,12 @@ func (r *Resource) DeleteCount() int {
 func (r *Resource) EnsureCreated(ctx context.Context, obj interface{}) error {
 	r.incrementCreateCount()
 
-	if r.returnErrorFunc != nil {
-		err := r.returnErrorFunc(obj)
+	r.mutex.Lock()
+	errFunc := r.returnErrorFunc
+	r.mutex.Unlock()
+
+	if errFunc != nil {
+		err := errFunc(obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -66,8 +70,12 @@ func (r *Resource) EnsureCreated(ctx context.Context, obj interface{}) error {
 func (r *Resource) EnsureDeleted(ctx context.Context, obj interface{}) error {
 	r.incrementDeleteCount()
 
-	if r.returnErrorFunc != nil {
-		err := r.returnErrorFunc(obj)
+	r.mutex.Lock()
+	errFunc := r.returnErrorFunc
+	r.mutex.Unlock()
+
+	if errFunc != nil {
+		err := errFunc(obj)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -81,6 +89,8 @@ func (r *Resource) Name() string {
 }
 
 func (r *Resource) SetReturnErrorFunc(f func(obj interface{}) error) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	r.returnErrorFunc = f
 }
 

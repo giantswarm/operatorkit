@@ -3,6 +3,7 @@
 package error
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -25,6 +26,8 @@ const (
 
 func Test_Controller_Integration_Error(t *testing.T) {
 	var err error
+
+	ctx := context.Background()
 
 	var rA *testresource.Resource
 	{
@@ -85,7 +88,7 @@ func Test_Controller_Integration_Error(t *testing.T) {
 	wrapper.MustSetup(testNamespace)
 	defer wrapper.MustTeardown(testNamespace)
 	controller := wrapper.Controller()
-	go controller.Boot()
+	go controller.Boot(ctx)
 	<-controller.Booted()
 
 	// We create two test objects. One is used by one resource to error out.

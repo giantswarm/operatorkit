@@ -3,6 +3,10 @@
 package parallel
 
 import (
+	"context"
+	"reflect"
+	"sort"
+	"sync"
 	"testing"
 	"time"
 
@@ -14,19 +18,24 @@ import (
 
 	"github.com/giantswarm/operatorkit/controller"
 	"github.com/giantswarm/operatorkit/controller/integration/testresource"
-	"github.com/giantswarm/operatorkit/controller/integration/wrapper"
 	"github.com/giantswarm/operatorkit/controller/integration/wrapper/nodeconfig"
 )
 
 const (
-	objName       = "test-obj"
-	testNamespace = "finalizer-integration-parallel-test"
+	objName      = "test-obj"
+	objNamespace = "integration-parallel-test"
 
-	operatorNameA  = "test-operator-a"
-	testFinalizerA = "operatorkit.giantswarm.io/test-operator-a"
+	controllerNameA = "test-controller-a"
+	finalizerA      = "operatorkit.giantswarm.io/test-controller-a"
+	resourceNameA   = "test-resource-a"
 
-	operatorNameB  = "test-operator-b"
-	testFinalizerB = "operatorkit.giantswarm.io/test-operator-b"
+	controllerNameB = "test-controller-b"
+	finalizerB      = "operatorkit.giantswarm.io/test-controller-b"
+	resourceNameB   = "test-resource-b"
+
+	controllerNameC = "test-controller-c"
+	resourceNameC   = "test-resource-c"
+	finalizerC      = "operatorkit.giantswarm.io/test-controller-c"
 )
 
 // Test_Finalizer_Integration_Parallel is a integration test to
@@ -34,182 +43,345 @@ const (
 func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	var err error
 
-	// We create the first resource "A" here with its own resource.
-	var trA *testresource.Resource
-	{
-		c := testresource.Config{}
+	ctx := context.Background()
 
-		trA, err = testresource.New(c)
+	var resourceA *testresource.Resource
+	{
+		c := testresource.Config{
+			Name: resourceNameA,
+		}
+
+		resourceA, err = testresource.New(c)
 		if err != nil {
-			t.Fatal("expected", nil, "got", err)
+			t.Fatalf("err == %v, want %v", err, nil)
 		}
 	}
 
-	testWrapperA, err := setupController(testNamespace, operatorNameA, trA)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
-
-	controllerA := testWrapperA.Controller()
-
-	// We create the second resource "B" and give it a different resource.
-	var trB *testresource.Resource
+	// resourceB errors once during the deletion.
+	var resourceB *testresource.Resource
 	{
-		c := testresource.Config{}
+		var once sync.Once
 
-		trB, err = testresource.New(c)
+		c := testresource.Config{
+			Name: resourceNameB,
+			ReturnErrorFunc: func(obj interface{}) error {
+				// Do not return error for update events.
+				{
+					accessor, err := meta.Accessor(obj)
+					if err != nil {
+						return microerror.Mask(err)
+					}
+					if accessor.GetDeletionTimestamp() == nil {
+						return nil
+					}
+				}
+
+				// Return error for first deletion event.
+				{
+					var err error
+					once.Do(func() {
+						err = microerror.Maskf(testError, "I fail once during the deletion")
+					})
+
+					if err != nil {
+						return microerror.Mask(err)
+					}
+				}
+
+				return nil
+			},
+		}
+
+		resourceB, err = testresource.New(c)
 		if err != nil {
-			t.Fatal("expected", nil, "got", err)
+			t.Fatalf("err == %v, want %v", err, nil)
 		}
 	}
 
-	testWrapperB, err := setupController(testNamespace, operatorNameB, trB)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
+	// resourceC fails all the time.
+	var resourceC *testresource.Resource
+	{
+		c := testresource.Config{
+			Name: resourceNameC,
+			ReturnErrorFunc: func(obj interface{}) error {
+				return microerror.Maskf(testError, "I fail all the time")
+			},
+		}
+
+		resourceC, err = testresource.New(c)
+		if err != nil {
+			t.Fatalf("err == %v, want %v", err, nil)
+		}
 	}
 
-	controllerB := testWrapperB.Controller()
+	var harnessA, harnessB, harnessC *nodeconfig.Wrapper
+	{
+		harnessA, err = newHarness(objNamespace, controllerNameA, resourceA)
+		if err != nil {
+			t.Fatalf("err == %v, want %v", err, nil)
+		}
+		harnessB, err = newHarness(objNamespace, controllerNameB, resourceB)
+		if err != nil {
+			t.Fatalf("err == %v, want %v", err, nil)
+		}
+		harnessC, err = newHarness(objNamespace, controllerNameC, resourceC)
+		if err != nil {
+			t.Fatalf("err == %v, want %v", err, nil)
+		}
+	}
 
-	// We setup the namespace in which we test. We use the wrapper of controller A
-	// here, it makes no difference if we use the wrapper of A or B.
-	testWrapperA.MustSetup(testNamespace)
-	defer testWrapperA.MustTeardown(testNamespace)
+	// Start controllers.
+	{
+		controllerA := harnessA.Controller()
+		controllerB := harnessB.Controller()
+		controllerC := harnessC.Controller()
 
-	// We start the controllers.
-	go controllerA.Boot()
-	go controllerB.Boot()
-	<-controllerA.Booted()
-	<-controllerB.Booted()
+		go controllerA.Boot(ctx)
+		go controllerB.Boot(ctx)
+		go controllerC.Boot(ctx)
+		select {
+		case <-controllerA.Booted():
+		case <-time.After(30 * time.Second):
+			t.Fatalf("failed to wait for controllerA to boot")
+		}
+		select {
+		case <-controllerB.Booted():
+		case <-time.After(30 * time.Second):
+			t.Fatalf("failed to wait for controllerB to boot")
+		}
+		select {
+		case <-controllerC.Booted():
+		case <-time.After(30 * time.Second):
+			t.Fatalf("failed to wait for controllerC to boot")
+		}
+	}
 
-	// We create an object without any finalizers.
-	// Creation is retried because the existance of a CRD might have to be ensured.
+	// Setup the test namespace. We use the harness A. It makes no
+	// difference if we use the harness A or B.
+	{
+		harnessA.MustSetup(objNamespace)
+		defer harnessA.MustTeardown(objNamespace)
+	}
+
+	// Create an object. Creation is retried because the CRD might still
+	// not be ensured.
 	{
 		o := func() error {
 			nodeConfig := &v1alpha1.NodeConfig{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      objName,
-					Namespace: testNamespace,
+					Namespace: objNamespace,
 				},
 			}
 
-			_, err := testWrapperA.CreateObject(testNamespace, nodeConfig)
+			_, err := harnessA.CreateObject(objNamespace, nodeConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
 			return nil
 		}
-		b := backoff.NewExponential(2*time.Minute, 10*time.Second)
+		b := backoff.NewMaxRetries(20, 1*time.Second)
+
 		err = backoff.Retry(o, b)
 		if err != nil {
-			t.Fatal("expected", nil, "got", err)
+			t.Fatalf("err == %v, want %v", err, nil)
 		}
 	}
 
-	// We use backoff with the absolute maximum amount:
-	// 10 second ResyncPeriod + 2 second RateWait + 8 second for safety.
-	// The controllers should now add their finalizers and EnsureCreated should be
-	// hit once immediatly.
+	// Verify controllers reconcile creation of that object. There should
+	// be 2 ResyncPeriods in 30 seconds so verify there were more than
+	// 2 create events.
 	//
-	// 		EnsureCreated: 1, EnsureDeleted: 0
+	// 		EnsureCreated: >2, EnsureDeleted: =0
 	//
-	// The controllers should reconcile once in this period.
+	{
+		o := func() error {
+			if resourceA.CreateCount() <= 2 {
+				return microerror.Maskf(waitError, "resourceA.CreateCount() == %v, want more than %v", resourceA.CreateCount(), 2)
+			}
+			if resourceA.DeleteCount() != 0 {
+				return microerror.Maskf(waitError, "resourceA.DeleteCount() == %v, want %v", resourceA.DeleteCount(), 0)
+			}
+			if resourceB.CreateCount() <= 2 {
+				return microerror.Maskf(waitError, "resourceB.CreateCount() == %v, want more than %v", resourceB.CreateCount(), 2)
+			}
+			if resourceB.DeleteCount() != 0 {
+				return microerror.Maskf(waitError, "resourceB.DeleteCount() == %v, want %v", resourceB.DeleteCount(), 0)
+			}
+			if resourceC.CreateCount() <= 2 {
+				return microerror.Maskf(waitError, "resourceC.CreateCount() == %v, want more than %v", resourceC.CreateCount(), 2)
+			}
+			if resourceC.DeleteCount() != 0 {
+				return microerror.Maskf(waitError, "resourceC.DeleteCount() == %v, want %v", resourceC.DeleteCount(), 0)
+			}
+
+			return nil
+		}
+		b := backoff.NewMaxRetries(30, 1*time.Second)
+
+		err := backoff.Retry(o, b)
+		if err != nil {
+			t.Fatalf("err == %v, want %v", err, nil)
+		}
+	}
+
+	// Verify deletion timestamp and finalizers.
+	{
+		obj, err := harnessA.GetObject(objName, objNamespace)
+		if err != nil {
+			t.Fatalf("err == %v, want %v", err, nil)
+		}
+
+		accessor, err := meta.Accessor(obj)
+		if err != nil {
+			t.Fatalf("err == %v, want %v", err, nil)
+		}
+
+		if accessor.GetDeletionTimestamp() != nil {
+			t.Fatalf("DeletionTimestamp == %v, want %v", accessor.GetDeletionTimestamp(), nil)
+		}
+
+		finalizers := accessor.GetFinalizers()
+		expectedFinalizers := []string{
+			finalizerA,
+			finalizerB,
+			finalizerC,
+		}
+		sort.Strings(finalizers)
+		sort.Strings(expectedFinalizers)
+		if !reflect.DeepEqual(finalizers, expectedFinalizers) {
+			t.Fatalf("finalizers == %v, want %v", finalizers, expectedFinalizers)
+		}
+	}
+
+	// Delete the object.
+	{
+		err := harnessA.DeleteObject(objName, objNamespace)
+		if err != nil {
+			t.Fatalf("err == %v, want %v", err, nil)
+		}
+	}
+
+	// Verify deletion timestamp and check there is only finzalierC left
+	// from constantly failing resource.
+	{
+		o := func() error {
+			obj, err := harnessA.GetObject(objName, objNamespace)
+			if err != nil {
+				t.Fatalf("err == %v, want %v", err, nil)
+			}
+
+			accessor, err := meta.Accessor(obj)
+			if err != nil {
+				t.Fatalf("err == %v, want %v", err, nil)
+			}
+
+			if accessor.GetDeletionTimestamp() == nil {
+				t.Fatalf("DeletionTimestamp == %v, want non nil", accessor.GetDeletionTimestamp())
+			}
+
+			finalizers := accessor.GetFinalizers()
+			expectedFinalizers := []string{
+				finalizerC,
+			}
+			sort.Strings(finalizers)
+			sort.Strings(expectedFinalizers)
+			if !reflect.DeepEqual(finalizers, expectedFinalizers) {
+				return microerror.Maskf(waitError, "finalizers == %v, want %v", finalizers, expectedFinalizers)
+			}
+
+			return nil
+		}
+		b := backoff.NewMaxRetries(30, 1*time.Second)
+
+		err := backoff.Retry(o, b)
+		if err != nil {
+			t.Fatalf("err == %v, want %v", err, nil)
+		}
+	}
+
+	// Verify that:
 	//
-	// 		EnsureCreated: 2, EnsureDeleted: 0
+	//	- resourceA received exactly 1 deletion event as it never
+	//	  fails.
+	//	- resourceB received exectly 2 deletion events as it fails
+	//	  during the deletion once.
+	//	- resourceB received more than 3 deletion events as it fails
+	//	  all the time.
 	//
-	operation := func() error {
-		// We are more forgiving here compared to other tests, the controllers might
-		// receive events at different times. Checking the count exactly might fail
-		// if a controller is slower and the other one reconciles one more time.
-		if trA.CreateCount() < 2 {
-			return microerror.Maskf(countMismatchError, "EnsureCreated of controller A was hit %v times, want atleast %v", trA.CreateCount(), 2)
+	{
+		o := func() error {
+			if resourceA.DeleteCount() != 1 {
+				microerror.Maskf(waitError, "resourceA.DeleteCount() == %v, want %v", resourceA.DeleteCount(), 1)
+			}
+			if resourceB.DeleteCount() != 2 {
+				microerror.Maskf(waitError, "resourceB.DeleteCount() == %v, want %v", resourceB.DeleteCount(), 2)
+			}
+			if resourceC.DeleteCount() <= 3 {
+				microerror.Maskf(waitError, "resourceC.DeleteCount() == %v, want more than %v", resourceC.DeleteCount(), 3)
+			}
+
+			return nil
 		}
-		if trA.DeleteCount() != 0 {
-			return microerror.Maskf(countMismatchError, "EnsureDeleted of controller A was hit %v times, want %v", trA.DeleteCount(), 0)
+
+		b := backoff.NewMaxRetries(30, 1*time.Second)
+
+		err := backoff.Retry(o, b)
+		if err != nil {
+			t.Fatalf("err == %v, want %v", err, nil)
 		}
-		if trB.CreateCount() < 2 {
-			return microerror.Maskf(countMismatchError, "EnsureCreated of controller B was hit %v times, want atleast %v", trB.CreateCount(), 2)
+	}
+
+	// Set the resourceC error function to nil to not return any error
+	// anymore. The finalizer should be removed with the next
+	// reconciliation now.
+	{
+		resourceC.SetReturnErrorFunc(nil)
+	}
+
+	// Verify that the object is completely gone now.
+	{
+		o := func() error {
+			_, err := harnessA.GetObject(objName, objNamespace)
+			if nodeconfig.IsNotFound(err) {
+				return nil
+			} else if err != nil {
+				return microerror.Mask(err)
+			}
+
+			return microerror.Maskf(waitError, "object %#q in namespace %#q still exists", objName, objNamespace)
 		}
-		if trB.DeleteCount() != 0 {
-			return microerror.Maskf(countMismatchError, "EnsureDeleted of controller B was hit %v times, want %v", trB.DeleteCount(), 0)
+		b := backoff.NewMaxRetries(30, 1*time.Second)
+
+		err := backoff.Retry(o, b)
+		if err != nil {
+			t.Fatalf("failed to wait for object deletion: %#v", err)
 		}
-		return nil
-	}
-	err = backoff.Retry(operation, backoff.NewMaxRetries(20, 1*time.Second))
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
 	}
 
-	// We get the object after the controllers have been started.
-	resultObj, err := testWrapperA.GetObject(objName, testNamespace)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
-
-	resultObjAccessor, err := meta.Accessor(resultObj)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
-
-	// We verify, that the DeletionTimestamp has not been set.
-	if resultObjAccessor.GetDeletionTimestamp() != nil {
-		t.Fatalf("DeletionTimestamp != nil, want nil")
-	}
-
-	// We verify, that our finalizer is still set.
-	// We check this individually because we are not sure in which order the
-	// finalizers were added.
-	if !containsFinalizer(resultObjAccessor.GetFinalizers(), testFinalizerA) {
-		t.Fatalf("finalizers == %v, want to contain %v", resultObjAccessor.GetFinalizers(), testFinalizerA)
-	}
-	if !containsFinalizer(resultObjAccessor.GetFinalizers(), testFinalizerB) {
-		t.Fatalf("finalizers == %v, want to contain %v", resultObjAccessor.GetFinalizers(), testFinalizerB)
-	}
-
-	// We delete the object now.
-	err = testWrapperA.DeleteObject(objName, testNamespace)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
-
-	// We use backoff with the absolute maximum amount:
-	// 2 second RateWait + 18 second to ensure that both finalizers were removed.
-	// The controllers should now remove the finalizer and EnsureDeleted should be
-	// hit four times immediatly.
-	// See https://github.com/giantswarm/giantswarm/issues/2897
+	// Verify **again** that:
 	//
-	// 		EnsureDeleted: 4
+	//	- resourceA received exactly 1 deletion event as it never
+	//	  fails.
+	//	- resourceB received exectly 2 deletion events as it fails
+	//	  during the deletion once.
+	//	- resourceB received more than 3 deletion events as it was
+	//	  failing all the time till SetReturnErrorFunc(nil) was called.
 	//
-	operation = func() error {
-		if trA.DeleteCount() != 3 {
-			return microerror.Maskf(countMismatchError, "EnsureDeleted of controller A was hit %v times, want %v", trA.DeleteCount(), 3)
+	{
+		if resourceA.DeleteCount() != 1 {
+			t.Fatalf("resourceA.DeleteCount() == %v, want %v", resourceA.DeleteCount(), 1)
 		}
-		if trB.DeleteCount() != 3 {
-			return microerror.Maskf(countMismatchError, "EnsureDeleted of controller B was hit %v times, want %v", trB.DeleteCount(), 3)
+		if resourceB.DeleteCount() != 2 {
+			t.Fatalf("resourceB.DeleteCount() == %v, want %v", resourceB.DeleteCount(), 2)
 		}
-		return nil
-	}
-	err = backoff.Retry(operation, backoff.NewMaxRetries(20, 1*time.Second))
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
-
-	// We verify that our object is completely gone now.
-	_, err = testWrapperA.GetObject(objName, testNamespace)
-	if !nodeconfig.IsNotFound(err) {
-		t.Fatalf("error == %#v, want NotFound error", err)
+		if resourceC.DeleteCount() <= 3 {
+			t.Fatalf("resourceC.DeleteCount() == %v, want more than %v", resourceC.DeleteCount(), 3)
+		}
 	}
 }
 
-func containsFinalizer(finalizers []string, finalizer string) bool {
-	for _, f := range finalizers {
-		if f == finalizer {
-			return true
-		}
-	}
-	return false
-}
-
-func setupController(namespace string, operatorName string, resource *testresource.Resource) (wrapper.Interface, error) {
+func newHarness(namespace string, controllerName string, resource *testresource.Resource) (*nodeconfig.Wrapper, error) {
 	resources := []controller.Resource{
 		controller.Resource(resource),
 	}
@@ -217,16 +389,14 @@ func setupController(namespace string, operatorName string, resource *testresour
 	c := nodeconfig.Config{
 		Resources: resources,
 
-		Name:      operatorName,
+		Name:      controllerName,
 		Namespace: namespace,
 	}
 
-	nodeconfigWrapper, err := nodeconfig.New(c)
+	harness, err := nodeconfig.New(c)
 	if err != nil {
 		return nil, err
 	}
 
-	testWrapper := wrapper.Interface(nodeconfigWrapper)
-
-	return testWrapper, nil
+	return harness, nil
 }
