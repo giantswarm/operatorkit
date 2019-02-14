@@ -44,7 +44,7 @@ func NewResourceSet(c ResourceSetConfig) (*ResourceSet, error) {
 	}
 
 	if c.Handles == nil {
-		c.Handles = func(obj interface{}) { return true }
+		c.Handles = func(obj interface{}) bool { return true }
 	}
 	if c.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Logger must not be empty", c)
