@@ -32,6 +32,7 @@ operators in production.
 ## Docs
 
 - [Control Flow Primitives](docs/control_flow_primitives.md)
+- [File Structure](docs/file_structure.md)
 - [Keeping Reconciliation Loops Short](docs/keeping_reconciliation_loops_short.md)
 - [Managing CR Status Sub Resources](docs/managing_cr_status_sub_resources.md)
 - [Metrics Provider](docs/metrics_provider.md)
