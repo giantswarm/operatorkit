@@ -198,10 +198,16 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 		return
 	}
 
-	ctx, err = rs.InitCtx(ctx, obj)
-	if err != nil {
-		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
-		return
+	{
+		// Memorize the old context. We need to use it for logging in
+		// case of InitCtx failure because the context returned by
+		// failing InitCtx can be nil.
+		oldCtx := ctx
+		ctx, err = rs.InitCtx(ctx, obj)
+		if err != nil {
+			c.logger.LogCtx(oldCtx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+			return
+		}
 	}
 
 	hasFinalizer, err := c.hasFinalizer(ctx, obj)
@@ -331,10 +337,16 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 		return
 	}
 
-	ctx, err = rs.InitCtx(ctx, obj)
-	if err != nil {
-		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
-		return
+	{
+		// Memorize the old context. We need to use it for logging in
+		// case of InitCtx failure because the context returned by
+		// failing InitCtx can be nil.
+		oldCtx := ctx
+		ctx, err = rs.InitCtx(ctx, obj)
+		if err != nil {
+			c.logger.LogCtx(oldCtx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+			return
+		}
 	}
 
 	ok, err := c.addFinalizer(ctx, obj)
