@@ -1,4 +1,4 @@
-# Resource File Structure
+# File Structure
 
 - operatorkit resources should have a consistent structure to make code
 naviagation easier.
