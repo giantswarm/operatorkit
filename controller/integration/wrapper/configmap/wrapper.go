@@ -14,6 +14,7 @@ import (
 	"github.com/giantswarm/e2e-harness/pkg/harness"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
+
 	"github.com/giantswarm/operatorkit/controller"
 	"github.com/giantswarm/operatorkit/controller/integration/testresourceset"
 	"github.com/giantswarm/operatorkit/informer"

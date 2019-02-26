@@ -41,34 +41,49 @@ jobs:
 
 
 
-  e2eTestControllerIntegrationBasic:
+  e2eTestControllerBasic:
     environment:
       TEST_DIR: "controller/integration/test/basic"
     <<: *e2eTest
 
-  e2eTestControllerIntegrationControlflow:
+  e2eTestControllerControlflow:
     environment:
       TEST_DIR: "controller/integration/test/controlflow"
     <<: *e2eTest
 
-  e2eTestControllerIntegrationError:
+  e2eTestControllerError:
     environment:
       TEST_DIR: "controller/integration/test/error"
     <<: *e2eTest
 
-  e2eTestControllerIntegrationParallel:
+  e2eTestControllerParallel:
     environment:
       TEST_DIR: "controller/integration/test/parallel"
     <<: *e2eTest
 
-  e2eTestControllerIntegrationReconciliation:
+  e2eTestControllerReconciliation:
     environment:
       TEST_DIR: "controller/integration/test/reconciliation"
     <<: *e2eTest
 
-  e2eTestInformerIntegration:
+  e2eTestControllerStatusUpdate:
     environment:
-      TEST_DIR: "informer/integration"
+      TEST_DIR: "controller/integration/test/statusupdate"
+    <<: *e2eTest
+
+  e2eTestInformerBasic:
+    environment:
+      TEST_DIR: "informer/integration/test/basic"
+    <<: *e2eTest
+
+  e2eTestInformerCollector:
+    environment:
+      TEST_DIR: "informer/integration/test/collector"
+    <<: *e2eTest
+
+  e2eTestInformerDeletionError:
+    environment:
+      TEST_DIR: "informer/integration/test/deletionerror"
     <<: *e2eTest
 
 
@@ -79,26 +94,38 @@ workflows:
     jobs:
       - build
 
-      - e2eTestControllerIntegrationBasic:
+      - e2eTestControllerBasic:
           requires:
           - build
 
-      - e2eTestControllerIntegrationControlflow:
+      - e2eTestControllerControlflow:
           requires:
           - build
 
-      - e2eTestControllerIntegrationError:
+      - e2eTestControllerError:
           requires:
           - build
 
-      - e2eTestControllerIntegrationParallel:
+      - e2eTestControllerParallel:
           requires:
           - build
 
-      - e2eTestControllerIntegrationReconciliation:
+      - e2eTestControllerReconciliation:
           requires:
           - build
 
-      - e2eTestInformerIntegration:
+      - e2eTestControllerStatusUpdate:
+          requires:
+          - build
+
+      - e2eTestInformerBasic:
+          requires:
+          - build
+
+      - e2eTestInformerCollector:
+          requires:
+          - build
+
+      - e2eTestInformerDeletionError:
           requires:
           - build

@@ -2,16 +2,12 @@ package controller
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-	"github.com/giantswarm/micrologger/loggermeta"
-	"k8s.io/apimachinery/pkg/api/meta"
 
 	"github.com/giantswarm/operatorkit/controller/context/finalizerskeptcontext"
 	"github.com/giantswarm/operatorkit/controller/context/updateallowedcontext"
-	"github.com/giantswarm/operatorkit/controller/context/updatenecessarycontext"
 )
 
 type ResourceSetConfig struct {
@@ -48,7 +44,7 @@ func NewResourceSet(c ResourceSetConfig) (*ResourceSet, error) {
 	}
 
 	if c.Handles == nil {
-		return nil, microerror.Maskf(invalidConfigError, "%T.Handles must not be empty", c)
+		c.Handles = func(obj interface{}) bool { return true }
 	}
 	if c.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Logger must not be empty", c)
@@ -70,24 +66,10 @@ func NewResourceSet(c ResourceSetConfig) (*ResourceSet, error) {
 func (r *ResourceSet) InitCtx(ctx context.Context, obj interface{}) (context.Context, error) {
 	ctx = finalizerskeptcontext.NewContext(ctx, make(chan struct{}))
 	ctx = updateallowedcontext.NewContext(ctx, make(chan struct{}))
-	ctx = updatenecessarycontext.NewContext(ctx, make(chan struct{}))
 
 	ctx, err := r.initCtx(ctx, obj)
 	if err != nil {
 		return nil, microerror.Mask(err)
-	}
-
-	accessor, err := meta.Accessor(obj)
-	if err != nil {
-		r.logger.LogCtx(ctx, "level", "warning", "message", "cannot create accessor for object", "stack", fmt.Sprintf("%#v", err))
-	} else {
-		meta, ok := loggermeta.FromContext(ctx)
-		if !ok {
-			meta = loggermeta.New()
-		}
-		meta.KeyVals["object"] = accessor.GetSelfLink()
-
-		ctx = loggermeta.NewContext(ctx, meta)
 	}
 
 	return ctx, nil

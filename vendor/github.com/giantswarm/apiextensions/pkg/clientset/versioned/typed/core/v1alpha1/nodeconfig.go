@@ -1,5 +1,5 @@
 /*
-Copyright 2018 Giant Swarm GmbH.
+Copyright 2019 Giant Swarm GmbH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"time"
+
 	v1alpha1 "github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
 	scheme "github.com/giantswarm/apiextensions/pkg/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,6 +39,7 @@ type NodeConfigsGetter interface {
 type NodeConfigInterface interface {
 	Create(*v1alpha1.NodeConfig) (*v1alpha1.NodeConfig, error)
 	Update(*v1alpha1.NodeConfig) (*v1alpha1.NodeConfig, error)
+	UpdateStatus(*v1alpha1.NodeConfig) (*v1alpha1.NodeConfig, error)
 	Delete(name string, options *v1.DeleteOptions) error
 	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
 	Get(name string, options v1.GetOptions) (*v1alpha1.NodeConfig, error)
@@ -75,11 +78,16 @@ func (c *nodeConfigs) Get(name string, options v1.GetOptions) (result *v1alpha1.
 
 // List takes label and field selectors, and returns the list of NodeConfigs that match those selectors.
 func (c *nodeConfigs) List(opts v1.ListOptions) (result *v1alpha1.NodeConfigList, err error) {
+	var timeout time.Duration
+	if opts.TimeoutSeconds != nil {
+		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
+	}
 	result = &v1alpha1.NodeConfigList{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("nodeconfigs").
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Timeout(timeout).
 		Do().
 		Into(result)
 	return
@@ -87,11 +95,16 @@ func (c *nodeConfigs) List(opts v1.ListOptions) (result *v1alpha1.NodeConfigList
 
 // Watch returns a watch.Interface that watches the requested nodeConfigs.
 func (c *nodeConfigs) Watch(opts v1.ListOptions) (watch.Interface, error) {
+	var timeout time.Duration
+	if opts.TimeoutSeconds != nil {
+		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
+	}
 	opts.Watch = true
 	return c.client.Get().
 		Namespace(c.ns).
 		Resource("nodeconfigs").
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Timeout(timeout).
 		Watch()
 }
 
@@ -120,6 +133,22 @@ func (c *nodeConfigs) Update(nodeConfig *v1alpha1.NodeConfig) (result *v1alpha1.
 	return
 }
 
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+
+func (c *nodeConfigs) UpdateStatus(nodeConfig *v1alpha1.NodeConfig) (result *v1alpha1.NodeConfig, err error) {
+	result = &v1alpha1.NodeConfig{}
+	err = c.client.Put().
+		Namespace(c.ns).
+		Resource("nodeconfigs").
+		Name(nodeConfig.Name).
+		SubResource("status").
+		Body(nodeConfig).
+		Do().
+		Into(result)
+	return
+}
+
 // Delete takes name of the nodeConfig and deletes it. Returns an error if one occurs.
 func (c *nodeConfigs) Delete(name string, options *v1.DeleteOptions) error {
 	return c.client.Delete().
@@ -133,10 +162,15 @@ func (c *nodeConfigs) Delete(name string, options *v1.DeleteOptions) error {
 
 // DeleteCollection deletes a collection of objects.
 func (c *nodeConfigs) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+	var timeout time.Duration
+	if listOptions.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	}
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("nodeconfigs").
 		VersionedParams(&listOptions, scheme.ParameterCodec).
+		Timeout(timeout).
 		Body(options).
 		Do().
 		Error()

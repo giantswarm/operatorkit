@@ -12,14 +12,16 @@ type Cluster struct {
 	ID         string            `json:"id" yaml:"id"`
 	Kubernetes ClusterKubernetes `json:"kubernetes" yaml:"kubernetes"`
 	Masters    []ClusterNode     `json:"masters" yaml:"masters"`
-	Vault      ClusterVault      `json:"vault" yaml:"vault"`
-	Version    string            `json:"version" yaml:"version"`
-	Workers    []ClusterNode     `json:"workers" yaml:"workers"`
+	Scaling    ClusterScaling    `json:"scaling" yaml:"scaling"`
+
+	// Version is DEPRECATED and should just be dropped.
+	Version string `json:"version" yaml:"version"`
+
+	Workers []ClusterNode `json:"workers" yaml:"workers"`
 }
 
 type ClusterCalico struct {
 	CIDR   int    `json:"cidr" yaml:"cidr"`
-	Domain string `json:"domain" yaml:"domain"`
 	MTU    int    `json:"mtu" yaml:"mtu"`
 	Subnet string `json:"subnet" yaml:"subnet"`
 }
@@ -48,7 +50,6 @@ type ClusterKubernetes struct {
 	CloudProvider     string                             `json:"cloudProvider" yaml:"cloudProvider"`
 	DNS               ClusterKubernetesDNS               `json:"dns" yaml:"dns"`
 	Domain            string                             `json:"domain" yaml:"domain"`
-	Hyperkube         ClusterKubernetesHyperkube         `json:"hyperkube" yaml:"hyperkube"`
 	IngressController ClusterKubernetesIngressController `json:"ingressController" yaml:"ingressController"`
 	Kubelet           ClusterKubernetesKubelet           `json:"kubelet" yaml:"kubelet"`
 	NetworkSetup      ClusterKubernetesNetworkSetup      `json:"networkSetup" yaml:"networkSetup"`
@@ -56,24 +57,13 @@ type ClusterKubernetes struct {
 }
 
 type ClusterKubernetesAPI struct {
-	AltNames       string `json:"altNames" yaml:"altNames"`
 	ClusterIPRange string `json:"clusterIPRange" yaml:"clusterIPRange"`
 	Domain         string `json:"domain" yaml:"domain"`
-	IP             net.IP `json:"ip" yaml:"ip"`
-	InsecurePort   int    `json:"insecurePort" yaml:"insecurePort"`
 	SecurePort     int    `json:"securePort" yaml:"securePort"`
 }
 
 type ClusterKubernetesDNS struct {
 	IP net.IP `json:"ip" yaml:"ip"`
-}
-
-type ClusterKubernetesHyperkube struct {
-	Docker ClusterKubernetesHyperkubeDocker `json:"docker" yaml:"docker"`
-}
-
-type ClusterKubernetesHyperkubeDocker struct {
-	Image string `json:"image" yaml:"image"`
 }
 
 type ClusterKubernetesIngressController struct {
@@ -116,7 +106,9 @@ type ClusterNode struct {
 	ID string `json:"id" yaml:"id"`
 }
 
-type ClusterVault struct {
-	Address string `json:"address" yaml:"address"`
-	Token   string `json:"token" yaml:"token"`
+type ClusterScaling struct {
+	// Max defines maximum number of worker nodes guest cluster is allowed to have.
+	Max int `json:"max" yaml:"max"`
+	// Min defines minimum number of worker nodes required to be present in guest cluster.
+	Min int `json:"min" yaml:"min"`
 }

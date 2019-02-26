@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/giantswarm/apiextensions/pkg/clientset/versioned"
@@ -98,7 +99,7 @@ func mainWithError() error {
 		}
 	}
 
-	memcachedController.Boot()
+	memcachedController.Boot(context.Background())
 
 	return nil
 }

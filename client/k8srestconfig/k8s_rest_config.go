@@ -103,17 +103,18 @@ type Config struct {
 func New(config Config) (*rest.Config, error) {
 	// Dependencies.
 	if config.Logger == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "%T.Logger must not be empty", config)
 	}
 
 	// Settings.
 	if config.Address == "" && !config.InCluster {
-		return nil, microerror.Maskf(invalidConfigError, "config.Address must not be empty when not creating in-cluster client")
+		return nil, microerror.Maskf(invalidConfigError, "%T.Address must not be empty when not creating in-cluster client", config)
 	}
+
 	if config.Address != "" {
 		_, err := url.Parse(config.Address)
 		if err != nil {
-			return nil, microerror.Maskf(invalidConfigError, "config.Address=%s must be a valid URL: %s", config.Address, err)
+			return nil, microerror.Maskf(invalidConfigError, "%T.Address=%s must be a valid URL: %s", config, config.Address, err)
 		}
 	}
 	if config.Timeout.Seconds() == 0 {

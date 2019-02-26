@@ -23,4 +23,4 @@ take a very long time though. Here the implementation should rather check for
 the current state of the managed system instead of blocking and waiting forever.
 See also real examples in the wild.
 
-- [aws-operator creating AWS CloudFormation stacks](https://github.com/giantswarm/aws-operator/blob/ee3ece0107442b60eb2755f669bf2945a5ab05f5/service/controller/v11/resource/cloudformation/create.go#L31-L57)
+- [aws-operator creating AWS CloudFormation stacks](https://github.com/giantswarm/aws-operator/tree/master/service/controller/v22/resource/cloudformation)

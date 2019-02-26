@@ -11,15 +11,15 @@ func Test_Controller_UpdateAllowedContext(t *testing.T) {
 		ExpectedIsUpdateAllowed bool
 	}{
 		{
-			Ctx: context.TODO(),
+			Ctx:                     context.TODO(),
 			ExpectedIsUpdateAllowed: false,
 		},
 		{
-			Ctx: NewContext(context.Background(), nil),
+			Ctx:                     NewContext(context.Background(), nil),
 			ExpectedIsUpdateAllowed: false,
 		},
 		{
-			Ctx: NewContext(context.Background(), make(chan struct{})),
+			Ctx:                     NewContext(context.Background(), make(chan struct{})),
 			ExpectedIsUpdateAllowed: false,
 		},
 		{

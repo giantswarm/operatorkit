@@ -7,11 +7,12 @@ import (
 
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
-	"github.com/giantswarm/operatorkit/controller/context/finalizerskeptcontext"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/giantswarm/operatorkit/controller/context/finalizerskeptcontext"
 )
 
 const (
@@ -24,7 +25,7 @@ type patchSpec struct {
 	Value interface{} `json:"value"`
 }
 
-func (f *Controller) addFinalizer(obj interface{}) (bool, error) {
+func (f *Controller) addFinalizer(ctx context.Context, obj interface{}) (bool, error) {
 	// We get the accessor of the object which we got passed from the framework.
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
@@ -32,7 +33,7 @@ func (f *Controller) addFinalizer(obj interface{}) (bool, error) {
 	}
 	// We check if the object has a finalizer here, to avoid unnecessary calls to
 	// the k8s api.
-	if containsFinalizer(accessor.GetFinalizers(), getFinalizerName(f.name)) {
+	if containsString(accessor.GetFinalizers(), getFinalizerName(f.name)) {
 		return false, nil // object already has the finalizer.
 	}
 
@@ -83,6 +84,25 @@ func (f *Controller) addFinalizer(obj interface{}) (bool, error) {
 	return stopReconciliation, nil
 }
 
+// hasFinalizer checks if the object has finalizer for this controller.
+func (c *Controller) hasFinalizer(ctx context.Context, obj interface{}) (bool, error) {
+	accessor, err := meta.Accessor(obj)
+	if err != nil {
+		return false, microerror.Mask(err)
+	}
+	finalizerName := getFinalizerName(c.name)
+	selfLink := accessor.GetSelfLink()
+
+	// Checking if the finalizer exists is not sufficient as there may be
+	// other events caused by other controllers or user interactions queued
+	// during the deletion.
+	if c.removedFinalizersCache.Contains(selfLink) {
+		return false, nil
+	}
+
+	return containsString(accessor.GetFinalizers(), finalizerName), nil
+}
+
 // removeFinalizer receives an object and tries to remove its finalizer which
 // was set by operatorkit. The removal of a finalizer will be retried and a fresh
 // object will get fetched from k8s if the ResourceVersion is out of date.
@@ -115,15 +135,15 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 	//       is its deletion.
 	//     - The object has another finalizer set and we removed ours already.
 	//
-	if !containsFinalizer(accessor.GetFinalizers(), finalizerName) {
-		c.logger.Log("level", "debug", "message", fmt.Sprintf("did not remove finalizer '%s'", finalizerName))
-		c.logger.Log("level", "debug", "message", fmt.Sprintf("finalizer '%s' not found", finalizerName))
+	if !containsString(accessor.GetFinalizers(), finalizerName) {
+		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("did not remove finalizer '%s'", finalizerName))
+		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("finalizer '%s' not found", finalizerName))
 
 		return nil
 	}
 
 	{
-		c.logger.Log("level", "debug", "message", fmt.Sprintf("removing finalizer '%s'", finalizerName))
+		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("removing finalizer '%s'", finalizerName))
 
 		o := func() error {
 			newObject, err := c.restClient.Get().AbsPath(selfLink).Do().Get()
@@ -164,15 +184,16 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 			return microerror.Mask(err)
 		}
 
-		c.logger.Log("level", "debug", "message", fmt.Sprintf("removed finalizer '%s'", finalizerName))
+		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("removed finalizer '%s'", finalizerName))
+		c.removedFinalizersCache.Set(selfLink)
 	}
 
 	return nil
 }
 
-func containsFinalizer(finalizers []string, finalizer string) bool {
-	for _, f := range finalizers {
-		if f == finalizer {
+func containsString(slice []string, s string) bool {
+	for _, x := range slice {
+		if x == s {
 			return true
 		}
 	}
@@ -188,7 +209,7 @@ func createAddFinalizerPatch(obj interface{}, operatorName string) (patch []patc
 		return nil, true, nil // object has been marked for deletion, we should ignore it.
 	}
 	finalizerName := getFinalizerName(operatorName)
-	if containsFinalizer(accessor.GetFinalizers(), finalizerName) {
+	if containsString(accessor.GetFinalizers(), finalizerName) {
 		return nil, false, nil // object already has the finalizer.
 	}
 	patch = []patchSpec{}

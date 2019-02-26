@@ -5,8 +5,9 @@ package testresourceset
 import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-	"github.com/giantswarm/operatorkit/controller"
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/giantswarm/operatorkit/controller"
 
 	"github.com/giantswarm/operatorkit/controller/integration/testresource"
 )

@@ -64,3 +64,13 @@ func IsStatusForbidden(err error) bool {
 
 	return false
 }
+
+var tooManyResourceSetsError = &microerror.Error{
+	Desc: "Multiple resource sets to reconcile the same runtime object is not supported. There must only be one resource set configured.",
+	Kind: "tooManyResourceSetsError",
+}
+
+// IsTooManyResourceSets asserts tooManyResourceSetsError.
+func IsTooManyResourceSets(err error) bool {
+	return microerror.Cause(err) == tooManyResourceSetsError
+}

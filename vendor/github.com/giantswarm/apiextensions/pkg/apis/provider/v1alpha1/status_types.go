@@ -38,6 +38,7 @@ type StatusCluster struct {
 	// Resources is a list of arbitrary conditions of operatorkit resource
 	// implementations.
 	Resources []StatusClusterResource `json:"resources" yaml:"resources"`
+	Scaling   StatusClusterScaling    `json:"scaling" yaml:"scaling"`
 	// Versions is a list that acts like a historical track record of versions a
 	// guest cluster went through. A version is only added to the list as soon as
 	// the guest cluster successfully migrated to the version added here.
@@ -47,6 +48,11 @@ type StatusCluster struct {
 // StatusClusterCondition expresses the conditions in which a guest cluster may
 // is.
 type StatusClusterCondition struct {
+	// LastHeartbeatTime is the last time we got an update on a given condition.
+	LastHeartbeatTime DeepCopyTime `json:"lastHeartbeatTime" yaml:"lastHeartbeatTime"`
+	// LastTransitionTime is the last time the condition transitioned from one
+	// status to another.
+	LastTransitionTime DeepCopyTime `json:"lastTransitionTime" yaml:"lastTransitionTime"`
 	// Status may be True, False or Unknown.
 	Status string `json:"status" yaml:"status"`
 	// Type may be Creating, Created, Scaling, Scaled, Draining, Drained,
@@ -62,7 +68,17 @@ type StatusClusterNetwork struct {
 
 // StatusClusterNode holds information about a guest cluster node.
 type StatusClusterNode struct {
-	Name    string `json:"name" yaml:"name"`
+	// Labels contains the kubernetes labels for corresponding node.
+	Labels map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
+	// LastHeartbeatTime is the last time we got an update on a given condition.
+	LastHeartbeatTime DeepCopyTime `json:"lastHeartbeatTime" yaml:"lastHeartbeatTime"`
+	// LastTransitionTime is the last time the condition transitioned from one
+	// status to another.
+	LastTransitionTime DeepCopyTime `json:"lastTransitionTime" yaml:"lastTransitionTime"`
+	// Name referrs to a tenant cluster node name.
+	Name string `json:"name" yaml:"name"`
+	// Version referrs to the version used by the node as mandated by the provider
+	// operator.
 	Version string `json:"version" yaml:"version"`
 }
 
@@ -73,23 +89,44 @@ type StatusClusterNode struct {
 // its own implementation and means in order to fulfil its premise.
 type StatusClusterResource struct {
 	Conditions []StatusClusterResourceCondition `json:"conditions" yaml:"conditions"`
-	Name       string                           `json:"status" yaml:"status"`
+	Name       string                           `json:"name" yaml:"name"`
 }
 
 // StatusClusterResourceCondition expresses the conditions in which an
 // operatorkit resource may is.
 type StatusClusterResourceCondition struct {
+	// LastHeartbeatTime is the last time we got an update on a given condition.
+	LastHeartbeatTime DeepCopyTime `json:"lastHeartbeatTime" yaml:"lastHeartbeatTime"`
+	// LastTransitionTime is the last time the condition transitioned from one
+	// status to another.
+	LastTransitionTime DeepCopyTime `json:"lastTransitionTime" yaml:"lastTransitionTime"`
 	// Status may be True, False or Unknown.
 	Status string `json:"status" yaml:"status"`
 	// Type may be anything an operatorkit resource may define.
 	Type string `json:"type" yaml:"type"`
 }
 
+// StatusClusterScaling expresses the current status of desired number of
+// worker nodes in guest cluster.
+type StatusClusterScaling struct {
+	DesiredCapacity int `json:"desiredCapacity" yaml:"desiredCapacity"`
+}
+
 // StatusClusterVersion expresses the versions in which a guest cluster was and
 // may still be.
 type StatusClusterVersion struct {
-	// Date is the time of the given guest cluster version being updated.
+	// TODO date is deprecated due to LastTransitionTime and LastHeartbeatTime.
+	// This can be removed ones the new properties are properly used in all tenant
+	// clusters.
+	//
+	//     https://github.com/giantswarm/giantswarm/issues/3988
+	//
 	Date time.Time `json:"date" yaml:"date"`
+	// LastHeartbeatTime is the last time we got an update on a given condition.
+	LastHeartbeatTime DeepCopyTime `json:"lastHeartbeatTime" yaml:"lastHeartbeatTime"`
+	// LastTransitionTime is the last time the condition transitioned from one
+	// status to another.
+	LastTransitionTime DeepCopyTime `json:"lastTransitionTime" yaml:"lastTransitionTime"`
 	// Semver is some semver version, e.g. 1.0.0.
 	Semver string `json:"semver" yaml:"semver"`
 }

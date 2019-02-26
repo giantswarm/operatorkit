@@ -24,10 +24,10 @@ type CRDClient struct {
 
 func New(config Config) (*CRDClient, error) {
 	if config.K8sExtClient == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.K8sExtClient must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "%T.K8sExtClient must not be empty", config)
 	}
 	if config.Logger == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "%T.Logger must not be empty", config)
 	}
 
 	crdClient := &CRDClient{
@@ -126,7 +126,7 @@ func (c *CRDClient) ensureStatusSubresourceCreated(ctx context.Context, customRe
 
 		if manifest.Spec.Subresources == nil || manifest.Spec.Subresources.Status == nil {
 			customResource.SetResourceVersion(manifest.ResourceVersion)
-			_, err = c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Update(customResource)
+			_, err = c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().UpdateStatus(customResource)
 			if err != nil {
 				return microerror.Mask(err)
 			}
