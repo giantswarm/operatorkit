@@ -23,7 +23,8 @@ func newConfigMapToUpdate(current, desired *v1.ConfigMap) *v1.ConfigMap {
 	merged.Annotations = desired.Annotations
 	merged.Labels = desired.Labels
 
-	merged.Spec = desired.Spec
+	merged.BinaryData = desired.BinaryData
+	merged.Data = desired.Data
 
 	if reflect.DeepEqual(current, merged) {
 		return nil

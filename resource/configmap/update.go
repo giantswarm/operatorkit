@@ -6,17 +6,15 @@ import (
 
 	"github.com/giantswarm/microerror"
 	v1 "k8s.io/api/core/v1"
-
-	"github.com/giantswarm/release-operator/service/controller/key"
 )
 
 func (r *Resource) ApplyUpdateChange(ctx context.Context, obj, updateChange interface{}) error {
-	configMap, err := key.ToConfigMap(updateChange)
+	configMaps, err := toConfigMaps(updateChange)
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
-	if configMap != nil {
+	for _, configMap := range configMaps {
 		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("updating ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace))
 
 		_, err = r.k8sClient.CoreV1().ConfigMaps(configMap.Namespace).Update(configMap)
