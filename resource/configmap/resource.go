@@ -1,4 +1,4 @@
-package app
+package configmap
 
 import (
 	"github.com/giantswarm/apiextensions/pkg/apis/application/v1alpha1"
