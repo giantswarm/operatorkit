@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/giantswarm/microerror"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -33,7 +33,7 @@ func (r *Resource) ApplyDeleteChange(ctx context.Context, obj, deleteChange inte
 	return nil
 }
 
-func (r *Resource) newDeleteChange(ctx context.Context, obj, currentState, desiredState interface{}) ([]*v1.ConfigMap, error) {
+func (r *Resource) newDeleteChange(ctx context.Context, obj, currentState, desiredState interface{}) ([]*corev1.ConfigMap, error) {
 	currentConfigMaps, err := toConfigMaps(currentState)
 	if err != nil {
 		return nil, microerror.Mask(err)
@@ -43,7 +43,7 @@ func (r *Resource) newDeleteChange(ctx context.Context, obj, currentState, desir
 		return nil, microerror.Mask(err)
 	}
 
-	var configMapsToDelete []*v1.ConfigMap
+	var configMapsToDelete []*corev1.ConfigMap
 	{
 		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("computing ConfigMaps to delete"))
 

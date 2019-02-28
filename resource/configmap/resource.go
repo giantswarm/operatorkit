@@ -3,7 +3,7 @@ package configmap
 import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -53,7 +53,7 @@ func (r *Resource) Name() string {
 	return r.name
 }
 
-func containsConfigMap(configMaps []*v1.ConfigMap, configMap *v1.ConfigMap) bool {
+func containsConfigMap(configMaps []*corev1.ConfigMap, configMap *corev1.ConfigMap) bool {
 	for _, a := range configMaps {
 		if configMap.Name == a.Name && configMap.Namespace == a.Namespace {
 			return true
@@ -63,8 +63,8 @@ func containsConfigMap(configMaps []*v1.ConfigMap, configMap *v1.ConfigMap) bool
 	return false
 }
 
-func toConfigMaps(v interface{}) ([]*v1.ConfigMap, error) {
-	x, ok := v.([]*v1.ConfigMap)
+func toConfigMaps(v interface{}) ([]*corev1.ConfigMap, error) {
+	x, ok := v.([]*corev1.ConfigMap)
 	if !ok {
 		return nil, microerror.Maskf(wrongTypeError, "expected '%T', got '%T'", x, v)
 	}

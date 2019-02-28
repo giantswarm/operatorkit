@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/giantswarm/microerror"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func (r *Resource) ApplyUpdateChange(ctx context.Context, obj, updateChange interface{}) error {
@@ -39,7 +39,7 @@ func (r *Resource) newUpdateChange(ctx context.Context, obj, currentState, desir
 		return nil, microerror.Mask(err)
 	}
 
-	var configMapsToUpdate []*v1.ConfigMap
+	var configMapsToUpdate []*corev1.ConfigMap
 	{
 		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("computing ConfigMaps to update"))
 
