@@ -19,7 +19,7 @@ func (r *Resource) ApplyUpdateChange(ctx context.Context, obj, updateChange inte
 	if configMap != nil {
 		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("updating ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace))
 
-		_, err = r.g8sClient.ApplicationV1alpha1().Apps(configMap.Namespace).Update(configMap)
+		_, err = r.k8sClient.CoreV1().ConfigMaps(configMap.Namespace).Update(configMap)
 		if err != nil {
 			return microerror.Mask(err)
 		}

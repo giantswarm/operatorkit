@@ -7,6 +7,7 @@ import (
 	"github.com/giantswarm/microerror"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (r *Resource) ApplyDeleteChange(ctx context.Context, obj, deleteChange interface{}) error {
@@ -18,7 +19,7 @@ func (r *Resource) ApplyDeleteChange(ctx context.Context, obj, deleteChange inte
 	for _, configMap := range configMapsToDelete {
 		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("deleting ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace))
 
-		err := r.g8sClient.ApplicationV1alpha1().Apps(configMap.Namespace).Delete(configMap.Name, &metav1.DeleteOptions{})
+		err := r.k8sClient.CoreV1().ConfigMaps(configMap.Namespace).Delete(configMap.Name, &metav1.DeleteOptions{})
 		if apierrors.IsNotFound(err) {
 			r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("already deleted ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace))
 		} else if err != nil {

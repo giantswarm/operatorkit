@@ -19,7 +19,7 @@ func (r *Resource) ApplyCreateChange(ctx context.Context, obj, createChange inte
 	for _, configMap := range configMaps {
 		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("creating ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace))
 
-		_, err = r.g8sClient.ApplicationV1alpha1().Apps(configMap.Namespace).Create(configMap)
+		_, err = r.k8sClient.CoreV1().ConfigMaps(configMap.Namespace).Create(configMap)
 		if apierrors.IsAlreadyExists(err) {
 			r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("already created ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace))
 		} else if err != nil {
