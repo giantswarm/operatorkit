@@ -3,7 +3,7 @@ package configmap
 import (
 	"reflect"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 // newConfigMapToUpdate creates a new instance of ConfigMap ready to be used as an
