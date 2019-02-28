@@ -4,28 +4,28 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/giantswarm/apiextensions/pkg/apis/application/v1alpha1"
 	"github.com/giantswarm/microerror"
+	"k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-// ApplyCreateChange ensures the App CR is created in the k8s api.
+// ApplyCreateChange ensures the ConfigMap is created in the k8s api.
 func (r *Resource) ApplyCreateChange(ctx context.Context, obj, createChange interface{}) error {
-	appCRs, err := toAppCRs(createChange)
+	configMaps, err := toConfigMaps(createChange)
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
-	for _, appCR := range appCRs {
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("creating App CR %#q in namespace %#q", appCR.Name, appCR.Namespace))
+	for _, configMap := range configMaps {
+		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("creating ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace))
 
-		_, err = r.g8sClient.ApplicationV1alpha1().Apps(appCR.Namespace).Create(appCR)
+		_, err = r.g8sClient.ApplicationV1alpha1().Apps(configMap.Namespace).Create(configMap)
 		if apierrors.IsAlreadyExists(err) {
-			r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("already created App CR %#q in namespace %#q", appCR.Name, appCR.Namespace))
+			r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("already created ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace))
 		} else if err != nil {
 			return microerror.Mask(err)
 		} else {
-			r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("created App CR %#q in namespace %#q", appCR.Name, appCR.Namespace))
+			r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("created ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace))
 		}
 	}
 
@@ -33,28 +33,28 @@ func (r *Resource) ApplyCreateChange(ctx context.Context, obj, createChange inte
 }
 
 func (r *Resource) newCreateChange(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
-	currentAppCRs, err := toAppCRs(currentState)
+	currentConfigMaps, err := toConfigMaps(currentState)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
 
-	desiredAppCRs, err := toAppCRs(desiredState)
+	desiredConfigMaps, err := toConfigMaps(desiredState)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
 
-	var appCRsToCreate []*v1alpha1.App
+	var configMapsToCreate []*v1.ConfigMap
 	{
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("computing App CRs to create "))
+		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("computing ConfigMaps to create "))
 
-		for _, d := range desiredAppCRs {
-			if !containsAppCR(d, currentAppCRs) {
-				appCRsToCreate = append(appCRsToCreate, d)
+		for _, d := range desiredConfigMaps {
+			if !containsConfigMap(d, currentConfigMaps) {
+				configMapsToCreate = append(configMapsToCreate, d)
 			}
 		}
 
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("computed %d App CRs to create", len(appCRsToCreate)))
+		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("computed %d ConfigMaps to create", len(configMapsToCreate)))
 	}
 
-	return appCRsToCreate, nil
+	return configMapsToCreate, nil
 }

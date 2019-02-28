@@ -4,58 +4,58 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/giantswarm/apiextensions/pkg/apis/application/v1alpha1"
 	"github.com/giantswarm/microerror"
+	"k8s.io/api/core/v1"
 
 	"github.com/giantswarm/release-operator/service/controller/key"
 )
 
 func (r *Resource) ApplyUpdateChange(ctx context.Context, obj, updateChange interface{}) error {
-	appCR, err := key.ToAppCR(updateChange)
+	configMap, err := key.ToConfigMap(updateChange)
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
-	if appCR != nil {
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("updating App CR %#q in namespace %#q", appCR.Name, appCR.Namespace))
+	if configMap != nil {
+		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("updating ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace))
 
-		_, err = r.g8sClient.ApplicationV1alpha1().Apps(appCR.Namespace).Update(appCR)
+		_, err = r.g8sClient.ApplicationV1alpha1().Apps(configMap.Namespace).Update(configMap)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("updated App CR %#q in namespace %#q", appCR.Name, appCR.Namespace))
+		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("updated ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace))
 	}
 
 	return nil
 }
 
 func (r *Resource) newUpdateChange(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
-	currentAppCRs, err := toAppCRs(currentState)
+	currentConfigMaps, err := toConfigMaps(currentState)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
 
-	desiredAppCRs, err := toAppCRs(desiredState)
+	desiredConfigMaps, err := toConfigMaps(desiredState)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
 
-	var appCRsToUpdate []*v1alpha1.App
+	var configMapsToUpdate []*v1.ConfigMap
 	{
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("computing App CRs to update"))
+		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("computing ConfigMaps to update"))
 
-		for _, c := range currentAppCRs {
-			for _, d := range desiredAppCRs {
-				m := newAppCRToUpdate(c, d)
+		for _, c := range currentConfigMaps {
+			for _, d := range desiredConfigMaps {
+				m := newConfigMapToUpdate(c, d)
 				if m != nil {
-					appCRsToUpdate = append(appCRsToUpdate, m)
+					configMapsToUpdate = append(configMapsToUpdate, m)
 				}
 			}
 		}
 
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("computed %d App CRs to update", appCRsToUpdate))
+		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("computed %d ConfigMaps to update", configMapsToUpdate))
 	}
 
-	return appCRsToUpdate, nil
+	return configMapsToUpdate, nil
 }

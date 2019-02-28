@@ -1,10 +1,10 @@
 package configmap
 
 import (
-	"github.com/giantswarm/apiextensions/pkg/apis/application/v1alpha1"
 	"github.com/giantswarm/apiextensions/pkg/clientset/versioned"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
+	"k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -60,7 +60,7 @@ func (r *Resource) Name() string {
 	return r.name
 }
 
-func containsAppCR(cr *v1alpha1.App, crs []*v1alpha1.App) bool {
+func containsConfigMap(cr *v1.ConfigMap, crs []*v1.ConfigMap) bool {
 	for _, a := range crs {
 		if cr.Name == a.Name && cr.Namespace == a.Namespace {
 			return true
@@ -70,8 +70,8 @@ func containsAppCR(cr *v1alpha1.App, crs []*v1alpha1.App) bool {
 	return false
 }
 
-func toAppCRs(v interface{}) ([]*v1alpha1.App, error) {
-	x, ok := v.([]*v1alpha1.App)
+func toConfigMaps(v interface{}) ([]*v1.ConfigMap, error) {
+	x, ok := v.([]*v1.ConfigMap)
 	if !ok {
 		return nil, microerror.Maskf(wrongTypeError, "expected '%T', got '%T'", x, v)
 	}
