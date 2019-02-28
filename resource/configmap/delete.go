@@ -48,7 +48,7 @@ func (r *Resource) newDeleteChange(ctx context.Context, obj, currentState, desir
 		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("computing ConfigMaps to delete"))
 
 		for _, c := range currentConfigMaps {
-			if !containsConfigMap(c, desiredConfigMaps) {
+			if !containsConfigMap(desiredConfigMaps, c) {
 				configMapsToDelete = append(configMapsToDelete, c)
 			}
 		}

@@ -53,9 +53,9 @@ func (r *Resource) Name() string {
 	return r.name
 }
 
-func containsConfigMap(cr *v1.ConfigMap, crs []*v1.ConfigMap) bool {
-	for _, a := range crs {
-		if cr.Name == a.Name && cr.Namespace == a.Namespace {
+func containsConfigMap(configMaps []*v1.ConfigMap, configMap *v1.ConfigMap) bool {
+	for _, a := range configMaps {
+		if configMap.Name == a.Name && configMap.Namespace == a.Namespace {
 			return true
 		}
 	}
