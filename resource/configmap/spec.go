@@ -8,7 +8,7 @@ import (
 
 type StateGetter interface {
 	// GetCurrentState returns a current state of the system for the given
-	// carnation of the observed Kubernetes object.
+	// incarnation of the observed Kubernetes object.
 	GetCurrentState(ctx context.Context, obj interface{}) ([]*corev1.ConfigMap, error)
 	// GetDesiredState returns a desired state of the system for the given
 	// carnation of the observed Kubernetes object.
