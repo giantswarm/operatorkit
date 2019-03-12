@@ -1,8 +1,8 @@
 package kubernetes
 
 import (
-	"github.com/giantswarm/app-operator/flag/service/kubernetes/tls"
-	"github.com/giantswarm/app-operator/flag/service/kubernetes/watch"
+	"github.com/giantswarm/operatorkit/flag/service/kubernetes/tls"
+	"github.com/giantswarm/operatorkit/flag/service/kubernetes/watch"
 )
 
 // Kubernetes is a data structure to hold Kubernetes specific command line
