@@ -24,7 +24,7 @@
 //				Address:    config.Viper.GetString(config.Flag.Service.Kubernetes.Address),
 //				InCluster:  config.Viper.GetBool(config.Flag.Service.Kubernetes.InCluster),
 //				KubeConfig: config.Viper.GetBool(config.Flag.Service.Kubernetes.KubeConfig),
-//				TLS: TLSClientConfig{
+//				TLS: k8srestconfig.ConfigTLS{
 //					CAFile:  config.Viper.GetString(config.Flag.Service.Kubernetes.TLS.CAFile),
 //					CrtFile: config.Viper.GetString(config.Flag.Service.Kubernetes.TLS.CrtFile),
 //					KeyFile: config.Viper.GetString(config.Flag.Service.Kubernetes.TLS.KeyFile),
@@ -73,8 +73,8 @@ const (
 	DefaultTimeout = 30 * time.Second
 )
 
-// TLSClientConfig contains settings to enable transport layer security.
-type TLSClientConfig struct {
+// ConfigTLS contains settings to enable transport layer security.
+type ConfigTLS struct {
 	// CAFile is the CA certificate for the cluster.
 	CAFile string
 	// CrtFile is the TLS client certificate.
@@ -99,7 +99,7 @@ type Config struct {
 	KubeConfig string
 	InCluster  bool
 	Timeout    time.Duration
-	TLS        TLSClientConfig
+	TLS        ConfigTLS
 }
 
 // New returns a Kubernetes REST configuration for clients.
