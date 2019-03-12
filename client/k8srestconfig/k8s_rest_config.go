@@ -134,22 +134,28 @@ func New(config Config) (*rest.Config, error) {
 
 	var restConfig *rest.Config
 	if config.KubeConfig != "" {
-		config.Logger.Log("level", "debug", "message", "using kubeconfig")
+		config.Logger.Log("level", "debug", "message", "creating REST config from kubeconfig")
 
 		bytes := []byte(config.KubeConfig)
 		restConfig, err = clientcmd.RESTConfigFromKubeConfig(bytes)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
+
+		config.Logger.Log("level", "debug", "message", "created REST config from kubeconfig")
+
 	} else if config.InCluster {
-		config.Logger.Log("level", "debug", "message", "creating in-cluster config")
+		config.Logger.Log("level", "debug", "message", "creating in-cluster REST config")
 
 		restConfig, err = rest.InClusterConfig()
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
+
+		config.Logger.Log("level", "debug", "message", "created in-cluster REST config")
+
 	} else {
-		config.Logger.Log("level", "debug", "message", "creating out-cluster config")
+		config.Logger.Log("level", "debug", "message", "creating out-cluster REST config")
 
 		restConfig = &rest.Config{
 			Host:    config.Address,
@@ -163,6 +169,8 @@ func New(config Config) (*rest.Config, error) {
 				CAData:   config.TLS.CAData,
 			},
 		}
+
+		config.Logger.Log("level", "debug", "message", "created out-cluster REST config")
 	}
 
 	restConfig.Burst = MaxBurst
