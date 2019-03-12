@@ -21,8 +21,9 @@
 //			c := k8srestconfig.Config{
 //				Logger: config.Logger,
 //
-//				Address:   config.Viper.GetString(config.Flag.Service.Kubernetes.Address),
-//				InCluster: config.Viper.GetBool(config.Flag.Service.Kubernetes.InCluster),
+//				Address:    config.Viper.GetString(config.Flag.Service.Kubernetes.Address),
+//				InCluster:  config.Viper.GetBool(config.Flag.Service.Kubernetes.InCluster),
+//				KubeConfig: config.Viper.GetBool(config.Flag.Service.Kubernetes.KubeConfig),
 //				TLS: TLSClientConfig{
 //					CAFile:  config.Viper.GetString(config.Flag.Service.Kubernetes.TLS.CAFile),
 //					CrtFile: config.Viper.GetString(config.Flag.Service.Kubernetes.TLS.CrtFile),
@@ -61,6 +62,7 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 const (
@@ -93,10 +95,11 @@ type Config struct {
 	Logger micrologger.Logger
 
 	// Settings
-	Address   string
-	InCluster bool
-	Timeout   time.Duration
-	TLS       TLSClientConfig
+	Address    string
+	KubeConfig string
+	InCluster  bool
+	Timeout    time.Duration
+	TLS        TLSClientConfig
 }
 
 // New returns a Kubernetes REST configuration for clients.
@@ -124,7 +127,15 @@ func New(config Config) (*rest.Config, error) {
 	var err error
 
 	var restConfig *rest.Config
-	if config.InCluster {
+	if config.KubeConfig != "" {
+		config.Logger.Log("level", "debug", "message", "using kubeconfig")
+
+		bytes := []byte(config.KubeConfig)
+		restConfig, err = clientcmd.RESTConfigFromKubeConfig(bytes)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+	} else if config.InCluster {
 		config.Logger.Log("level", "debug", "message", "creating in-cluster config")
 
 		restConfig, err = rest.InClusterConfig()
