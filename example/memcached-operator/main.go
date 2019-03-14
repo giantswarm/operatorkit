@@ -50,7 +50,7 @@ func mainWithError() error {
 
 			Address:   k8sAddress,
 			InCluster: k8sInCluster,
-			TLS: k8srestconfig.TLSClientConfig{
+			TLS: k8srestconfig.ConfigTLS{
 				CAFile:  k8sCAFile,
 				CrtFile: k8sCrtFile,
 				KeyFile: k8sKeyFile,

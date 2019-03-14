@@ -21,9 +21,10 @@
 //			c := k8srestconfig.Config{
 //				Logger: config.Logger,
 //
-//				Address:   config.Viper.GetString(config.Flag.Service.Kubernetes.Address),
-//				InCluster: config.Viper.GetBool(config.Flag.Service.Kubernetes.InCluster),
-//				TLS: TLSClientConfig{
+//				Address:    config.Viper.GetString(config.Flag.Service.Kubernetes.Address),
+//				InCluster:  config.Viper.GetBool(config.Flag.Service.Kubernetes.InCluster),
+//				KubeConfig: config.Viper.GetBool(config.Flag.Service.Kubernetes.KubeConfig),
+//				TLS: k8srestconfig.ConfigTLS{
 //					CAFile:  config.Viper.GetString(config.Flag.Service.Kubernetes.TLS.CAFile),
 //					CrtFile: config.Viper.GetString(config.Flag.Service.Kubernetes.TLS.CrtFile),
 //					KeyFile: config.Viper.GetString(config.Flag.Service.Kubernetes.TLS.KeyFile),
@@ -61,6 +62,7 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 const (
@@ -71,8 +73,8 @@ const (
 	DefaultTimeout = 30 * time.Second
 )
 
-// TLSClientConfig contains settings to enable transport layer security.
-type TLSClientConfig struct {
+// ConfigTLS contains settings to enable transport layer security.
+type ConfigTLS struct {
 	// CAFile is the CA certificate for the cluster.
 	CAFile string
 	// CrtFile is the TLS client certificate.
@@ -93,10 +95,11 @@ type Config struct {
 	Logger micrologger.Logger
 
 	// Settings
-	Address   string
-	InCluster bool
-	Timeout   time.Duration
-	TLS       TLSClientConfig
+	Address    string
+	KubeConfig string
+	InCluster  bool
+	Timeout    time.Duration
+	TLS        ConfigTLS
 }
 
 // New returns a Kubernetes REST configuration for clients.
@@ -107,8 +110,14 @@ func New(config Config) (*rest.Config, error) {
 	}
 
 	// Settings.
-	if config.Address == "" && !config.InCluster {
-		return nil, microerror.Maskf(invalidConfigError, "%T.Address must not be empty when not creating in-cluster client", config)
+	if config.Address == "" && !config.InCluster && config.KubeConfig == "" {
+		return nil, microerror.Maskf(invalidConfigError, "%T.Address must not be empty when not using %T.InCluster or %T.KubeConfig", config)
+	}
+	if config.Address != "" && config.KubeConfig != "" {
+		return nil, microerror.Maskf(invalidConfigError, "cannot use %T.Address and %T.KubeConfig", config)
+	}
+	if config.InCluster && config.KubeConfig != "" {
+		return nil, microerror.Maskf(invalidConfigError, "cannot use %T.InCluster and %T.KubeConfig", config)
 	}
 
 	if config.Address != "" {
@@ -124,15 +133,29 @@ func New(config Config) (*rest.Config, error) {
 	var err error
 
 	var restConfig *rest.Config
-	if config.InCluster {
-		config.Logger.Log("level", "debug", "message", "creating in-cluster config")
+	if config.KubeConfig != "" {
+		config.Logger.Log("level", "debug", "message", "creating REST config from kubeconfig")
+
+		bytes := []byte(config.KubeConfig)
+		restConfig, err = clientcmd.RESTConfigFromKubeConfig(bytes)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+
+		config.Logger.Log("level", "debug", "message", "created REST config from kubeconfig")
+
+	} else if config.InCluster {
+		config.Logger.Log("level", "debug", "message", "creating in-cluster REST config")
 
 		restConfig, err = rest.InClusterConfig()
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
+
+		config.Logger.Log("level", "debug", "message", "created in-cluster REST config")
+
 	} else {
-		config.Logger.Log("level", "debug", "message", "creating out-cluster config")
+		config.Logger.Log("level", "debug", "message", "creating out-cluster REST config")
 
 		restConfig = &rest.Config{
 			Host:    config.Address,
@@ -146,6 +169,8 @@ func New(config Config) (*rest.Config, error) {
 				CAData:   config.TLS.CAData,
 			},
 		}
+
+		config.Logger.Log("level", "debug", "message", "created out-cluster REST config")
 	}
 
 	restConfig.Burst = MaxBurst
