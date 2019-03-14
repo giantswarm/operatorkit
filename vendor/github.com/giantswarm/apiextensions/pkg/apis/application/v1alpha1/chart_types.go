@@ -60,6 +60,36 @@ func NewChartTypeMeta() metav1.TypeMeta {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
+// Chart CRs might look something like the following.
+//
+//    apiVersion: application.giantswarm.io/v1alpha1
+//    kind: Chart
+//    metadata:
+//      name: "prometheus"
+//      labels:
+//        chart-operator.giantswarm.io/version: "1.0.0"
+//
+//    spec:
+//      name: "prometheus"
+//      namespace: "monitoring"
+//      config:
+//        configMap:
+//        name: "prometheus-values"
+//        namespace: "monitoring"
+//        resourceVersion: ""
+//      secret:
+//        name: "prometheus-secrets"
+//        namespace: "monitoring"
+//        resourceVersion: ""
+//      tarballURL: "https://giantswarm.github.com/app-catalog/prometheus-1-0-0.tgz"
+//
+//    status:
+//      appVersion: "2.4.3" # Optional value from Chart.yaml with the version of the deployed app.
+//      release:
+//        lastDeployed: "2018-11-30T21:06:20Z"
+//        status: "DEPLOYED"
+//      version: "1.1.0" # Required value from Chart.yaml with the version of the chart.
+//
 type Chart struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata"`
@@ -132,6 +162,23 @@ type ChartSpecKubeConfigSecret struct {
 }
 
 type ChartStatus struct {
+	// AppVersion is the value of the AppVersion field in the Chart.yaml of the
+	// deployed chart. This is an optional field with the version of the
+	// component being deployed.
+	// e.g. 0.21.0.
+	// https://docs.helm.sh/developing_charts/#the-chart-yaml-file
+	AppVersion string `json:"appVersion" yaml:"appVersion"`
+	// Release is the status of the Helm release for the deployed chart.
+	Release ChartStatusRelease `json:"release" yaml:"release"`
+	// Version is the value of the Version field in the Chart.yaml of the
+	// deployed chart.
+	// e.g. 1.0.0.
+	Version string `json:"version" yaml:"version"`
+}
+
+type ChartStatusRelease struct {
+	// LastDeployed is the time when the deployed chart was last deployed.
+	LastDeployed DeepCopyTime `json:"lastDeployed" yaml:"lastDeployed"`
 	// Status is the status of the deployed chart,
 	// e.g. DEPLOYED.
 	Status string `json:"status" yaml:"status"`

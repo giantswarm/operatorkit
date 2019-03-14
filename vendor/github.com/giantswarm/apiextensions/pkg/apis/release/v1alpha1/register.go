@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	group   = "core.giantswarm.io"
+	group   = "release.giantswarm.io"
 	version = "v1alpha1"
 )
 
@@ -15,30 +15,10 @@ const (
 // should contain all zero values of custom objects and custom object lists
 // in the group version.
 var knownTypes = []runtime.Object{
-	&CertConfig{},
-	&CertConfigList{},
-	&ChartConfig{},
-	&ChartConfigList{},
-	&Cluster{},
-	&ClusterList{},
-	&DrainerConfig{},
-	&DrainerConfigList{},
-	&AWSClusterConfig{},
-	&AWSClusterConfigList{},
-	&AzureClusterConfig{},
-	&AzureClusterConfigList{},
-	&KVMClusterConfig{},
-	&KVMClusterConfigList{},
-	&DraughtsmanConfig{},
-	&DraughtsmanConfigList{},
-	&FlannelConfig{},
-	&FlannelConfigList{},
-	&IngressConfig{},
-	&IngressConfigList{},
-	&NodeConfig{},
-	&NodeConfigList{},
-	&StorageConfig{},
-	&StorageConfigList{},
+	&Release{},
+	&ReleaseList{},
+	&ReleaseCycle{},
+	&ReleaseCycleList{},
 }
 
 // SchemeGroupVersion is group version used to register these objects
