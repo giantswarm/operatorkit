@@ -78,14 +78,14 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	// Creation is retried because the CRD might still not be ensured.
 	{
 		o := func() error {
-			nodeConfig := &v1alpha1.NodeConfig{
+			drainerConfig := &v1alpha1.DrainerConfig{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      objName,
 					Namespace: objNamespace,
 				},
 			}
 
-			_, err := harness.CreateObject(objNamespace, nodeConfig)
+			_, err := harness.CreateObject(objNamespace, drainerConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}

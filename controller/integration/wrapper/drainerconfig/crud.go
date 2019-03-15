@@ -8,11 +8,11 @@ import (
 )
 
 func (w Wrapper) CreateObject(namespace string, obj interface{}) (interface{}, error) {
-	nodeConfig, err := toCustomObject(obj)
+	drainerConfig, err := toCustomObject(obj)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
-	createDrainerConfig, err := w.g8sClient.CoreV1alpha1().DrainerConfigs(namespace).Create(&nodeConfig)
+	createDrainerConfig, err := w.g8sClient.CoreV1alpha1().DrainerConfigs(namespace).Create(&drainerConfig)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
@@ -30,29 +30,29 @@ func (w Wrapper) DeleteObject(name, namespace string) error {
 }
 
 func (w Wrapper) GetObject(name, namespace string) (interface{}, error) {
-	nodeConfig, err := w.g8sClient.CoreV1alpha1().DrainerConfigs(namespace).Get(name, metav1.GetOptions{})
+	drainerConfig, err := w.g8sClient.CoreV1alpha1().DrainerConfigs(namespace).Get(name, metav1.GetOptions{})
 	if errors.IsNotFound(err) {
 		return nil, microerror.Mask(notFoundError)
 	} else if err != nil {
 		return nil, microerror.Mask(err)
 	}
 
-	return nodeConfig, nil
+	return drainerConfig, nil
 }
 
 func (w Wrapper) UpdateObject(namespace string, obj interface{}) (interface{}, error) {
-	nodeConfig, err := toCustomObject(obj)
+	drainerConfig, err := toCustomObject(obj)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
 
-	m, err := w.g8sClient.CoreV1alpha1().DrainerConfigs(namespace).Get(nodeConfig.GetName(), metav1.GetOptions{})
+	m, err := w.g8sClient.CoreV1alpha1().DrainerConfigs(namespace).Get(drainerConfig.GetName(), metav1.GetOptions{})
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
-	nodeConfig.SetResourceVersion(m.GetResourceVersion())
+	drainerConfig.SetResourceVersion(m.GetResourceVersion())
 
-	updateDrainerConfig, err := w.g8sClient.CoreV1alpha1().DrainerConfigs(namespace).Update(&nodeConfig)
+	updateDrainerConfig, err := w.g8sClient.CoreV1alpha1().DrainerConfigs(namespace).Update(&drainerConfig)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}

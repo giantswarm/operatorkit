@@ -47,7 +47,7 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 		}
 	}
 
-	var nodeConfigWrapper *drainerconfig.Wrapper
+	var drainerConfigWrapper *drainerconfig.Wrapper
 	{
 		c := drainerconfig.Config{
 			Resources: []controller.Resource{
@@ -58,17 +58,17 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 			Namespace: testNamespace,
 		}
 
-		nodeConfigWrapper, err = drainerconfig.New(c)
+		drainerConfigWrapper, err = drainerconfig.New(c)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}
 
-		nodeConfigWrapper.MustSetup(testNamespace)
-		defer nodeConfigWrapper.MustTeardown(testNamespace)
+		drainerConfigWrapper.MustSetup(testNamespace)
+		defer drainerConfigWrapper.MustTeardown(testNamespace)
 	}
 
 	{
-		c := nodeConfigWrapper.Controller()
+		c := drainerConfigWrapper.Controller()
 
 		go c.Boot(ctx)
 		<-c.Booted()
@@ -76,14 +76,14 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 
 	{
 		o := func() error {
-			nodeConfig := &v1alpha1.DrainerConfig{
+			drainerConfig := &v1alpha1.DrainerConfig{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      objName,
 					Namespace: testNamespace,
 				},
 				TypeMeta: v1alpha1.NewNodeTypeMeta(),
 			}
-			_, err := nodeConfigWrapper.CreateObject(testNamespace, nodeConfig)
+			_, err := drainerConfigWrapper.CreateObject(testNamespace, drainerConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -101,7 +101,7 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	{
-		newObj, err := nodeConfigWrapper.GetObject(objName, testNamespace)
+		newObj, err := drainerConfigWrapper.GetObject(objName, testNamespace)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}

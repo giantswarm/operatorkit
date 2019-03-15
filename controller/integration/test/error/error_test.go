@@ -94,7 +94,7 @@ func Test_Controller_Integration_Error(t *testing.T) {
 	// We create two test objects. One is used by one resource to error out.
 	{
 		o := func() error {
-			a := &v1alpha1.NodeConfig{
+			a := &v1alpha1.DrainerConfig{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testObjectA,
 					Namespace: testNamespace,
@@ -106,7 +106,7 @@ func Test_Controller_Integration_Error(t *testing.T) {
 				return microerror.Mask(err)
 			}
 
-			b := &v1alpha1.NodeConfig{
+			b := &v1alpha1.DrainerConfig{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testObjectB,
 					Namespace: testNamespace,

@@ -167,14 +167,14 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	// not be ensured.
 	{
 		o := func() error {
-			nodeConfig := &v1alpha1.NodeConfig{
+			drainerConfig := &v1alpha1.DrainerConfig{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      objName,
 					Namespace: objNamespace,
 				},
 			}
 
-			_, err := harnessA.CreateObject(objNamespace, nodeConfig)
+			_, err := harnessA.CreateObject(objNamespace, drainerConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
