@@ -10,8 +10,10 @@ import (
 	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
-	"github.com/giantswarm/operatorkit/controller"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/giantswarm/operatorkit/controller"
+	"github.com/giantswarm/operatorkit/controller/integration/wrapper/drainerconfig"
 )
 
 const (
@@ -74,7 +76,7 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 
 	{
 		o := func() error {
-			nodeConfig := &v1alpha1.NodeConfig{
+			nodeConfig := &v1alpha1.DrainerConfig{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      objName,
 					Namespace: testNamespace,
@@ -104,7 +106,7 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 			t.Fatal("expected", nil, "got", err)
 		}
 
-		customResource := newObj.(*v1alpha1.NodeConfig)
+		customResource := newObj.(*v1alpha1.DrainerConfig)
 
 		if len(customResource.Status.Conditions) != 1 {
 			t.Fatal("expected one status condition")
