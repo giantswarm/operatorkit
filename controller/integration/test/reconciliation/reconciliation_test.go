@@ -13,7 +13,7 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/operatorkit/controller"
 	"github.com/giantswarm/operatorkit/controller/integration/testresource"
-	"github.com/giantswarm/operatorkit/controller/integration/wrapper/nodeconfig"
+	"github.com/giantswarm/operatorkit/controller/integration/wrapper/drainerconfig"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -47,14 +47,14 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		controller.Resource(tr),
 	}
 
-	c := nodeconfig.Config{
+	c := drainerconfig.Config{
 		Resources: resources,
 
 		Name:      operatorName,
 		Namespace: testNamespace,
 	}
 
-	nodeConfigWrapper, err := nodeconfig.New(c)
+	nodeConfigWrapper, err := drainerconfig.New(c)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}

@@ -11,7 +11,6 @@ import (
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/operatorkit/controller"
-	"github.com/giantswarm/operatorkit/controller/integration/wrapper/nodeconfig"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -46,9 +45,9 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 		}
 	}
 
-	var nodeConfigWrapper *nodeconfig.Wrapper
+	var nodeConfigWrapper *drainerconfig.Wrapper
 	{
-		c := nodeconfig.Config{
+		c := drainerconfig.Config{
 			Resources: []controller.Resource{
 				r,
 			},
@@ -57,7 +56,7 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 			Namespace: testNamespace,
 		}
 
-		nodeConfigWrapper, err = nodeconfig.New(c)
+		nodeConfigWrapper, err = drainerconfig.New(c)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}

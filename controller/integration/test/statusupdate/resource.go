@@ -63,11 +63,11 @@ func (r *Resource) EnsureCreated(ctx context.Context, obj interface{}) error {
 
 	defer func() { r.executionCount++ }()
 
-	var customResource v1alpha1.NodeConfig
+	var customResource v1alpha1.DrainerConfig
 	{
-		curObj := obj.(*v1alpha1.NodeConfig)
+		curObj := obj.(*v1alpha1.DrainerConfig)
 
-		newObj, err := r.g8sClient.CoreV1alpha1().NodeConfigs(curObj.GetNamespace()).Get(curObj.GetName(), metav1.GetOptions{})
+		newObj, err := r.g8sClient.CoreV1alpha1().DrainerConfigs(curObj.GetNamespace()).Get(curObj.GetName(), metav1.GetOptions{})
 		if err != nil {
 			r.t.Fatal("expected", nil, "got", err)
 		}
@@ -76,13 +76,13 @@ func (r *Resource) EnsureCreated(ctx context.Context, obj interface{}) error {
 	}
 
 	if r.executionCount == 0 {
-		newCondition := v1alpha1.NodeConfigStatusCondition{
+		newCondition := v1alpha1.DrainerConfigStatusCondition{
 			Status: conditionStatus,
 			Type:   conditionType,
 		}
 		customResource.Status.Conditions = append(customResource.Status.Conditions, newCondition)
 
-		_, err := r.g8sClient.CoreV1alpha1().NodeConfigs(customResource.GetNamespace()).UpdateStatus(&customResource)
+		_, err := r.g8sClient.CoreV1alpha1().DrainerConfigs(customResource.GetNamespace()).UpdateStatus(&customResource)
 		if err != nil {
 			r.t.Fatal("expected", nil, "got", err)
 		}

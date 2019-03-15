@@ -15,7 +15,7 @@ import (
 
 	"github.com/giantswarm/operatorkit/controller"
 	"github.com/giantswarm/operatorkit/controller/integration/testresource"
-	"github.com/giantswarm/operatorkit/controller/integration/wrapper/nodeconfig"
+	"github.com/giantswarm/operatorkit/controller/integration/wrapper/drainerconfig"
 )
 
 const (
@@ -70,16 +70,16 @@ func Test_Controller_Integration_Error(t *testing.T) {
 		rB,
 	}
 
-	var wrapper *nodeconfig.Wrapper
+	var wrapper *drainerconfig.Wrapper
 	{
-		c := nodeconfig.Config{
+		c := drainerconfig.Config{
 			Resources: resources,
 
 			Name:      "operator-name",
 			Namespace: testNamespace,
 		}
 
-		wrapper, err = nodeconfig.New(c)
+		wrapper, err = drainerconfig.New(c)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}
