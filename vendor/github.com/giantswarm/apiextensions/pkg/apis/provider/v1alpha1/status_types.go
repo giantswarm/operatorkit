@@ -48,8 +48,6 @@ type StatusCluster struct {
 // StatusClusterCondition expresses the conditions in which a guest cluster may
 // is.
 type StatusClusterCondition struct {
-	// LastHeartbeatTime is the last time we got an update on a given condition.
-	LastHeartbeatTime DeepCopyTime `json:"lastHeartbeatTime" yaml:"lastHeartbeatTime"`
 	// LastTransitionTime is the last time the condition transitioned from one
 	// status to another.
 	LastTransitionTime DeepCopyTime `json:"lastTransitionTime" yaml:"lastTransitionTime"`
@@ -70,8 +68,6 @@ type StatusClusterNetwork struct {
 type StatusClusterNode struct {
 	// Labels contains the kubernetes labels for corresponding node.
 	Labels map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
-	// LastHeartbeatTime is the last time we got an update on a given condition.
-	LastHeartbeatTime DeepCopyTime `json:"lastHeartbeatTime" yaml:"lastHeartbeatTime"`
 	// LastTransitionTime is the last time the condition transitioned from one
 	// status to another.
 	LastTransitionTime DeepCopyTime `json:"lastTransitionTime" yaml:"lastTransitionTime"`
@@ -95,8 +91,6 @@ type StatusClusterResource struct {
 // StatusClusterResourceCondition expresses the conditions in which an
 // operatorkit resource may is.
 type StatusClusterResourceCondition struct {
-	// LastHeartbeatTime is the last time we got an update on a given condition.
-	LastHeartbeatTime DeepCopyTime `json:"lastHeartbeatTime" yaml:"lastHeartbeatTime"`
 	// LastTransitionTime is the last time the condition transitioned from one
 	// status to another.
 	LastTransitionTime DeepCopyTime `json:"lastTransitionTime" yaml:"lastTransitionTime"`
@@ -115,15 +109,13 @@ type StatusClusterScaling struct {
 // StatusClusterVersion expresses the versions in which a guest cluster was and
 // may still be.
 type StatusClusterVersion struct {
-	// TODO date is deprecated due to LastTransitionTime and LastHeartbeatTime.
+	// TODO date is deprecated due to LastTransitionTime
 	// This can be removed ones the new properties are properly used in all tenant
 	// clusters.
 	//
 	//     https://github.com/giantswarm/giantswarm/issues/3988
 	//
 	Date time.Time `json:"date" yaml:"date"`
-	// LastHeartbeatTime is the last time we got an update on a given condition.
-	LastHeartbeatTime DeepCopyTime `json:"lastHeartbeatTime" yaml:"lastHeartbeatTime"`
 	// LastTransitionTime is the last time the condition transitioned from one
 	// status to another.
 	LastTransitionTime DeepCopyTime `json:"lastTransitionTime" yaml:"lastTransitionTime"`

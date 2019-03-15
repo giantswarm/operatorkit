@@ -40,6 +40,4 @@ type KVMClusterConfigExpansion interface{}
 
 type NodeConfigExpansion interface{}
 
-type ReleaseExpansion interface{}
-
 type StorageConfigExpansion interface{}

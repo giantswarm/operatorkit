@@ -1,5 +1,3 @@
-// +build k8srequired
-
 package testresource
 
 import (

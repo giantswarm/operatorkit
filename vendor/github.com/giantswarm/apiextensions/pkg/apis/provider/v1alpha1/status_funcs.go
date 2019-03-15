@@ -8,7 +8,6 @@ import (
 func NewStatusClusterNode(name, version string, labels map[string]string) StatusClusterNode {
 	return StatusClusterNode{
 		Labels:             labels,
-		LastHeartbeatTime:  DeepCopyTime{time.Now()},
 		LastTransitionTime: DeepCopyTime{time.Now()},
 		Name:               name,
 		Version:            version,
@@ -75,36 +74,12 @@ func (s StatusCluster) LatestVersion() string {
 	latest := s.Versions[0]
 
 	for _, v := range s.Versions {
-		if latest.Date.Before(v.Date) {
+		if latest.LastTransitionTime.Time.Before(v.LastTransitionTime.Time) || latest.Date.Before(v.Date) {
 			latest = v
 		}
 	}
 
 	return latest.Semver
-}
-
-func (s StatusCluster) UpdateHeartBeatOfCreatedCondition() []StatusClusterCondition {
-	return updateHeartBeatOfCondition(s.Conditions, StatusClusterTypeCreated, StatusClusterStatusTrue, time.Now())
-}
-
-func (s StatusCluster) UpdateHeartBeatOfCreatingCondition() []StatusClusterCondition {
-	return updateHeartBeatOfCondition(s.Conditions, StatusClusterTypeCreating, StatusClusterStatusTrue, time.Now())
-}
-
-func (s StatusCluster) UpdateHeartBeatOfDeletedCondition() []StatusClusterCondition {
-	return updateHeartBeatOfCondition(s.Conditions, StatusClusterTypeDeleted, StatusClusterStatusTrue, time.Now())
-}
-
-func (s StatusCluster) UpdateHeartBeatOfDeletingCondition() []StatusClusterCondition {
-	return updateHeartBeatOfCondition(s.Conditions, StatusClusterTypeDeleting, StatusClusterStatusTrue, time.Now())
-}
-
-func (s StatusCluster) UpdateHeartBeatOfUpdatedCondition() []StatusClusterCondition {
-	return updateHeartBeatOfCondition(s.Conditions, StatusClusterTypeUpdated, StatusClusterStatusTrue, time.Now())
-}
-
-func (s StatusCluster) UpdateHeartBeatOfUpdatingCondition() []StatusClusterCondition {
-	return updateHeartBeatOfCondition(s.Conditions, StatusClusterTypeUpdating, StatusClusterStatusTrue, time.Now())
 }
 
 func (s StatusCluster) WithCreatedCondition() []StatusClusterCondition {
@@ -125,7 +100,6 @@ func (s StatusCluster) WithDeletingCondition() []StatusClusterCondition {
 
 func (s StatusCluster) WithNewVersion(version string) []StatusClusterVersion {
 	newVersion := StatusClusterVersion{
-		LastHeartbeatTime:  DeepCopyTime{time.Now()},
 		LastTransitionTime: DeepCopyTime{time.Now()},
 		Semver:             version,
 	}
@@ -171,24 +145,9 @@ func hasVersion(versions []StatusClusterVersion, search string) bool {
 	return false
 }
 
-func updateHeartBeatOfCondition(conditions []StatusClusterCondition, search string, status string, t time.Time) []StatusClusterCondition {
-	var newConditions []StatusClusterCondition
-
-	for _, c := range conditions {
-		if c.Type == search {
-			c.LastHeartbeatTime = DeepCopyTime{t}
-		}
-
-		newConditions = append(newConditions, c)
-	}
-
-	return newConditions
-}
-
 func withCondition(conditions []StatusClusterCondition, search string, replace string, status string, t time.Time) []StatusClusterCondition {
 	newConditions := []StatusClusterCondition{
 		{
-			LastHeartbeatTime:  DeepCopyTime{t},
 			LastTransitionTime: DeepCopyTime{t},
 			Status:             status,
 			Type:               replace,

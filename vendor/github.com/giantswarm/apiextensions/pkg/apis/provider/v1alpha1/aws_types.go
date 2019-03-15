@@ -178,6 +178,11 @@ type AWSConfigStatus struct {
 
 type AWSConfigStatusAWS struct {
 	AvailabilityZones []AWSConfigStatusAWSAvailabilityZone `json:"availabilityZones" yaml:"availabilityZones"`
+	AutoScalingGroup  AWSConfigStatusAWSAutoScalingGroup   `json:"autoScalingGroup" yaml:"autoScalingGroup"`
+}
+
+type AWSConfigStatusAWSAutoScalingGroup struct {
+	Name string `json:"name"`
 }
 
 type AWSConfigStatusAWSAvailabilityZone struct {

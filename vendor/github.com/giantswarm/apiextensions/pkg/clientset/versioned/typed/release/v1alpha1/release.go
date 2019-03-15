@@ -21,7 +21,7 @@ package v1alpha1
 import (
 	"time"
 
-	v1alpha1 "github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
+	v1alpha1 "github.com/giantswarm/apiextensions/pkg/apis/release/v1alpha1"
 	scheme "github.com/giantswarm/apiextensions/pkg/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -56,7 +56,7 @@ type releases struct {
 }
 
 // newReleases returns a Releases
-func newReleases(c *CoreV1alpha1Client, namespace string) *releases {
+func newReleases(c *ReleaseV1alpha1Client, namespace string) *releases {
 	return &releases{
 		client: c.RESTClient(),
 		ns:     namespace,

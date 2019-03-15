@@ -10,9 +10,10 @@ import (
 	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
-	"github.com/giantswarm/operatorkit/controller"
-	"github.com/giantswarm/operatorkit/controller/integration/wrapper/nodeconfig"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/giantswarm/operatorkit/controller"
+	"github.com/giantswarm/operatorkit/controller/integration/wrapper/drainerconfig"
 )
 
 const (
@@ -46,9 +47,9 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 		}
 	}
 
-	var nodeConfigWrapper *nodeconfig.Wrapper
+	var drainerConfigWrapper *drainerconfig.Wrapper
 	{
-		c := nodeconfig.Config{
+		c := drainerconfig.Config{
 			Resources: []controller.Resource{
 				r,
 			},
@@ -57,17 +58,17 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 			Namespace: testNamespace,
 		}
 
-		nodeConfigWrapper, err = nodeconfig.New(c)
+		drainerConfigWrapper, err = drainerconfig.New(c)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}
 
-		nodeConfigWrapper.MustSetup(testNamespace)
-		defer nodeConfigWrapper.MustTeardown(testNamespace)
+		drainerConfigWrapper.MustSetup(testNamespace)
+		defer drainerConfigWrapper.MustTeardown(testNamespace)
 	}
 
 	{
-		c := nodeConfigWrapper.Controller()
+		c := drainerConfigWrapper.Controller()
 
 		go c.Boot(ctx)
 		<-c.Booted()
@@ -75,14 +76,14 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 
 	{
 		o := func() error {
-			nodeConfig := &v1alpha1.NodeConfig{
+			drainerConfig := &v1alpha1.DrainerConfig{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      objName,
 					Namespace: testNamespace,
 				},
 				TypeMeta: v1alpha1.NewNodeTypeMeta(),
 			}
-			_, err := nodeConfigWrapper.CreateObject(testNamespace, nodeConfig)
+			_, err := drainerConfigWrapper.CreateObject(testNamespace, drainerConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -100,12 +101,12 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	{
-		newObj, err := nodeConfigWrapper.GetObject(objName, testNamespace)
+		newObj, err := drainerConfigWrapper.GetObject(objName, testNamespace)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}
 
-		customResource := newObj.(*v1alpha1.NodeConfig)
+		customResource := newObj.(*v1alpha1.DrainerConfig)
 
 		if len(customResource.Status.Conditions) != 1 {
 			t.Fatal("expected one status condition")

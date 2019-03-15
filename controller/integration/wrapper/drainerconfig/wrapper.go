@@ -1,6 +1,4 @@
-// +build k8srequired
-
-package nodeconfig
+package drainerconfig
 
 import (
 	"time"
@@ -82,7 +80,7 @@ func New(config Config) (*Wrapper, error) {
 	{
 		c := informer.Config{
 			Logger:  newLogger,
-			Watcher: g8sClient.CoreV1alpha1().NodeConfigs(config.Namespace),
+			Watcher: g8sClient.CoreV1alpha1().DrainerConfigs(config.Namespace),
 
 			RateWait:     time.Second * 2,
 			ResyncPeriod: time.Second * 10,
@@ -112,7 +110,7 @@ func New(config Config) (*Wrapper, error) {
 	var newController *controller.Controller
 	{
 		c := controller.Config{
-			CRD:       v1alpha1.NewNodeConfigCRD(),
+			CRD:       v1alpha1.NewDrainerConfigCRD(),
 			CRDClient: crdClient,
 			Informer:  newInformer,
 			Logger:    newLogger,

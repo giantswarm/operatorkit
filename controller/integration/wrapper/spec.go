@@ -1,5 +1,3 @@
-// +build k8srequired
-
 package wrapper
 
 import "github.com/giantswarm/operatorkit/controller"

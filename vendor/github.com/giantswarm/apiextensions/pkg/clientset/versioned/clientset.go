@@ -23,6 +23,7 @@ import (
 	corev1alpha1 "github.com/giantswarm/apiextensions/pkg/clientset/versioned/typed/core/v1alpha1"
 	examplev1alpha1 "github.com/giantswarm/apiextensions/pkg/clientset/versioned/typed/example/v1alpha1"
 	providerv1alpha1 "github.com/giantswarm/apiextensions/pkg/clientset/versioned/typed/provider/v1alpha1"
+	releasev1alpha1 "github.com/giantswarm/apiextensions/pkg/clientset/versioned/typed/release/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -42,6 +43,9 @@ type Interface interface {
 	ProviderV1alpha1() providerv1alpha1.ProviderV1alpha1Interface
 	// Deprecated: please explicitly pick a version if possible.
 	Provider() providerv1alpha1.ProviderV1alpha1Interface
+	ReleaseV1alpha1() releasev1alpha1.ReleaseV1alpha1Interface
+	// Deprecated: please explicitly pick a version if possible.
+	Release() releasev1alpha1.ReleaseV1alpha1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
@@ -52,6 +56,7 @@ type Clientset struct {
 	coreV1alpha1        *corev1alpha1.CoreV1alpha1Client
 	exampleV1alpha1     *examplev1alpha1.ExampleV1alpha1Client
 	providerV1alpha1    *providerv1alpha1.ProviderV1alpha1Client
+	releaseV1alpha1     *releasev1alpha1.ReleaseV1alpha1Client
 }
 
 // ApplicationV1alpha1 retrieves the ApplicationV1alpha1Client
@@ -98,6 +103,17 @@ func (c *Clientset) Provider() providerv1alpha1.ProviderV1alpha1Interface {
 	return c.providerV1alpha1
 }
 
+// ReleaseV1alpha1 retrieves the ReleaseV1alpha1Client
+func (c *Clientset) ReleaseV1alpha1() releasev1alpha1.ReleaseV1alpha1Interface {
+	return c.releaseV1alpha1
+}
+
+// Deprecated: Release retrieves the default version of ReleaseClient.
+// Please explicitly pick a version.
+func (c *Clientset) Release() releasev1alpha1.ReleaseV1alpha1Interface {
+	return c.releaseV1alpha1
+}
+
 // Discovery retrieves the DiscoveryClient
 func (c *Clientset) Discovery() discovery.DiscoveryInterface {
 	if c == nil {
@@ -130,6 +146,10 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	if err != nil {
 		return nil, err
 	}
+	cs.releaseV1alpha1, err = releasev1alpha1.NewForConfig(&configShallowCopy)
+	if err != nil {
+		return nil, err
+	}
 
 	cs.DiscoveryClient, err = discovery.NewDiscoveryClientForConfig(&configShallowCopy)
 	if err != nil {
@@ -146,6 +166,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 	cs.coreV1alpha1 = corev1alpha1.NewForConfigOrDie(c)
 	cs.exampleV1alpha1 = examplev1alpha1.NewForConfigOrDie(c)
 	cs.providerV1alpha1 = providerv1alpha1.NewForConfigOrDie(c)
+	cs.releaseV1alpha1 = releasev1alpha1.NewForConfigOrDie(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
 	return &cs
@@ -158,6 +179,7 @@ func New(c rest.Interface) *Clientset {
 	cs.coreV1alpha1 = corev1alpha1.New(c)
 	cs.exampleV1alpha1 = examplev1alpha1.New(c)
 	cs.providerV1alpha1 = providerv1alpha1.New(c)
+	cs.releaseV1alpha1 = releasev1alpha1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs

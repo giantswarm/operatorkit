@@ -46,6 +46,30 @@ func NewAppCatalogCRD() *apiextensionsv1beta1.CustomResourceDefinition {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
+// AppCatalog CRs might look something like the following.
+//
+//    apiVersion: application.giantswarm.io/v1alpha1
+//    kind: AppCatalog
+//    metadata:
+//      name: "giantswarm"
+//      labels:
+//        app-operator.giantswarm.io/version: "1.0.0"
+//
+//    spec:
+//      title: "Giant Swarm"
+//      description: "Catalog of Apps by Giant Swarm"
+//      config:
+//        configMap:
+//          name: "app-catalog-values"
+//          namespace: "giantswarm"
+//        secret:
+//          name: "app-catalog-secrets"
+//          namespace: "giantswarm"
+//      logoURL: "https://s.giantswarm.io/..."
+//      storage:
+//        type: "helm"
+//        URL: "https://giantswarm.github.com/app-catalog/"
+//
 type AppCatalog struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata"`
@@ -57,14 +81,44 @@ type AppCatalogSpec struct {
 	// e.g. Catalog of Apps by Giant Swarm
 	Title       string `json:"title" yaml:"title"`
 	Description string `json:"description" yaml:"description"`
-	// CatalogStorage references a map containing values that should be
-	// applied to the appcatalog.
-	CatalogStorage AppCatalogSpecCatalogStorage `json:"catalogStorage" yaml:"catalogStorage"`
+	// Config is the config to be applied when apps belonging to this
+	// catalog are deployed.
+	Config AppCatalogSpecConfig `json:"config" yaml:"config"`
 	// LogoURL contains the links for logo image file for this app catalog
 	LogoURL string `json:"logoURL" yaml:"logoURL"`
+	// Storage references a map containing values that should be applied to
+	// the appcatalog.
+	Storage AppCatalogSpecStorage `json:"storage" yaml:"storage"`
 }
 
-type AppCatalogSpecCatalogStorage struct {
+type AppCatalogSpecConfig struct {
+	// ConfigMap references a config map containing catalog values that
+	// should be applied to apps in this catalog.
+	ConfigMap AppCatalogSpecConfigConfigMap `json:"configMap" yaml:"configMap"`
+	// Secret references a secret containing catalog values that should be
+	// applied to apps in this catalog.
+	Secret AppCatalogSpecConfigSecret `json:"secret" yaml:"secret"`
+}
+
+type AppCatalogSpecConfigConfigMap struct {
+	// Name is the name of the config map containing catalog values to
+	// apply, e.g. app-catalog-values.
+	Name string `json:"name" yaml:"name"`
+	// Namespace is the namespace of the catalog values config map,
+	// e.g. giantswarm.
+	Namespace string `json:"namespace" yaml:"namespace"`
+}
+
+type AppCatalogSpecConfigSecret struct {
+	// Name is the name of the secret containing catalog values to apply,
+	// e.g. app-catalog-secret.
+	Name string `json:"name" yaml:"name"`
+	// Namespace is the namespace of the secret,
+	// e.g. giantswarm.
+	Namespace string `json:"namespace" yaml:"namespace"`
+}
+
+type AppCatalogSpecStorage struct {
 	// Type indicates which repository type would be used for this AppCatalog.
 	// e.g. helm
 	Type string `json:"type" yaml:"type"`

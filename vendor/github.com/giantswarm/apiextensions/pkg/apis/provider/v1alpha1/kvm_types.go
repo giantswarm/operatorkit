@@ -128,7 +128,13 @@ type KVMConfigSpecVersionBundle struct {
 }
 
 type KVMConfigStatus struct {
-	Cluster StatusCluster `json:"cluster" yaml:"cluster"`
+	Cluster StatusCluster      `json:"cluster" yaml:"cluster"`
+	KVM     KVMConfigStatusKVM `json:"kvm" yaml:"kvm"`
+}
+
+type KVMConfigStatusKVM struct {
+	// NodeIndexes is a map from nodeID -> nodeIndex. This is used to create deterministic iSCSI initiator names.
+	NodeIndexes map[string]int `json:"nodeIndexes" yaml:"nodeIndexes"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
