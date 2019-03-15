@@ -1,6 +1,4 @@
-// +build k8srequired
-
-package nodeconfig
+package drainerconfig
 
 import "github.com/giantswarm/microerror"
 

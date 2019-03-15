@@ -112,25 +112,14 @@ func (l *activationLogger) With(keyVals ...interface{}) Logger {
 	return l.underlying.With(keyVals...)
 }
 
-func containsKey(keyVals []interface{}, aKey string) bool {
-	for i := 0; i < len(keyVals); i += 2 {
-		s, ok := keyVals[i].(string)
-		if ok && s == aKey {
-			return true
-		}
-	}
-
-	return false
-}
-
-func containsVal(keyVals []interface{}, aVal interface{}) bool {
+func valueFor(keyVals []interface{}, key string) (interface{}, bool) {
 	for i := 1; i < len(keyVals); i += 2 {
-		if keyVals[i] == aVal {
-			return true
+		if key == keyVals[i-1] {
+			return keyVals[i], true
 		}
 	}
 
-	return false
+	return nil, false
 }
 
 func isLevelAllowed(keyVals []interface{}, aVal interface{}) bool {
@@ -195,7 +184,8 @@ func shouldActivate(activations map[string]interface{}, keyVals []interface{}) (
 	var activationCount int
 
 	for aKey, aVal := range activations {
-		if containsKey(keyVals, aKey) && containsVal(keyVals, aVal) {
+		v, ok := valueFor(keyVals, aKey)
+		if ok && v == aVal {
 			activationCount++
 			continue
 		}

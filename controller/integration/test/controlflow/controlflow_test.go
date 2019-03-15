@@ -17,7 +17,7 @@ import (
 	"github.com/giantswarm/operatorkit/controller"
 	"github.com/giantswarm/operatorkit/controller/integration/testresource"
 	"github.com/giantswarm/operatorkit/controller/integration/wrapper"
-	"github.com/giantswarm/operatorkit/controller/integration/wrapper/nodeconfig"
+	"github.com/giantswarm/operatorkit/controller/integration/wrapper/drainerconfig"
 )
 
 const (
@@ -78,14 +78,14 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	// Creation is retried because the CRD might still not be ensured.
 	{
 		o := func() error {
-			nodeConfig := &v1alpha1.NodeConfig{
+			drainerConfig := &v1alpha1.DrainerConfig{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      objName,
 					Namespace: objNamespace,
 				},
 			}
 
-			_, err := harness.CreateObject(objNamespace, nodeConfig)
+			_, err := harness.CreateObject(objNamespace, drainerConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -227,7 +227,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	{
 		o := func() error {
 			_, err = harness.GetObject(objName, objNamespace)
-			if nodeconfig.IsNotFound(err) {
+			if drainerconfig.IsNotFound(err) {
 				return nil
 			} else if err != nil {
 				return microerror.Mask(err)
@@ -244,19 +244,19 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	}
 }
 
-func newHarness(namespace string, controllerName string, resource *testresource.Resource) (*nodeconfig.Wrapper, error) {
+func newHarness(namespace string, controllerName string, resource *testresource.Resource) (*drainerconfig.Wrapper, error) {
 	resources := []controller.Resource{
 		controller.Resource(resource),
 	}
 
-	c := nodeconfig.Config{
+	c := drainerconfig.Config{
 		Resources: resources,
 
 		Name:      controllerName,
 		Namespace: namespace,
 	}
 
-	harness, err := nodeconfig.New(c)
+	harness, err := drainerconfig.New(c)
 	if err != nil {
 		return nil, err
 	}
