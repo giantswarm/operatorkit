@@ -117,7 +117,7 @@ func New(config Config) (*rest.Config, error) {
 		return nil, microerror.Maskf(invalidConfigError, "cannot use %T.Address and %T.KubeConfig", config)
 	}
 	if config.InCluster && config.KubeConfig != "" {
-		return nil, microerror.Maskf(invalidConfigError, "cannot use %T.InCluster and %T.KubeConfig", config)
+		return nil, microerror.Maskf(invalidConfigError, "cannot use %T.InCluster and %T.KubeConfig", config, config)
 	}
 
 	if config.Address != "" {
