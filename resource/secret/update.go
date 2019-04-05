@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/giantswarm/microerror"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 func (r *Resource) ApplyUpdateChange(ctx context.Context, obj, updateChange interface{}) error {
@@ -52,7 +52,7 @@ func (r *Resource) newUpdateChange(ctx context.Context, obj, currentState, desir
 			}
 		}
 
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("computed %d Secrets to update", secretsToUpdate))
+		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("computed %d Secrets to update", len(secretsToUpdate)))
 	}
 
 	return secretsToUpdate, nil
