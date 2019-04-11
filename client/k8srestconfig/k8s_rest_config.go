@@ -111,19 +111,19 @@ func New(config Config) (*rest.Config, error) {
 
 	// Settings.
 	if config.Address == "" && !config.InCluster && config.KubeConfig == "" {
-		return nil, microerror.Maskf(invalidConfigError, "%T.Address must not be empty when not using %T.InCluster or %T.KubeConfig", config)
+		return nil, microerror.Maskf(invalidConfigError, "%T.Address must not be empty when not using %T.InCluster or %T.KubeConfig", config, config, config)
 	}
 	if config.Address != "" && config.KubeConfig != "" {
-		return nil, microerror.Maskf(invalidConfigError, "cannot use %T.Address and %T.KubeConfig", config)
+		return nil, microerror.Maskf(invalidConfigError, "cannot use %T.Address and %T.KubeConfig", config, config)
 	}
 	if config.InCluster && config.KubeConfig != "" {
-		return nil, microerror.Maskf(invalidConfigError, "cannot use %T.InCluster and %T.KubeConfig", config)
+		return nil, microerror.Maskf(invalidConfigError, "cannot use %T.InCluster and %T.KubeConfig", config, config)
 	}
 
 	if config.Address != "" {
 		_, err := url.Parse(config.Address)
 		if err != nil {
-			return nil, microerror.Maskf(invalidConfigError, "%T.Address=%s must be a valid URL: %s", config, config.Address, err)
+			return nil, microerror.Maskf(invalidConfigError, "%T.Address=%#q must be a valid URL: %s", config, config.Address, err)
 		}
 	}
 	if config.Timeout.Seconds() == 0 {
