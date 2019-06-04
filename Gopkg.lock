@@ -68,7 +68,7 @@
   name = "github.com/giantswarm/exporterkit"
   packages = ["collector"]
   pruneopts = "UT"
-  revision = "1d58394415d4f9fdd2bec8a9ec8d085131afd1c8"
+  revision = "664e1317b3687f3a76ccc0df98a8dc784e60d376"
 
 [[projects]]
   branch = "master"
@@ -278,15 +278,15 @@
   version = "v2.0.1"
 
 [[projects]]
-  branch = "master"
-  digest = "1:fbe2da976970d237a1db5ed65fabfa3f820cc4bafec9132d9605cdb90509b6af"
+  digest = "1:f501bfa808e6af3af1bc7091f742e3a3289fba99ab9c29d194975b6d407a990c"
   name = "github.com/prometheus/client_golang"
   packages = [
     "prometheus",
     "prometheus/internal",
   ]
   pruneopts = "UT"
-  revision = "fa4aa9000d2863904891d193dea354d23f3d712a"
+  revision = "50c4339db732beb2165735d2cde0bff78eb3c5a5"
+  version = "v0.9.3"
 
 [[projects]]
   branch = "master"
