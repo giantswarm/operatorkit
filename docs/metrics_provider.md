@@ -1,8 +1,8 @@
 # Metrics provider
 
 The idea about metrics provider is to have a metrics driven approach of
-verifying the operators functionality. An operator reconciles a system were
-several resources exist. As a means of measurement and safety net it is a good
+verifying the operators functionality. An operator reconciles a system where
+several resources exist. As a means of measurement and as a safety net, it is a good
 practise to implement metrics providers that emit metrics about the managed
 system and its resources.
 
