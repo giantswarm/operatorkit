@@ -44,6 +44,7 @@ func NewAppCatalogCRD() *apiextensionsv1beta1.CustomResourceDefinition {
 }
 
 // +genclient
+// +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // AppCatalog CRs might look something like the following.

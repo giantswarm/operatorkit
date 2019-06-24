@@ -21,7 +21,6 @@ package v1alpha1
 import (
 	v1alpha1 "github.com/giantswarm/apiextensions/pkg/apis/release/v1alpha1"
 	"github.com/giantswarm/apiextensions/pkg/clientset/versioned/scheme"
-	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	rest "k8s.io/client-go/rest"
 )
 
@@ -36,12 +35,12 @@ type ReleaseV1alpha1Client struct {
 	restClient rest.Interface
 }
 
-func (c *ReleaseV1alpha1Client) Releases(namespace string) ReleaseInterface {
-	return newReleases(c, namespace)
+func (c *ReleaseV1alpha1Client) Releases() ReleaseInterface {
+	return newReleases(c)
 }
 
-func (c *ReleaseV1alpha1Client) ReleaseCycles(namespace string) ReleaseCycleInterface {
-	return newReleaseCycles(c, namespace)
+func (c *ReleaseV1alpha1Client) ReleaseCycles() ReleaseCycleInterface {
+	return newReleaseCycles(c)
 }
 
 // NewForConfig creates a new ReleaseV1alpha1Client for the given config.
@@ -76,7 +75,7 @@ func setConfigDefaults(config *rest.Config) error {
 	gv := v1alpha1.SchemeGroupVersion
 	config.GroupVersion = &gv
 	config.APIPath = "/apis"
-	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: scheme.Codecs}
+	config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
 
 	if config.UserAgent == "" {
 		config.UserAgent = rest.DefaultKubernetesUserAgent()

@@ -103,9 +103,6 @@ type ChartSpec struct {
 	// Name is the name of the Helm chart to be deployed.
 	// e.g. kubernetes-prometheus
 	Name string `json:"name" yaml:"name"`
-	// KubeConfig is the kubeconfig to connect to the cluster when deploying
-	// the app.
-	KubeConfig ChartSpecKubeConfig `json:"kubeConfig" yaml:"kubeConfig"`
 	// Namespace is the namespace where the chart should be deployed.
 	// e.g. monitoring
 	Namespace string `json:"namespace" yaml:"namespace"`
@@ -147,20 +144,6 @@ type ChartSpecConfigSecret struct {
 	ResourceVersion string `json:"resourceVersion" yaml:"resourceVersion"`
 }
 
-type ChartSpecKubeConfig struct {
-	// Secret references a secret containing the kubconfig.
-	Secret ChartSpecKubeConfigSecret `json:"secret" yaml:"secret"`
-}
-
-type ChartSpecKubeConfigSecret struct {
-	// Name is the name of the secret containing the kubeconfig,
-	// e.g. chart-operator-kubeconfig.
-	Name string `json:"name" yaml:"name"`
-	// Namespace is the namespace of the secret containing the kubeconfig,
-	// e.g. giantswarm.
-	Namespace string `json:"namespace" yaml:"namespace"`
-}
-
 type ChartStatus struct {
 	// AppVersion is the value of the AppVersion field in the Chart.yaml of the
 	// deployed chart. This is an optional field with the version of the
@@ -168,6 +151,9 @@ type ChartStatus struct {
 	// e.g. 0.21.0.
 	// https://docs.helm.sh/developing_charts/#the-chart-yaml-file
 	AppVersion string `json:"appVersion" yaml:"appVersion"`
+	// Reason is the description of the last status of helm release when the chart is
+	// not installed successfully, e.g. deploy resource already exists.
+	Reason string `json:"reason,omitempty" yaml:"reason,omitempty"`
 	// Release is the status of the Helm release for the deployed chart.
 	Release ChartStatusRelease `json:"release" yaml:"release"`
 	// Version is the value of the Version field in the Chart.yaml of the
