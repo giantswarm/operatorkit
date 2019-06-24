@@ -30,7 +30,7 @@
   name = "github.com/giantswarm/backoff"
 
 [[constraint]]
-  branch = "master"
+  branch = "k8s-1.15"
   name = "github.com/giantswarm/e2e-harness"
 
 [[constraint]]
