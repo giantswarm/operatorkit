@@ -1,4 +1,4 @@
-package secret
+package configmapresource
 
 import "github.com/giantswarm/microerror"
 

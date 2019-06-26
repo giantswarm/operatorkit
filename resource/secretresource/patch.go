@@ -1,4 +1,4 @@
-package configmap
+package secretresource
 
 import (
 	"context"

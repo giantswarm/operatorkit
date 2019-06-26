@@ -1,16 +1,16 @@
-package configmap
+package secretresource
 
 import (
 	"reflect"
 
-	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
-// newConfigMapToUpdate creates a new instance of ConfigMap ready to be used as an
+// newSecretToUpdate creates a new instance of Secret ready to be used as an
 // argument to Update method of generated client. It returns nil if the name or
 // namespace doesn't match or if objects don't have differences in scope of
 // interest.
-func newConfigMapToUpdate(current, desired *corev1.ConfigMap) *corev1.ConfigMap {
+func newSecretToUpdate(current, desired *v1.Secret) *v1.Secret {
 	if current.Namespace != desired.Namespace {
 		return nil
 	}
@@ -23,8 +23,8 @@ func newConfigMapToUpdate(current, desired *corev1.ConfigMap) *corev1.ConfigMap 
 	merged.Annotations = desired.Annotations
 	merged.Labels = desired.Labels
 
-	merged.BinaryData = desired.BinaryData
 	merged.Data = desired.Data
+	merged.StringData = desired.StringData
 
 	if reflect.DeepEqual(current, merged) {
 		return nil

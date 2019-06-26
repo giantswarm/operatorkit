@@ -1,9 +1,9 @@
-package secret
+package configmapresource
 
 import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-	"k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -53,9 +53,9 @@ func (r *Resource) Name() string {
 	return r.name
 }
 
-func containsSecret(cr *v1.Secret, crs []*v1.Secret) bool {
-	for _, a := range crs {
-		if cr.Name == a.Name && cr.Namespace == a.Namespace {
+func containsConfigMap(configMaps []*corev1.ConfigMap, configMap *corev1.ConfigMap) bool {
+	for _, a := range configMaps {
+		if configMap.Name == a.Name && configMap.Namespace == a.Namespace {
 			return true
 		}
 	}
@@ -63,8 +63,8 @@ func containsSecret(cr *v1.Secret, crs []*v1.Secret) bool {
 	return false
 }
 
-func toSecrets(v interface{}) ([]*v1.Secret, error) {
-	x, ok := v.([]*v1.Secret)
+func toConfigMaps(v interface{}) ([]*corev1.ConfigMap, error) {
+	x, ok := v.([]*corev1.ConfigMap)
 	if !ok {
 		return nil, microerror.Maskf(wrongTypeError, "expected '%T', got '%T'", x, v)
 	}
