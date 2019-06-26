@@ -8,7 +8,7 @@ package metricsresource
 //	"testing"
 //
 //	"github.com/giantswarm/operatorkit/controller"
-//	"github.com/giantswarm/operatorkit/controller/resource/internal"
+//	"github.com/giantswarm/operatorkit/resource/internal"
 //)
 //
 //func Test_Wrapper(t *testing.T) {

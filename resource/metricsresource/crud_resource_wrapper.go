@@ -6,7 +6,7 @@ import (
 	"github.com/giantswarm/microerror"
 
 	"github.com/giantswarm/operatorkit/controller"
-	"github.com/giantswarm/operatorkit/controller/resource/internal"
+	"github.com/giantswarm/operatorkit/resource/internal"
 )
 
 // crudResourceWrapper is a specialized wrapper which wraps
