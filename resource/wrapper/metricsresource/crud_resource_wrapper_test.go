@@ -3,7 +3,7 @@ package metricsresource
 import (
 	"testing"
 
-	"github.com/giantswarm/operatorkit/resource/internal"
+	"github.com/giantswarm/operatorkit/resource/wrapper/internal"
 )
 
 func Test_crudResourceWrapper_Wrapper(t *testing.T) {
