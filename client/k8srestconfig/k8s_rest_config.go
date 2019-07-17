@@ -70,7 +70,7 @@ const (
 	MaxQPS = 100
 	// Maximum burst for throttle.
 	MaxBurst       = 100
-	DefaultTimeout = 30 * time.Second
+	DefaultTimeout = 10 * time.Second
 )
 
 // ConfigTLS contains settings to enable transport layer security.
