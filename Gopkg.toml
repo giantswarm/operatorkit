@@ -50,8 +50,8 @@
   version = "=2.1.0"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/prometheus/client_golang"
+  version = "0.9.3"
 
 [[constraint]]
   name = "k8s.io/api"
