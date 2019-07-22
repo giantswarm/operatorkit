@@ -75,6 +75,9 @@ operators][operators].
 - https://github.com/giantswarm/release-operator
 - more to come
 
+## Example
+An example `memcached-operator` is provided in the repository https://gtihub.com/giantswarm/memcached-operator. We try to keep this operator up-to-date and for it to be used as the 'state of the art' example.
+
 ## Contact
 
 - Mailing list: [giantswarm](https://groups.google.com/forum/!forum/giantswarm)
