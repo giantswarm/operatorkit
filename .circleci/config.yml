@@ -39,7 +39,12 @@ jobs:
             ./architect deploy
           fi
 
+  example-test:
+    steps:
+      - checkout
 
+      - run:
+          go test -v ./example/memcached-operator/...
 
   e2eTestControllerBasic:
     environment:
@@ -129,3 +134,6 @@ workflows:
       - e2eTestInformerDeletionError:
           requires:
           - build
+  example:
+    jobs:
+      - example-test
