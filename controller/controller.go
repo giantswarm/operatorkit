@@ -240,12 +240,15 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Event, updateChan chan watch.Event, errChan chan error) error {
 	loop := -1
 
+	// Memorise the original context to avoid growing the context forever.
+	oldCtx := ctx
+
 	for {
 		loop++
 
 		// Set loop specific logger context.
 		{
-			ctx = setLoggerCtxValue(ctx, loggerKeyLoop, strconv.Itoa(loop))
+			ctx = setLoggerCtxValue(oldCtx, loggerKeyLoop, strconv.Itoa(loop))
 		}
 
 		select {
