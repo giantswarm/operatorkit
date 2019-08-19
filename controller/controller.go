@@ -542,8 +542,10 @@ func setLoggerCtxValue(ctx context.Context, key, value string) context.Context {
 	m, ok := loggermeta.FromContext(ctx)
 	if !ok {
 		m = loggermeta.New()
+		ctx = loggermeta.NewContext(ctx, m)
 	}
+
 	m.KeyVals[key] = value
 
-	return loggermeta.NewContext(ctx, m)
+	return ctx
 }
