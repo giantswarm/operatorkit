@@ -33,7 +33,16 @@ func (r *Resource) ApplyDeleteChange(ctx context.Context, obj, deleteChange inte
 	return nil
 }
 
-func (r *Resource) newDeleteChange(ctx context.Context, obj, currentState, desiredState interface{}) ([]*corev1.ConfigMap, error) {
+func (r *Resource) newDeleteChangeForDeletePatch(ctx context.Context, obj, currentState, desiredState interface{}) ([]*corev1.ConfigMap, error) {
+	currentConfigMaps, err := toConfigMaps(currentState)
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
+	return currentConfigMaps, nil
+}
+
+func (r *Resource) newDeleteChangeForUpdatePatch(ctx context.Context, obj, currentState, desiredState interface{}) ([]*corev1.ConfigMap, error) {
 	currentConfigMaps, err := toConfigMaps(currentState)
 	if err != nil {
 		return nil, microerror.Mask(err)
