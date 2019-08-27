@@ -33,7 +33,6 @@ func (r *Resource) newUpdateChange(ctx context.Context, obj, currentState, desir
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
-
 	desiredSecrets, err := toSecrets(desiredState)
 	if err != nil {
 		return nil, microerror.Mask(err)

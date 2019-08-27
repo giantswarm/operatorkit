@@ -27,7 +27,6 @@ func (r *Resource) ApplyDeleteChange(ctx context.Context, obj, deleteChange inte
 		} else {
 			r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("deleted Secret %#q in namespace %#q", secret.Name, secret.Namespace))
 		}
-
 	}
 
 	return nil
