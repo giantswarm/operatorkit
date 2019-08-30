@@ -15,6 +15,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/rest"
 
@@ -396,7 +397,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 	}
 
 	go func() {
-		resetWait := c.informer.ResyncPeriod() * 3
+		resetWait := c.informer.ResyncPeriod() * 4
 
 		for {
 			select {
@@ -407,6 +408,23 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 			}
 		}
 	}()
+
+	// We overwrite the k8s error handlers so they do not intercept our log
+	// streams. The format is way easier to parse for us that way. Here we also
+	// emit metrics for the occured errors to ensure we create more awareness of
+	// anything going wrong in our operators. Errors we catch here may look like
+	// some classics.
+	//
+	//     E0829 12:52:10.569082       1 portforward.go:376] error copying from local connection to remote stream: tls: use of closed connection
+	//
+	{
+		runtime.ErrorHandlers = []func(err error){
+			func(err error) {
+				c.errorCollector <- err
+				c.logger.LogCtx(ctx, "level", "error", "message", "caught third party runtime error", "stack", fmt.Sprintf("%#v", err))
+			},
+		}
+	}
 
 	// Initializing the watch gives us all necessary event channels we need to
 	// further process them within the controller. Once we got the event channels
