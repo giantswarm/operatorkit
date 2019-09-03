@@ -412,14 +412,18 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 	// We overwrite the k8s error handlers so they do not intercept our log
 	// streams. The format is way easier to parse for us that way. Here we also
 	// emit metrics for the occured errors to ensure we create more awareness of
-	// anything going wrong in our operators. Errors we catch here may look like
-	// some classics.
-	//
-	//     E0829 12:52:10.569082       1 portforward.go:376] error copying from local connection to remote stream: tls: use of closed connection
-	//
+	// anything going wrong in our operators.
 	{
 		runtime.ErrorHandlers = []func(err error){
 			func(err error) {
+				// When we see a port forwarding error we ignore it because we cannot do
+				// anything about it. Errors like we check here would have to be dealt
+				// with in the third party tools we use. The port forwarding in general
+				// is broken by design which will go away with Helm 3, soon TM.
+				if IsPortforward(err) {
+					return
+				}
+
 				c.errorCollector <- err
 				c.logger.LogCtx(ctx, "level", "error", "message", "caught third party runtime error", "stack", fmt.Sprintf("%#v", err))
 			},

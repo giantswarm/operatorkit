@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"strings"
+
 	"github.com/giantswarm/microerror"
 	"k8s.io/apimachinery/pkg/api/errors"
 )
@@ -39,6 +41,29 @@ var noResourceSetError = &microerror.Error{
 // IsNoResourceSet asserts noResourceSetError.
 func IsNoResourceSet(err error) bool {
 	return microerror.Cause(err) == noResourceSetError
+}
+
+var portForwardError = &microerror.Error{
+	Kind: "portForwardError",
+}
+
+// IsPortforward asserts portForwardError.
+func IsPortforward(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	c := microerror.Cause(err)
+
+	if c == portForwardError {
+		return true
+	}
+
+	if strings.Contains(c.Error(), "error copying from local connection to remote stream") {
+		return true
+	}
+
+	return false
 }
 
 var statusForbiddenError = &microerror.Error{
