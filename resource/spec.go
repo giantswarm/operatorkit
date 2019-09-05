@@ -7,7 +7,7 @@ import "context"
 // In that case they are guaranteed to be executed in order one after another.
 type Interface interface {
 	// EnsureCreated is called when the observed runtime object is created or
-	// updated. After the execution of EnsureCreated, systems being managed have
+	// updated. After the successful execution of EnsureCreated, systems being managed have
 	// created or updated system resources. This method must be idempotent.
 	EnsureCreated(ctx context.Context, obj interface{}) error
 	// EnsureDeleted is called when the observed runtime object is requested to be
