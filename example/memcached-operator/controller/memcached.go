@@ -9,9 +9,10 @@ import (
 
 	"github.com/giantswarm/operatorkit/client/k8scrdclient"
 	"github.com/giantswarm/operatorkit/controller"
-	"github.com/giantswarm/operatorkit/example/memcached-operator/controller/resource"
+	controllerresource "github.com/giantswarm/operatorkit/example/memcached-operator/controller/resource"
 	"github.com/giantswarm/operatorkit/example/memcached-operator/logger"
 	"github.com/giantswarm/operatorkit/informer"
+	"github.com/giantswarm/operatorkit/resource"
 )
 
 const name = "memcached-operator"
@@ -38,29 +39,29 @@ func NewMemcached(config Config) (*Memcached, error) {
 		watcher    = config.G8sClient.ExampleV1alpha1().MemcachedConfigs("")
 	)
 
-	var deploymentsResource controller.Resource
+	var deploymentsResource resource.Interface
 	{
-		c := resource.DeploymentsConfig{
+		c := controllerresource.DeploymentsConfig{
 			K8sClient: config.K8sClient,
 		}
 
-		deploymentsResource, err = resource.NewDeployments(c)
+		deploymentsResource, err = controllerresource.NewDeployments(c)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
 	}
 
-	var servicesResource controller.Resource
+	var servicesResource resource.Interface
 	{
-		c := resource.ServicesConfig{}
+		c := controllerresource.ServicesConfig{}
 
-		servicesResource, err = resource.NewServices(c)
+		servicesResource, err = controllerresource.NewServices(c)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
 	}
 
-	resources := []controller.Resource{
+	resources := []resource.Interface{
 		deploymentsResource,
 		servicesResource,
 	}
@@ -83,7 +84,6 @@ func NewMemcached(config Config) (*Memcached, error) {
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
-
 	}
 
 	// resourceSets is used in more complex operators that support multiple

@@ -5,11 +5,12 @@ import (
 
 	"github.com/giantswarm/operatorkit/controller"
 	"github.com/giantswarm/operatorkit/example/memcached-operator/logger"
+	"github.com/giantswarm/operatorkit/resource"
 )
 
 // newSimpleResourceSets creates a list if resource sets which handles all
 // reconciled objects. In this case with only a single resource set.
-func newSimpleResourceSets(resources []controller.Resource) ([]*controller.ResourceSet, error) {
+func newSimpleResourceSets(resources []resource.Interface) ([]*controller.ResourceSet, error) {
 	var err error
 
 	var set *controller.ResourceSet
