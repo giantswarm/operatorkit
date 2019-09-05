@@ -1,6 +1,4 @@
-// NOTE the CRUD resource has moved to operatorkit/resource/crud. The code below
-// is DEPRECATED and only kept for backward compatibility.
-package controller
+package crud
 
 type patchType string
 
@@ -10,12 +8,12 @@ const (
 	patchUpdate patchType = "update"
 )
 
-// Patch is a set of information required in order to reconcile to the desired
-// state. Patch is split into three parts: create, delete and update changes.
-// The parts are passed as arguments to Resource's ApplyCreateChange,
-// ApplyDeleteChange and ApplyUpdateChange functions respectively. Patch
-// changes are guaranteed to be applied in that order (i.e. create, update,
-// delete).
+// Patch is a set of information required in order to reconcile the current
+// state towards the desired state. Patch is split into three parts: create,
+// delete and update changes. The parts are passed as arguments to the CRUD
+// Resource's ApplyCreateChange, ApplyDeleteChange and ApplyUpdateChange
+// functions respectively. Patch changes are guaranteed to be applied in that
+// order (i.e. create, update, delete).
 type Patch struct {
 	data map[patchType]interface{}
 }

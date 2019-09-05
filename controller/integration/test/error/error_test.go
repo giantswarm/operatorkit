@@ -13,9 +13,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/giantswarm/operatorkit/controller"
 	"github.com/giantswarm/operatorkit/controller/integration/testresource"
 	"github.com/giantswarm/operatorkit/controller/integration/wrapper/drainerconfig"
+	"github.com/giantswarm/operatorkit/resource"
 )
 
 const (
@@ -65,7 +65,7 @@ func Test_Controller_Integration_Error(t *testing.T) {
 		}
 	}
 
-	resources := []controller.Resource{
+	resources := []resource.Interface{
 		rA,
 		rB,
 	}
