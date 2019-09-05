@@ -2,21 +2,20 @@ package metricsresource
 
 import (
 	"github.com/giantswarm/microerror"
-
-	"github.com/giantswarm/operatorkit/controller"
+	"github.com/giantswarm/operatorkit/resource"
 )
 
 type Config struct {
-	Resource controller.Resource
+	Resource resource.Interface
 }
 
-func New(config Config) (controller.Resource, error) {
+func New(config Config) (resource.Interface, error) {
 	if config.Resource == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Resource must not be empty", config)
 	}
 
 	var err error
-	var r controller.Resource
+	var r resource.Interface
 
 	// CRUD resource special case.
 	r, err = newCRUDResourceWrapper(config)

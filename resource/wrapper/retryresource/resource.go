@@ -6,18 +6,17 @@ import (
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-
-	"github.com/giantswarm/operatorkit/controller"
+	"github.com/giantswarm/operatorkit/resource"
 )
 
 type Config struct {
 	Logger   micrologger.Logger
-	Resource controller.Resource
+	Resource resource.Interface
 
 	BackOff backoff.Interface
 }
 
-func New(config Config) (controller.Resource, error) {
+func New(config Config) (resource.Interface, error) {
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Logger must not be empty", config)
 	}
@@ -30,7 +29,7 @@ func New(config Config) (controller.Resource, error) {
 	}
 
 	var err error
-	var r controller.Resource
+	var r resource.Interface
 
 	// CRUD resource special case.
 	r, err = newCRUDResourceWrapper(config)

@@ -2,15 +2,14 @@ package internal
 
 import (
 	"github.com/giantswarm/microerror"
-
-	"github.com/giantswarm/operatorkit/controller"
+	"github.com/giantswarm/operatorkit/resource"
 )
 
 type Wrapper interface {
-	Wrapped() controller.Resource
+	Wrapped() resource.Interface
 }
 
-func Underlying(r controller.Resource) (controller.Resource, error) {
+func Underlying(r resource.Interface) (resource.Interface, error) {
 	i := 0
 
 	for {

@@ -4,13 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/giantswarm/operatorkit/controller"
+	"github.com/giantswarm/operatorkit/resource"
 )
 
 // Test_Underlying_Wrapped tests resource unwrapping by Underlying.
 func Test_Underlying_Wrapped(t *testing.T) {
 	testCases := []struct {
-		Resource controller.Resource
+		Resource resource.Interface
 	}{
 		// Test 0.
 		{
@@ -85,11 +85,11 @@ func Test_Underlying_NonWrapped(t *testing.T) {
 // an infinite loop.
 func Test_Underlying_Loop(t *testing.T) {
 	testCases := []struct {
-		ResourceFunc func() controller.Resource
+		ResourceFunc func() resource.Interface
 	}{
 		// Test 0. r1 -> r1.
 		{
-			ResourceFunc: func() controller.Resource {
+			ResourceFunc: func() resource.Interface {
 				r1 := &testWrappingResource{}
 
 				r1.resource = r1
@@ -99,7 +99,7 @@ func Test_Underlying_Loop(t *testing.T) {
 		},
 		// Test 1. r1 -> r2 -> r3 -> r1.
 		{
-			ResourceFunc: func() controller.Resource {
+			ResourceFunc: func() resource.Interface {
 				r1 := &testWrappingResource{}
 				r2 := &testWrappingResource{}
 				r3 := &testWrappingResource{}
@@ -113,7 +113,7 @@ func Test_Underlying_Loop(t *testing.T) {
 		},
 		// Test 1. r1 -> r2 -> r3 -> r4 -> r2.
 		{
-			ResourceFunc: func() controller.Resource {
+			ResourceFunc: func() resource.Interface {
 				r1 := &testWrappingResource{}
 				r2 := &testWrappingResource{}
 				r3 := &testWrappingResource{}
@@ -153,10 +153,10 @@ func (r *testNoopResource) EnsureDeleted(ctx context.Context, obj interface{}) e
 }
 
 type testWrappingResource struct {
-	resource controller.Resource
+	resource resource.Interface
 }
 
-func (r *testWrappingResource) Wrapped() controller.Resource {
+func (r *testWrappingResource) Wrapped() resource.Interface {
 	return r.resource
 }
 
