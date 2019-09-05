@@ -2,8 +2,7 @@ package metricsresource
 
 import (
 	"github.com/giantswarm/microerror"
-
-	"github.com/giantswarm/operatorkit/controller"
+	"github.com/giantswarm/operatorkit/resource"
 )
 
 type WrapConfig struct {
@@ -11,8 +10,8 @@ type WrapConfig struct {
 
 // Wrap wraps each given resource with a metrics resource and returns the list
 // of wrapped resources.
-func Wrap(resources []controller.Resource, config WrapConfig) ([]controller.Resource, error) {
-	var wrapped []controller.Resource
+func Wrap(resources []resource.Interface, config WrapConfig) ([]resource.Interface, error) {
+	var wrapped []resource.Interface
 
 	for _, r := range resources {
 		c := Config{

@@ -9,6 +9,7 @@ import (
 	"github.com/giantswarm/micrologger"
 
 	"github.com/giantswarm/operatorkit/controller"
+	"github.com/giantswarm/operatorkit/resource"
 	"github.com/giantswarm/operatorkit/resource/wrapper/internal"
 )
 
@@ -16,7 +17,7 @@ import (
 // *controller.CRUDResource.
 type crudResourceWrapper struct {
 	logger   micrologger.Logger
-	resource controller.Resource
+	resource resource.Interface
 
 	backOff backoff.Interface
 }
@@ -100,6 +101,6 @@ func (r *crudResourceWrapper) Name() string {
 }
 
 // Wrapped implements internal.Wrapper interface.
-func (r *crudResourceWrapper) Wrapped() controller.Resource {
+func (r *crudResourceWrapper) Wrapped() resource.Interface {
 	return r.resource
 }

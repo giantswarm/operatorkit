@@ -6,13 +6,14 @@ import (
 	"github.com/giantswarm/microerror"
 
 	"github.com/giantswarm/operatorkit/controller"
+	"github.com/giantswarm/operatorkit/resource"
 	"github.com/giantswarm/operatorkit/resource/wrapper/internal"
 )
 
 // crudResourceWrapper is a specialized wrapper which wraps
 // *controller.CRUDResource.
 type crudResourceWrapper struct {
-	resource controller.Resource
+	resource resource.Interface
 }
 
 func newCRUDResourceWrapper(config Config) (*crudResourceWrapper, error) {
@@ -81,6 +82,6 @@ func (r *crudResourceWrapper) Name() string {
 }
 
 // Wrapped implements internal.Wrapper interface.
-func (r *crudResourceWrapper) Wrapped() controller.Resource {
+func (r *crudResourceWrapper) Wrapped() resource.Interface {
 	return r.resource
 }
