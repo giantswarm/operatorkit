@@ -8,6 +8,7 @@ import (
 
 	"github.com/giantswarm/operatorkit/controller/context/finalizerskeptcontext"
 	"github.com/giantswarm/operatorkit/controller/context/updateallowedcontext"
+	"github.com/giantswarm/operatorkit/resource"
 )
 
 type ResourceSetConfig struct {
@@ -26,14 +27,14 @@ type ResourceSetConfig struct {
 	// Resources is the list of controller resources being executed on runtime
 	// object reconciliation if Handles returns true when asked by the
 	// controller. Resources are executed in given order.
-	Resources []Resource
+	Resources []resource.Interface
 }
 
 type ResourceSet struct {
 	handles   func(obj interface{}) bool
 	initCtx   func(ctx context.Context, obj interface{}) (context.Context, error)
 	logger    micrologger.Logger
-	resources []Resource
+	resources []resource.Interface
 }
 
 func NewResourceSet(c ResourceSetConfig) (*ResourceSet, error) {
@@ -79,6 +80,6 @@ func (r *ResourceSet) Handles(obj interface{}) bool {
 	return r.handles(obj)
 }
 
-func (r *ResourceSet) Resources() []Resource {
+func (r *ResourceSet) Resources() []resource.Interface {
 	return r.resources
 }

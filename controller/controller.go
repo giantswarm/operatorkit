@@ -23,6 +23,7 @@ import (
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
 	"github.com/giantswarm/operatorkit/informer"
+	"github.com/giantswarm/operatorkit/resource"
 )
 
 const (
@@ -495,7 +496,7 @@ func (c *Controller) resourceSet(obj interface{}) (*ResourceSet, error) {
 //         DeleteFunc:    deleteFunc,
 //     }
 //
-func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) error {
+func ProcessDelete(ctx context.Context, obj interface{}, resources []resource.Interface) error {
 	if len(resources) == 0 {
 		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}
@@ -536,7 +537,7 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 //         UpdateFunc:    updateFunc,
 //     }
 //
-func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) error {
+func ProcessUpdate(ctx context.Context, obj interface{}, resources []resource.Interface) error {
 	if len(resources) == 0 {
 		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}
