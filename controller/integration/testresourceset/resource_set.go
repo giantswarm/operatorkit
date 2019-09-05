@@ -6,24 +6,24 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/giantswarm/operatorkit/controller"
-
 	"github.com/giantswarm/operatorkit/controller/integration/testresource"
+	"github.com/giantswarm/operatorkit/resource"
 )
 
 type Config struct {
 	K8sClient kubernetes.Interface
 	Logger    micrologger.Logger
-	Resources []controller.Resource
+	Resources []resource.Interface
 
 	ProjectName string
 }
 
 func New(config Config) (*controller.ResourceSet, error) {
 	var err error
-	var resources []controller.Resource
+	var resources []resource.Interface
 
 	if len(config.Resources) == 0 {
-		var tr controller.Resource
+		var tr resource.Interface
 		{
 			c := testresource.Config{}
 
@@ -33,7 +33,7 @@ func New(config Config) (*controller.ResourceSet, error) {
 			}
 		}
 
-		resources = []controller.Resource{
+		resources = []resource.Interface{
 			tr,
 		}
 	} else {

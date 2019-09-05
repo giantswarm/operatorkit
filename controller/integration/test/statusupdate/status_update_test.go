@@ -14,6 +14,7 @@ import (
 
 	"github.com/giantswarm/operatorkit/controller"
 	"github.com/giantswarm/operatorkit/controller/integration/wrapper/drainerconfig"
+	"github.com/giantswarm/operatorkit/resource"
 )
 
 const (
@@ -50,7 +51,7 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 	var drainerConfigWrapper *drainerconfig.Wrapper
 	{
 		c := drainerconfig.Config{
-			Resources: []controller.Resource{
+			Resources: []resource.Interface{
 				r,
 			},
 

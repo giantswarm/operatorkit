@@ -3,12 +3,14 @@ package controller
 import (
 	"context"
 	"testing"
+
+	"github.com/giantswarm/operatorkit/resource"
 )
 
 func Test_Controller_Resource_PatchNoPanic(t *testing.T) {
 	testCases := []struct {
-		ProcessMethod func(ctx context.Context, obj interface{}, rs []Resource) error
-		Resources     []Resource
+		ProcessMethod func(ctx context.Context, obj interface{}, rs []resource.Interface) error
+		Resources     []resource.Interface
 		ErrorMatcher  func(err error) bool
 	}{
 		// Test 0 ensures ProcessDelete returns an error in case no resources are
@@ -23,7 +25,7 @@ func Test_Controller_Resource_PatchNoPanic(t *testing.T) {
 		// resource.
 		{
 			ProcessMethod: ProcessDelete,
-			Resources: []Resource{
+			Resources: []resource.Interface{
 				&testResourcePatchNoPanic{},
 			},
 			ErrorMatcher: nil,
@@ -32,7 +34,7 @@ func Test_Controller_Resource_PatchNoPanic(t *testing.T) {
 		// Test 2 ensures ProcessDelete does not panic when executing two resources.
 		{
 			ProcessMethod: ProcessDelete,
-			Resources: []Resource{
+			Resources: []resource.Interface{
 				&testResourcePatchNoPanic{},
 				&testResourcePatchNoPanic{},
 			},
@@ -51,7 +53,7 @@ func Test_Controller_Resource_PatchNoPanic(t *testing.T) {
 		// resource.
 		{
 			ProcessMethod: ProcessUpdate,
-			Resources: []Resource{
+			Resources: []resource.Interface{
 				&testResourcePatchNoPanic{},
 			},
 			ErrorMatcher: nil,
@@ -60,7 +62,7 @@ func Test_Controller_Resource_PatchNoPanic(t *testing.T) {
 		// Test 5 ensures ProcessUpdate does not panic when executing two resources.
 		{
 			ProcessMethod: ProcessUpdate,
-			Resources: []Resource{
+			Resources: []resource.Interface{
 				&testResourcePatchNoPanic{},
 				&testResourcePatchNoPanic{},
 			},
