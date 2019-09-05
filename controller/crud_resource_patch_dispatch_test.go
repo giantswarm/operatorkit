@@ -1,3 +1,5 @@
+// NOTE the CRUD resource has moved to operatorkit/resource/crud. The code below
+// is DEPRECATED and only kept for backward compatibility.
 package controller
 
 import (
