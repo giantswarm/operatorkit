@@ -10,19 +10,18 @@ import (
 	"github.com/giantswarm/micrologger"
 
 	"github.com/giantswarm/operatorkit/resource"
-	"github.com/giantswarm/operatorkit/resource/wrapper/internal"
 )
 
 type resourceWrapper struct {
+	backOff  backoff.Interface
 	logger   micrologger.Logger
 	resource resource.Interface
-
-	backOff backoff.Interface
-
-	name string
 }
 
 func newResourceWrapper(config Config) (*resourceWrapper, error) {
+	if config.BackOff == nil {
+		return nil, microerror.Maskf(invalidConfigError, "%T.BackOff must not be empty", config)
+	}
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Logger must not be empty", config)
 	}
@@ -30,29 +29,10 @@ func newResourceWrapper(config Config) (*resourceWrapper, error) {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Resource must not be empty", config)
 	}
 
-	if config.BackOff == nil {
-		config.BackOff = backoff.NewExponential(2*time.Minute, 10*time.Second)
-	}
-
-	var name string
-	{
-		u, err := internal.Underlying(config.Resource)
-		if err != nil {
-			return nil, microerror.Mask(err)
-		}
-
-		name = u.Name()
-	}
-
 	r := &resourceWrapper{
-		logger: config.Logger.With(
-			"underlyingResource", name,
-		),
+		backOff:  config.BackOff,
+		logger:   config.Logger,
 		resource: config.Resource,
-
-		backOff: config.BackOff,
-
-		name: name,
 	}
 
 	return r, nil
@@ -107,7 +87,7 @@ func (r *resourceWrapper) EnsureDeleted(ctx context.Context, obj interface{}) er
 }
 
 func (r *resourceWrapper) Name() string {
-	return r.name
+	return r.resource.Name()
 }
 
 // Wrapped implements internal.Wrapper interface.
