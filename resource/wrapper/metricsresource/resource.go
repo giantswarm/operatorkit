@@ -2,6 +2,7 @@ package metricsresource
 
 import (
 	"github.com/giantswarm/microerror"
+
 	"github.com/giantswarm/operatorkit/resource"
 )
 

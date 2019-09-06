@@ -2,6 +2,7 @@ package internal
 
 import (
 	"github.com/giantswarm/microerror"
+
 	"github.com/giantswarm/operatorkit/resource"
 )
 

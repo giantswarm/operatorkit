@@ -6,6 +6,7 @@ import (
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
+
 	"github.com/giantswarm/operatorkit/resource"
 )
 
