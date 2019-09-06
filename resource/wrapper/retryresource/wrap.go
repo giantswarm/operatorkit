@@ -12,9 +12,8 @@ import (
 
 // WrapConfig is the configuration used to wrap resources with retry resources.
 type WrapConfig struct {
-	Logger micrologger.Logger
-
 	BackOffFactory func() backoff.Interface
+	Logger         micrologger.Logger
 }
 
 // Wrap wraps each given resource with a retry resource and returns the list of
@@ -32,10 +31,9 @@ func Wrap(resources []resource.Interface, config WrapConfig) ([]resource.Interfa
 
 	for _, r := range resources {
 		c := Config{
+			BackOff:  config.BackOffFactory(),
 			Logger:   config.Logger,
 			Resource: r,
-
-			BackOff: config.BackOffFactory(),
 		}
 
 		retryResource, err := New(c)

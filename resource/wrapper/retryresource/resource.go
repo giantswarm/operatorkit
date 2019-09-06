@@ -1,8 +1,6 @@
 package retryresource
 
 import (
-	"time"
-
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
@@ -11,22 +9,20 @@ import (
 )
 
 type Config struct {
+	BackOff  backoff.Interface
 	Logger   micrologger.Logger
 	Resource resource.Interface
-
-	BackOff backoff.Interface
 }
 
 func New(config Config) (resource.Interface, error) {
+	if config.BackOff == nil {
+		return nil, microerror.Maskf(invalidConfigError, "%T.BackOff must not be empty", config)
+	}
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Logger must not be empty", config)
 	}
 	if config.Resource == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Resource must not be empty", config)
-	}
-
-	if config.BackOff == nil {
-		config.BackOff = backoff.NewExponential(2*time.Minute, 10*time.Second)
 	}
 
 	var err error
