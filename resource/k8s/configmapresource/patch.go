@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/giantswarm/microerror"
+
 	"github.com/giantswarm/operatorkit/controller"
 )
 

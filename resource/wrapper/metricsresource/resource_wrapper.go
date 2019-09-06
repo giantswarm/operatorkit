@@ -4,8 +4,9 @@ import (
 	"context"
 
 	"github.com/giantswarm/microerror"
-	"github.com/giantswarm/operatorkit/resource"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/giantswarm/operatorkit/resource"
 )
 
 type resourceWrapper struct {
