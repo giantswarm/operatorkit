@@ -12,13 +12,19 @@ import (
 	"github.com/giantswarm/operatorkit/resource"
 )
 
-type resourceWrapper struct {
+type simpleResourceConfig struct {
+	BackOff  backoff.Interface
+	Logger   micrologger.Logger
+	Resource resource.Interface
+}
+
+type simpleResource struct {
 	backOff  backoff.Interface
 	logger   micrologger.Logger
 	resource resource.Interface
 }
 
-func newResourceWrapper(config Config) (*resourceWrapper, error) {
+func newSimpleResource(config simpleResourceConfig) (*simpleResource, error) {
 	if config.BackOff == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.BackOff must not be empty", config)
 	}
@@ -29,7 +35,7 @@ func newResourceWrapper(config Config) (*resourceWrapper, error) {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Resource must not be empty", config)
 	}
 
-	r := &resourceWrapper{
+	r := &simpleResource{
 		backOff:  config.BackOff,
 		logger:   config.Logger,
 		resource: config.Resource,
@@ -38,7 +44,7 @@ func newResourceWrapper(config Config) (*resourceWrapper, error) {
 	return r, nil
 }
 
-func (r *resourceWrapper) EnsureCreated(ctx context.Context, obj interface{}) error {
+func (r *simpleResource) EnsureCreated(ctx context.Context, obj interface{}) error {
 	var err error
 
 	o := func() error {
@@ -62,7 +68,7 @@ func (r *resourceWrapper) EnsureCreated(ctx context.Context, obj interface{}) er
 	return nil
 }
 
-func (r *resourceWrapper) EnsureDeleted(ctx context.Context, obj interface{}) error {
+func (r *simpleResource) EnsureDeleted(ctx context.Context, obj interface{}) error {
 	var err error
 
 	o := func() error {
@@ -86,11 +92,6 @@ func (r *resourceWrapper) EnsureDeleted(ctx context.Context, obj interface{}) er
 	return nil
 }
 
-func (r *resourceWrapper) Name() string {
+func (r *simpleResource) Name() string {
 	return r.resource.Name()
-}
-
-// Wrapped implements internal.Wrapper interface.
-func (r *resourceWrapper) Wrapped() resource.Interface {
-	return r.resource
 }
