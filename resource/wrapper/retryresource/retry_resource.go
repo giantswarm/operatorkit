@@ -76,18 +76,18 @@ func New(config Config) (*Resource, error) {
 		}
 	}
 
-	// Here we check if the configured resource is actually a simple Resource
+	// Here we check if the configured resource is actually a basic Resource
 	// implementation and wrap it accordingly. In this case we have to wrap
 	// EnsureCreated and EnsureDeleted. to execute the retry logic properly.
 	ri, ok := u.(resource.Interface)
 	if ok {
-		c := simpleResourceConfig{
+		c := basicResourceConfig{
 			BackOff:  config.BackOff,
 			Logger:   config.Logger,
 			Resource: ri,
 		}
 
-		wrapped, err = newSimpleResource(c)
+		wrapped, err = newBasicResource(c)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
