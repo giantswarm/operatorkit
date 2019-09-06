@@ -11,9 +11,8 @@ import (
 )
 
 func Test_Resource_CRUD_Interface(t *testing.T) {
-	var r resource.Interface
-	r = &Resource{}
-	_ = fmt.Sprintf("%#v", r)
+	// This won't compile if *Resource doesn't implement resource.Interface.
+	var _ resource.Interface = &Resource{}
 }
 
 func Test_Resource_CRUD_PatchDispatch(t *testing.T) {
