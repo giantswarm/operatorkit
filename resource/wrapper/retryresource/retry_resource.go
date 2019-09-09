@@ -9,7 +9,6 @@ import (
 
 	"github.com/giantswarm/operatorkit/resource"
 	"github.com/giantswarm/operatorkit/resource/crud"
-	"github.com/giantswarm/operatorkit/resource/wrapper/internal"
 )
 
 type Config struct {
@@ -34,20 +33,12 @@ func New(config Config) (*Resource, error) {
 	var err error
 	var wrapped resource.Interface
 
-	var u resource.Interface
-	{
-		u, err = internal.Underlying(config.Resource)
-		if err != nil {
-			return nil, microerror.Mask(err)
-		}
-	}
-
 	// Here we check if the configured resource is actually a CRUD Resource
 	// implementation and wrap it accordingly. In this case we have to wrap
 	// GetCurrentState, GetDesiredState, NewUpdatePatch, NewDeletePatch,
 	// ApplyCreateChange, ApplyDeleteChange and ApplyUpdateChange to execute the
 	// retry logic properly.
-	ci, ok := u.(crud.Interface)
+	ci, ok := config.Resource.(crud.Interface)
 	if ok {
 		var crudResource crud.Interface
 		{
@@ -79,7 +70,7 @@ func New(config Config) (*Resource, error) {
 	// Here we check if the configured resource is actually a basic Resource
 	// implementation and wrap it accordingly. In this case we have to wrap
 	// EnsureCreated and EnsureDeleted. to execute the retry logic properly.
-	ri, ok := u.(resource.Interface)
+	ri, ok := config.Resource.(resource.Interface)
 	if ok {
 		c := basicResourceConfig{
 			BackOff:  config.BackOff,
