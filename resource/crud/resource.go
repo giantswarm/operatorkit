@@ -48,6 +48,15 @@ func NewResource(config ResourceConfig) (*Resource, error) {
 	return r, nil
 }
 
+// CRUD is not part of the resource.Interface and should not be used. It is
+// exposed for wrapping purposes in the wrapper package.
+//
+// NOTE This method should not be used outside operatorkit.
+//
+func (r *Resource) CRUD() Interface {
+	return r.crud
+}
+
 func (r *Resource) EnsureCreated(ctx context.Context, obj interface{}) error {
 	var err error
 
