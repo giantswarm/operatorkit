@@ -11,11 +11,12 @@ import (
 
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
+	"github.com/giantswarm/operatorkit/resource"
 )
 
 func Test_ProcessDelete_CRUD(t *testing.T) {
 	testCases := []struct {
-		Resources     []Resource
+		Resources     []resource.Interface
 		ExpectedOrder []string
 		ErrorMatcher  func(err error) bool
 	}{
@@ -29,7 +30,7 @@ func Test_ProcessDelete_CRUD(t *testing.T) {
 
 		// Test 1 ensures ProcessDelete calls EnsureDeleted method of the resource.
 		{
-			Resources: []Resource{
+			Resources: []resource.Interface{
 				newTestCRUDResource("r0"),
 			},
 			ExpectedOrder: []string{
@@ -46,7 +47,7 @@ func Test_ProcessDelete_CRUD(t *testing.T) {
 		// Test 2 ensures ProcessDelete executes all the resources in
 		// the expected order.
 		{
-			Resources: []Resource{
+			Resources: []resource.Interface{
 				newTestCRUDResource("r0"),
 				newTestCRUDResource("r1"),
 			},
@@ -71,7 +72,7 @@ func Test_ProcessDelete_CRUD(t *testing.T) {
 		// Test 3 ensures ProcessDelete executes resources in the
 		// expected order until the reconciliation gets canceled.
 		{
-			Resources: []Resource{
+			Resources: []resource.Interface{
 				newTestCRUDResource("r0"),
 				newTestCRUDResource("r1"),
 				newTestCRUDResource("r2").CancelReconciliationAt("GetDesiredState"),
@@ -101,7 +102,7 @@ func Test_ProcessDelete_CRUD(t *testing.T) {
 		// Test 4 ensures ProcessDelete executes next resource after
 		// resourcecanceledcontext is cancelled.
 		{
-			Resources: []Resource{
+			Resources: []resource.Interface{
 				newTestCRUDResource("r0").CancelResourceAt("ApplyDeleteChange"),
 				newTestCRUDResource("r1"),
 				newTestCRUDResource("r2").CancelResourceAt("GetDesiredState"),
@@ -166,7 +167,7 @@ func Test_ProcessDelete_CRUD(t *testing.T) {
 
 func Test_ProcessUpdate_CRUD(t *testing.T) {
 	testCases := []struct {
-		Resources     []Resource
+		Resources     []resource.Interface
 		ExpectedOrder []string
 		ErrorMatcher  func(err error) bool
 	}{
@@ -180,7 +181,7 @@ func Test_ProcessUpdate_CRUD(t *testing.T) {
 
 		// Test 1 ensures ProcessUpdate calls EnsureDeleted method of the resource.
 		{
-			Resources: []Resource{
+			Resources: []resource.Interface{
 				newTestCRUDResource("r0"),
 			},
 			ExpectedOrder: []string{
@@ -197,7 +198,7 @@ func Test_ProcessUpdate_CRUD(t *testing.T) {
 		// Test 2 ensures ProcessUpdate executes all the resources in
 		// the expected order.
 		{
-			Resources: []Resource{
+			Resources: []resource.Interface{
 				newTestCRUDResource("r0"),
 				newTestCRUDResource("r1"),
 			},
@@ -222,7 +223,7 @@ func Test_ProcessUpdate_CRUD(t *testing.T) {
 		// Test 3 ensures ProcessUpdate executes resources in the
 		// expected order until the reconciliation gets canceled.
 		{
-			Resources: []Resource{
+			Resources: []resource.Interface{
 				newTestCRUDResource("r0"),
 				newTestCRUDResource("r1"),
 				newTestCRUDResource("r2").CancelReconciliationAt("GetDesiredState"),
@@ -252,7 +253,7 @@ func Test_ProcessUpdate_CRUD(t *testing.T) {
 		// Test 4 ensures ProcessUpdate executes next resource after
 		// resourcecanceledcontext is cancelled.
 		{
-			Resources: []Resource{
+			Resources: []resource.Interface{
 				newTestCRUDResource("r0").CancelResourceAt("ApplyDeleteChange"),
 				newTestCRUDResource("r1"),
 				newTestCRUDResource("r2").CancelResourceAt("GetDesiredState"),

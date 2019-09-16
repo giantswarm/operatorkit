@@ -16,10 +16,11 @@ import (
 	"github.com/giantswarm/operatorkit/controller"
 	"github.com/giantswarm/operatorkit/controller/integration/testresourceset"
 	"github.com/giantswarm/operatorkit/informer"
+	"github.com/giantswarm/operatorkit/resource"
 )
 
 type Config struct {
-	Resources []controller.Resource
+	Resources []resource.Interface
 
 	Name      string
 	Namespace string

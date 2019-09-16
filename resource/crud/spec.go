@@ -1,14 +1,12 @@
-// NOTE the CRUD resource has moved to operatorkit/resource/crud. The code below
-// is DEPRECATED and only kept for backward compatibility.
-package controller
+package crud
 
 import "context"
 
-// CRUDResourceOps provides set of building blocks of a CRUDResource business
-// logic being reconciled when observing custom objects. The interface provides
-// a guideline for an easier way to follow the rather complex intentions of
-// operators in general.
-type CRUDResourceOps interface {
+// Interface provides set of building blocks of a CRUD Resource business logic
+// being reconciled when observing runtime objects. The interface provides a
+// guideline for an easier way to follow the rather complex intentions of
+// operators' reconciliation in general.
+type Interface interface {
 	// Name returns the resource's name used for identification.
 	Name() string
 

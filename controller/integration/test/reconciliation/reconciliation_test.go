@@ -11,9 +11,9 @@ import (
 	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
-	"github.com/giantswarm/operatorkit/controller"
 	"github.com/giantswarm/operatorkit/controller/integration/testresource"
 	"github.com/giantswarm/operatorkit/controller/integration/wrapper/drainerconfig"
+	"github.com/giantswarm/operatorkit/resource"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -33,22 +33,20 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 
 	ctx := context.Background()
 
-	var tr *testresource.Resource
+	var r *testresource.Resource
 	{
 		c := testresource.Config{}
 
-		tr, err = testresource.New(c)
+		r, err = testresource.New(c)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}
 	}
 
-	resources := []controller.Resource{
-		controller.Resource(tr),
-	}
-
 	c := drainerconfig.Config{
-		Resources: resources,
+		Resources: []resource.Interface{
+			r,
+		},
 
 		Name:      operatorName,
 		Namespace: testNamespace,
@@ -140,11 +138,11 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	//
 	{
 		o := func() error {
-			if tr.CreateCount() != 4 {
-				return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 4)
+			if r.CreateCount() != 4 {
+				return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", r.CreateCount(), 4)
 			}
-			if tr.DeleteCount() != 0 {
-				return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 0)
+			if r.DeleteCount() != 0 {
+				return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", r.DeleteCount(), 0)
 			}
 			return nil
 		}
@@ -194,11 +192,11 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	// 		EnsureCreated: 4, EnsureDeleted: 1
 	{
 		o := func() error {
-			if tr.CreateCount() != 4 {
-				return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", tr.CreateCount(), 4)
+			if r.CreateCount() != 4 {
+				return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", r.CreateCount(), 4)
 			}
-			if tr.DeleteCount() != 1 {
-				return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", tr.DeleteCount(), 1)
+			if r.DeleteCount() != 1 {
+				return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", r.DeleteCount(), 1)
 			}
 			return nil
 		}

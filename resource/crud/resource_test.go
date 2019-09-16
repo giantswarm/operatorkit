@@ -1,6 +1,4 @@
-// NOTE the CRUD resource has moved to operatorkit/resource/crud. The code below
-// is DEPRECATED and only kept for backward compatibility.
-package controller
+package crud
 
 import (
 	"context"
@@ -8,15 +6,22 @@ import (
 	"testing"
 
 	"github.com/giantswarm/micrologger/microloggertest"
+
+	"github.com/giantswarm/operatorkit/resource"
 )
 
-func Test_CRUDResource_PatchDispatch(t *testing.T) {
+func Test_Resource_CRUD_Interface(t *testing.T) {
+	// This won't compile if *Resource doesn't implement resource.Interface.
+	var _ resource.Interface = &Resource{}
+}
+
+func Test_Resource_CRUD_PatchDispatch(t *testing.T) {
 	testCases := []struct {
-		Ops CRUDResourceOps
+		CRUD Interface
 	}{
 		// Case 0
 		{
-			Ops: &testCRUDResourceOpsPatchDispatch{
+			CRUD: &testCRUDResourceOpsPatchDispatch{
 				Patch: func() *Patch {
 					return nil
 				}(),
@@ -25,7 +30,7 @@ func Test_CRUDResource_PatchDispatch(t *testing.T) {
 
 		// Case 1
 		{
-			Ops: &testCRUDResourceOpsPatchDispatch{
+			CRUD: &testCRUDResourceOpsPatchDispatch{
 				Patch: func() *Patch {
 					p := NewPatch()
 
@@ -38,7 +43,7 @@ func Test_CRUDResource_PatchDispatch(t *testing.T) {
 
 		// Case 2
 		{
-			Ops: &testCRUDResourceOpsPatchDispatch{
+			CRUD: &testCRUDResourceOpsPatchDispatch{
 				Patch: func() *Patch {
 					p := NewPatch()
 
@@ -51,7 +56,7 @@ func Test_CRUDResource_PatchDispatch(t *testing.T) {
 
 		// Case 3
 		{
-			Ops: &testCRUDResourceOpsPatchDispatch{
+			CRUD: &testCRUDResourceOpsPatchDispatch{
 				Patch: func() *Patch {
 					p := NewPatch()
 
@@ -64,7 +69,7 @@ func Test_CRUDResource_PatchDispatch(t *testing.T) {
 
 		// Case 4
 		{
-			Ops: &testCRUDResourceOpsPatchDispatch{
+			CRUD: &testCRUDResourceOpsPatchDispatch{
 				Patch: func() *Patch {
 					p := NewPatch()
 
@@ -78,7 +83,7 @@ func Test_CRUDResource_PatchDispatch(t *testing.T) {
 
 		// Case 5
 		{
-			Ops: &testCRUDResourceOpsPatchDispatch{
+			CRUD: &testCRUDResourceOpsPatchDispatch{
 				Patch: func() *Patch {
 					p := NewPatch()
 
@@ -93,11 +98,12 @@ func Test_CRUDResource_PatchDispatch(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		c := CRUDResourceConfig{
+		c := ResourceConfig{
+			CRUD:   tc.CRUD,
 			Logger: microloggertest.New(),
-			Ops:    tc.Ops,
 		}
-		r, err := NewCRUDResource(c)
+
+		r, err := NewResource(c)
 		if err != nil {
 			t.Fatalf("test %d: unexpected NewCRUDResource error = %#v", i, err)
 		}

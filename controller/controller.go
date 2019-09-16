@@ -15,6 +15,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/rest"
 
@@ -22,6 +23,7 @@ import (
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
 	"github.com/giantswarm/operatorkit/informer"
+	"github.com/giantswarm/operatorkit/resource"
 )
 
 const (
@@ -396,7 +398,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 	}
 
 	go func() {
-		resetWait := c.informer.ResyncPeriod() * 3
+		resetWait := c.informer.ResyncPeriod() * 4
 
 		for {
 			select {
@@ -407,6 +409,27 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 			}
 		}
 	}()
+
+	// We overwrite the k8s error handlers so they do not intercept our log
+	// streams. The format is way easier to parse for us that way. Here we also
+	// emit metrics for the occured errors to ensure we create more awareness of
+	// anything going wrong in our operators.
+	{
+		runtime.ErrorHandlers = []func(err error){
+			func(err error) {
+				// When we see a port forwarding error we ignore it because we cannot do
+				// anything about it. Errors like we check here would have to be dealt
+				// with in the third party tools we use. The port forwarding in general
+				// is broken by design which will go away with Helm 3, soon TM.
+				if IsPortforward(err) {
+					return
+				}
+
+				c.errorCollector <- err
+				c.logger.LogCtx(ctx, "level", "error", "message", "caught third party runtime error", "stack", fmt.Sprintf("%#v", err))
+			},
+		}
+	}
 
 	// Initializing the watch gives us all necessary event channels we need to
 	// further process them within the controller. Once we got the event channels
@@ -473,7 +496,7 @@ func (c *Controller) resourceSet(obj interface{}) (*ResourceSet, error) {
 //         DeleteFunc:    deleteFunc,
 //     }
 //
-func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) error {
+func ProcessDelete(ctx context.Context, obj interface{}, resources []resource.Interface) error {
 	if len(resources) == 0 {
 		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}
@@ -514,7 +537,7 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []Resource) e
 //         UpdateFunc:    updateFunc,
 //     }
 //
-func ProcessUpdate(ctx context.Context, obj interface{}, resources []Resource) error {
+func ProcessUpdate(ctx context.Context, obj interface{}, resources []resource.Interface) error {
 	if len(resources) == 0 {
 		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}

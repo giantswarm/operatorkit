@@ -1,23 +1,23 @@
 package retryresource
 
 import (
-	"time"
-
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 
-	"github.com/giantswarm/operatorkit/controller"
+	"github.com/giantswarm/operatorkit/resource"
 )
 
 type Config struct {
+	BackOff  backoff.Interface
 	Logger   micrologger.Logger
-	Resource controller.Resource
-
-	BackOff backoff.Interface
+	Resource resource.Interface
 }
 
-func New(config Config) (controller.Resource, error) {
+func New(config Config) (resource.Interface, error) {
+	if config.BackOff == nil {
+		return nil, microerror.Maskf(invalidConfigError, "%T.BackOff must not be empty", config)
+	}
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Logger must not be empty", config)
 	}
@@ -25,12 +25,8 @@ func New(config Config) (controller.Resource, error) {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Resource must not be empty", config)
 	}
 
-	if config.BackOff == nil {
-		config.BackOff = backoff.NewExponential(2*time.Minute, 10*time.Second)
-	}
-
 	var err error
-	var r controller.Resource
+	var r resource.Interface
 
 	// CRUD resource special case.
 	r, err = newCRUDResourceWrapper(config)
