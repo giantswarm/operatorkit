@@ -115,6 +115,9 @@ type ChartConfigStatus struct {
 	// ReleaseStatus is the status of the Helm release when the chart is
 	// installed, e.g. DEPLOYED.
 	ReleaseStatus string `json:"releaseStatus" yaml:"releaseStatus"`
+	// Reason is the description of the last status of helm release when the chart is
+	// not installed successfully, e.g. deploy resource already exists.
+	Reason string `json:"reason,omitempty" yaml:"reason,omitempty"`
 }
 
 type ChartConfigSpecVersionBundle struct {

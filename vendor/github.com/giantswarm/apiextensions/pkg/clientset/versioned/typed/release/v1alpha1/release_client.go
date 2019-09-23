@@ -36,12 +36,12 @@ type ReleaseV1alpha1Client struct {
 	restClient rest.Interface
 }
 
-func (c *ReleaseV1alpha1Client) Releases(namespace string) ReleaseInterface {
-	return newReleases(c, namespace)
+func (c *ReleaseV1alpha1Client) Releases() ReleaseInterface {
+	return newReleases(c)
 }
 
-func (c *ReleaseV1alpha1Client) ReleaseCycles(namespace string) ReleaseCycleInterface {
-	return newReleaseCycles(c, namespace)
+func (c *ReleaseV1alpha1Client) ReleaseCycles() ReleaseCycleInterface {
+	return newReleaseCycles(c)
 }
 
 // NewForConfig creates a new ReleaseV1alpha1Client for the given config.
