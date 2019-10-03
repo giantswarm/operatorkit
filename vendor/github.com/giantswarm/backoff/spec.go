@@ -2,9 +2,12 @@ package backoff
 
 import "time"
 
-// Interface describes how a backoff has to be implemented. Also see
+// BackOff describes how a backoff has to be implemented. Also see
 // https://godoc.org/github.com/cenkalti/backoff#BackOff.
-type Interface interface {
+type BackOff interface {
 	NextBackOff() time.Duration
 	Reset()
 }
+
+// Interface is an alias for backward compatibility.
+type Interface = BackOff
