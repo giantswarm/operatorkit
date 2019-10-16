@@ -126,7 +126,7 @@ func (c *CRDClient) ensureStatusSubresourceCreated(ctx context.Context, customRe
 
 		if manifest.Spec.Subresources == nil || manifest.Spec.Subresources.Status == nil {
 			customResource.SetResourceVersion(manifest.ResourceVersion)
-			_, err = c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().UpdateStatus(customResource)
+			_, err = c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Update(customResource)
 			if err != nil {
 				return microerror.Mask(err)
 			}
