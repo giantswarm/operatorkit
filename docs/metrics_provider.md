@@ -33,7 +33,7 @@ All the collectors [need to be registered](https://godoc.org/github.com/promethe
 so that they are included in metrics collection.
 
 Each time that the metrics endpoint is scraped by Prometheus, all the 
-registered collectors will get their `Collect()` method called, and metrics 
+registered collectors will have their `Collect()` method called, and metrics 
 will be exposed on the response.
 
 [Here you can find a commented example](https://godoc.org/github.com/prometheus/client_golang/prometheus#ex-Collector) on the prometheus client docs.
