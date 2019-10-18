@@ -32,7 +32,7 @@ This interface allows us to implement new collectors by implementing the
 All the collectors [need to be registered](https://godoc.org/github.com/prometheus/client_golang/prometheus#Registerer) 
 so that they are included in metrics collection.
 
-Each time that the metrics endpoint is scrapped by Prometheus, all the 
+Each time that the metrics endpoint is scraped by Prometheus, all the 
 registered collectors will get their `Collect()` method called, and metrics 
 will be exposed on the response.
 
