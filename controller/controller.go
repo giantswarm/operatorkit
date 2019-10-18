@@ -3,7 +3,9 @@ package controller
 import (
 	"context"
 	"fmt"
+	"hash/fnv"
 	"os"
+	"reflect"
 	"strconv"
 	"sync"
 	"time"
@@ -15,6 +17,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/rest"
@@ -27,6 +30,8 @@ import (
 )
 
 const (
+	concurrency = 16
+
 	loggerKeyController = "controller"
 	loggerKeyEvent      = "event"
 	loggerKeyLoop       = "loop"
@@ -86,6 +91,7 @@ type Controller struct {
 	mutex                  sync.Mutex
 
 	backOffFactory func() backoff.Interface
+	concurrency    int
 	name           string
 }
 
@@ -129,6 +135,7 @@ func New(config Config) (*Controller, error) {
 		mutex:                  sync.Mutex{},
 
 		backOffFactory: config.BackOffFactory,
+		concurrency:    concurrency,
 		name:           config.Name,
 	}
 
@@ -237,9 +244,80 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 	}
 }
 
+// hashEvent takes an event and produces an integer hash that:
+// - is guaranteed to be stable for the lifetime of an object,
+// - is in the bounds 0 <= int < c.concurrency.
+func (c *Controller) hashEvent(ctx context.Context, event watch.Event) int {
+	v := reflect.ValueOf(event.Object).Elem()
+	objectMeta, ok := v.FieldByName("ObjectMeta").Interface().(metav1.ObjectMeta)
+	if !ok {
+		c.logger.LogCtx(ctx, "level", "error", "message", "could not get object meta from object", "object", fmt.Sprintf("%#v", event.Object))
+		return 0
+	}
+
+	key := fmt.Sprintf("%s/%s", objectMeta.GetNamespace(), objectMeta.GetName())
+
+	hash := fnv.New32a()
+	hash.Write([]byte(key))
+
+	ih := int(hash.Sum32())
+	h := ih % c.concurrency
+
+	return h
+}
+
 // ProcessEvents takes the event channels created by the operatorkit informer
-// and executes the controller's event functions accordingly.
+// and routes them to appropriate workers.
 func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Event, updateChan chan watch.Event, errChan chan error) error {
+	// eventChannels holds the channels necessary for sending events to a worker.
+	type eventChannels struct {
+		deleteChan chan watch.Event
+		updateChan chan watch.Event
+	}
+
+	c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("starting %v workers", c.concurrency))
+
+	channels := make([]eventChannels, c.concurrency)
+
+	for i := 0; i < c.concurrency; i++ {
+		channels[i] = eventChannels{
+			deleteChan: make(chan watch.Event),
+			updateChan: make(chan watch.Event),
+		}
+
+		go c.processEvents(ctx, i, channels[i].deleteChan, channels[i].updateChan)
+	}
+
+	c.logger.LogCtx(ctx, "level", "debug", "message", "starting dispatching events to workers")
+
+	for {
+		select {
+		case e := <-deleteChan:
+			hash := c.hashEvent(ctx, e)
+			channels[hash].deleteChan <- e
+
+		case e := <-updateChan:
+			hash := c.hashEvent(ctx, e)
+			channels[hash].updateChan <- e
+
+		case err := <-errChan:
+			if IsStatusForbidden(err) {
+				c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("controller might be missing RBAC rule for %s CRD", c.crd.Name), "stack", fmt.Sprintf("%#v", err))
+			} else if err != nil {
+				c.logger.LogCtx(ctx, "level", "error", "message", "failed to watch object", "stack", fmt.Sprintf("%#v", err))
+			}
+
+		case <-ctx.Done():
+			return nil
+		}
+	}
+
+	return nil
+}
+
+// processEvents takes the event channels created by the event router
+// and executes the controller's event functions accordingly.
+func (c *Controller) processEvents(ctx context.Context, worker int, deleteChan chan watch.Event, updateChan chan watch.Event) {
 	loop := -1
 
 	for {
@@ -254,7 +332,7 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 		case e := <-deleteChan:
 			event := "delete"
 
-			t := prometheus.NewTimer(controllerHistogram.WithLabelValues(event))
+			t := prometheus.NewTimer(controllerHistogram.WithLabelValues(event, strconv.Itoa(worker)))
 
 			// Set event specific logger context.
 			{
@@ -269,15 +347,16 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 				}
 			}
 
-			c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
+			c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object", "worker", worker)
 			c.deleteFunc(ctx, e.Object)
 			c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled object")
 
 			t.ObserveDuration()
+
 		case e := <-updateChan:
 			event := "update"
 
-			t := prometheus.NewTimer(controllerHistogram.WithLabelValues(event))
+			t := prometheus.NewTimer(controllerHistogram.WithLabelValues(event, strconv.Itoa(worker)))
 
 			// Set event specific logger context.
 			{
@@ -292,21 +371,14 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 				}
 			}
 
-			c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
+			c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object", "worker", worker)
 			c.updateFunc(ctx, e.Object)
 			c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled object")
 
 			t.ObserveDuration()
-		case err := <-errChan:
-			if IsStatusForbidden(err) {
-				c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("controller might be missing RBAC rule for %s CRD", c.crd.Name), "stack", fmt.Sprintf("%#v", err))
-			} else if err != nil {
-				c.logger.LogCtx(ctx, "level", "error", "message", "failed to watch object", "stack", fmt.Sprintf("%#v", err))
-			}
 
-			time.Sleep(time.Second)
 		case <-ctx.Done():
-			return nil
+			return
 		}
 	}
 }

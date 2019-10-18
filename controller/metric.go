@@ -25,7 +25,7 @@ var (
 			Name:      "event",
 			Help:      "Histogram for events within the operatorkit controller.",
 		},
-		[]string{"event"},
+		[]string{"event", "worker"},
 	)
 )
 
