@@ -503,23 +503,23 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []resource.In
 
 	ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
 
+	defer func() {
+		ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
+	}()
 	for _, r := range resources {
 		ctx = setLoggerCtxValue(ctx, loggerKeyResource, r.Name())
 		ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 
 		err := r.EnsureDeleted(ctx, obj)
 		if err != nil {
-			ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
 			return microerror.Mask(err)
 		}
 
 		if reconciliationcanceledcontext.IsCanceled(ctx) {
-			ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
 			return nil
 		}
 	}
 
-	ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
 	return nil
 }
 
@@ -547,23 +547,23 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []resource.In
 
 	ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
 
+	defer func() {
+		ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
+	}()
 	for _, r := range resources {
 		ctx = setLoggerCtxValue(ctx, loggerKeyResource, r.Name())
 		ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 
 		err := r.EnsureCreated(ctx, obj)
 		if err != nil {
-			ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
 			return microerror.Mask(err)
 		}
 
 		if reconciliationcanceledcontext.IsCanceled(ctx) {
-			ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
 			return nil
 		}
 	}
 
-	ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
 	return nil
 }
 
