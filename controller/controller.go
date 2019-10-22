@@ -503,6 +503,9 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []resource.In
 
 	ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
 
+	defer func() {
+		ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
+	}()
 	for _, r := range resources {
 		ctx = setLoggerCtxValue(ctx, loggerKeyResource, r.Name())
 		ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
@@ -544,6 +547,9 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []resource.In
 
 	ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
 
+	defer func() {
+		ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
+	}()
 	for _, r := range resources {
 		ctx = setLoggerCtxValue(ctx, loggerKeyResource, r.Name())
 		ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
@@ -569,6 +575,19 @@ func setLoggerCtxValue(ctx context.Context, key, value string) context.Context {
 	}
 
 	m.KeyVals[key] = value
+
+	return ctx
+}
+
+func unsetLoggerCtxValue(ctx context.Context, key string) context.Context {
+	m, ok := loggermeta.FromContext(ctx)
+	if !ok {
+		m = loggermeta.New()
+		ctx = loggermeta.NewContext(ctx, m)
+		return ctx
+	}
+
+	delete(m.KeyVals, key)
 
 	return ctx
 }
