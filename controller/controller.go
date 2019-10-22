@@ -509,14 +509,17 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []resource.In
 
 		err := r.EnsureDeleted(ctx, obj)
 		if err != nil {
+			ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
 			return microerror.Mask(err)
 		}
 
 		if reconciliationcanceledcontext.IsCanceled(ctx) {
+			ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
 			return nil
 		}
 	}
 
+	ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
 	return nil
 }
 
@@ -550,14 +553,17 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []resource.In
 
 		err := r.EnsureCreated(ctx, obj)
 		if err != nil {
+			ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
 			return microerror.Mask(err)
 		}
 
 		if reconciliationcanceledcontext.IsCanceled(ctx) {
+			ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
 			return nil
 		}
 	}
 
+	ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
 	return nil
 }
 
@@ -569,6 +575,19 @@ func setLoggerCtxValue(ctx context.Context, key, value string) context.Context {
 	}
 
 	m.KeyVals[key] = value
+
+	return ctx
+}
+
+func unsetLoggerCtxValue(ctx context.Context, key string) context.Context {
+	m, ok := loggermeta.FromContext(ctx)
+	if !ok {
+		m = loggermeta.New()
+		ctx = loggermeta.NewContext(ctx, m)
+		return ctx
+	}
+
+	delete(m.KeyVals, key)
 
 	return ctx
 }
