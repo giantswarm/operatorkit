@@ -234,8 +234,8 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
 
-		if accessor.GetDeletionTimestamp() != nil {
-			t.Fatalf("DeletionTimestamp == %v, want %v", accessor.GetDeletionTimestamp(), nil)
+		if accessor.GetDeletionTimestamp() == nil {
+			t.Fatalf("DeletionTimestamp == %v, want non nil", accessor.GetDeletionTimestamp())
 		}
 
 		expectedFinalizers := []string{
