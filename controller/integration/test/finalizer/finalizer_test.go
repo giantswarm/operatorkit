@@ -229,8 +229,8 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 	//
 	{
 		o := func() error {
-			if r.DeleteCount() > 6 {
-				microerror.Maskf(waitError, "r.DeleteCount() == %v, want more than %v", r.DeleteCount(), 0)
+			if r.DeleteCount() > 10 {
+				microerror.Maskf(waitError, "r.DeleteCount() == %v, want more than %v", r.DeleteCount(), 10)
 			}
 
 			return nil
