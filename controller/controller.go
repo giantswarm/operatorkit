@@ -177,21 +177,31 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	rs, err := c.resourceSet(obj)
-	if IsNoResourceSet(err) {
-		err = c.removeFinalizer(ctx, obj)
-		if err != nil {
+	var err error
+
+	var rs *ResourceSet
+	{
+		c.logger.LogCtx(ctx, "level", "debug", "message", "finding resource set")
+
+		rs, err = c.resourceSet(obj)
+		if IsNoResourceSet(err) {
+			// TODO remove
+			err = c.removeFinalizer(ctx, obj)
+			if err != nil {
+				c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
+				return
+			}
+
+			c.logger.LogCtx(ctx, "level", "debug", "message", "did not find resource set")
+			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
+			return
+
+		} else if err != nil {
 			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
 			return
 		}
 
-		c.logger.LogCtx(ctx, "level", "debug", "message", "did not find any resource set")
-		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
-		return
-
-	} else if err != nil {
-		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
-		return
+		c.logger.LogCtx(ctx, "level", "debug", "message", "found resource set")
 	}
 
 	{
@@ -320,15 +330,24 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	rs, err := c.resourceSet(obj)
-	if IsNoResourceSet(err) {
-		c.logger.LogCtx(ctx, "level", "debug", "message", "did not find any resource set")
-		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
-		return
+	var err error
 
-	} else if err != nil {
-		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
-		return
+	var rs *ResourceSet
+	{
+		c.logger.LogCtx(ctx, "level", "debug", "message", "finding resource set")
+
+		rs, err = c.resourceSet(obj)
+		if IsNoResourceSet(err) {
+			c.logger.LogCtx(ctx, "level", "debug", "message", "did not find resource set")
+			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
+			return
+
+		} else if err != nil {
+			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
+			return
+		}
+
+		c.logger.LogCtx(ctx, "level", "debug", "message", "found resource set")
 	}
 
 	{
@@ -343,19 +362,26 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 		}
 	}
 
-	ok, err := c.addFinalizer(ctx, obj)
-	if IsInvalidRESTClient(err) {
-		panic("invalid REST client configured for controller")
-	} else if err != nil {
-		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
-		return
-	}
+	{
+		c.logger.LogCtx(ctx, "level", "debug", "message", "adding finalizer")
 
-	if ok {
-		// A finalizer was added, this causes a new update event, so we stop
-		// reconciling here and will pick up the new event.
-		c.logger.LogCtx(ctx, "level", "debug", "message", "stop reconciliation due to finalizer added")
-		return
+		ok, err := c.addFinalizer(ctx, obj)
+		if IsInvalidRESTClient(err) {
+			panic("invalid REST client configured for controller")
+		} else if err != nil {
+			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
+			return
+		}
+
+		if ok {
+			// A finalizer was added, this causes a new update event, so we stop
+			// reconciling here and will pick up the new event.
+			c.logger.LogCtx(ctx, "level", "debug", "message", "added finalizer")
+			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
+			return
+		}
+
+		c.logger.LogCtx(ctx, "level", "debug", "message", "did not add finalizer")
 	}
 
 	err = ProcessUpdate(ctx, obj, rs.Resources())
