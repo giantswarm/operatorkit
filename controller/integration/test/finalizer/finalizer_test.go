@@ -205,8 +205,10 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 		}
 	}
 
-	// Verify that the test resource received at least 1 deletion event.
-	//
+	// Verify that the test resource received at least 1 deletion event. When the
+	// fix for the test is not applied, the test fails with DeleteCount() == 2.
+	// This is because controllers of wrapperB and wrapperC remove the finalizer
+	// early, which they should not.
 	{
 		o := func() error {
 			if r.DeleteCount() < 20 {
