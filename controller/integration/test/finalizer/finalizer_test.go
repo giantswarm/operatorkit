@@ -229,7 +229,21 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 	//
 	{
 		o := func() error {
+			fmt.Printf("\n")
+			fmt.Printf("\n")
+			fmt.Printf("\n")
+			fmt.Printf("delete count: %#v\n", r.DeleteCount())
+			fmt.Printf("\n")
+			fmt.Printf("\n")
+			fmt.Printf("\n")
 			if r.DeleteCount() < 20 {
+				fmt.Printf("\n")
+				fmt.Printf("\n")
+				fmt.Printf("\n")
+				fmt.Printf("retry\n")
+				fmt.Printf("\n")
+				fmt.Printf("\n")
+				fmt.Printf("\n")
 				microerror.Maskf(waitError, "r.DeleteCount() == %v, want more than %v", r.DeleteCount(), 20)
 			}
 
