@@ -179,6 +179,12 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 
 	rs, err := c.resourceSet(obj)
 	if IsNoResourceSet(err) {
+		err = c.removeFinalizer(ctx, obj)
+		if err != nil {
+			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
+			return
+		}
+
 		c.logger.LogCtx(ctx, "level", "debug", "message", "did not find any resource set")
 		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 		return
