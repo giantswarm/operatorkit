@@ -258,7 +258,7 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 				fmt.Printf("\n")
 				fmt.Printf("\n")
 				fmt.Printf("\n")
-				microerror.Maskf(waitError, "r.DeleteCount() == %v, want more than %v", r.DeleteCount(), 20)
+				return microerror.Maskf(waitError, "r.DeleteCount() == %v, want more than %v", r.DeleteCount(), 20)
 			}
 
 			return nil
