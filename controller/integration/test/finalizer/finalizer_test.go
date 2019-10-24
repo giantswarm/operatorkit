@@ -69,15 +69,15 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 	var wrapperB *drainerconfig.Wrapper
 	var wrapperC *drainerconfig.Wrapper
 	{
-		wrapperA, err = newWrapper(r, newControllerLogger("a"), newTrueHandlesFunc())
+		wrapperA, err = newWrapper(r, newWrapperLogger("a"), newTrueHandlesFunc())
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
-		wrapperB, err = newWrapper(r, newControllerLogger("b"), newFalseHandlesFunc())
+		wrapperB, err = newWrapper(r, newWrapperLogger("b"), newFalseHandlesFunc())
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
-		wrapperC, err = newWrapper(r, newControllerLogger("c"), newFalseHandlesFunc())
+		wrapperC, err = newWrapper(r, newWrapperLogger("c"), newFalseHandlesFunc())
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -280,7 +280,7 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 	}
 }
 
-func newControllerLogger(c string) micrologger.Logger {
+func newWrapperLogger(w string) micrologger.Logger {
 	var err error
 
 	var l micrologger.Logger
@@ -293,7 +293,7 @@ func newControllerLogger(c string) micrologger.Logger {
 		}
 	}
 
-	return l.With("controller", c)
+	return l.With("wrapper", w)
 }
 
 func newWrapper(r *testresource.Resource, l micrologger.Logger, h func(obj interface{}) bool) (*drainerconfig.Wrapper, error) {
