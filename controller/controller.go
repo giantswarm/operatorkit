@@ -179,18 +179,6 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 
 	rs, err := c.resourceSet(obj)
 	if IsNoResourceSet(err) {
-		// In case the resource router is not able to find any resource set to
-		// handle the reconciled runtime object, we stop here. Note that we just
-		// remove the finalizer regardless because at this point there will never be
-		// a chance to remove it otherwhise because nobody wanted to handle this
-		// runtime object anyway. Otherwise we can end up in deadlock
-		// trying to reconcile this object over and over.
-		err = c.removeFinalizer(ctx, obj)
-		if err != nil {
-			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
-			return
-		}
-
 		c.logger.LogCtx(ctx, "level", "debug", "message", "did not find any resource set")
 		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 		return
@@ -328,8 +316,6 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 
 	rs, err := c.resourceSet(obj)
 	if IsNoResourceSet(err) {
-		// In case the resource router is not able to find any resource set to
-		// handle the reconciled runtime object, we stop here.
 		c.logger.LogCtx(ctx, "level", "debug", "message", "did not find any resource set")
 		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 		return
