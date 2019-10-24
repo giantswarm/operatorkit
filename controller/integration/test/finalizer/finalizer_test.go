@@ -29,7 +29,7 @@ const (
 	// finalizer is the only finalizer shared by the three test controllers.
 	finalizer    = "operatorkit.giantswarm.io/test-controller"
 	objName      = "test-obj"
-	objNamespace = "integration-parallel-test"
+	objNamespace = "integration-finalizer-test"
 )
 
 // Test_Controller_Integration_Finalizer is an integration test to check that
@@ -180,6 +180,26 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
 
+		fmt.Printf("\n")
+		fmt.Printf("\n")
+		fmt.Printf("\n")
+		fmt.Printf("%#v\n", accessor.GetFinalizers())
+		fmt.Printf("\n")
+		fmt.Printf("\n")
+		fmt.Printf("\n")
+		fmt.Printf("%#v\n", accessor.GetLabels())
+		fmt.Printf("\n")
+		fmt.Printf("\n")
+		fmt.Printf("\n")
+		fmt.Printf("%#v\n", accessor.DeletionTimestamp())
+		fmt.Printf("\n")
+		fmt.Printf("\n")
+		fmt.Printf("\n")
+		fmt.Printf("%#v\n", accessor.ResourceVersion())
+		fmt.Printf("\n")
+		fmt.Printf("\n")
+		fmt.Printf("\n")
+
 		if accessor.GetDeletionTimestamp() != nil {
 			t.Fatalf("DeletionTimestamp == %v, want %v", accessor.GetDeletionTimestamp(), nil)
 		}
@@ -209,7 +229,7 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 	//
 	{
 		o := func() error {
-			if r.DeleteCount() >= 4 {
+			if r.DeleteCount() >= 5 {
 				microerror.Maskf(waitError, "r.DeleteCount() == %v, want more than %v", r.DeleteCount(), 0)
 			}
 
@@ -234,6 +254,26 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
+
+		fmt.Printf("\n")
+		fmt.Printf("\n")
+		fmt.Printf("\n")
+		fmt.Printf("%#v\n", accessor.GetFinalizers())
+		fmt.Printf("\n")
+		fmt.Printf("\n")
+		fmt.Printf("\n")
+		fmt.Printf("%#v\n", accessor.GetLabels())
+		fmt.Printf("\n")
+		fmt.Printf("\n")
+		fmt.Printf("\n")
+		fmt.Printf("%#v\n", accessor.DeletionTimestamp())
+		fmt.Printf("\n")
+		fmt.Printf("\n")
+		fmt.Printf("\n")
+		fmt.Printf("%#v\n", accessor.ResourceVersion())
+		fmt.Printf("\n")
+		fmt.Printf("\n")
+		fmt.Printf("\n")
 
 		if accessor.GetDeletionTimestamp() == nil {
 			t.Fatalf("DeletionTimestamp == %v, want non nil", accessor.GetDeletionTimestamp())
