@@ -141,7 +141,33 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 		}
 	}
 
-	// Verify deletion timestamp and finalizers.
+	// Verify controllers reconcile creation of that object. There should be 2
+	// ResyncPeriods in 30 seconds so verify there were at least 2 create events.
+	// They should be made by the controller of wrapperA.
+	//
+	// 		EnsureCreated: >=2, EnsureDeleted: =0
+	//
+	{
+		o := func() error {
+			if r.CreateCount() < 2 {
+				return microerror.Maskf(waitError, "r.CreateCount() == %v, want more than %v", r.CreateCount(), 2)
+			}
+			if r.DeleteCount() != 0 {
+				return microerror.Maskf(waitError, "r.DeleteCount() == %v, want %v", r.DeleteCount(), 0)
+			}
+
+			return nil
+		}
+		b := backoff.NewMaxRetries(30, 1*time.Second)
+
+		err := backoff.Retry(o, b)
+		if err != nil {
+			t.Fatalf("err == %v, want %v", err, nil)
+		}
+	}
+
+	// Once we ensured the reconciled runtime object got processed by the
+	// controllers, verify the deletion timestamp and finalizers.
 	{
 		obj, err := wrapperA.GetObject(objName, objNamespace)
 		if err != nil {
