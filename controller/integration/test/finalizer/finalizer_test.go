@@ -22,14 +22,13 @@ import (
 )
 
 const (
+	// controllerName is the same for all three controllers in order to simulate
+	// multiple VOO deployments of the same operator.
+	controllerName = "test-controller"
 	// finalizer is the only finalizer shared by the three test controllers.
 	finalizer    = "operatorkit.giantswarm.io/test-controller"
 	objName      = "test-obj"
 	objNamespace = "integration-parallel-test"
-
-	controllerNameA = "test-controller-a"
-	controllerNameB = "test-controller-b"
-	controllerNameC = "test-controller-c"
 )
 
 // Test_Controller_Integration_Finalizer is an integration test to check that
@@ -69,15 +68,15 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 	var wrapperB *drainerconfig.Wrapper
 	var wrapperC *drainerconfig.Wrapper
 	{
-		wrapperA, err = newWrapper(controllerNameA, r, newTrueHandlesFunc())
+		wrapperA, err = newWrapper(r, newTrueHandlesFunc())
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
-		wrapperB, err = newWrapper(controllerNameB, r, newFalseHandlesFunc())
+		wrapperB, err = newWrapper(r, newFalseHandlesFunc())
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
-		wrapperC, err = newWrapper(controllerNameC, r, newFalseHandlesFunc())
+		wrapperC, err = newWrapper(r, newFalseHandlesFunc())
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -236,7 +235,7 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 	}
 }
 
-func newWrapper(controllerName string, r *testresource.Resource, h func(obj interface{}) bool) (*drainerconfig.Wrapper, error) {
+func newWrapper(r *testresource.Resource, h func(obj interface{}) bool) (*drainerconfig.Wrapper, error) {
 	c := drainerconfig.Config{
 		HandlesFunc: h,
 		Resources: []resource.Interface{
