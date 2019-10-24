@@ -152,7 +152,7 @@ func (c *Controller) Boot(ctx context.Context) {
 
 		err := backoff.RetryNotify(operation, c.backOffFactory(), notifier)
 		if err != nil {
-			c.logger.LogCtx(ctx, "level", "error", "message", "stop controller boot retries due to too many errors", "stack", fmt.Sprintf("%#v", err))
+			c.logger.LogCtx(ctx, "level", "error", "message", "stop controller boot retries due to too many errors", "stack", microerror.Stack(err))
 			os.Exit(1)
 		}
 	})
@@ -187,7 +187,7 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 		// trying to reconcile this object over and over.
 		err = c.removeFinalizer(ctx, obj)
 		if err != nil {
-			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
 			return
 		}
 
@@ -196,7 +196,7 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 		return
 
 	} else if err != nil {
-		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
 		return
 	}
 
@@ -207,21 +207,21 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 		oldCtx := ctx
 		ctx, err = rs.InitCtx(ctx, obj)
 		if err != nil {
-			c.logger.LogCtx(oldCtx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+			c.logger.LogCtx(oldCtx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
 			return
 		}
 	}
 
 	hasFinalizer, err := c.hasFinalizer(ctx, obj)
 	if err != nil {
-		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
 		return
 	}
 	if hasFinalizer {
 		err = ProcessDelete(ctx, obj, rs.Resources())
 		if err != nil {
 			c.errorCollector <- err
-			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
 			return
 		}
 	} else {
@@ -232,7 +232,7 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 
 	err = c.removeFinalizer(ctx, obj)
 	if err != nil {
-		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
 		return
 	}
 }
@@ -262,7 +262,7 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 
 				accessor, err := meta.Accessor(e.Object)
 				if err != nil {
-					c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("failed to create accessor %T", e.Object), "stack", fmt.Sprintf("%#v", err))
+					c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("failed to create accessor %T", e.Object), "stack", microerror.Stack(err))
 				} else {
 					ctx = setLoggerCtxValue(ctx, loggerKeyObject, accessor.GetSelfLink())
 					ctx = setLoggerCtxValue(ctx, loggerKeyVersion, accessor.GetResourceVersion())
@@ -285,7 +285,7 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 
 				accessor, err := meta.Accessor(e.Object)
 				if err != nil {
-					c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("failed to create accessor %T", e.Object), "stack", fmt.Sprintf("%#v", err))
+					c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("failed to create accessor %T", e.Object), "stack", microerror.Stack(err))
 				} else {
 					ctx = setLoggerCtxValue(ctx, loggerKeyObject, accessor.GetSelfLink())
 					ctx = setLoggerCtxValue(ctx, loggerKeyVersion, accessor.GetResourceVersion())
@@ -299,9 +299,9 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 			t.ObserveDuration()
 		case err := <-errChan:
 			if IsStatusForbidden(err) {
-				c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("controller might be missing RBAC rule for %s CRD", c.crd.Name), "stack", fmt.Sprintf("%#v", err))
+				c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("controller might be missing RBAC rule for %s CRD", c.crd.Name), "stack", microerror.Stack(err))
 			} else if err != nil {
-				c.logger.LogCtx(ctx, "level", "error", "message", "failed to watch object", "stack", fmt.Sprintf("%#v", err))
+				c.logger.LogCtx(ctx, "level", "error", "message", "failed to watch object", "stack", microerror.Stack(err))
 			}
 
 			time.Sleep(time.Second)
@@ -335,7 +335,7 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 		return
 
 	} else if err != nil {
-		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
 		return
 	}
 
@@ -346,7 +346,7 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 		oldCtx := ctx
 		ctx, err = rs.InitCtx(ctx, obj)
 		if err != nil {
-			c.logger.LogCtx(oldCtx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+			c.logger.LogCtx(oldCtx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
 			return
 		}
 	}
@@ -355,7 +355,7 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 	if IsInvalidRESTClient(err) {
 		panic("invalid REST client configured for controller")
 	} else if err != nil {
-		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
 		return
 	}
 
@@ -369,7 +369,7 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 	err = ProcessUpdate(ctx, obj, rs.Resources())
 	if err != nil {
 		c.errorCollector <- err
-		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", fmt.Sprintf("%#v", err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
 		return
 	}
 }
@@ -426,7 +426,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 				}
 
 				c.errorCollector <- err
-				c.logger.LogCtx(ctx, "level", "error", "message", "caught third party runtime error", "stack", fmt.Sprintf("%#v", err))
+				c.logger.LogCtx(ctx, "level", "error", "message", "caught third party runtime error", "stack", microerror.Stack(err))
 			},
 		}
 	}
