@@ -204,6 +204,24 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 		}
 	}
 
+	// Verify that the test resource received at least 1 deletion event.
+	//
+	{
+		o := func() error {
+			if r.DeleteCount() >= 1 {
+				microerror.Maskf(waitError, "r.DeleteCount() == %v, want more than %v", r.DeleteCount(), 0)
+			}
+
+			return nil
+		}
+		b := backoff.NewMaxRetries(30, 1*time.Second)
+
+		err := backoff.Retry(o, b)
+		if err != nil {
+			t.Fatalf("err == %v, want %v", err, nil)
+		}
+	}
+
 	// Verify deletion timestamp and finalizers.
 	{
 		obj, err := wrapperA.GetObject(objName, objNamespace)
