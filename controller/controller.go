@@ -299,7 +299,7 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 			t.ObserveDuration()
 		case err := <-errChan:
 			if IsStatusForbidden(err) {
-				c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("controller might be missing RBAC rule for %s CRD", c.crd.Name), "stack", microerror.Stack(err))
+				c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("controller might be missing RBAC rule for %#q CRD", c.crd.Name), "stack", microerror.Stack(err))
 			} else if err != nil {
 				c.logger.LogCtx(ctx, "level", "error", "message", "failed to watch object", "stack", microerror.Stack(err))
 			}

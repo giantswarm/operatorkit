@@ -119,8 +119,8 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 	// replayed. In case we see such a request via the dispatched context, we skip
 	// the finalizer removal.
 	if finalizerskeptcontext.IsKept(ctx) {
-		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("did not remove finalizer '%s'", finalizerName))
-		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("finalizer '%s' requested to be kept", finalizerName))
+		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("did not remove finalizer %#q", finalizerName))
+		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("finalizer %#q requested to be kept", finalizerName))
 
 		return nil
 	}
@@ -136,14 +136,14 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 	//     - The object has another finalizer set and we removed ours already.
 	//
 	if !containsString(accessor.GetFinalizers(), finalizerName) {
-		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("did not remove finalizer '%s'", finalizerName))
-		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("finalizer '%s' not found", finalizerName))
+		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("did not remove finalizer %#q", finalizerName))
+		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("finalizer %#q not found", finalizerName))
 
 		return nil
 	}
 
 	{
-		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("removing finalizer '%s'", finalizerName))
+		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("removing finalizer %#q", finalizerName))
 
 		o := func() error {
 			newObject, err := c.restClient.Get().AbsPath(selfLink).Do().Get()
@@ -184,7 +184,7 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 			return microerror.Mask(err)
 		}
 
-		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("removed finalizer '%s'", finalizerName))
+		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("removed finalizer %#q", finalizerName))
 		c.removedFinalizersCache.Set(selfLink)
 	}
 
