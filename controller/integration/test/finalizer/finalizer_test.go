@@ -211,8 +211,8 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 	// early, which they should not.
 	{
 		o := func() error {
-			if r.DeleteCount() < 20 {
-				return microerror.Maskf(waitError, "r.DeleteCount() == %v, want more than %v", r.DeleteCount(), 20)
+			if r.DeleteCount() < 3 {
+				return microerror.Maskf(waitError, "r.DeleteCount() == %v, want at least %v", r.DeleteCount(), 3)
 			}
 
 			return nil
