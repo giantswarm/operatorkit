@@ -180,26 +180,6 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
 
-		fmt.Printf("\n")
-		fmt.Printf("\n")
-		fmt.Printf("\n")
-		fmt.Printf("%#v\n", accessor.GetFinalizers())
-		fmt.Printf("\n")
-		fmt.Printf("\n")
-		fmt.Printf("\n")
-		fmt.Printf("%#v\n", accessor.GetLabels())
-		fmt.Printf("\n")
-		fmt.Printf("\n")
-		fmt.Printf("\n")
-		fmt.Printf("%#v\n", accessor.GetDeletionTimestamp())
-		fmt.Printf("\n")
-		fmt.Printf("\n")
-		fmt.Printf("\n")
-		fmt.Printf("%#v\n", accessor.GetResourceVersion())
-		fmt.Printf("\n")
-		fmt.Printf("\n")
-		fmt.Printf("\n")
-
 		if accessor.GetDeletionTimestamp() != nil {
 			t.Fatalf("DeletionTimestamp == %v, want %v", accessor.GetDeletionTimestamp(), nil)
 		}
@@ -229,35 +209,7 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 	//
 	{
 		o := func() error {
-			obj, err := wrapperA.GetObject(objName, objNamespace)
-			if err != nil {
-				t.Fatalf("err == %v, want %v", err, nil)
-			}
-
-			accessor, err := meta.Accessor(obj)
-			if err != nil {
-				t.Fatalf("err == %v, want %v", err, nil)
-			}
-
-			fmt.Printf("\n")
-			fmt.Printf("\n")
-			fmt.Printf("\n")
-			fmt.Printf("%#v\n", accessor.GetFinalizers())
-			fmt.Printf("\n")
-			fmt.Printf("\n")
-			fmt.Printf("\n")
-			fmt.Printf("delete count: %#v\n", r.DeleteCount())
-			fmt.Printf("\n")
-			fmt.Printf("\n")
-			fmt.Printf("\n")
 			if r.DeleteCount() < 20 {
-				fmt.Printf("\n")
-				fmt.Printf("\n")
-				fmt.Printf("\n")
-				fmt.Printf("retry\n")
-				fmt.Printf("\n")
-				fmt.Printf("\n")
-				fmt.Printf("\n")
 				return microerror.Maskf(waitError, "r.DeleteCount() == %v, want more than %v", r.DeleteCount(), 20)
 			}
 
@@ -282,26 +234,6 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
-
-		fmt.Printf("\n")
-		fmt.Printf("\n")
-		fmt.Printf("\n")
-		fmt.Printf("%#v\n", accessor.GetFinalizers())
-		fmt.Printf("\n")
-		fmt.Printf("\n")
-		fmt.Printf("\n")
-		fmt.Printf("%#v\n", accessor.GetLabels())
-		fmt.Printf("\n")
-		fmt.Printf("\n")
-		fmt.Printf("\n")
-		fmt.Printf("%#v\n", accessor.GetDeletionTimestamp())
-		fmt.Printf("\n")
-		fmt.Printf("\n")
-		fmt.Printf("\n")
-		fmt.Printf("%#v\n", accessor.GetResourceVersion())
-		fmt.Printf("\n")
-		fmt.Printf("\n")
-		fmt.Printf("\n")
 
 		if accessor.GetDeletionTimestamp() == nil {
 			t.Fatalf("DeletionTimestamp == %v, want non nil", accessor.GetDeletionTimestamp())
