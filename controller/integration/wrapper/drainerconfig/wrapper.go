@@ -23,7 +23,8 @@ import (
 )
 
 type Config struct {
-	Resources []resource.Interface
+	HandlesFunc func(obj interface{}) bool
+	Resources   []resource.Interface
 
 	Name      string
 	Namespace string
@@ -95,9 +96,10 @@ func New(config Config) (*Wrapper, error) {
 	var resourceSet *controller.ResourceSet
 	{
 		c := testresourceset.Config{
-			K8sClient: k8sClient,
-			Logger:    newLogger,
-			Resources: config.Resources,
+			HandlesFunc: config.HandlesFunc,
+			K8sClient:   k8sClient,
+			Logger:      newLogger,
+			Resources:   config.Resources,
 
 			ProjectName: config.Name,
 		}
