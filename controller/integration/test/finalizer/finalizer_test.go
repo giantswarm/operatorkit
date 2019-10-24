@@ -229,6 +229,20 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 	//
 	{
 		o := func() error {
+			obj, err := wrapperA.GetObject(objName, objNamespace)
+			if err != nil {
+				t.Fatalf("err == %v, want %v", err, nil)
+			}
+
+			accessor, err := meta.Accessor(obj)
+			if err != nil {
+				t.Fatalf("err == %v, want %v", err, nil)
+			}
+
+			fmt.Printf("\n")
+			fmt.Printf("\n")
+			fmt.Printf("\n")
+			fmt.Printf("%#v\n", accessor.GetFinalizers())
 			fmt.Printf("\n")
 			fmt.Printf("\n")
 			fmt.Printf("\n")
