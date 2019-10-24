@@ -24,6 +24,7 @@ import (
 
 type Config struct {
 	HandlesFunc func(obj interface{}) bool
+	Logger      micrologger.Logger
 	Resources   []resource.Interface
 
 	Name      string
@@ -55,11 +56,10 @@ func New(config Config) (*Wrapper, error) {
 		return nil, microerror.Mask(err)
 	}
 
-	var newLogger micrologger.Logger
-	{
+	if config.Logger == nil {
 		c := micrologger.Config{}
 
-		newLogger, err = micrologger.New(c)
+		config.Logger, err = micrologger.New(c)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
@@ -69,7 +69,7 @@ func New(config Config) (*Wrapper, error) {
 	{
 		c := k8scrdclient.Config{
 			K8sExtClient: k8sExtClient,
-			Logger:       newLogger,
+			Logger:       config.Logger,
 		}
 
 		crdClient, err = k8scrdclient.New(c)
@@ -81,7 +81,7 @@ func New(config Config) (*Wrapper, error) {
 	var newInformer *informer.Informer
 	{
 		c := informer.Config{
-			Logger:  newLogger,
+			Logger:  config.Logger,
 			Watcher: g8sClient.CoreV1alpha1().DrainerConfigs(config.Namespace),
 
 			RateWait:     time.Second * 2,
@@ -98,7 +98,7 @@ func New(config Config) (*Wrapper, error) {
 		c := testresourceset.Config{
 			HandlesFunc: config.HandlesFunc,
 			K8sClient:   k8sClient,
-			Logger:      newLogger,
+			Logger:      config.Logger,
 			Resources:   config.Resources,
 
 			ProjectName: config.Name,
@@ -116,7 +116,7 @@ func New(config Config) (*Wrapper, error) {
 			CRD:       v1alpha1.NewDrainerConfigCRD(),
 			CRDClient: crdClient,
 			Informer:  newInformer,
-			Logger:    newLogger,
+			Logger:    config.Logger,
 			ResourceSets: []*controller.ResourceSet{
 				resourceSet,
 			},

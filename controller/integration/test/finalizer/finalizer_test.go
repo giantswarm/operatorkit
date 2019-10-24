@@ -13,6 +13,7 @@ import (
 	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
+	"github.com/giantswarm/micrologger"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -68,15 +69,15 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 	var wrapperB *drainerconfig.Wrapper
 	var wrapperC *drainerconfig.Wrapper
 	{
-		wrapperA, err = newWrapper(r, newTrueHandlesFunc())
+		wrapperA, err = newWrapper(r, newControllerLogger("a"), newTrueHandlesFunc())
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
-		wrapperB, err = newWrapper(r, newFalseHandlesFunc())
+		wrapperB, err = newWrapper(r, newControllerLogger("b"), newFalseHandlesFunc())
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
-		wrapperC, err = newWrapper(r, newFalseHandlesFunc())
+		wrapperC, err = newWrapper(r, newControllerLogger("c"), newFalseHandlesFunc())
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -279,9 +280,26 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 	}
 }
 
-func newWrapper(r *testresource.Resource, h func(obj interface{}) bool) (*drainerconfig.Wrapper, error) {
+func newControllerLogger(c string) micrologger.Logger {
+	var err error
+
+	var l micrologger.Logger
+	{
+		c := micrologger.Config{}
+
+		l, err = micrologger.New(c)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	return l.With("controller", c)
+}
+
+func newWrapper(r *testresource.Resource, l micrologger.Logger, h func(obj interface{}) bool) (*drainerconfig.Wrapper, error) {
 	c := drainerconfig.Config{
 		HandlesFunc: h,
+		Logger:      l,
 		Resources: []resource.Interface{
 			r,
 		},
