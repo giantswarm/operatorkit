@@ -222,7 +222,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 			}
 
 			if accessor.GetDeletionTimestamp() == nil {
-				microerror.Maskf(waitError, "DeletionTimestamp == %v, want non nil", accessor.GetDeletionTimestamp())
+				return microerror.Maskf(waitError, "DeletionTimestamp == %v, want non nil", accessor.GetDeletionTimestamp())
 			}
 
 			finalizers := accessor.GetFinalizers()
@@ -230,7 +230,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 				testOtherFinalizer,
 			}
 			if !reflect.DeepEqual(finalizers, expectedFinalizers) {
-				microerror.Maskf(waitError, "finalizers == %v, want %v", finalizers, expectedFinalizers)
+				return microerror.Maskf(waitError, "finalizers == %v, want %v", finalizers, expectedFinalizers)
 			}
 
 			return nil
