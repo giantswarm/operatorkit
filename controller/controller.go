@@ -190,7 +190,8 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 			return
 
 		} else if err != nil {
-			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
+			c.logger.LogCtx(ctx, "level", "error", "message", "failed finding resource set", "stack", microerror.Stack(err))
+			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 			return
 		}
 
@@ -204,21 +205,24 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 		oldCtx := ctx
 		ctx, err = rs.InitCtx(ctx, obj)
 		if err != nil {
-			c.logger.LogCtx(oldCtx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
+			c.logger.LogCtx(oldCtx, "level", "error", "message", "failed initializing context", "stack", microerror.Stack(err))
+			c.logger.LogCtx(oldCtx, "level", "debug", "message", "canceling reconciliation")
 			return
 		}
 	}
 
 	hasFinalizer, err := c.hasFinalizer(ctx, obj)
 	if err != nil {
-		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "failed checking finalizer", "stack", microerror.Stack(err))
+		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 		return
 	}
 	if hasFinalizer {
 		err = ProcessDelete(ctx, obj, rs.Resources())
 		if err != nil {
 			c.errorCollector <- err
-			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
+			c.logger.LogCtx(ctx, "level", "error", "message", "failed processing event", "stack", microerror.Stack(err))
+			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 			return
 		}
 	} else {
@@ -229,7 +233,8 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 
 	err = c.removeFinalizer(ctx, obj)
 	if err != nil {
-		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "failed removing finalizer", "stack", microerror.Stack(err))
+		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 		return
 	}
 }
@@ -336,7 +341,8 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 			return
 
 		} else if err != nil {
-			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
+			c.logger.LogCtx(ctx, "level", "error", "message", "failed finding resource set", "stack", microerror.Stack(err))
+			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 			return
 		}
 
@@ -350,7 +356,8 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 		oldCtx := ctx
 		ctx, err = rs.InitCtx(ctx, obj)
 		if err != nil {
-			c.logger.LogCtx(oldCtx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
+			c.logger.LogCtx(oldCtx, "level", "error", "message", "failed initializing context", "stack", microerror.Stack(err))
+			c.logger.LogCtx(oldCtx, "level", "debug", "message", "canceling reconciliation")
 			return
 		}
 	}
@@ -362,7 +369,8 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 		if IsInvalidRESTClient(err) {
 			panic("invalid REST client configured for controller")
 		} else if err != nil {
-			c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
+			c.logger.LogCtx(ctx, "level", "error", "message", "failed adding finalizer", "stack", microerror.Stack(err))
+			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 			return
 		}
 
@@ -380,7 +388,8 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 	err = ProcessUpdate(ctx, obj, rs.Resources())
 	if err != nil {
 		c.errorCollector <- err
-		c.logger.LogCtx(ctx, "level", "error", "message", "stop reconciliation due to error", "stack", microerror.Stack(err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "failed processing event", "stack", microerror.Stack(err))
+		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 		return
 	}
 }
