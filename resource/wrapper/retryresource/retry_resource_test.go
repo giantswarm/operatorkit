@@ -41,7 +41,7 @@ func Test_CRUD_success(t *testing.T) {
 func Test_CRUD_failure(t *testing.T) {
 	var err error
 
-	r := test.NewNopCRUDResource()
+	r := test.NewNopBasicResource()
 
 	c := Config{
 		BackOff:  backoff.NewConstant(1, 1),
@@ -54,7 +54,7 @@ func Test_CRUD_failure(t *testing.T) {
 	}
 
 	_, ok := internal.CRUD(wrapped)
-	if !ok {
-		t.Fatalf("CURD(r) == %v, want %v", ok, true)
+	if ok {
+		t.Fatalf("Basic(r) == %v, want %v", ok, false)
 	}
 }
