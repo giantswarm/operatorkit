@@ -75,6 +75,9 @@ operators][operators].
 - https://github.com/giantswarm/release-operator
 - more to come
 
+## Example
+For the detail implementation in the state of art, please see [giantswarm/aws-operator](https://github.com/giantswarm/aws-operator).
+
 ## Contact
 
 - Mailing list: [giantswarm](https://groups.google.com/forum/!forum/giantswarm)

@@ -41,8 +41,8 @@ func (c *ApplicationV1alpha1Client) Apps(namespace string) AppInterface {
 	return newApps(c, namespace)
 }
 
-func (c *ApplicationV1alpha1Client) AppCatalogs(namespace string) AppCatalogInterface {
-	return newAppCatalogs(c, namespace)
+func (c *ApplicationV1alpha1Client) AppCatalogs() AppCatalogInterface {
+	return newAppCatalogs(c)
 }
 
 func (c *ApplicationV1alpha1Client) Charts(namespace string) ChartInterface {

@@ -1,7 +1,7 @@
 package v1alpha1
 
 import (
-	"github.com/giantswarm/to"
+	"github.com/ghodss/yaml"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -17,218 +17,120 @@ const (
 	ChangelogKindSecurity   ReleaseChangelogKind = "security"
 )
 
+const releaseCRDYAML = `
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: releases.release.giantswarm.io
+spec:
+  group: release.giantswarm.io
+  scope: Cluster
+  version: v1alpha1
+  names:
+    kind: Release
+    plural: releases
+    singular: release
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          type: object
+          properties:
+            changelog:
+              type: array
+              minItems: 1
+              items:
+                type: object
+                properties:
+                  component:
+                    type: string
+                    minLength: 3
+                  description:
+                    type: string
+                    minLength: 3
+                  kind:
+                    enum:
+                    - added
+                    - changed
+                    - deprecated
+                    - fixed
+                    - removed
+                    - security
+                required:
+                - component
+                - description
+                - kind
+            components:
+              type: array
+              minItems: 1
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    minLength: 3
+                  version:
+                    type: string
+                    minLength: 5
+            parentVersion:
+              type: string
+              pattern: "^\\d+\\.\\d+\\.\\d+$"
+            version:
+              type: string
+              minLength: 5
+          required:
+          - changelog
+          - components
+          - parentVersion
+          - version
+        status:
+          type: object
+          properties:
+            cycle:
+              type: object
+              properties:
+                disabledDate:
+                  type: string
+                  format: date
+                enabledDate:
+                  type: string
+                  format: date
+                phase:
+                  enum:
+                  - upcoming
+                  - enabled
+                  - disabled
+                  - eol
+              required:
+              - phase
+`
+
 type ReleaseChangelogKind string
 
-var releaseCRDValidation = &apiextensionsv1beta1.CustomResourceValidation{
-	// See http://json-schema.org/learn.
-	OpenAPIV3Schema: &apiextensionsv1beta1.JSONSchemaProps{
-		Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
-			"spec": {
-				Type: "object",
-				Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
-					"changelog": {
-						Type: "array",
-						Items: &apiextensionsv1beta1.JSONSchemaPropsOrArray{
-							Schema: &apiextensionsv1beta1.JSONSchemaProps{
-								Type: "object",
-								Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
-									"component": {
-										Type:      "string",
-										MinLength: to.Int64P(3),
-									},
-									"description": {
-										Type:      "string",
-										MinLength: to.Int64P(3),
-									},
-									"kind": {
-										Enum: []apiextensionsv1beta1.JSON{
-											{Raw: []byte(`"added"`)},
-											{Raw: []byte(`"changed"`)},
-											{Raw: []byte(`"deprecated"`)},
-											{Raw: []byte(`"fixed"`)},
-											{Raw: []byte(`"removed"`)},
-											{Raw: []byte(`"security"`)},
-										},
-									},
-								},
-								Required: []string{
-									"component",
-									"description",
-									"kind",
-								},
-							},
-						},
-						MinItems: to.Int64P(1),
-					},
-					"components": {
-						Type: "array",
-						Items: &apiextensionsv1beta1.JSONSchemaPropsOrArray{
-							Schema: &apiextensionsv1beta1.JSONSchemaProps{
-								Type: "object",
-								Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
-									"name": {
-										Type:      "string",
-										MinLength: to.Int64P(3),
-									},
-									"version": {
-										Type:      "string",
-										MinLength: to.Int64P(5),
-									},
-								},
-							},
-						},
-						MinItems: to.Int64P(1),
-					},
-					"parentVersion": {
-						Type:    "string",
-						Pattern: `^\d+\.\d+\.\d+$`,
-					},
-					"version": {
-						Type:      "string",
-						MinLength: to.Int64P(5),
-					},
-				},
-				Required: []string{
-					"changelog",
-					"components",
-					"parentVersion",
-					"version",
-				},
-			},
-			"status": {
-				Type: "object",
-				Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
-					"cycle": NewReleaseCycleCRD().Spec.Validation.OpenAPIV3Schema.Properties["spec"],
-				},
-			},
-		},
-	},
+var releaseCRD *apiextensionsv1beta1.CustomResourceDefinition
+
+func init() {
+	err := yaml.Unmarshal([]byte(releaseCRDYAML), &releaseCRD)
+	if err != nil {
+		panic(err)
+	}
 }
 
-// NewReleaseCRD looks like following.
-//
-//	kind: CustomResourceDefinition
-//	apiVersion: apiextensions.k8s.io/v1beta1
-//	metadata:
-//	  name: releases.release.giantswarm.io
-//	spec:
-//	  group: release.giantswarm.io
-//	  version: v1alpha1
-//	  names:
-//	    plural: releases
-//	    singular: release
-//	    kind: Release
-//	  scope: Cluster
-//	  validation:
-//	    openAPIV3Schema:
-//	      properties:
-//	        spec:
-//	          type: object
-//	          required:
-//	            - changelog
-//	            - components
-//	            - parentVersion
-//	            - version
-//	          properties:
-//	            changelog:
-//	              type: array
-//	              minItems: 1
-//	              items:
-//	                type: object
-//	                required:
-//	                  - component
-//	                  - description
-//	                  - kind
-//	                properties:
-//	                  component:
-//	                    type: string
-//	                    minLength: 3
-//	                  description:
-//	                    type: string
-//	                    minLength: 3
-//	                  kind:
-//	                    enum:
-//	                      - added
-//	                      - changed
-//	                      - deprecated
-//	                      - fixed
-//	                      - removed
-//	                      - security
-//	            components:
-//	              type: array
-//	              minItems: 1
-//	              items:
-//	                type: object
-//	                properties:
-//	                  name:
-//	                    type: string
-//	                    minLength: 3
-//	                  version:
-//	                    type: string
-//	                    minLength: 5
-//	            parentVersion:
-//	              type: string
-//	              pattern: "^\\d+\\.\\d+\\.\\d+$"
-//	            version:
-//	              type: string
-//	              minLength: 5
-//	        status:
-//	          type: object
-//	          properties:
-//	            cycle:
-//	              type: object
-//	              required:
-//	                - phase
-//	              properties:
-//	                disabledDate:
-//	                  type: string
-//	                  format: date
-//	                enabledDate:
-//	                  type: string
-//	                  format: date
-//	                phase:
-//	                  enum:
-//	                  - upcoming
-//	                  - enabled
-//	                  - disabled
-//	                  - eol
-//	  subresources:
-//	    status: {}
-//
 func NewReleaseCRD() *apiextensionsv1beta1.CustomResourceDefinition {
-	return &apiextensionsv1beta1.CustomResourceDefinition{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: apiextensionsv1beta1.SchemeGroupVersion.String(),
-			Kind:       "CustomResourceDefinition",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "releases.release.giantswarm.io",
-		},
-		Spec: apiextensionsv1beta1.CustomResourceDefinitionSpec{
-			Group:   "release.giantswarm.io",
-			Scope:   "Cluster",
-			Version: "v1alpha1",
-			Names: apiextensionsv1beta1.CustomResourceDefinitionNames{
-				Kind:     "Release",
-				Plural:   "releases",
-				Singular: "release",
-			},
-			Subresources: &apiextensionsv1beta1.CustomResourceSubresources{
-				Status: &apiextensionsv1beta1.CustomResourceSubresourceStatus{},
-			},
-			Validation: releaseCRDValidation,
-		},
-	}
+	return releaseCRD.DeepCopy()
 }
 
 func NewReleaseTypeMeta() metav1.TypeMeta {
 	return metav1.TypeMeta{
-		APIVersion: version,
+		APIVersion: SchemeGroupVersion.String(),
 		Kind:       kindRelease,
 	}
 }
 
 // +genclient
+// +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // Release CRs might look something like the following.
@@ -254,7 +156,7 @@ func NewReleaseTypeMeta() metav1.TypeMeta {
 //	      version: "0.5.0"
 //	    - name: "cluster-operator"
 //	      version: "0.10.0"
-//	  parentVersion: "6.2.1"
+//	  parentVersion: "6.0.1"
 //	  version: "6.1.0"
 //	status:
 //	  cycle:

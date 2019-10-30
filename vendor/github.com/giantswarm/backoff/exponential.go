@@ -6,7 +6,7 @@ import (
 	"github.com/cenkalti/backoff"
 )
 
-func NewExponential(maxWait, maxInterval time.Duration) backoff.BackOff {
+func NewExponential(maxWait, maxInterval time.Duration) BackOff {
 	b := &backoff.ExponentialBackOff{
 		InitialInterval:     backoff.DefaultInitialInterval,
 		RandomizationFactor: backoff.DefaultRandomizationFactor,

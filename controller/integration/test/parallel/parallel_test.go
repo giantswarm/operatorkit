@@ -312,13 +312,13 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	{
 		o := func() error {
 			if resourceA.DeleteCount() != 1 {
-				microerror.Maskf(waitError, "resourceA.DeleteCount() == %v, want %v", resourceA.DeleteCount(), 1)
+				return microerror.Maskf(waitError, "resourceA.DeleteCount() == %v, want %v", resourceA.DeleteCount(), 1)
 			}
 			if resourceB.DeleteCount() != 2 {
-				microerror.Maskf(waitError, "resourceB.DeleteCount() == %v, want %v", resourceB.DeleteCount(), 2)
+				return microerror.Maskf(waitError, "resourceB.DeleteCount() == %v, want %v", resourceB.DeleteCount(), 2)
 			}
 			if resourceC.DeleteCount() <= 3 {
-				microerror.Maskf(waitError, "resourceC.DeleteCount() == %v, want more than %v", resourceC.DeleteCount(), 3)
+				return microerror.Maskf(waitError, "resourceC.DeleteCount() == %v, want more than %v", resourceC.DeleteCount(), 3)
 			}
 
 			return nil
