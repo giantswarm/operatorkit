@@ -9,23 +9,27 @@ import (
 	"github.com/giantswarm/operatorkit/resource"
 )
 
-type resourceWrapper struct {
+type basicResourceConfig struct {
+	Resource resource.Interface
+}
+
+type basicResource struct {
 	resource resource.Interface
 }
 
-func newResourceWrapper(config Config) (*resourceWrapper, error) {
+func newBasicResource(config basicResourceConfig) (*basicResource, error) {
 	if config.Resource == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Resource must not be empty", config)
 	}
 
-	r := &resourceWrapper{
+	r := &basicResource{
 		resource: config.Resource,
 	}
 
 	return r, nil
 }
 
-func (r *resourceWrapper) EnsureCreated(ctx context.Context, obj interface{}) error {
+func (r *basicResource) EnsureCreated(ctx context.Context, obj interface{}) error {
 	rl := r.resource.Name()
 	ol := "EnsureCreated"
 
@@ -42,7 +46,7 @@ func (r *resourceWrapper) EnsureCreated(ctx context.Context, obj interface{}) er
 	return nil
 }
 
-func (r *resourceWrapper) EnsureDeleted(ctx context.Context, obj interface{}) error {
+func (r *basicResource) EnsureDeleted(ctx context.Context, obj interface{}) error {
 	rl := r.resource.Name()
 	ol := "EnsureDeleted"
 
@@ -59,11 +63,6 @@ func (r *resourceWrapper) EnsureDeleted(ctx context.Context, obj interface{}) er
 	return nil
 }
 
-func (r *resourceWrapper) Name() string {
+func (r *basicResource) Name() string {
 	return r.resource.Name()
-}
-
-// Wrapped implements internal.Wrapper interface.
-func (r *resourceWrapper) Wrapped() resource.Interface {
-	return r.resource
 }
