@@ -2,7 +2,6 @@ package retryresource
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/giantswarm/backoff"
@@ -57,7 +56,7 @@ func (r *basicResource) EnsureCreated(ctx context.Context, obj interface{}) erro
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", fmt.Sprintf("%#v", err))
+		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", microerror.Stack(err))
 	}
 
 	err = backoff.RetryNotify(o, r.backOff, n)
@@ -81,7 +80,7 @@ func (r *basicResource) EnsureDeleted(ctx context.Context, obj interface{}) erro
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", fmt.Sprintf("%#v", err))
+		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", microerror.Stack(err))
 	}
 
 	err = backoff.RetryNotify(o, r.backOff, n)

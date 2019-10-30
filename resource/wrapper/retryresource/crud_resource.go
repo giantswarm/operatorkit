@@ -2,7 +2,6 @@ package retryresource
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/giantswarm/backoff"
@@ -62,7 +61,7 @@ func (r *crudResource) GetCurrentState(ctx context.Context, obj interface{}) (in
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", fmt.Sprintf("%#v", err))
+		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", microerror.Stack(err))
 	}
 
 	err = backoff.RetryNotify(o, r.backOff, n)
@@ -87,8 +86,7 @@ func (r *crudResource) GetDesiredState(ctx context.Context, obj interface{}) (in
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", fmt.Sprintf("%#v", err))
-
+		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", microerror.Stack(err))
 	}
 
 	err = backoff.RetryNotify(o, r.backOff, n)
@@ -113,7 +111,7 @@ func (r *crudResource) NewUpdatePatch(ctx context.Context, obj, currentState, de
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", fmt.Sprintf("%#v", err))
+		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", microerror.Stack(err))
 	}
 
 	err = backoff.RetryNotify(o, r.backOff, n)
@@ -138,7 +136,7 @@ func (r *crudResource) NewDeletePatch(ctx context.Context, obj, currentState, de
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", fmt.Sprintf("%#v", err))
+		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", microerror.Stack(err))
 	}
 
 	err = backoff.RetryNotify(o, r.backOff, n)
@@ -160,7 +158,7 @@ func (r *crudResource) ApplyCreateChange(ctx context.Context, obj, createState i
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", fmt.Sprintf("%#v", err))
+		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", microerror.Stack(err))
 	}
 
 	err := backoff.RetryNotify(o, r.backOff, n)
@@ -182,7 +180,7 @@ func (r *crudResource) ApplyDeleteChange(ctx context.Context, obj, deleteState i
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", fmt.Sprintf("%#v", err))
+		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", microerror.Stack(err))
 	}
 
 	err := backoff.RetryNotify(o, r.backOff, n)
@@ -204,7 +202,7 @@ func (r *crudResource) ApplyUpdateChange(ctx context.Context, obj, updateState i
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", fmt.Sprintf("%#v", err))
+		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", microerror.Stack(err))
 	}
 
 	err := backoff.RetryNotify(o, r.backOff, n)
