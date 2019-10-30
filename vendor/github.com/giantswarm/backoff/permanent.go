@@ -1,5 +1,9 @@
 package backoff
 
-import "github.com/cenkalti/backoff"
+import (
+	"github.com/cenkalti/backoff"
+)
 
-var Permanent = backoff.Permanent
+func Permanent(err error) error {
+	return backoff.Permanent(err)
+}

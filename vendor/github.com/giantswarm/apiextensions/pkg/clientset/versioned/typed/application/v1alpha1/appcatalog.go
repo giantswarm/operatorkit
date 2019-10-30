@@ -32,7 +32,7 @@ import (
 // AppCatalogsGetter has a method to return a AppCatalogInterface.
 // A group's client should implement this interface.
 type AppCatalogsGetter interface {
-	AppCatalogs(namespace string) AppCatalogInterface
+	AppCatalogs() AppCatalogInterface
 }
 
 // AppCatalogInterface has methods to work with AppCatalog resources.
@@ -51,14 +51,12 @@ type AppCatalogInterface interface {
 // appCatalogs implements AppCatalogInterface
 type appCatalogs struct {
 	client rest.Interface
-	ns     string
 }
 
 // newAppCatalogs returns a AppCatalogs
-func newAppCatalogs(c *ApplicationV1alpha1Client, namespace string) *appCatalogs {
+func newAppCatalogs(c *ApplicationV1alpha1Client) *appCatalogs {
 	return &appCatalogs{
 		client: c.RESTClient(),
-		ns:     namespace,
 	}
 }
 
@@ -66,7 +64,6 @@ func newAppCatalogs(c *ApplicationV1alpha1Client, namespace string) *appCatalogs
 func (c *appCatalogs) Get(name string, options v1.GetOptions) (result *v1alpha1.AppCatalog, err error) {
 	result = &v1alpha1.AppCatalog{}
 	err = c.client.Get().
-		Namespace(c.ns).
 		Resource("appcatalogs").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
@@ -83,7 +80,6 @@ func (c *appCatalogs) List(opts v1.ListOptions) (result *v1alpha1.AppCatalogList
 	}
 	result = &v1alpha1.AppCatalogList{}
 	err = c.client.Get().
-		Namespace(c.ns).
 		Resource("appcatalogs").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -100,7 +96,6 @@ func (c *appCatalogs) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	}
 	opts.Watch = true
 	return c.client.Get().
-		Namespace(c.ns).
 		Resource("appcatalogs").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -111,7 +106,6 @@ func (c *appCatalogs) Watch(opts v1.ListOptions) (watch.Interface, error) {
 func (c *appCatalogs) Create(appCatalog *v1alpha1.AppCatalog) (result *v1alpha1.AppCatalog, err error) {
 	result = &v1alpha1.AppCatalog{}
 	err = c.client.Post().
-		Namespace(c.ns).
 		Resource("appcatalogs").
 		Body(appCatalog).
 		Do().
@@ -123,7 +117,6 @@ func (c *appCatalogs) Create(appCatalog *v1alpha1.AppCatalog) (result *v1alpha1.
 func (c *appCatalogs) Update(appCatalog *v1alpha1.AppCatalog) (result *v1alpha1.AppCatalog, err error) {
 	result = &v1alpha1.AppCatalog{}
 	err = c.client.Put().
-		Namespace(c.ns).
 		Resource("appcatalogs").
 		Name(appCatalog.Name).
 		Body(appCatalog).
@@ -135,7 +128,6 @@ func (c *appCatalogs) Update(appCatalog *v1alpha1.AppCatalog) (result *v1alpha1.
 // Delete takes name of the appCatalog and deletes it. Returns an error if one occurs.
 func (c *appCatalogs) Delete(name string, options *v1.DeleteOptions) error {
 	return c.client.Delete().
-		Namespace(c.ns).
 		Resource("appcatalogs").
 		Name(name).
 		Body(options).
@@ -150,7 +142,6 @@ func (c *appCatalogs) DeleteCollection(options *v1.DeleteOptions, listOptions v1
 		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
-		Namespace(c.ns).
 		Resource("appcatalogs").
 		VersionedParams(&listOptions, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -163,7 +154,6 @@ func (c *appCatalogs) DeleteCollection(options *v1.DeleteOptions, listOptions v1
 func (c *appCatalogs) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.AppCatalog, err error) {
 	result = &v1alpha1.AppCatalog{}
 	err = c.client.Patch(pt).
-		Namespace(c.ns).
 		Resource("appcatalogs").
 		SubResource(subresources...).
 		Name(name).

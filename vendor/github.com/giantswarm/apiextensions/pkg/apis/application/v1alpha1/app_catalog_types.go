@@ -1,9 +1,85 @@
 package v1alpha1
 
 import (
+	"github.com/ghodss/yaml"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+const (
+	kindAppCatalog = "AppCatalog"
+)
+
+const appCatalogCRDYAML = `
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: appcatalogs.application.giantswarm.io
+spec:
+  group: application.giantswarm.io
+  scope: Cluster
+  version: v1alpha1
+  names:
+    kind: AppCatalog
+    plural: appcatalogs
+    singular: appcatalog
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          type: object
+          properties:
+            title:
+              type: string
+            description:
+              type: string
+            config:
+              type: object
+              properties:
+                configMap:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    resourceVersion:
+                      type: string
+                  required: ["name", "namespace"]
+                secret:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    resourceVersion:
+                      type: string
+                  required: ["name", "namespace"]
+            logoURL:
+              type: string
+            storage:
+              type: object 
+              properties:
+                type:
+                  type: string
+                URL:
+                  type: string
+                  format: uri 
+              required: ["type", "URL"]
+          required: ["title", "description", "storage"]
+`
+
+var appCatalogCRD *apiextensionsv1beta1.CustomResourceDefinition
+
+func init() {
+	err := yaml.Unmarshal([]byte(appCatalogCRDYAML), &appCatalogCRD)
+	if err != nil {
+		panic(err)
+	}
+}
 
 // NewAppCatalogCRD returns a new custom resource definition for AppCatalog.
 // This might look something like the following.
@@ -22,28 +98,18 @@ import (
 //         singular: appcatalog
 //
 func NewAppCatalogCRD() *apiextensionsv1beta1.CustomResourceDefinition {
-	return &apiextensionsv1beta1.CustomResourceDefinition{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: apiextensionsv1beta1.SchemeGroupVersion.String(),
-			Kind:       "CustomResourceDefinition",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "appcatalogs.application.giantswarm.io",
-		},
-		Spec: apiextensionsv1beta1.CustomResourceDefinitionSpec{
-			Group:   "application.giantswarm.io",
-			Scope:   "Cluster",
-			Version: "v1alpha1",
-			Names: apiextensionsv1beta1.CustomResourceDefinitionNames{
-				Kind:     "AppCatalog",
-				Plural:   "appcatalogs",
-				Singular: "appcatalog",
-			},
-		},
+	return appCatalogCRD.DeepCopy()
+}
+
+func NewAppCatalogTypeMeta() metav1.TypeMeta {
+	return metav1.TypeMeta{
+		APIVersion: SchemeGroupVersion.String(),
+		Kind:       kindAppCatalog,
 	}
 }
 
 // +genclient
+// +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // AppCatalog CRs might look something like the following.
@@ -65,7 +131,7 @@ func NewAppCatalogCRD() *apiextensionsv1beta1.CustomResourceDefinition {
 //        secret:
 //          name: "app-catalog-secrets"
 //          namespace: "giantswarm"
-//      logoURL: "https://s.giantswarm.io/..."
+//      logoURL: "/images/repo_icons/incubator.png"
 //      storage:
 //        type: "helm"
 //        URL: "https://giantswarm.github.com/app-catalog/"

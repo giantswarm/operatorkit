@@ -6,7 +6,7 @@ import (
 	"github.com/cenkalti/backoff"
 )
 
-func NewConstant(maxWait, maxInterval time.Duration) backoff.BackOff {
+func NewConstant(maxWait, maxInterval time.Duration) BackOff {
 	b := withMaxElapsedTime(backoff.NewConstantBackOff(maxInterval), maxWait)
 
 	b.Reset()
@@ -14,7 +14,7 @@ func NewConstant(maxWait, maxInterval time.Duration) backoff.BackOff {
 	return b
 }
 
-func withMaxElapsedTime(b backoff.BackOff, d time.Duration) *backOffMaxElapsedTime {
+func withMaxElapsedTime(b BackOff, d time.Duration) *backOffMaxElapsedTime {
 	return &backOffMaxElapsedTime{
 		underlying: b,
 		maxElapsed: d,
@@ -23,7 +23,7 @@ func withMaxElapsedTime(b backoff.BackOff, d time.Duration) *backOffMaxElapsedTi
 }
 
 type backOffMaxElapsedTime struct {
-	underlying backoff.BackOff
+	underlying BackOff
 	maxElapsed time.Duration
 	start      time.Time
 }

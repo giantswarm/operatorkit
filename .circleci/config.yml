@@ -56,6 +56,11 @@ jobs:
       TEST_DIR: "controller/integration/test/error"
     <<: *e2eTest
 
+  e2eTestControllerFinalizer:
+    environment:
+      TEST_DIR: "controller/integration/test/finalizer"
+    <<: *e2eTest
+
   e2eTestControllerParallel:
     environment:
       TEST_DIR: "controller/integration/test/parallel"
@@ -103,6 +108,10 @@ workflows:
           - build
 
       - e2eTestControllerError:
+          requires:
+          - build
+
+      - e2eTestControllerFinalizer:
           requires:
           - build
 

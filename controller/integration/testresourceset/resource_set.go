@@ -11,9 +11,10 @@ import (
 )
 
 type Config struct {
-	K8sClient kubernetes.Interface
-	Logger    micrologger.Logger
-	Resources []resource.Interface
+	HandlesFunc func(obj interface{}) bool
+	K8sClient   kubernetes.Interface
+	Logger      micrologger.Logger
+	Resources   []resource.Interface
 
 	ProjectName string
 }
@@ -40,14 +41,16 @@ func New(config Config) (*controller.ResourceSet, error) {
 		resources = config.Resources
 	}
 
-	handlesFunc := func(obj interface{}) bool {
-		return true
+	if config.HandlesFunc == nil {
+		config.HandlesFunc = func(obj interface{}) bool {
+			return true
+		}
 	}
 
 	var resourceSet *controller.ResourceSet
 	{
 		c := controller.ResourceSetConfig{
-			Handles:   handlesFunc,
+			Handles:   config.HandlesFunc,
 			Logger:    config.Logger,
 			Resources: resources,
 		}
