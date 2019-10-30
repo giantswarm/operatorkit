@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"github.com/ghodss/yaml"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -8,6 +9,103 @@ import (
 const (
 	kindApp = "App"
 )
+
+const appCRDYAML = `
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: apps.application.giantswarm.io
+spec:
+  group: application.giantswarm.io
+  scope: Namespaced
+  version: v1alpha1
+  names:
+    kind: App
+    plural: apps
+    singular: app
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          type: object
+          properties:
+            catalog:
+              type: string
+            name:
+              type: string
+            namespace:
+              type: string
+            version:
+              type: string
+            config:
+              type: object
+              properties:
+                configMap:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                  required: ["name", "namespace"]
+                secret:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                  required: ["name", "namespace"]
+            kubeConfig:
+              type: object
+              properties:
+                inCluster:
+                  type: boolean
+                context:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                secret:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                  required: ["name", "namespace"]
+            userConfig:
+              type: object
+              properties:
+                configMap:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                  required: ["name", "namespace"]
+                secret:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                  required: ["name", "namespace"]
+          required: ["catalog", "name", "namespace", "version"]
+`
+
+var appCRD *apiextensionsv1beta1.CustomResourceDefinition
+
+func init() {
+	err := yaml.Unmarshal([]byte(appCRDYAML), &appCRD)
+	if err != nil {
+		panic(err)
+	}
+}
 
 // NewAppCRD returns a new custom resource definition for App.
 // This might look something like the following.
@@ -26,33 +124,12 @@ const (
 //         singular: app
 //
 func NewAppCRD() *apiextensionsv1beta1.CustomResourceDefinition {
-	return &apiextensionsv1beta1.CustomResourceDefinition{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: apiextensionsv1beta1.SchemeGroupVersion.String(),
-			Kind:       "CustomResourceDefinition",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "apps.application.giantswarm.io",
-		},
-		Spec: apiextensionsv1beta1.CustomResourceDefinitionSpec{
-			Group:   "application.giantswarm.io",
-			Scope:   "Namespaced",
-			Version: "v1alpha1",
-			Names: apiextensionsv1beta1.CustomResourceDefinitionNames{
-				Kind:     "App",
-				Plural:   "apps",
-				Singular: "app",
-			},
-			Subresources: &apiextensionsv1beta1.CustomResourceSubresources{
-				Status: &apiextensionsv1beta1.CustomResourceSubresourceStatus{},
-			},
-		},
-	}
+	return appCRD.DeepCopy()
 }
 
 func NewAppTypeMeta() metav1.TypeMeta {
 	return metav1.TypeMeta{
-		APIVersion: version,
+		APIVersion: SchemeGroupVersion.String(),
 		Kind:       kindApp,
 	}
 }
@@ -123,7 +200,7 @@ type AppSpec struct {
 	// e.g. monitoring
 	Namespace string `json:"namespace" yaml:"namespace"`
 	// UserConfig is the user config to be applied when the app is deployed.
-	UserConfig AppSpecConfig `json:"userConfig" yaml:"userConfig"`
+	UserConfig AppSpecUserConfig `json:"userConfig" yaml:"userConfig"`
 	// Version is the version of the app that should be deployed.
 	// e.g. 1.0.0
 	Version string `json:"version" yaml:"version"`
@@ -194,8 +271,8 @@ type AppSpecUserConfigConfigMap struct {
 	// Name is the name of the config map containing user values to apply,
 	// e.g. prometheus-user-values.
 	Name string `json:"name" yaml:"name"`
-	// Namespace is the namespace of the user values config map,
-	// e.g. monitoring.
+	// Namespace is the namespace of the user values config map on the control plane,
+	// e.g. 123ab.
 	Namespace string `json:"namespace" yaml:"namespace"`
 }
 
@@ -226,6 +303,9 @@ type AppStatus struct {
 type AppStatusRelease struct {
 	// LastDeployed is the time when the app was last deployed.
 	LastDeployed DeepCopyTime `json:"lastDeployed" yaml:"lastDeployed"`
+	// Reason is the description of the last status of helm release when the app is
+	// not installed successfully, e.g. deploy resource already exists.
+	Reason string `json:"reason,omitempty" yaml:"reason,omitempty"`
 	// Status is the status of the deployed app,
 	// e.g. DEPLOYED.
 	Status string `json:"status" yaml:"status"`
