@@ -1,14 +1,13 @@
 package retryresource
 
 import (
-	"context"
-
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 
 	"github.com/giantswarm/operatorkit/resource"
 	"github.com/giantswarm/operatorkit/resource/crud"
+	"github.com/giantswarm/operatorkit/resource/wrapper/internal"
 )
 
 type Config struct {
@@ -17,38 +16,32 @@ type Config struct {
 	Resource resource.Interface
 }
 
-type Resource struct {
-	resource resource.Interface
-}
-
 // New returns a new retry resource according to the configured resource's
 // implementation, which might be resource.Interface or crud.Interface. This has
 // then different implications on how to retry the different methods of the
 // interfaces.
-func New(config Config) (*Resource, error) {
+func New(config Config) (resource.Interface, error) {
 	if config.Resource == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Resource must not be empty", config)
 	}
 
 	var err error
-	var wrapped resource.Interface
 
-	// Here we check if the configured resource is actually a CRUD Resource
-	// implementation and wrap it accordingly. In this case we have to wrap
-	// GetCurrentState, GetDesiredState, NewUpdatePatch, NewDeletePatch,
-	// ApplyCreateChange, ApplyDeleteChange and ApplyUpdateChange to execute the
-	// retry logic properly.
-	ci, ok := config.Resource.(crud.Interface)
+	// If crud.Interface can be extracted from this resource wrap it.
+	// In this case GetCurrentState, GetDesiredState, NewUpdatePatch,
+	// NewDeletePatch, ApplyCreateChange, ApplyDeleteChange and
+	// ApplyUpdateChange are wrapped with retries.
+	crudInterface, ok := internal.CRUD(config.Resource)
 	if ok {
-		var crudResource crud.Interface
+		var wrappedCRUD *crudResource
 		{
 			c := crudResourceConfig{
 				BackOff: config.BackOff,
-				CRUD:    ci,
+				CRUD:    crudInterface,
 				Logger:  config.Logger,
 			}
 
-			crudResource, err = newCRUDResource(c)
+			wrappedCRUD, err = newCRUDResource(c)
 			if err != nil {
 				return nil, microerror.Mask(err)
 			}
@@ -56,59 +49,33 @@ func New(config Config) (*Resource, error) {
 
 		{
 			c := crud.ResourceConfig{
-				CRUD:   crudResource,
+				CRUD:   wrappedCRUD,
 				Logger: config.Logger,
 			}
 
-			wrapped, err = crud.NewResource(c)
+			r, err := crud.NewResource(c)
 			if err != nil {
 				return nil, microerror.Mask(err)
 			}
+
+			return r, nil
 		}
 	}
 
-	// Here we check if the configured resource is actually a basic Resource
-	// implementation and wrap it accordingly. In this case we have to wrap
-	// EnsureCreated and EnsureDeleted. to execute the retry logic properly.
-	ri, ok := config.Resource.(resource.Interface)
-	if ok {
+	// If crud.Interface can't be extracted resource wrap only resource.Interface
+	// EnsureCreated and EnsureDeleted methods with retries.
+	{
 		c := basicResourceConfig{
 			BackOff:  config.BackOff,
 			Logger:   config.Logger,
-			Resource: ri,
+			Resource: config.Resource,
 		}
 
-		wrapped, err = newBasicResource(c)
+		r, err := newBasicResource(c)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
+
+		return r, nil
 	}
-
-	r := &Resource{
-		resource: wrapped,
-	}
-
-	return r, nil
-}
-
-func (r *Resource) EnsureCreated(ctx context.Context, obj interface{}) error {
-	err := r.resource.EnsureCreated(ctx, obj)
-	if err != nil {
-		return microerror.Mask(err)
-	}
-
-	return nil
-}
-
-func (r *Resource) EnsureDeleted(ctx context.Context, obj interface{}) error {
-	err := r.resource.EnsureDeleted(ctx, obj)
-	if err != nil {
-		return microerror.Mask(err)
-	}
-
-	return nil
-}
-
-func (r *Resource) Name() string {
-	return r.resource.Name()
 }
