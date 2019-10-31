@@ -12,6 +12,7 @@ import (
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
 	"github.com/giantswarm/operatorkit/resource"
+	"github.com/giantswarm/operatorkit/resource/crud"
 )
 
 func Test_ProcessDelete_CRUD(t *testing.T) {
@@ -317,7 +318,7 @@ func Test_ProcessUpdate_CRUD(t *testing.T) {
 }
 
 type testCRUDResource struct {
-	*CRUDResource
+	*crud.Resource
 	ops *testCRUDResourceOps
 }
 
@@ -326,22 +327,22 @@ func newTestCRUDResource(name string) *testCRUDResource {
 
 	ops := newTestResourceOps(name)
 
-	var crudResource *CRUDResource
+	var crudResource *crud.Resource
 	{
-		c := CRUDResourceConfig{
+		c := crud.ResourceConfig{
+			CRUD:   ops,
 			Logger: microloggertest.New(),
-			Ops:    ops,
 		}
 
-		crudResource, err = NewCRUDResource(c)
+		crudResource, err = crud.NewResource(c)
 		if err != nil {
 			panic(fmt.Sprintf("%#v", microerror.Mask(err)))
 		}
 	}
 
 	return &testCRUDResource{
-		CRUDResource: crudResource,
-		ops:          ops,
+		Resource: crudResource,
+		ops:      ops,
 	}
 }
 
@@ -397,12 +398,12 @@ func (o *testCRUDResourceOps) GetDesiredState(ctx context.Context, obj interface
 	return nil, nil
 }
 
-func (o *testCRUDResourceOps) NewUpdatePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*Patch, error) {
+func (o *testCRUDResourceOps) NewUpdatePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*crud.Patch, error) {
 	o.executeMethod(ctx, "NewUpdatePatch")
 	return newFullPatch(), nil
 }
 
-func (o *testCRUDResourceOps) NewDeletePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*Patch, error) {
+func (o *testCRUDResourceOps) NewDeletePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*crud.Patch, error) {
 	o.executeMethod(ctx, "NewDeletePatch")
 	return newFullPatch(), nil
 }
@@ -435,8 +436,8 @@ func (o *testCRUDResourceOps) executeMethod(ctx context.Context, method string) 
 
 // newFullPatch returns Patch filled with nil's so all Apply*Change methods are
 // executed.
-func newFullPatch() *Patch {
-	p := NewPatch()
+func newFullPatch() *crud.Patch {
+	p := crud.NewPatch()
 	p.SetCreateChange(nil)
 	p.SetDeleteChange(nil)
 	p.SetUpdateChange(nil)
