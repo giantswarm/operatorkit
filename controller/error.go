@@ -63,6 +63,10 @@ func IsPortforward(err error) bool {
 		return true
 	}
 
+	if strings.Contains(c.Error(), "error copying from remote stream to local connection") {
+		return true
+	}
+
 	return false
 }
 
