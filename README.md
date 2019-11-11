@@ -1,4 +1,4 @@
-[![CircleCI](https://circleci.com/gh/giantswarm/operatorkit.svg?&style=shield&circle-token=5f7e69042df6538d1e9c7ef0dd1387ca4d7a0d55)](https://circleci.com/gh/giantswarm/operatorkit)
+[![GoDoc](https://godoc.org/github.com/giantswarm/operatorkit?status.svg)](http://godoc.org/github.com/giantswarm/operatorkit) [![CircleCI](https://circleci.com/gh/giantswarm/operatorkit.svg?&style=shield&circle-token=5f7e69042df6538d1e9c7ef0dd1387ca4d7a0d55)](https://circleci.com/gh/giantswarm/operatorkit)
 
 # operatorkit
 
@@ -62,21 +62,11 @@ operators][operators].
 
 ## Projects using operatorkit
 
-- https://github.com/giantswarm/app-operator
-- https://github.com/giantswarm/aws-operator
-- https://github.com/giantswarm/azure-operator
-- https://github.com/giantswarm/cert-operator
-- https://github.com/giantswarm/cluster-operator
-- https://github.com/giantswarm/chart-operator
-- https://github.com/giantswarm/flannel-operator
-- https://github.com/giantswarm/kvm-operator
-- https://github.com/giantswarm/node-operator
-- https://github.com/giantswarm/prometheus-config-controller
-- https://github.com/giantswarm/release-operator
-- more to come
+[Giant Swarm operators][giantswarm-operators] using operatorkit.
 
-## Example
-For the detail implementation in the state of art, please see [giantswarm/aws-operator](https://github.com/giantswarm/aws-operator).
+## Example
+
+For the detailed implementation in the state of art, please see [giantswarm/aws-operator](https://github.com/giantswarm/aws-operator).
 
 ## Contact
 
@@ -96,4 +86,5 @@ for details.
 
 [finalizers]: https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-custom-resource-definitions/#finalizers
 [giantswarm]: https://giantswarm.io
+[giantswarm-operators]: https://github.com/search?p=1&q=topic%3Aoperator+org%3Agiantswarm&type=Repositories
 [operators]: https://coreos.com/operators
