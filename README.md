@@ -62,9 +62,9 @@ operators][operators].
 
 ## Projects using operatorkit
 
-[Giant Swarm operators using operatorkit](https://github.com/search?p=1&q=topic%3Aoperator+org%3Agiantswarm&type=Repositories).
+[Giant Swarm operators][giantswarm-operators] using operatorkit.
 
-## Example
+## Example
 
 For the detailed implementation in the state of art, please see [giantswarm/aws-operator](https://github.com/giantswarm/aws-operator).
 
@@ -86,4 +86,5 @@ for details.
 
 [finalizers]: https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-custom-resource-definitions/#finalizers
 [giantswarm]: https://giantswarm.io
+[giantswarm-operators]: https://github.com/search?p=1&q=topic%3Aoperator+org%3Agiantswarm&type=Repositories
 [operators]: https://coreos.com/operators
