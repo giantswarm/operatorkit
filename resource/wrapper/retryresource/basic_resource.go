@@ -2,7 +2,6 @@ package retryresource
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/giantswarm/backoff"
@@ -12,13 +11,19 @@ import (
 	"github.com/giantswarm/operatorkit/resource"
 )
 
-type resourceWrapper struct {
+type basicResourceConfig struct {
+	BackOff  backoff.Interface
+	Logger   micrologger.Logger
+	Resource resource.Interface
+}
+
+type basicResource struct {
 	backOff  backoff.Interface
 	logger   micrologger.Logger
 	resource resource.Interface
 }
 
-func newResourceWrapper(config Config) (*resourceWrapper, error) {
+func newBasicResource(config basicResourceConfig) (*basicResource, error) {
 	if config.BackOff == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.BackOff must not be empty", config)
 	}
@@ -29,7 +34,7 @@ func newResourceWrapper(config Config) (*resourceWrapper, error) {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Resource must not be empty", config)
 	}
 
-	r := &resourceWrapper{
+	r := &basicResource{
 		backOff:  config.BackOff,
 		logger:   config.Logger,
 		resource: config.Resource,
@@ -38,7 +43,7 @@ func newResourceWrapper(config Config) (*resourceWrapper, error) {
 	return r, nil
 }
 
-func (r *resourceWrapper) EnsureCreated(ctx context.Context, obj interface{}) error {
+func (r *basicResource) EnsureCreated(ctx context.Context, obj interface{}) error {
 	var err error
 
 	o := func() error {
@@ -51,7 +56,7 @@ func (r *resourceWrapper) EnsureCreated(ctx context.Context, obj interface{}) er
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", fmt.Sprintf("%#v", err))
+		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", microerror.Stack(err))
 	}
 
 	err = backoff.RetryNotify(o, r.backOff, n)
@@ -62,7 +67,7 @@ func (r *resourceWrapper) EnsureCreated(ctx context.Context, obj interface{}) er
 	return nil
 }
 
-func (r *resourceWrapper) EnsureDeleted(ctx context.Context, obj interface{}) error {
+func (r *basicResource) EnsureDeleted(ctx context.Context, obj interface{}) error {
 	var err error
 
 	o := func() error {
@@ -75,7 +80,7 @@ func (r *resourceWrapper) EnsureDeleted(ctx context.Context, obj interface{}) er
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", fmt.Sprintf("%#v", err))
+		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", microerror.Stack(err))
 	}
 
 	err = backoff.RetryNotify(o, r.backOff, n)
@@ -86,11 +91,6 @@ func (r *resourceWrapper) EnsureDeleted(ctx context.Context, obj interface{}) er
 	return nil
 }
 
-func (r *resourceWrapper) Name() string {
+func (r *basicResource) Name() string {
 	return r.resource.Name()
-}
-
-// Wrapped implements internal.Wrapper interface.
-func (r *resourceWrapper) Wrapped() resource.Interface {
-	return r.resource
 }
