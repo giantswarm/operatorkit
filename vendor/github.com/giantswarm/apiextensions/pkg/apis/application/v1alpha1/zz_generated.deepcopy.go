@@ -83,7 +83,7 @@ func (in *AppCatalog) DeepCopyObject() runtime.Object {
 func (in *AppCatalogList) DeepCopyInto(out *AppCatalogList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]AppCatalog, len(*in))
@@ -200,7 +200,7 @@ func (in *AppCatalogSpecStorage) DeepCopy() *AppCatalogSpecStorage {
 func (in *AppList) DeepCopyInto(out *AppList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]App, len(*in))
@@ -464,7 +464,7 @@ func (in *Chart) DeepCopyObject() runtime.Object {
 func (in *ChartList) DeepCopyInto(out *ChartList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]Chart, len(*in))

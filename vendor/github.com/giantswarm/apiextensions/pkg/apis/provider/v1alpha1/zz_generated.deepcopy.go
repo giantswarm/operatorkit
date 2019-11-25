@@ -58,7 +58,7 @@ func (in *AWSConfig) DeepCopyObject() runtime.Object {
 func (in *AWSConfigList) DeepCopyInto(out *AWSConfigList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]AWSConfig, len(*in))
@@ -480,7 +480,7 @@ func (in *AzureConfig) DeepCopyObject() runtime.Object {
 func (in *AzureConfigList) DeepCopyInto(out *AzureConfigList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]AzureConfig, len(*in))
@@ -1038,7 +1038,7 @@ func (in *KVMConfig) DeepCopyObject() runtime.Object {
 func (in *KVMConfigList) DeepCopyInto(out *KVMConfigList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]KVMConfig, len(*in))
