@@ -9,6 +9,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+
+	"github.com/giantswarm/k8sclient/k8scrdclient"
 )
 
 type ClientsConfig struct {
@@ -23,6 +25,7 @@ type ClientsConfig struct {
 type Clients struct {
 	logger micrologger.Logger
 
+	crdClient  k8scrdclient.Interface
 	dynClient  dynamic.Interface
 	extClient  *apiextensionsclient.Clientset
 	g8sClient  *versioned.Clientset
@@ -57,21 +60,34 @@ func NewClients(config ClientsConfig) (*Clients, error) {
 		}
 	}
 
-	var dynClient dynamic.Interface
-	{
-		c := rest.CopyConfig(restConfig)
-
-		dynClient, err = dynamic.NewForConfig(c)
-		if err != nil {
-			return nil, microerror.Mask(err)
-		}
-	}
-
 	var extClient *apiextensionsclient.Clientset
 	{
 		c := rest.CopyConfig(restConfig)
 
 		extClient, err = apiextensionsclient.NewForConfig(c)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+	}
+
+	var crdClient *k8scrdclient.CRDClient
+	{
+		c := k8scrdclient.Config{
+			K8sExtClient: extClient,
+			Logger:       config.Logger,
+		}
+
+		crdClient, err = k8scrdclient.New(c)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+	}
+
+	var dynClient dynamic.Interface
+	{
+		c := rest.CopyConfig(restConfig)
+
+		dynClient, err = dynamic.NewForConfig(c)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
@@ -111,6 +127,7 @@ func NewClients(config ClientsConfig) (*Clients, error) {
 	c := &Clients{
 		logger: config.Logger,
 
+		crdClient:  crdClient,
 		dynClient:  dynClient,
 		extClient:  extClient,
 		g8sClient:  g8sClient,
@@ -120,6 +137,10 @@ func NewClients(config ClientsConfig) (*Clients, error) {
 	}
 
 	return c, nil
+}
+
+func (c *Clients) CRDClient() k8scrdclient.Interface {
+	return c.crdClient
 }
 
 func (c *Clients) DynClient() dynamic.Interface {

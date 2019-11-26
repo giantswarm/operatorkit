@@ -11,8 +11,6 @@ import (
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/giantswarm/k8sclient/k8scrdclient"
 )
 
 type SetupConfig struct {
@@ -42,21 +40,9 @@ func NewSetup(config SetupConfig) (*Setup, error) {
 }
 
 func (s *Setup) EnsureCRDCreated(ctx context.Context, crd *apiextensionsv1beta1.CustomResourceDefinition) error {
-	var err error
-
-	var crdClient *k8scrdclient.CRDClient
-	{
-		c := k8scrdclient.Config{
-			K8sExtClient: s.clients.ExtClient(),
-			Logger:       s.logger,
-		}
-
-		crdClient, err = k8scrdclient.New(c)
-	}
-
 	b := backoff.NewExponential(backoff.ShortMaxWait, backoff.ShortMaxInterval)
 
-	err = crdClient.EnsureCreated(ctx, crd, b)
+	err := s.clients.CRDClient().EnsureCreated(ctx, crd, b)
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -65,21 +51,9 @@ func (s *Setup) EnsureCRDCreated(ctx context.Context, crd *apiextensionsv1beta1.
 }
 
 func (s *Setup) EnsureCRDDeleted(ctx context.Context, crd *apiextensionsv1beta1.CustomResourceDefinition) error {
-	var err error
-
-	var crdClient *k8scrdclient.CRDClient
-	{
-		c := k8scrdclient.Config{
-			K8sExtClient: s.clients.ExtClient(),
-			Logger:       s.logger,
-		}
-
-		crdClient, err = k8scrdclient.New(c)
-	}
-
 	b := backoff.NewExponential(backoff.ShortMaxWait, backoff.ShortMaxInterval)
 
-	err = crdClient.EnsureDeleted(ctx, crd, b)
+	err := s.clients.CRDClient().EnsureDeleted(ctx, crd, b)
 	if err != nil {
 		return microerror.Mask(err)
 	}

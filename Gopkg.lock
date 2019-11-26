@@ -88,14 +88,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:a898b1ce20ff287436a68a699737bb6545602383b4a75b4d4c8b0626e3cea12e"
+  digest = "1:d8d1d2bf378e71c60812d41884f729d2940b18c108ded125e3fd35aee15dbae5"
   name = "github.com/giantswarm/k8sclient"
   packages = [
     ".",
     "k8scrdclient",
   ]
   pruneopts = "UT"
-  revision = "e86cb73c7627fa81f7f08a795af1eab0bda26805"
+  revision = "d288b9c6cffe2f4771bfcd464adf202b4b560039"
 
 [[projects]]
   branch = "master"
@@ -812,7 +812,6 @@
     "k8s.io/apimachinery/pkg/runtime",
     "k8s.io/apimachinery/pkg/runtime/schema",
     "k8s.io/apimachinery/pkg/types",
-    "k8s.io/apimachinery/pkg/util/runtime",
     "k8s.io/apimachinery/pkg/watch",
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/rest",
