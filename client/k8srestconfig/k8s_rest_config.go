@@ -1,5 +1,4 @@
-// Package k8srestconfig provides interface to create client-go rest config
-// which can be used to construct various clients.
+// Package k8srestconfig is deprecated and moved to github.com/giantswarm/k8sclient.
 //
 // Example usage:
 //
