@@ -17,7 +17,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/util/runtime"
+	pkgruntime "k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -26,7 +27,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	"github.com/giantswarm/operatorkit/client/k8scrdclient"
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
 	"github.com/giantswarm/operatorkit/resource"
@@ -43,7 +43,6 @@ const (
 
 type Config struct {
 	CRD            *apiextensionsv1beta1.CustomResourceDefinition
-	CRDClient      *k8scrdclient.CRDClient
 	BackOffFactory func() backoff.Interface
 	K8sClient      k8sclient.Interface
 	Logger         micrologger.Logger
@@ -57,7 +56,7 @@ type Config struct {
 	// versioned and different resources can be executed depending on the runtime
 	// object being reconciled.
 	ResourceSets         []*ResourceSet
-	RuntimeObjectFactory func() runtime.Object
+	RuntimeObjectFactory func() pkgruntime.Object
 
 	// Name is the name which the controller uses on finalizers for resources.
 	// The name used should be unique in the kubernetes cluster, to ensure that
@@ -68,12 +67,11 @@ type Config struct {
 
 type Controller struct {
 	crd                  *apiextensionsv1beta1.CustomResourceDefinition
-	crdClient            *k8scrdclient.CRDClient
 	backOffFactory       func() backoff.Interface
 	k8sClient            k8sclient.Interface
 	logger               micrologger.Logger
 	resourceSets         []*ResourceSet
-	runtimeObjectFactory func() runtime.Object
+	runtimeObjectFactory func() pkgruntime.Object
 
 	bootOnce               sync.Once
 	booted                 chan struct{}
@@ -87,8 +85,8 @@ type Controller struct {
 
 // New creates a new configured operator controller.
 func New(config Config) (*Controller, error) {
-	if config.CRD != nil && config.CRDClient == nil || config.CRD == nil && config.CRDClient != nil {
-		return nil, microerror.Maskf(invalidConfigError, "%T.CRD and %T.CRDClient must not be empty when either given", config, config)
+	if config.CRD == nil {
+		return nil, microerror.Maskf(invalidConfigError, "%T.CRD must not be empty", config)
 	}
 	if config.BackOffFactory == nil {
 		config.BackOffFactory = func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) }
@@ -115,9 +113,8 @@ func New(config Config) (*Controller, error) {
 
 	c := &Controller{
 		crd:                  config.CRD,
-		crdClient:            config.CRDClient,
 		backOffFactory:       config.BackOffFactory,
-		K8sClient:            config.K8sClient,
+		k8sClient:            config.K8sClient,
 		logger:               config.Logger,
 		resourceSets:         config.ResourceSets,
 		runtimeObjectFactory: config.RuntimeObjectFactory,
@@ -125,7 +122,7 @@ func New(config Config) (*Controller, error) {
 		bootOnce:               sync.Once{},
 		booted:                 make(chan struct{}),
 		errorCollector:         make(chan error, 1),
-		removedFinalizersCache: newStringCache(config.Informer.ResyncPeriod() * 3),
+		removedFinalizersCache: newStringCache(config.ResyncPeriod * 3),
 		mutex:                  sync.Mutex{},
 
 		name:         config.Name,
@@ -411,7 +408,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 	if c.crd != nil {
 		c.logger.LogCtx(ctx, "level", "debug", "message", "ensuring custom resource definition exists")
 
-		err := c.crdClient.EnsureCreated(ctx, c.crd, c.backOffFactory())
+		err := c.k8sClient.CRDClient().EnsureCreated(ctx, c.crd, c.backOffFactory())
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -419,19 +416,8 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 		c.logger.LogCtx(ctx, "level", "debug", "message", "ensured custom resource definition exists")
 	}
 
-	{
-		c.logger.LogCtx(ctx, "level", "debug", "message", "booting informer")
-
-		err := c.informer.Boot(ctx)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-
-		c.logger.LogCtx(ctx, "level", "debug", "message", "booted informer")
-	}
-
 	go func() {
-		resetWait := c.informer.ResyncPeriod() * 4
+		resetWait := c.resyncPeriod * 4
 
 		for {
 			select {
@@ -448,7 +434,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 	// emit metrics for the occured errors to ensure we create more awareness of
 	// anything going wrong in our operators.
 	{
-		runtime.ErrorHandlers = []func(err error){
+		utilruntime.ErrorHandlers = []func(err error){
 			func(err error) {
 				// When we see a port forwarding error we ignore it because we cannot do
 				// anything about it. Errors like we check here would have to be dealt
@@ -470,22 +456,22 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 			SyncPeriod: to.DurationP(c.resyncPeriod),
 		}
 
-		mgr, err = manager.New(restConfig, o)
+		mgr, err = manager.New(c.k8sClient.RESTConfig(), o)
 		if err != nil {
-			return nil, microerror.Mask(err)
+			return microerror.Mask(err)
 		}
 	}
 
 	var ctrl controller.Controller
 	{
-		c := controller.Options{
+		o := controller.Options{
 			MaxConcurrentReconciles: 1,
 			Reconciler:              c,
 		}
 
-		ctrl, err = controller.New(r.name, mgr, c)
+		ctrl, err = controller.New(c.name, mgr, o)
 		if err != nil {
-			return nil, microerror.Mask(err)
+			return microerror.Mask(err)
 		}
 	}
 
@@ -494,7 +480,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 	// users know when to go ahead. Note that mgr.Start below blocks the boot
 	// process until it ends gracefully or fails.
 	{
-		err = ctrl.Watch(&source.Kind{Type: r.runtimeObjectFactory()}, &handler.EnqueueRequestForObject{})
+		err = ctrl.Watch(&source.Kind{Type: c.runtimeObjectFactory()}, &handler.EnqueueRequestForObject{})
 		if err != nil {
 			return microerror.Mask(err)
 		}

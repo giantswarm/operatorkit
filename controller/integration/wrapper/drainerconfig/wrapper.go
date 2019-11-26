@@ -7,13 +7,11 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/giantswarm/operatorkit/client/k8scrdclient"
 	"github.com/giantswarm/operatorkit/controller"
 	"github.com/giantswarm/operatorkit/controller/integration/testresourceset"
 	"github.com/giantswarm/operatorkit/resource"
@@ -48,28 +46,11 @@ func New(config Config) (*Wrapper, error) {
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
-	k8sExtClient, err := clientset.NewForConfig(restConfig)
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
 
 	if config.Logger == nil {
 		c := micrologger.Config{}
 
 		config.Logger, err = micrologger.New(c)
-		if err != nil {
-			return nil, microerror.Mask(err)
-		}
-	}
-
-	var crdClient *k8scrdclient.CRDClient
-	{
-		c := k8scrdclient.Config{
-			K8sExtClient: k8sExtClient,
-			Logger:       config.Logger,
-		}
-
-		crdClient, err = k8scrdclient.New(c)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
@@ -95,9 +76,8 @@ func New(config Config) (*Wrapper, error) {
 	var newController *controller.Controller
 	{
 		c := controller.Config{
-			CRD:       v1alpha1.NewDrainerConfigCRD(),
-			CRDClient: crdClient,
-			Logger:    config.Logger,
+			CRD:    v1alpha1.NewDrainerConfigCRD(),
+			Logger: config.Logger,
 			ResourceSets: []*controller.ResourceSet{
 				resourceSet,
 			},
