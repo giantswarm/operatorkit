@@ -1,8 +1,6 @@
 package configmap
 
 import (
-	"time"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,7 +13,6 @@ import (
 
 	"github.com/giantswarm/operatorkit/controller"
 	"github.com/giantswarm/operatorkit/controller/integration/testresourceset"
-	"github.com/giantswarm/operatorkit/informer"
 	"github.com/giantswarm/operatorkit/resource"
 )
 
@@ -52,21 +49,6 @@ func New(config Config) (*Wrapper, error) {
 		}
 	}
 
-	var newInformer *informer.Informer
-	{
-		c := informer.Config{
-			Logger:  newLogger,
-			Watcher: k8sClient.CoreV1().ConfigMaps(config.Namespace),
-
-			RateWait:     time.Second * 2,
-			ResyncPeriod: time.Second * 10,
-		}
-		newInformer, err = informer.New(c)
-		if err != nil {
-			return nil, microerror.Mask(err)
-		}
-	}
-
 	var resourceSet *controller.ResourceSet
 	{
 		c := testresourceset.Config{
@@ -86,12 +68,10 @@ func New(config Config) (*Wrapper, error) {
 	var newController *controller.Controller
 	{
 		c := controller.Config{
-			Informer: newInformer,
-			Logger:   newLogger,
+			Logger: newLogger,
 			ResourceSets: []*controller.ResourceSet{
 				resourceSet,
 			},
-			RESTClient: k8sClient.CoreV1().RESTClient(),
 
 			Name: config.Name,
 		}

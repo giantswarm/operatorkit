@@ -1,4 +1,4 @@
-package informer
+package controller
 
 import (
 	"github.com/prometheus/client_golang/prometheus"

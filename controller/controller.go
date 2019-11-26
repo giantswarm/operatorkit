@@ -9,20 +9,26 @@ import (
 	"time"
 
 	"github.com/giantswarm/backoff"
+	"github.com/giantswarm/k8sclient"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/giantswarm/micrologger/loggermeta"
+	"github.com/giantswarm/to"
 	"github.com/prometheus/client_golang/prometheus"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/giantswarm/operatorkit/client/k8scrdclient"
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
-	"github.com/giantswarm/operatorkit/informer"
 	"github.com/giantswarm/operatorkit/resource"
 )
 
@@ -36,10 +42,11 @@ const (
 )
 
 type Config struct {
-	CRD       *apiextensionsv1beta1.CustomResourceDefinition
-	CRDClient *k8scrdclient.CRDClient
-	Informer  informer.Interface
-	Logger    micrologger.Logger
+	CRD            *apiextensionsv1beta1.CustomResourceDefinition
+	CRDClient      *k8scrdclient.CRDClient
+	BackOffFactory func() backoff.Interface
+	K8sClient      k8sclient.Interface
+	Logger         micrologger.Logger
 	// ResourceSets is a list of resource sets. A resource set provides a specific
 	// function to initialize the request context and a list of resources to be
 	// executed for a reconciliation loop. That way each runtime object being
@@ -49,35 +56,24 @@ type Config struct {
 	// list of resources being executed for the received runtime object can be
 	// versioned and different resources can be executed depending on the runtime
 	// object being reconciled.
-	ResourceSets []*ResourceSet
-	// RESTClient needs to be configured with a serializer capable of serializing
-	// and deserializing the object which is watched by the informer. Otherwise
-	// deserialization will fail when trying to add a finalizer.
-	//
-	// For standard k8s object this is going to be e.g.
-	//
-	// 		k8sClient.CoreV1().RESTClient()
-	//
-	// For CRs of giantswarm this is going to be e.g.
-	//
-	// 		g8sClient.CoreV1alpha1().RESTClient()
-	//
-	RESTClient rest.Interface
+	ResourceSets         []*ResourceSet
+	RuntimeObjectFactory func() runtime.Object
 
-	BackOffFactory func() backoff.Interface
 	// Name is the name which the controller uses on finalizers for resources.
 	// The name used should be unique in the kubernetes cluster, to ensure that
 	// two operators which handle the same resource add two distinct finalizers.
-	Name string
+	Name         string
+	ResyncPeriod time.Duration
 }
 
 type Controller struct {
-	crd          *apiextensionsv1beta1.CustomResourceDefinition
-	crdClient    *k8scrdclient.CRDClient
-	informer     informer.Interface
-	restClient   rest.Interface
-	logger       micrologger.Logger
-	resourceSets []*ResourceSet
+	crd                  *apiextensionsv1beta1.CustomResourceDefinition
+	crdClient            *k8scrdclient.CRDClient
+	backOffFactory       func() backoff.Interface
+	k8sClient            k8sclient.Interface
+	logger               micrologger.Logger
+	resourceSets         []*ResourceSet
+	runtimeObjectFactory func() runtime.Object
 
 	bootOnce               sync.Once
 	booted                 chan struct{}
@@ -85,8 +81,8 @@ type Controller struct {
 	removedFinalizersCache *stringCache
 	mutex                  sync.Mutex
 
-	backOffFactory func() backoff.Interface
-	name           string
+	name         string
+	resyncPeriod time.Duration
 }
 
 // New creates a new configured operator controller.
@@ -94,10 +90,10 @@ func New(config Config) (*Controller, error) {
 	if config.CRD != nil && config.CRDClient == nil || config.CRD == nil && config.CRDClient != nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.CRD and %T.CRDClient must not be empty when either given", config, config)
 	}
-	if config.Informer == nil {
-		return nil, microerror.Maskf(invalidConfigError, "%T.Informer must not be empty", config)
+	if config.BackOffFactory == nil {
+		config.BackOffFactory = func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) }
 	}
-	if config.RESTClient == nil {
+	if config.K8sClient == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.K8sClient must not be empty", config)
 	}
 	if config.Logger == nil {
@@ -106,21 +102,25 @@ func New(config Config) (*Controller, error) {
 	if len(config.ResourceSets) == 0 {
 		return nil, microerror.Maskf(invalidConfigError, "%T.ResourceSets must not be empty", config)
 	}
-
-	if config.BackOffFactory == nil {
-		config.BackOffFactory = func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) }
+	if config.RuntimeObjectFactory == nil {
+		return nil, microerror.Maskf(invalidConfigError, "%T.RuntimeObjectFactory must not be empty", config)
 	}
+
 	if config.Name == "" {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Name must not be empty", config)
 	}
+	if config.ResyncPeriod == 0 {
+		return nil, microerror.Maskf(invalidConfigError, "%T.ResyncPeriod must not be empty", config)
+	}
 
 	c := &Controller{
-		crd:          config.CRD,
-		crdClient:    config.CRDClient,
-		informer:     config.Informer,
-		restClient:   config.RESTClient,
-		logger:       config.Logger,
-		resourceSets: config.ResourceSets,
+		crd:                  config.CRD,
+		crdClient:            config.CRDClient,
+		backOffFactory:       config.BackOffFactory,
+		K8sClient:            config.K8sClient,
+		logger:               config.Logger,
+		resourceSets:         config.ResourceSets,
+		runtimeObjectFactory: config.RuntimeObjectFactory,
 
 		bootOnce:               sync.Once{},
 		booted:                 make(chan struct{}),
@@ -128,8 +128,8 @@ func New(config Config) (*Controller, error) {
 		removedFinalizersCache: newStringCache(config.Informer.ResyncPeriod() * 3),
 		mutex:                  sync.Mutex{},
 
-		backOffFactory: config.BackOffFactory,
-		name:           config.Name,
+		name:         config.Name,
+		resyncPeriod: config.ResyncPeriod,
 	}
 
 	return c, nil
@@ -313,6 +313,17 @@ func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Ev
 	}
 }
 
+func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) {
+	// TODO call runtime.Object factory to get new empty object pointer, so we can
+	// propagate it further.
+	//
+	//     https://github.com/kubernetes-sigs/cluster-api/blob/master/controllers/cluster_controller.go#L95-L96
+	//
+	fmt.Printf("%s/%s\n", req.Namespace, req.Name)
+
+	return reconcile.Result{}, nil
+}
+
 // UpdateFunc executes the controller's ProcessUpdate function.
 func (c *Controller) UpdateFunc(oldObj, newObj interface{}) {
 	ctx := context.Background()
@@ -395,6 +406,8 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 }
 
 func (c *Controller) bootWithError(ctx context.Context) error {
+	var err error
+
 	if c.crd != nil {
 		c.logger.LogCtx(ctx, "level", "debug", "message", "ensuring custom resource definition exists")
 
@@ -451,26 +464,46 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 		}
 	}
 
-	// Initializing the watch gives us all necessary event channels we need to
-	// further process them within the controller. Once we got the event channels
-	// everything is set up for the operator's reconciliation. We put the
-	// controller into a booted state by closing its booted channel so users know
-	// when to go ahead. Note that ProcessEvents below blocks the boot process
-	// until it fails.
+	var mgr manager.Manager
 	{
-		c.logger.LogCtx(ctx, "level", "debug", "message", "starting list-watch")
+		o := manager.Options{
+			SyncPeriod: to.DurationP(c.resyncPeriod),
+		}
 
-		deleteChan, updateChan, errChan := c.informer.Watch(ctx)
-		close(c.booted)
+		mgr, err = manager.New(restConfig, o)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+	}
 
-		c.logger.LogCtx(ctx, "level", "debug", "message", "processing object events")
+	var ctrl controller.Controller
+	{
+		c := controller.Options{
+			MaxConcurrentReconciles: 1,
+			Reconciler:              c,
+		}
 
-		err := c.ProcessEvents(ctx, deleteChan, updateChan, errChan)
+		ctrl, err = controller.New(r.name, mgr, c)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+	}
+
+	// Initializing the watch means to have the operator's reconciliation set up.
+	// We put the controller into a booted state by closing its booted channel so
+	// users know when to go ahead. Note that mgr.Start below blocks the boot
+	// process until it ends gracefully or fails.
+	{
+		err = ctrl.Watch(&source.Kind{Type: r.runtimeObjectFactory()}, &handler.EnqueueRequestForObject{})
 		if err != nil {
 			return microerror.Mask(err)
 		}
+		close(c.booted)
 
-		c.logger.LogCtx(ctx, "level", "debug", "message", "processed object events")
+		err = mgr.Start(signals.SetupSignalHandler())
+		if err != nil {
+			return microerror.Mask(err)
+		}
 	}
 
 	return nil

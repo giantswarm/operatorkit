@@ -1,8 +1,6 @@
 package drainerconfig
 
 import (
-	"time"
-
 	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/apiextensions/pkg/clientset/versioned"
 	"github.com/giantswarm/e2e-harness/pkg/harness"
@@ -18,7 +16,6 @@ import (
 	"github.com/giantswarm/operatorkit/client/k8scrdclient"
 	"github.com/giantswarm/operatorkit/controller"
 	"github.com/giantswarm/operatorkit/controller/integration/testresourceset"
-	"github.com/giantswarm/operatorkit/informer"
 	"github.com/giantswarm/operatorkit/resource"
 )
 
@@ -78,21 +75,6 @@ func New(config Config) (*Wrapper, error) {
 		}
 	}
 
-	var newInformer *informer.Informer
-	{
-		c := informer.Config{
-			Logger:  config.Logger,
-			Watcher: g8sClient.CoreV1alpha1().DrainerConfigs(config.Namespace),
-
-			RateWait:     time.Second * 2,
-			ResyncPeriod: time.Second * 10,
-		}
-		newInformer, err = informer.New(c)
-		if err != nil {
-			return nil, microerror.Mask(err)
-		}
-	}
-
 	var resourceSet *controller.ResourceSet
 	{
 		c := testresourceset.Config{
@@ -115,12 +97,10 @@ func New(config Config) (*Wrapper, error) {
 		c := controller.Config{
 			CRD:       v1alpha1.NewDrainerConfigCRD(),
 			CRDClient: crdClient,
-			Informer:  newInformer,
 			Logger:    config.Logger,
 			ResourceSets: []*controller.ResourceSet{
 				resourceSet,
 			},
-			RESTClient: g8sClient.CoreV1alpha1().RESTClient(),
 
 			Name: config.Name,
 		}

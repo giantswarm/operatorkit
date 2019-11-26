@@ -22,7 +22,7 @@
 
 
 [[constraint]]
-  branch = "k8s-1-16"
+  branch = "master"
   name = "github.com/giantswarm/apiextensions"
 
 [[constraint]]
@@ -30,12 +30,16 @@
   name = "github.com/giantswarm/backoff"
 
 [[constraint]]
-  branch = "k8s-1-16"
+  branch = "master"
   name = "github.com/giantswarm/e2e-harness"
 
 [[constraint]]
   branch = "master"
   name = "github.com/giantswarm/exporterkit"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/giantswarm/k8sclient"
 
 [[constraint]]
   branch = "master"
@@ -55,11 +59,11 @@
 
 [[constraint]]
   name = "k8s.io/api"
-  version = "kubernetes-1.16.3"
+  version = "kubernetes-1.15.4"
 
 [[constraint]]
   name = "k8s.io/apiextensions-apiserver"
-  version = "kubernetes-1.16.3"
+  version = "kubernetes-1.15.4"
 
 [[constraint]]
   name = "sigs.k8s.io/controller-runtime"
@@ -67,11 +71,11 @@
 
 [[constraint]]
   name = "k8s.io/apimachinery"
-  version = "kubernetes-1.16.3"
+  version = "kubernetes-1.15.4"
 
 [[constraint]]
   name = "k8s.io/client-go"
-  version = "kubernetes-1.16.3"
+  version = "kubernetes-1.15.4"
 
 [[override]]
   source = "gopkg.in/fsnotify/fsnotify.v1"
