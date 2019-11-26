@@ -1,3 +1,4 @@
+// Package k8scrdclient is deprecated and moved to github.com/giantswarm/k8sclient.
 package k8scrdclient
 
 import (
