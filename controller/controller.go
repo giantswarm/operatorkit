@@ -2,9 +2,7 @@ package controller
 
 import (
 	"context"
-	"fmt"
 	"os"
-	"strconv"
 	"sync"
 	"time"
 
@@ -17,9 +15,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/watch"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -236,87 +234,52 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 	}
 }
 
-// ProcessEvents takes the event channels created by the operatorkit informer
-// and executes the controller's event functions accordingly.
-func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Event, updateChan chan watch.Event, errChan chan error) error {
-	loop := -1
+func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) {
+	ctx := context.Background()
+	obj := c.runtimeObjectFactory()
 
-	for {
-		loop++
+	err := c.k8sClient.CtrlClient().Get(ctx, req.NamespacedName, obj)
+	if err != nil {
+		return reconcile.Result{}, microerror.Mask(err)
+	}
 
-		// Set loop specific logger context.
-		{
-			ctx = setLoggerCtxValue(ctx, loggerKeyLoop, strconv.Itoa(loop))
-		}
-
-		select {
-		case e := <-deleteChan:
-			event := "delete"
-
-			t := prometheus.NewTimer(controllerHistogram.WithLabelValues(event))
-
-			// Set event specific logger context.
-			{
-				ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
-
-				accessor, err := meta.Accessor(e.Object)
-				if err != nil {
-					c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("failed to create accessor %T", e.Object), "stack", microerror.Stack(err))
-				} else {
-					ctx = setLoggerCtxValue(ctx, loggerKeyObject, accessor.GetSelfLink())
-					ctx = setLoggerCtxValue(ctx, loggerKeyVersion, accessor.GetResourceVersion())
-				}
-			}
-
-			c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
-			c.deleteFunc(ctx, e.Object)
-			c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled object")
-
-			t.ObserveDuration()
-		case e := <-updateChan:
-			event := "update"
-
-			t := prometheus.NewTimer(controllerHistogram.WithLabelValues(event))
-
-			// Set event specific logger context.
-			{
-				ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
-
-				accessor, err := meta.Accessor(e.Object)
-				if err != nil {
-					c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("failed to create accessor %T", e.Object), "stack", microerror.Stack(err))
-				} else {
-					ctx = setLoggerCtxValue(ctx, loggerKeyObject, accessor.GetSelfLink())
-					ctx = setLoggerCtxValue(ctx, loggerKeyVersion, accessor.GetResourceVersion())
-				}
-			}
-
-			c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
-			c.updateFunc(ctx, e.Object)
-			c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled object")
-
-			t.ObserveDuration()
-		case err := <-errChan:
-			if IsStatusForbidden(err) {
-				c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("controller might be missing RBAC rule for %#q CRD", c.crd.Name), "stack", microerror.Stack(err))
-			} else if err != nil {
-				c.logger.LogCtx(ctx, "level", "error", "message", "failed to watch object", "stack", microerror.Stack(err))
-			}
-
-			time.Sleep(time.Second)
-		case <-ctx.Done():
-			return nil
+	var accessor metav1.Object
+	{
+		accessor, err = meta.Accessor(obj)
+		if err != nil {
+			return reconcile.Result{}, microerror.Mask(err)
 		}
 	}
-}
 
-func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) {
-	// TODO call runtime.Object factory to get new empty object pointer, so we can
-	// propagate it further.
-	//
-	//     https://github.com/kubernetes-sigs/cluster-api/blob/master/controllers/cluster_controller.go#L95-L96
-	//
-	fmt.Printf("%s/%s\n", req.Namespace, req.Name)
+	if accessor.GetDeletionTimestamp() != nil {
+		event := "delete"
+
+		t := prometheus.NewTimer(controllerHistogram.WithLabelValues(event))
+
+		ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
+		ctx = setLoggerCtxValue(ctx, loggerKeyObject, accessor.GetSelfLink())
+		ctx = setLoggerCtxValue(ctx, loggerKeyVersion, accessor.GetResourceVersion())
+
+		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
+		c.deleteFunc(ctx, obj)
+		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled object")
+
+		t.ObserveDuration()
+	} else {
+		event := "update"
+
+		t := prometheus.NewTimer(controllerHistogram.WithLabelValues(event))
+
+		ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
+		ctx = setLoggerCtxValue(ctx, loggerKeyObject, accessor.GetSelfLink())
+		ctx = setLoggerCtxValue(ctx, loggerKeyVersion, accessor.GetResourceVersion())
+
+		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
+		c.updateFunc(ctx, obj)
+		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled object")
+
+		t.ObserveDuration()
+	}
 
 	return reconcile.Result{}, nil
 }
