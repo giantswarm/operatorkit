@@ -60,7 +60,7 @@
     "pkg/clientset/versioned/typed/release/v1alpha1",
   ]
   pruneopts = "UT"
-  revision = "32dbbd812bd6d9e86c4418fd449b873f248b8caf"
+  revision = "7788d0c28a5e28c04d1df463afeb1ef129abfa3b"
 
 [[projects]]
   branch = "master"
@@ -88,14 +88,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:0563751c98a15ffafb4d67f2f5cce2bd70aad353bff425e670e1134d3a5404b8"
+  digest = "1:e7e6a0fd3834a59ca94f05ac446f1d07642035602c89b86898833b6ed66170da"
   name = "github.com/giantswarm/k8sclient"
   packages = [
     ".",
     "k8scrdclient",
   ]
   pruneopts = "UT"
-  revision = "30d23f85dc84f60941c5a736aa9fec6c646209f7"
+  revision = "a22ea535b73800472ceb4ee3ff00d40b546a8fd4"
 
 [[projects]]
   branch = "master"
