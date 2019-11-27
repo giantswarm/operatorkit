@@ -18,6 +18,14 @@
   version = "v1.1.1"
 
 [[projects]]
+  digest = "1:ac425d784b13d49b37a5bbed3ce022677f8f3073b216f05d6adcb9303e27fa0f"
+  name = "github.com/evanphx/json-patch"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "026c730a0dcc5d11f93f1cf1cc65b01247ea7b6f"
+  version = "v4.5.0"
+
+[[projects]]
   branch = "master"
   digest = "1:08188cf7ce7027b22e88cc23da27f17349a0ba7746271a60cbe0a70266c2346f"
   name = "github.com/ghodss/yaml"
@@ -191,6 +199,14 @@
   version = "1.0.1"
 
 [[projects]]
+  digest = "1:cf31692c14422fa27c83a05292eb5cbe0fb2775972e8f1f8446a71549bd8980b"
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "ba968bfe8b2f7e042a574c888954fccecfa385b4"
+  version = "v0.8.1"
+
+[[projects]]
   digest = "1:524b71991fc7d9246cc7dc2d9e0886ccb97648091c63e30eef619e6862c955dd"
   name = "github.com/spf13/pflag"
   packages = ["."]
@@ -208,7 +224,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:572817a5e74219a011a0baa07279ae8369c289f850f920db9c2f0f0c35382768"
+  digest = "1:e4a92f168e339bc2e697401a883588748fa58e0dd3ae14160f9bd890ca37382d"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -219,7 +235,7 @@
     "idna",
   ]
   pruneopts = "UT"
-  revision = "ffdde105785063a81acd95bdf89ea53f6e0aac2d"
+  revision = "ef20fe5d793301b553005db740f730d87993f778"
 
 [[projects]]
   branch = "master"
@@ -234,14 +250,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:adc8dbdd1348594585d83239cf52498fd87e103577dda9b50ccac2122d9ead72"
+  digest = "1:055d921edfad0ae56ef0d21a124a002cf3a669b4c42e85b810abf0225226e2a3"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "UT"
-  revision = "bd437916bb0eb726b873ee8e9b2dcf212d32e2fd"
+  revision = "63cb32ae39b28d6bb8e7e215c1fc39dd80dcdb02"
 
 [[projects]]
   digest = "1:8d8faad6b12a3a4c819a3f9618cb6ee1fa1cfc33253abeeea8b55336721e3405"
@@ -275,6 +291,17 @@
   packages = ["rate"]
   pruneopts = "UT"
   revision = "555d28b269f0569763d25dbe1a237ae74c6bcc82"
+
+[[projects]]
+  branch = "master"
+  digest = "1:a0e46a43516d3f5ff0ba3636488b8a8df632b2986da49823cd8340c070c1a125"
+  name = "golang.org/x/xerrors"
+  packages = [
+    ".",
+    "internal",
+  ]
+  pruneopts = "UT"
+  revision = "1b5146add8981d58be77b16229c0ff0f8bebd8c1"
 
 [[projects]]
   digest = "1:e0a1881f9e0564bebdeac98c75e59f07acdde6ed3a5396e0e613eaad31194866"
@@ -411,7 +438,7 @@
   version = "kubernetes-1.15.4"
 
 [[projects]]
-  digest = "1:f3ba7c8123cf20106b1afdb6b2c508ba0204b07d34e3e503fa5e853e143209d0"
+  digest = "1:4c5292cdac6571f09bda33cb867546c3a1d760b39fa1f1913fe0d59d8d2e746c"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
@@ -461,6 +488,7 @@
     "plugin/pkg/client/auth/exec",
     "rest",
     "rest/watch",
+    "restmapper",
     "tools/auth",
     "tools/clientcmd",
     "tools/clientcmd/api",
@@ -499,6 +527,17 @@
   revision = "6ca3b61696b65b0e81f1a39b4937fc2d2994ed6a"
 
 [[projects]]
+  digest = "1:bdb52c1bab3f4336d128f504e0035e956fc7b817fbacd7eed60287c5e99a5d34"
+  name = "sigs.k8s.io/controller-runtime"
+  packages = [
+    "pkg/client",
+    "pkg/client/apiutil",
+  ]
+  pruneopts = "UT"
+  revision = "d21241119ea4de139f1892ba2f5bc72c96d07f3f"
+  version = "v0.3.0"
+
+[[projects]]
   digest = "1:7719608fe0b52a4ece56c2dde37bedd95b938677d1ab0f84b8a7852e4c59f849"
   name = "sigs.k8s.io/yaml"
   packages = ["."]
@@ -523,6 +562,7 @@
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/rest",
     "k8s.io/client-go/tools/clientcmd",
+    "sigs.k8s.io/controller-runtime/pkg/client",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

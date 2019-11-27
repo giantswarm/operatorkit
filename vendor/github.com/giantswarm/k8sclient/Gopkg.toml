@@ -58,6 +58,10 @@
   name = "k8s.io/client-go"
   version = "kubernetes-1.15.4"
 
+[[constraint]]
+  name = "sigs.k8s.io/controller-runtime"
+  version = "v0.3.0"
+
 
 
 [prune]

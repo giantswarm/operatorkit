@@ -88,14 +88,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:d8d1d2bf378e71c60812d41884f729d2940b18c108ded125e3fd35aee15dbae5"
+  digest = "1:0563751c98a15ffafb4d67f2f5cce2bd70aad353bff425e670e1134d3a5404b8"
   name = "github.com/giantswarm/k8sclient"
   packages = [
     ".",
     "k8scrdclient",
   ]
   pruneopts = "UT"
-  revision = "d288b9c6cffe2f4771bfcd464adf202b4b560039"
+  revision = "30d23f85dc84f60941c5a736aa9fec6c646209f7"
 
 [[projects]]
   branch = "master"
@@ -388,7 +388,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:572817a5e74219a011a0baa07279ae8369c289f850f920db9c2f0f0c35382768"
+  digest = "1:e4a92f168e339bc2e697401a883588748fa58e0dd3ae14160f9bd890ca37382d"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -399,7 +399,7 @@
     "idna",
   ]
   pruneopts = "UT"
-  revision = "ffdde105785063a81acd95bdf89ea53f6e0aac2d"
+  revision = "ef20fe5d793301b553005db740f730d87993f778"
 
 [[projects]]
   branch = "master"
@@ -422,14 +422,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b3ad83b74282b80f16f8af265c3447299df40901514dcdec3cb1f098335c85ff"
+  digest = "1:055d921edfad0ae56ef0d21a124a002cf3a669b4c42e85b810abf0225226e2a3"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "UT"
-  revision = "8a8471f7e56d296bf6a05aa09520b111beb1937a"
+  revision = "63cb32ae39b28d6bb8e7e215c1fc39dd80dcdb02"
 
 [[projects]]
   digest = "1:8d8faad6b12a3a4c819a3f9618cb6ee1fa1cfc33253abeeea8b55336721e3405"
@@ -812,6 +812,7 @@
     "k8s.io/apimachinery/pkg/runtime",
     "k8s.io/apimachinery/pkg/runtime/schema",
     "k8s.io/apimachinery/pkg/types",
+    "k8s.io/apimachinery/pkg/util/runtime",
     "k8s.io/apimachinery/pkg/watch",
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/rest",
