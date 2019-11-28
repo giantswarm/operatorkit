@@ -87,7 +87,7 @@
   revision = "9749deade60f7624620aa7158a4f38c87ea23795"
 
 [[projects]]
-  branch = "add-scheme"
+  branch = "master"
   digest = "1:05cb6533a801e2a154f1d7dd3e6ed3c319d000a3958f8ce30832b079d60ffab2"
   name = "github.com/giantswarm/k8sclient"
   packages = [
@@ -95,7 +95,7 @@
     "k8scrdclient",
   ]
   pruneopts = "UT"
-  revision = "8cd0ec96f78e3fb7d322bf6142244c35ceaca40f"
+  revision = "8680e194c7eed1bb0121972ca46ca4b0396536fd"
 
 [[projects]]
   branch = "master"
