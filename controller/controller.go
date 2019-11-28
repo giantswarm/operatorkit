@@ -19,6 +19,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -249,16 +250,6 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 		}
 	}
 
-	fmt.Printf("\n")
-	fmt.Printf("\n")
-	fmt.Printf("\n")
-	fmt.Printf("%#v\n", obj)
-	fmt.Printf("\n")
-	fmt.Printf("%#v\n", accessor)
-	fmt.Printf("\n")
-	fmt.Printf("\n")
-	fmt.Printf("\n")
-
 	if accessor.GetDeletionTimestamp() != nil {
 		event := "delete"
 
@@ -306,6 +297,16 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 	// run into race conditions.
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
+
+	fmt.Printf("\n")
+	fmt.Printf("\n")
+	fmt.Printf("\n")
+	fmt.Printf("%#v\n", obj)
+	fmt.Printf("\n")
+	fmt.Printf("%#v\n", scheme.Scheme.AllKnownTypes())
+	fmt.Printf("\n")
+	fmt.Printf("\n")
+	fmt.Printf("\n")
 
 	var err error
 
