@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"sync"
 	"time"
@@ -247,6 +248,16 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 			return reconcile.Result{}, microerror.Mask(err)
 		}
 	}
+
+	fmt.Printf("\n")
+	fmt.Printf("\n")
+	fmt.Printf("\n")
+	fmt.Printf("%#v\n", obj)
+	fmt.Printf("\n")
+	fmt.Printf("%#v\n", accessor)
+	fmt.Printf("\n")
+	fmt.Printf("\n")
+	fmt.Printf("\n")
 
 	if accessor.GetDeletionTimestamp() != nil {
 		event := "delete"
