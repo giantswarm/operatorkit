@@ -1,15 +1,17 @@
 package configmap
 
 import (
+	"time"
+
+	"github.com/giantswarm/e2e-harness/pkg/harness"
+	"github.com/giantswarm/k8sclient"
+	"github.com/giantswarm/microerror"
+	"github.com/giantswarm/micrologger"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
-
-	"github.com/giantswarm/e2e-harness/pkg/harness"
-	"github.com/giantswarm/microerror"
-	"github.com/giantswarm/micrologger"
 
 	"github.com/giantswarm/operatorkit/controller"
 	"github.com/giantswarm/operatorkit/controller/integration/testresourceset"
@@ -30,14 +32,7 @@ type Wrapper struct {
 }
 
 func New(config Config) (*Wrapper, error) {
-	restConfig, err := clientcmd.BuildConfigFromFlags("", harness.DefaultKubeConfig)
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
-	k8sClient, err := kubernetes.NewForConfig(restConfig)
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
+	var err error
 
 	var newLogger micrologger.Logger
 	{
@@ -49,10 +44,24 @@ func New(config Config) (*Wrapper, error) {
 		}
 	}
 
+	var k8sClient *k8sclient.Clients
+	{
+		c := k8sclient.ClientsConfig{
+			Logger: newLogger,
+
+			KubeConfigPath: harness.DefaultKubeConfig,
+		}
+
+		k8sClient, err = k8sclient.NewClients(c)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+	}
+
 	var resourceSet *controller.ResourceSet
 	{
 		c := testresourceset.Config{
-			K8sClient: k8sClient,
+			K8sClient: k8sClient.K8sClient(),
 			Logger:    newLogger,
 			Resources: config.Resources,
 
@@ -68,12 +77,17 @@ func New(config Config) (*Wrapper, error) {
 	var newController *controller.Controller
 	{
 		c := controller.Config{
-			Logger: newLogger,
+			K8sClient: k8sClient,
+			Logger:    newLogger,
 			ResourceSets: []*controller.ResourceSet{
 				resourceSet,
 			},
+			RuntimeObjectFactory: func() pkgruntime.Object {
+				return &corev1.ConfigMap{}
+			},
 
-			Name: config.Name,
+			Name:         config.Name,
+			ResyncPeriod: 2 * time.Second,
 		}
 
 		newController, err = controller.New(c)
@@ -84,7 +98,7 @@ func New(config Config) (*Wrapper, error) {
 
 	wrapper := &Wrapper{
 		controller: newController,
-		k8sClient:  k8sClient,
+		k8sClient:  k8sClient.K8sClient(),
 	}
 
 	return wrapper, nil
