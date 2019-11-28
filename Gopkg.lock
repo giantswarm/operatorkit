@@ -76,7 +76,7 @@
   name = "github.com/giantswarm/e2e-harness"
   packages = ["pkg/harness"]
   pruneopts = "UT"
-  revision = "b83c4cc71ae0ff0a71381229b2232871e07fd763"
+  revision = "f54d8a266f15340b465463a8b8b972f1f430a69c"
 
 [[projects]]
   branch = "master"
@@ -744,7 +744,7 @@
   revision = "6ca3b61696b65b0e81f1a39b4937fc2d2994ed6a"
 
 [[projects]]
-  digest = "1:7a1b470e308c2b7c9e2abf19b4d22e8c246c389f7b92b7a025c2f45585183dc2"
+  digest = "1:4e1e8cff108d6dc130a2b01aa03435e8151d37e84c9c9353f854ae66df988a7f"
   name = "sigs.k8s.io/controller-runtime"
   packages = [
     "pkg/cache",
@@ -761,7 +761,6 @@
     "pkg/leaderelection",
     "pkg/log",
     "pkg/manager",
-    "pkg/manager/signals",
     "pkg/metrics",
     "pkg/predicate",
     "pkg/reconcile",
@@ -820,7 +819,6 @@
     "sigs.k8s.io/controller-runtime/pkg/controller",
     "sigs.k8s.io/controller-runtime/pkg/handler",
     "sigs.k8s.io/controller-runtime/pkg/manager",
-    "sigs.k8s.io/controller-runtime/pkg/manager/signals",
     "sigs.k8s.io/controller-runtime/pkg/reconcile",
     "sigs.k8s.io/controller-runtime/pkg/source",
   ]
