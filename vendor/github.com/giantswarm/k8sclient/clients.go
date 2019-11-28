@@ -6,12 +6,13 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
 	"github.com/giantswarm/k8sclient/k8scrdclient"
 )
@@ -89,12 +90,19 @@ func NewClients(config ClientsConfig) (*Clients, error) {
 
 	var ctrlClient client.Client
 	{
-		err = v1alpha1.AddToScheme(scheme.Scheme)
+		scheme := runtime.NewScheme()
+
+		err = v1alpha1.AddToScheme(scheme)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
 
-		ctrlClient, err = client.New(rest.CopyConfig(restConfig), client.Options{})
+		mapper, err := apiutil.NewDynamicRESTMapper(restConfig)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+
+		ctrlClient, err = client.New(rest.CopyConfig(restConfig), client.Options{Scheme: scheme, Mapper: mapper})
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
