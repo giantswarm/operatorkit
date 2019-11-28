@@ -46,35 +46,35 @@ jobs:
       TEST_DIR: "controller/integration/test/basic"
     <<: *e2eTest
 
-  e2eTestControllerControlflow:
-    environment:
-      TEST_DIR: "controller/integration/test/controlflow"
-    <<: *e2eTest
-
-  e2eTestControllerError:
-    environment:
-      TEST_DIR: "controller/integration/test/error"
-    <<: *e2eTest
-
-  e2eTestControllerFinalizer:
-    environment:
-      TEST_DIR: "controller/integration/test/finalizer"
-    <<: *e2eTest
-
-  e2eTestControllerParallel:
-    environment:
-      TEST_DIR: "controller/integration/test/parallel"
-    <<: *e2eTest
-
-  e2eTestControllerReconciliation:
-    environment:
-      TEST_DIR: "controller/integration/test/reconciliation"
-    <<: *e2eTest
-
-  e2eTestControllerStatusUpdate:
-    environment:
-      TEST_DIR: "controller/integration/test/statusupdate"
-    <<: *e2eTest
+#  e2eTestControllerControlflow:
+#    environment:
+#      TEST_DIR: "controller/integration/test/controlflow"
+#    <<: *e2eTest
+#
+#  e2eTestControllerError:
+#    environment:
+#      TEST_DIR: "controller/integration/test/error"
+#    <<: *e2eTest
+#
+#  e2eTestControllerFinalizer:
+#    environment:
+#      TEST_DIR: "controller/integration/test/finalizer"
+#    <<: *e2eTest
+#
+#  e2eTestControllerParallel:
+#    environment:
+#      TEST_DIR: "controller/integration/test/parallel"
+#    <<: *e2eTest
+#
+#  e2eTestControllerReconciliation:
+#    environment:
+#      TEST_DIR: "controller/integration/test/reconciliation"
+#    <<: *e2eTest
+#
+#  e2eTestControllerStatusUpdate:
+#    environment:
+#      TEST_DIR: "controller/integration/test/statusupdate"
+#    <<: *e2eTest
 
 
 
@@ -88,26 +88,26 @@ workflows:
           requires:
           - build
 
-      - e2eTestControllerControlflow:
-          requires:
-          - build
-
-      - e2eTestControllerError:
-          requires:
-          - build
-
-      - e2eTestControllerFinalizer:
-          requires:
-          - build
-
-      - e2eTestControllerParallel:
-          requires:
-          - build
-
-      - e2eTestControllerReconciliation:
-          requires:
-          - build
-
-      - e2eTestControllerStatusUpdate:
-          requires:
-          - build
+#      - e2eTestControllerControlflow:
+#          requires:
+#          - build
+#
+#      - e2eTestControllerError:
+#          requires:
+#          - build
+#
+#      - e2eTestControllerFinalizer:
+#          requires:
+#          - build
+#
+#      - e2eTestControllerParallel:
+#          requires:
+#          - build
+#
+#      - e2eTestControllerReconciliation:
+#          requires:
+#          - build
+#
+#      - e2eTestControllerStatusUpdate:
+#          requires:
+#          - build
