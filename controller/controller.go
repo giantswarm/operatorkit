@@ -83,9 +83,6 @@ type Controller struct {
 
 // New creates a new configured operator controller.
 func New(config Config) (*Controller, error) {
-	if config.CRD == nil {
-		return nil, microerror.Maskf(invalidConfigError, "%T.CRD must not be empty", config)
-	}
 	if config.BackOffFactory == nil {
 		config.BackOffFactory = func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) }
 	}
