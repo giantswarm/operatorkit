@@ -43,7 +43,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:a1f66d90646e72d72e99c53053879efa5bb32c0c8a15960a064f547c6c5d5ef7"
+  digest = "1:3bc548f3315ca9d6140d87262589b7d8abc03272d052812991d9eda0b9729d40"
   name = "github.com/giantswarm/apiextensions"
   packages = [
     "pkg/apis/application/v1alpha1",
@@ -60,7 +60,7 @@
     "pkg/clientset/versioned/typed/release/v1alpha1",
   ]
   pruneopts = "UT"
-  revision = "7788d0c28a5e28c04d1df463afeb1ef129abfa3b"
+  revision = "07abe143fd9b20533c2ac7ff739ec468216ea602"
 
 [[projects]]
   branch = "master"
@@ -76,7 +76,7 @@
   name = "github.com/giantswarm/e2e-harness"
   packages = ["pkg/harness"]
   pruneopts = "UT"
-  revision = "9e1d1b2eb1cc551e6fc5a35505acb021faf7620c"
+  revision = "b83c4cc71ae0ff0a71381229b2232871e07fd763"
 
 [[projects]]
   branch = "master"
@@ -87,15 +87,15 @@
   revision = "9749deade60f7624620aa7158a4f38c87ea23795"
 
 [[projects]]
-  branch = "master"
-  digest = "1:e7e6a0fd3834a59ca94f05ac446f1d07642035602c89b86898833b6ed66170da"
+  branch = "add-scheme"
+  digest = "1:05cb6533a801e2a154f1d7dd3e6ed3c319d000a3958f8ce30832b079d60ffab2"
   name = "github.com/giantswarm/k8sclient"
   packages = [
     ".",
     "k8scrdclient",
   ]
   pruneopts = "UT"
-  revision = "a22ea535b73800472ceb4ee3ff00d40b546a8fd4"
+  revision = "8cd0ec96f78e3fb7d322bf6142244c35ceaca40f"
 
 [[projects]]
   branch = "master"
@@ -384,7 +384,7 @@
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = "UT"
-  revision = "ac88ee75c92c889b97e05591e9a39b6480c538b3"
+  revision = "b544559bb6d1b5c62fba4af5e843ff542174f079"
 
 [[projects]]
   branch = "master"
@@ -422,14 +422,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:055d921edfad0ae56ef0d21a124a002cf3a669b4c42e85b810abf0225226e2a3"
+  digest = "1:77b59f879b437f66aa2d510e2752017a5a1ce3cef6f4744586affbed1ccf2f46"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "UT"
-  revision = "63cb32ae39b28d6bb8e7e215c1fc39dd80dcdb02"
+  revision = "6d18c012aee9febd81bbf9806760c8c4480e870d"
 
 [[projects]]
   digest = "1:8d8faad6b12a3a4c819a3f9618cb6ee1fa1cfc33253abeeea8b55336721e3405"

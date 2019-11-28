@@ -38,7 +38,7 @@
   name = "github.com/giantswarm/exporterkit"
 
 [[constraint]]
-  branch = "master"
+  branch = "add-scheme"
   name = "github.com/giantswarm/k8sclient"
 
 [[constraint]]

@@ -3,6 +3,7 @@ package k8sclient
 import (
 	"github.com/giantswarm/apiextensions/pkg/clientset/versioned"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -20,4 +21,5 @@ type Interface interface {
 	K8sClient() kubernetes.Interface
 	RESTClient() rest.Interface
 	RESTConfig() *rest.Config
+	Scheme() *runtime.Scheme
 }
