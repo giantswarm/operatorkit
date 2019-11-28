@@ -112,8 +112,10 @@ type AzureConfigSpecAzureVirtualNetwork struct {
 type AzureConfigSpecAzureNode struct {
 	// VMSize is the master vm size (e.g. Standard_A1)
 	VMSize string `json:"vmSize" yaml:"vmSize"`
-	// Size of a volume mounted to /var/lib/docker.
+	// DockerVolumeSizeGB is the size of a volume mounted to /var/lib/docker.
 	DockerVolumeSizeGB int `json:"dockerVolumeSizeGB" yaml:"dockerVolumeSizeGB"`
+	// KubeletVolumeSizeGB is the size of a volume mounted to /var/lib/kubelet.
+	KubeletVolumeSizeGB int `json:"kubeletVolumeSizeGB" yaml:"kubeletVolumeSizeGB"`
 }
 
 type AzureConfigSpecVersionBundle struct {
@@ -121,7 +123,20 @@ type AzureConfigSpecVersionBundle struct {
 }
 
 type AzureConfigStatus struct {
-	Cluster StatusCluster `json:"cluster" yaml:"cluster"`
+	Cluster  StatusCluster             `json:"cluster" yaml:"cluster"`
+	Provider AzureConfigStatusProvider `json:"provider" yaml:"provider"`
+}
+
+type AzureConfigStatusProvider struct {
+	Ingress AzureConfigStatusProviderIngress `json:"ingress" yaml:"ingress"`
+}
+
+type AzureConfigStatusProviderIngress struct {
+	LoadBalancer AzureConfigStatusProviderIngressLoadBalancer `json:"loadBalancer" yaml:"loadBalancer"`
+}
+
+type AzureConfigStatusProviderIngressLoadBalancer struct {
+	PublicIPName string `json:"publicIPName" yaml:"publicIPName"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

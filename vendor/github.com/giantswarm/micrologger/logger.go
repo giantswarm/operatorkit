@@ -3,6 +3,7 @@ package micrologger
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 
 	kitlog "github.com/go-kit/kit/log"
@@ -46,10 +47,12 @@ func New(config Config) (*MicroLogger, error) {
 }
 
 func (l *MicroLogger) Log(keyVals ...interface{}) error {
+	keyVals = l.processStack(keyVals)
 	return l.logger.Log(keyVals...)
 }
 
 func (l *MicroLogger) LogCtx(ctx context.Context, keyVals ...interface{}) error {
+	keyVals = l.processStack(keyVals)
 	meta, ok := loggermeta.FromContext(ctx)
 	if !ok {
 		return l.logger.Log(keyVals...)
@@ -69,7 +72,49 @@ func (l *MicroLogger) LogCtx(ctx context.Context, keyVals ...interface{}) error 
 }
 
 func (l *MicroLogger) With(keyVals ...interface{}) Logger {
+	keyVals = l.processStack(keyVals)
 	return &MicroLogger{
 		logger: kitlog.With(l.logger, keyVals...),
 	}
+}
+
+func (l *MicroLogger) processStack(keyVals []interface{}) []interface{} {
+	for i := 1; i < len(keyVals); i += 2 {
+		k := keyVals[i-1]
+		v := keyVals[i]
+
+		// If this is not the "stack" key try on next iteration.
+		if k != "stack" {
+			continue
+		}
+
+		// Try to get bytes of the data for the "stack" key. Return
+		// what is given otherwise.
+		var bytes []byte
+		switch data := v.(type) {
+		case string:
+			bytes = []byte(data)
+		case []byte:
+			bytes = data
+		default:
+			return keyVals
+		}
+
+		// If the found value isn't a JSON return.
+		var m map[string]interface{}
+		err := json.Unmarshal(bytes, &m)
+		if err != nil {
+			return keyVals
+		}
+
+		// If the found value is a JSON then make a copy of keyVals to
+		// not mutate the original one and store the value as a map to
+		// be rendered as a JSON object. Then return it.
+		keyValsCopy := append([]interface{}{}, keyVals...)
+		keyValsCopy[i] = m
+
+		return keyValsCopy
+	}
+
+	return keyVals
 }
