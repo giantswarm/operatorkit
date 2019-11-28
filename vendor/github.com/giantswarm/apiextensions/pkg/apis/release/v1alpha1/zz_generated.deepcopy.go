@@ -94,7 +94,7 @@ func (in *ReleaseCycle) DeepCopyObject() runtime.Object {
 func (in *ReleaseCycleList) DeepCopyInto(out *ReleaseCycleList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]ReleaseCycle, len(*in))
@@ -161,7 +161,7 @@ func (in *ReleaseCycleStatus) DeepCopy() *ReleaseCycleStatus {
 func (in *ReleaseList) DeepCopyInto(out *ReleaseList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]Release, len(*in))

@@ -24,3 +24,20 @@ func Stack(err error) string {
 		return err.Error()
 	}
 }
+
+// Desc returns the description of a microerror.Error.
+func Desc(err error) string {
+	c := Cause(err)
+	switch c.(type) {
+	case nil:
+		return ""
+	case *Error:
+		e, ok := c.(*Error)
+		if ok {
+			return e.Desc
+		}
+		return ""
+	default:
+		return ""
+	}
+}

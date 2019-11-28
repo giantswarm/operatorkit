@@ -55,7 +55,7 @@ func (in *AWSClusterConfig) DeepCopyObject() runtime.Object {
 func (in *AWSClusterConfigList) DeepCopyInto(out *AWSClusterConfigList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]AWSClusterConfig, len(*in))
@@ -252,7 +252,7 @@ func (in *AzureClusterConfig) DeepCopyObject() runtime.Object {
 func (in *AzureClusterConfigList) DeepCopyInto(out *AzureClusterConfigList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]AzureClusterConfig, len(*in))
@@ -449,7 +449,7 @@ func (in *CertConfig) DeepCopyObject() runtime.Object {
 func (in *CertConfigList) DeepCopyInto(out *CertConfigList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]CertConfig, len(*in))
@@ -575,7 +575,7 @@ func (in *ChartConfig) DeepCopyObject() runtime.Object {
 func (in *ChartConfigList) DeepCopyInto(out *ChartConfigList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]ChartConfig, len(*in))
@@ -774,7 +774,7 @@ func (in *ClusterGuestConfigVersionBundle) DeepCopy() *ClusterGuestConfigVersion
 func (in *ClusterList) DeepCopyInto(out *ClusterList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]Cluster, len(*in))
@@ -917,7 +917,7 @@ func (in *DrainerConfig) DeepCopyObject() runtime.Object {
 func (in *DrainerConfigList) DeepCopyInto(out *DrainerConfigList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]DrainerConfig, len(*in))
@@ -1119,7 +1119,7 @@ func (in *DraughtsmanConfig) DeepCopyObject() runtime.Object {
 func (in *DraughtsmanConfigList) DeepCopyInto(out *DraughtsmanConfigList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]DraughtsmanConfig, len(*in))
@@ -1216,7 +1216,7 @@ func (in *FlannelConfig) DeepCopyObject() runtime.Object {
 func (in *FlannelConfigList) DeepCopyInto(out *FlannelConfigList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]FlannelConfig, len(*in))
@@ -1489,7 +1489,7 @@ func (in *IngressConfig) DeepCopyObject() runtime.Object {
 func (in *IngressConfigList) DeepCopyInto(out *IngressConfigList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]IngressConfig, len(*in))
@@ -1654,7 +1654,7 @@ func (in *KVMClusterConfig) DeepCopyObject() runtime.Object {
 func (in *KVMClusterConfigList) DeepCopyInto(out *KVMClusterConfigList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]KVMClusterConfig, len(*in))
@@ -1835,7 +1835,7 @@ func (in *NodeConfig) DeepCopyObject() runtime.Object {
 func (in *NodeConfigList) DeepCopyInto(out *NodeConfigList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]NodeConfig, len(*in))
@@ -1927,7 +1927,7 @@ func (in *StorageConfig) DeepCopyObject() runtime.Object {
 func (in *StorageConfigList) DeepCopyInto(out *StorageConfigList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]StorageConfig, len(*in))
