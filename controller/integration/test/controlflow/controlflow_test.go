@@ -4,6 +4,7 @@ package controlflow
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -67,6 +68,8 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 			t.Fatalf("failed to wait for controller to boot")
 		}
 	}
+
+	fmt.Printf("test assumes controller booted\n")
 
 	// Setup the test namespace.
 	{

@@ -235,6 +235,8 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 }
 
 func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) {
+	fmt.Printf("Controller.Reconcile called\n")
+
 	ctx := context.Background()
 	obj := c.runtimeObjectFactory()
 
@@ -424,7 +426,10 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 	var mgr manager.Manager
 	{
 		o := manager.Options{
-			SyncPeriod: to.DurationP(c.resyncPeriod),
+			// MetricsBindAddress is set to 0 in order to disable it. We do this
+			// ourselves.
+			MetricsBindAddress: "0",
+			SyncPeriod:         to.DurationP(c.resyncPeriod),
 		}
 
 		mgr, err = manager.New(c.k8sClient.RESTConfig(), o)
@@ -456,11 +461,13 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 	// users know when to go ahead. Note that mgr.Start below blocks the boot
 	// process until it ends gracefully or fails.
 	{
+		fmt.Printf("controller starts to watch\n")
 		err = ctrl.Watch(&source.Kind{Type: c.runtimeObjectFactory()}, &handler.EnqueueRequestForObject{})
 		if err != nil {
 			return microerror.Mask(err)
 		}
 		close(c.booted)
+		fmt.Printf("controller signals it has booted\n")
 
 		err = mgr.Start(signals.SetupSignalHandler())
 		if err != nil {
