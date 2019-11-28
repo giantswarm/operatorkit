@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
 	"sync"
@@ -457,13 +456,11 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 	// users know when to go ahead. Note that mgr.Start below blocks the boot
 	// process until it ends gracefully or fails.
 	{
-		fmt.Printf("controller starts to watch\n")
 		err = ctrl.Watch(&source.Kind{Type: c.runtimeObjectFactory()}, &handler.EnqueueRequestForObject{})
 		if err != nil {
 			return microerror.Mask(err)
 		}
 		close(c.booted)
-		fmt.Printf("controller signals it has booted\n")
 
 		err = mgr.Start(setupSignalHandler())
 		if err != nil {
