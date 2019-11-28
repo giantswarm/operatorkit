@@ -298,7 +298,7 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	fmt.Printf("\n")
+	fmt.Printf("obj and AllKnownTypes\n")
 	fmt.Printf("\n")
 	fmt.Printf("\n")
 	fmt.Printf("%#v\n", obj)

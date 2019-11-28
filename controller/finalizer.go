@@ -9,6 +9,7 @@ import (
 	"github.com/giantswarm/microerror"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -42,14 +43,24 @@ func (c *Controller) addFinalizer(ctx context.Context, obj interface{}) (bool, e
 		o := func() error {
 			// We get an up to date version of our object from k8s and parse the
 			// response from the RESTClient to runtime object.
-			obj, err := c.k8sClient.RESTClient().Get().AbsPath(accessor.GetSelfLink()).Do().Get()
+			newObj := c.runtimeObjectFactory()
+
+			err := c.k8sClient.CtrlClient().Get(ctx, types.NamespacedName{Name: accessor.GetName(), Namespace: accessor.GetNamespace()}, newObj)
 			if runtime.IsNotRegisteredError(err) {
 				return microerror.Mask(invalidRESTClientError)
 			} else if err != nil {
 				return microerror.Mask(err)
 			}
 
-			patch, stop, err := createAddFinalizerPatch(obj, c.name)
+			fmt.Printf("newObj\n")
+			fmt.Printf("\n")
+			fmt.Printf("\n")
+			fmt.Printf("%#v\n", newObj)
+			fmt.Printf("\n")
+			fmt.Printf("\n")
+			fmt.Printf("\n")
+
+			patch, stop, err := createAddFinalizerPatch(newObj, c.name)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -146,7 +157,9 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("removing finalizer %#q", finalizerName))
 
 		o := func() error {
-			newObject, err := c.k8sClient.RESTClient().Get().AbsPath(selfLink).Do().Get()
+			newObj := c.runtimeObjectFactory()
+
+			err := c.k8sClient.CtrlClient().Get(ctx, types.NamespacedName{Name: accessor.GetName(), Namespace: accessor.GetNamespace()}, newObj)
 			if errors.IsNotFound(err) {
 				// The reconciled object is already gone. Nothing to do anymore.
 				return nil
@@ -154,10 +167,24 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 				return microerror.Mask(err)
 			}
 
-			newAccessor, err := meta.Accessor(newObject)
-			if err != nil {
-				return microerror.Mask(err)
+			var newAccessor metav1.Object
+			{
+				newAccessor, err = meta.Accessor(newObj)
+				if err != nil {
+					return microerror.Mask(err)
+				}
 			}
+
+			fmt.Printf("newObj and accessor\n")
+			fmt.Printf("\n")
+			fmt.Printf("\n")
+			fmt.Printf("%#v\n", newObj)
+			fmt.Printf("\n")
+			fmt.Printf("%#v\n", accessor)
+			fmt.Printf("\n")
+			fmt.Printf("\n")
+			fmt.Printf("\n")
+
 			patch := []patchSpec{
 				{
 					Op:    "replace",
