@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/k8sclient"
 	"github.com/giantswarm/microerror"
@@ -443,6 +444,11 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 		if err != nil {
 			return microerror.Mask(err)
 		}
+	}
+
+	err = v1alpha1.AddToScheme(scheme.Scheme)
+	if err != nil {
+		return microerror.Mask(err)
 	}
 
 	// Initializing the watch means to have the operator's reconciliation set up.
