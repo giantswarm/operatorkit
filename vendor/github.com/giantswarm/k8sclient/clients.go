@@ -1,12 +1,14 @@
 package k8sclient
 
 import (
+	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/apiextensions/pkg/clientset/versioned"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -87,6 +89,11 @@ func NewClients(config ClientsConfig) (*Clients, error) {
 
 	var ctrlClient client.Client
 	{
+		err = v1alpha1.AddToScheme(scheme.Scheme)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+
 		ctrlClient, err = client.New(rest.CopyConfig(restConfig), client.Options{})
 		if err != nil {
 			return nil, microerror.Mask(err)
