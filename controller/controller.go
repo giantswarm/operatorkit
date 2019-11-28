@@ -346,9 +346,7 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 		c.logger.LogCtx(ctx, "level", "debug", "message", "adding finalizer")
 
 		ok, err := c.addFinalizer(ctx, obj)
-		if IsInvalidRESTClient(err) {
-			panic("invalid REST client configured for controller")
-		} else if err != nil {
+		if err != nil {
 			c.logger.LogCtx(ctx, "level", "error", "message", "failed adding finalizer", "stack", microerror.Stack(err))
 			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 			return

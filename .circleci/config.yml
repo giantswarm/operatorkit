@@ -46,11 +46,11 @@ jobs:
       TEST_DIR: "controller/integration/test/basic"
     <<: *e2eTest
 
-#  e2eTestControllerControlflow:
-#    environment:
-#      TEST_DIR: "controller/integration/test/controlflow"
-#    <<: *e2eTest
-#
+  e2eTestControllerControlflow:
+    environment:
+      TEST_DIR: "controller/integration/test/controlflow"
+    <<: *e2eTest
+
 #  e2eTestControllerError:
 #    environment:
 #      TEST_DIR: "controller/integration/test/error"
@@ -88,10 +88,10 @@ workflows:
           requires:
           - build
 
-#      - e2eTestControllerControlflow:
-#          requires:
-#          - build
-#
+      - e2eTestControllerControlflow:
+          requires:
+          - build
+
 #      - e2eTestControllerError:
 #          requires:
 #          - build

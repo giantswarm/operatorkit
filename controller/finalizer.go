@@ -10,7 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/giantswarm/operatorkit/controller/context/finalizerskeptcontext"
@@ -46,19 +45,9 @@ func (c *Controller) addFinalizer(ctx context.Context, obj interface{}) (bool, e
 			newObj := c.runtimeObjectFactory()
 
 			err := c.k8sClient.CtrlClient().Get(ctx, types.NamespacedName{Name: accessor.GetName(), Namespace: accessor.GetNamespace()}, newObj)
-			if runtime.IsNotRegisteredError(err) {
-				return microerror.Mask(invalidRESTClientError)
-			} else if err != nil {
+			if err != nil {
 				return microerror.Mask(err)
 			}
-
-			fmt.Printf("newObj\n")
-			fmt.Printf("\n")
-			fmt.Printf("\n")
-			fmt.Printf("%#v\n", newObj)
-			fmt.Printf("\n")
-			fmt.Printf("\n")
-			fmt.Printf("\n")
 
 			patch, stop, err := createAddFinalizerPatch(newObj, c.name)
 			if err != nil {
@@ -174,16 +163,6 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 					return microerror.Mask(err)
 				}
 			}
-
-			fmt.Printf("newObj and accessor\n")
-			fmt.Printf("\n")
-			fmt.Printf("\n")
-			fmt.Printf("%#v\n", newObj)
-			fmt.Printf("\n")
-			fmt.Printf("%#v\n", accessor)
-			fmt.Printf("\n")
-			fmt.Printf("\n")
-			fmt.Printf("\n")
 
 			patch := []patchSpec{
 				{

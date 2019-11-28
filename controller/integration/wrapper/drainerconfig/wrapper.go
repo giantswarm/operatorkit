@@ -1,16 +1,19 @@
 package drainerconfig
 
 import (
+	"time"
+
 	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/apiextensions/pkg/clientset/versioned"
 	"github.com/giantswarm/e2e-harness/pkg/harness"
+	"github.com/giantswarm/k8sclient"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/giantswarm/operatorkit/controller"
 	"github.com/giantswarm/operatorkit/controller/integration/testresourceset"
@@ -34,18 +37,7 @@ type Wrapper struct {
 }
 
 func New(config Config) (*Wrapper, error) {
-	restConfig, err := clientcmd.BuildConfigFromFlags("", harness.DefaultKubeConfig)
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
-	k8sClient, err := kubernetes.NewForConfig(restConfig)
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
-	g8sClient, err := versioned.NewForConfig(restConfig)
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
+	var err error
 
 	if config.Logger == nil {
 		c := micrologger.Config{}
@@ -56,11 +48,25 @@ func New(config Config) (*Wrapper, error) {
 		}
 	}
 
+	var k8sClient *k8sclient.Clients
+	{
+		c := k8sclient.ClientsConfig{
+			Logger: config.Logger,
+
+			KubeConfigPath: harness.DefaultKubeConfig,
+		}
+
+		k8sClient, err = k8sclient.NewClients(c)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+	}
+
 	var resourceSet *controller.ResourceSet
 	{
 		c := testresourceset.Config{
 			HandlesFunc: config.HandlesFunc,
-			K8sClient:   k8sClient,
+			K8sClient:   k8sClient.K8sClient(),
 			Logger:      config.Logger,
 			Resources:   config.Resources,
 
@@ -76,13 +82,18 @@ func New(config Config) (*Wrapper, error) {
 	var newController *controller.Controller
 	{
 		c := controller.Config{
-			CRD:    v1alpha1.NewDrainerConfigCRD(),
-			Logger: config.Logger,
+			CRD:       v1alpha1.NewDrainerConfigCRD(),
+			K8sClient: k8sClient,
+			Logger:    config.Logger,
 			ResourceSets: []*controller.ResourceSet{
 				resourceSet,
 			},
+			RuntimeObjectFactory: func() pkgruntime.Object {
+				return &v1alpha1.DrainerConfig{}
+			},
 
-			Name: config.Name,
+			Name:         config.Name,
+			ResyncPeriod: 2 * time.Second,
 		}
 
 		newController, err = controller.New(c)
@@ -93,8 +104,8 @@ func New(config Config) (*Wrapper, error) {
 
 	wrapper := &Wrapper{
 		controller: newController,
-		g8sClient:  g8sClient,
-		k8sClient:  k8sClient,
+		g8sClient:  k8sClient.G8sClient(),
+		k8sClient:  k8sClient.K8sClient(),
 	}
 
 	return wrapper, nil
