@@ -19,7 +19,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -233,14 +232,16 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 	}
 }
 
+// Reconcile implements the reconciler given to the controller-runtime
+// controller. Reconcile never returns any error as we deal with them in
+// operatorkit internally.
 func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) {
-	fmt.Printf("Controller.Reconcile called\n")
-
 	ctx := context.Background()
 
 	res, err := c.reconcile(ctx, req)
 	if err != nil {
 		c.logger.LogCtx(ctx, "level", "error", "message", "failed to reconcile", "stack", microerror.Stack(err))
+		return reconcile.Result{}, nil
 	}
 
 	return res, nil
@@ -309,16 +310,6 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 	// run into race conditions.
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-
-	fmt.Printf("obj and AllKnownTypes\n")
-	fmt.Printf("\n")
-	fmt.Printf("\n")
-	fmt.Printf("%#v\n", obj)
-	fmt.Printf("\n")
-	fmt.Printf("%#v\n", scheme.Scheme.AllKnownTypes())
-	fmt.Printf("\n")
-	fmt.Printf("\n")
-	fmt.Printf("\n")
 
 	var err error
 

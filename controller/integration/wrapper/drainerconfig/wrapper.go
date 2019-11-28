@@ -51,7 +51,8 @@ func New(config Config) (*Wrapper, error) {
 	var k8sClient *k8sclient.Clients
 	{
 		c := k8sclient.ClientsConfig{
-			Logger: config.Logger,
+			AddToScheme: v1alpha1.AddToScheme,
+			Logger:      config.Logger,
 
 			KubeConfigPath: harness.DefaultKubeConfig,
 		}
