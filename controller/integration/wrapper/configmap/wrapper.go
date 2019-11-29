@@ -83,7 +83,7 @@ func New(config Config) (*Wrapper, error) {
 				resourceSet,
 			},
 			NewRuntimeObjectFunc: func() pkgruntime.Object {
-				return &corev1.ConfigMap{}
+				return new(corev1.ConfigMap)
 			},
 
 			Name:         config.Name,

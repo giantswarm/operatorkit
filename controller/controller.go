@@ -272,7 +272,6 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 
 func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	obj := c.newRuntimeObjectFunc()
-
 	err := c.k8sClient.CtrlClient().Get(ctx, req.NamespacedName, obj)
 	if err != nil {
 		return reconcile.Result{}, microerror.Mask(err)

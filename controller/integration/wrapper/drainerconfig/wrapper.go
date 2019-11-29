@@ -90,7 +90,7 @@ func New(config Config) (*Wrapper, error) {
 				resourceSet,
 			},
 			NewRuntimeObjectFunc: func() pkgruntime.Object {
-				return &v1alpha1.DrainerConfig{}
+				return new(v1alpha1.DrainerConfig)
 			},
 
 			Name:         config.Name,
