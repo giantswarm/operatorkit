@@ -43,8 +43,14 @@ const (
 type Config struct {
 	CRD            *apiextensionsv1beta1.CustomResourceDefinition
 	BackOffFactory func() backoff.Interface
-	K8sClient      k8sclient.Interface
-	Logger         micrologger.Logger
+	// K8sClient is the client collection used to setup and manage certain
+	// operatorkit primitives. The CRD Client it provides is used to ensure the
+	// CRD being created, in case the CRD option is configured. The Controller
+	// Client is used to fetch runtime objects. It therefore must be properly
+	// configured using the AddToScheme option. The REST Client is used to patch
+	// finalizers on runtime objects.
+	K8sClient k8sclient.Interface
+	Logger    micrologger.Logger
 	// ResourceSets is a list of resource sets. A resource set provides a specific
 	// function to initialize the request context and a list of resources to be
 	// executed for a reconciliation loop. That way each runtime object being
@@ -54,8 +60,18 @@ type Config struct {
 	// list of resources being executed for the received runtime object can be
 	// versioned and different resources can be executed depending on the runtime
 	// object being reconciled.
-	ResourceSets         []*ResourceSet
-	RuntimeObjectFactory func() pkgruntime.Object
+	ResourceSets []*ResourceSet
+	// NewRuntimeObjectFunc returns a new initialized pointer of a type
+	// implementing the runtime object interface. The object returned is used with
+	// the controller-runtime client to fetch the latest version of the object
+	// itself. That way we can manage all runtime objects in a somewhat generic
+	// way. See the example below.
+	//
+	//     func() pkgruntime.Object {
+	//        return new(corev1.ConfigMap)
+	//     }
+	//
+	NewRuntimeObjectFunc func() pkgruntime.Object
 
 	// Name is the name which the controller uses on finalizers for resources.
 	// The name used should be unique in the kubernetes cluster, to ensure that
@@ -70,7 +86,7 @@ type Controller struct {
 	k8sClient            k8sclient.Interface
 	logger               micrologger.Logger
 	resourceSets         []*ResourceSet
-	runtimeObjectFactory func() pkgruntime.Object
+	newRuntimeObjectFunc func() pkgruntime.Object
 
 	bootOnce               sync.Once
 	booted                 chan struct{}
@@ -96,8 +112,8 @@ func New(config Config) (*Controller, error) {
 	if len(config.ResourceSets) == 0 {
 		return nil, microerror.Maskf(invalidConfigError, "%T.ResourceSets must not be empty", config)
 	}
-	if config.RuntimeObjectFactory == nil {
-		return nil, microerror.Maskf(invalidConfigError, "%T.RuntimeObjectFactory must not be empty", config)
+	if config.NewRuntimeObjectFunc == nil {
+		return nil, microerror.Maskf(invalidConfigError, "%T.NewRuntimeObjectFunc must not be empty", config)
 	}
 
 	if config.Name == "" {
@@ -113,7 +129,7 @@ func New(config Config) (*Controller, error) {
 		k8sClient:            config.K8sClient,
 		logger:               config.Logger,
 		resourceSets:         config.ResourceSets,
-		runtimeObjectFactory: config.RuntimeObjectFactory,
+		newRuntimeObjectFunc: config.NewRuntimeObjectFunc,
 
 		bootOnce:               sync.Once{},
 		booted:                 make(chan struct{}),
@@ -248,7 +264,7 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 }
 
 func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	obj := c.runtimeObjectFactory()
+	obj := c.newRuntimeObjectFunc()
 
 	err := c.k8sClient.CtrlClient().Get(ctx, req.NamespacedName, obj)
 	if err != nil {
@@ -456,7 +472,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 	// users know when to go ahead. Note that mgr.Start below blocks the boot
 	// process until it ends gracefully or fails.
 	{
-		err = ctrl.Watch(&source.Kind{Type: c.runtimeObjectFactory()}, &handler.EnqueueRequestForObject{})
+		err = ctrl.Watch(&source.Kind{Type: c.newRuntimeObjectFunc()}, &handler.EnqueueRequestForObject{})
 		if err != nil {
 			return microerror.Mask(err)
 		}

@@ -89,7 +89,7 @@ func New(config Config) (*Wrapper, error) {
 			ResourceSets: []*controller.ResourceSet{
 				resourceSet,
 			},
-			RuntimeObjectFactory: func() pkgruntime.Object {
+			NewRuntimeObjectFunc: func() pkgruntime.Object {
 				return &v1alpha1.DrainerConfig{}
 			},
 

@@ -42,7 +42,7 @@ func (c *Controller) addFinalizer(ctx context.Context, obj interface{}) (bool, e
 		o := func() error {
 			// We get an up to date version of our object from k8s and parse the
 			// response from the RESTClient to runtime object.
-			newObj := c.runtimeObjectFactory()
+			newObj := c.newRuntimeObjectFunc()
 
 			err := c.k8sClient.CtrlClient().Get(ctx, types.NamespacedName{Name: accessor.GetName(), Namespace: accessor.GetNamespace()}, newObj)
 			if err != nil {
@@ -146,7 +146,7 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("removing finalizer %#q", finalizerName))
 
 		o := func() error {
-			newObj := c.runtimeObjectFactory()
+			newObj := c.newRuntimeObjectFunc()
 
 			err := c.k8sClient.CtrlClient().Get(ctx, types.NamespacedName{Name: accessor.GetName(), Namespace: accessor.GetNamespace()}, newObj)
 			if errors.IsNotFound(err) {

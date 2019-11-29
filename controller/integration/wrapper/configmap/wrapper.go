@@ -82,7 +82,7 @@ func New(config Config) (*Wrapper, error) {
 			ResourceSets: []*controller.ResourceSet{
 				resourceSet,
 			},
-			RuntimeObjectFactory: func() pkgruntime.Object {
+			NewRuntimeObjectFunc: func() pkgruntime.Object {
 				return &corev1.ConfigMap{}
 			},
 
