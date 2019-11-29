@@ -32,6 +32,10 @@ import (
 )
 
 const (
+	DefaultResyncPeriod = 5 * time.Minute
+)
+
+const (
 	loggerKeyController = "controller"
 	loggerKeyEvent      = "event"
 	loggerKeyLoop       = "loop"
@@ -76,7 +80,10 @@ type Config struct {
 	// Name is the name which the controller uses on finalizers for resources.
 	// The name used should be unique in the kubernetes cluster, to ensure that
 	// two operators which handle the same resource add two distinct finalizers.
-	Name         string
+	Name string
+	// ResyncPeriod is the duration after which a complete sync with all known
+	// runtime objects the controller watches is performed. Defaults to
+	// DefaultResyncPeriod.
 	ResyncPeriod time.Duration
 }
 
@@ -120,7 +127,7 @@ func New(config Config) (*Controller, error) {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Name must not be empty", config)
 	}
 	if config.ResyncPeriod == 0 {
-		return nil, microerror.Maskf(invalidConfigError, "%T.ResyncPeriod must not be empty", config)
+		config.ResyncPeriod = DefaultResyncPeriod
 	}
 
 	c := &Controller{
