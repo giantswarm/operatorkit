@@ -278,22 +278,28 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, microerror.Mask(err)
 	}
 
-	var accessor metav1.Object
+	var m metav1.Object
+	var t metav1.Type
 	{
-		accessor, err = meta.Accessor(obj)
+		m, err = meta.Accessor(obj)
+		if err != nil {
+			return reconcile.Result{}, microerror.Mask(err)
+		}
+		t, err = meta.TypeAccessor(obj)
 		if err != nil {
 			return reconcile.Result{}, microerror.Mask(err)
 		}
 	}
 
-	if accessor.GetDeletionTimestamp() != nil {
+	if m.GetDeletionTimestamp() != nil {
 		event := "delete"
 
-		t := prometheus.NewTimer(controllerHistogram.WithLabelValues(event))
+		deletionTimestampGauge.WithLabelValues(t.GetKind(), m.GetName(), m.GetNamespace()).Set(float64(m.GetDeletionTimestamp().Unix()))
+		t := prometheus.NewTimer(eventHistogram.WithLabelValues(event))
 
 		ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
-		ctx = setLoggerCtxValue(ctx, loggerKeyObject, accessor.GetSelfLink())
-		ctx = setLoggerCtxValue(ctx, loggerKeyVersion, accessor.GetResourceVersion())
+		ctx = setLoggerCtxValue(ctx, loggerKeyObject, m.GetSelfLink())
+		ctx = setLoggerCtxValue(ctx, loggerKeyVersion, m.GetResourceVersion())
 
 		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
 		c.deleteFunc(ctx, obj)
@@ -303,11 +309,12 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reco
 	} else {
 		event := "update"
 
-		t := prometheus.NewTimer(controllerHistogram.WithLabelValues(event))
+		creationTimestampGauge.WithLabelValues(t.GetKind(), m.GetName(), m.GetNamespace()).Set(float64(m.GetCreationTimestamp().Unix()))
+		t := prometheus.NewTimer(eventHistogram.WithLabelValues(event))
 
 		ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
-		ctx = setLoggerCtxValue(ctx, loggerKeyObject, accessor.GetSelfLink())
-		ctx = setLoggerCtxValue(ctx, loggerKeyVersion, accessor.GetResourceVersion())
+		ctx = setLoggerCtxValue(ctx, loggerKeyObject, m.GetSelfLink())
+		ctx = setLoggerCtxValue(ctx, loggerKeyVersion, m.GetResourceVersion())
 
 		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
 		c.updateFunc(ctx, obj)
@@ -418,9 +425,9 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 		for {
 			select {
 			case <-c.errorCollector:
-				controllerErrorGauge.Inc()
+				errorGauge.Inc()
 			case <-time.After(resetWait):
-				controllerErrorGauge.Set(0)
+				errorGauge.Set(0)
 			}
 		}
 	}()
