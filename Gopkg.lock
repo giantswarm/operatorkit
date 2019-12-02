@@ -91,6 +91,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:acd6a43f92d30bc78965591e3ad0173769c97761b3a55bdb11ee0970307c87ee"
+  name = "github.com/giantswarm/k8sclient"
+  packages = ["k8scrdclient"]
+  pruneopts = "UT"
+  revision = "8680e194c7eed1bb0121972ca46ca4b0396536fd"
+
+[[projects]]
+  branch = "master"
   digest = "1:d80347cb345b2986422040821735ae0efba8b8093b765b146b90796d926b85b4"
   name = "github.com/giantswarm/microerror"
   packages = ["."]
@@ -777,7 +785,12 @@
     "github.com/giantswarm/apiextensions/pkg/clientset/versioned",
     "github.com/giantswarm/backoff",
     "github.com/giantswarm/e2e-harness/pkg/harness",
+<<<<<<< HEAD
     "github.com/giantswarm/k8sclient",
+=======
+    "github.com/giantswarm/exporterkit/collector",
+    "github.com/giantswarm/k8sclient/k8scrdclient",
+>>>>>>> master
     "github.com/giantswarm/microerror",
     "github.com/giantswarm/micrologger",
     "github.com/giantswarm/micrologger/loggermeta",
