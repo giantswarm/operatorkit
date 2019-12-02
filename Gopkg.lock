@@ -68,7 +68,7 @@
   name = "github.com/giantswarm/e2e-harness"
   packages = ["pkg/harness"]
   pruneopts = "UT"
-  revision = "e992be3b683962f744a23996900042317cdf873e"
+  revision = "f54d8a266f15340b465463a8b8b972f1f430a69c"
 
 [[projects]]
   branch = "master"
@@ -77,6 +77,14 @@
   packages = ["collector"]
   pruneopts = "UT"
   revision = "9749deade60f7624620aa7158a4f38c87ea23795"
+
+[[projects]]
+  branch = "master"
+  digest = "1:acd6a43f92d30bc78965591e3ad0173769c97761b3a55bdb11ee0970307c87ee"
+  name = "github.com/giantswarm/k8sclient"
+  packages = ["k8scrdclient"]
+  pruneopts = "UT"
+  revision = "8680e194c7eed1bb0121972ca46ca4b0396536fd"
 
 [[projects]]
   branch = "master"
@@ -324,7 +332,7 @@
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = "UT"
-  revision = "ac88ee75c92c889b97e05591e9a39b6480c538b3"
+  revision = "b544559bb6d1b5c62fba4af5e843ff542174f079"
 
 [[projects]]
   branch = "master"
@@ -652,6 +660,7 @@
     "github.com/giantswarm/backoff",
     "github.com/giantswarm/e2e-harness/pkg/harness",
     "github.com/giantswarm/exporterkit/collector",
+    "github.com/giantswarm/k8sclient/k8scrdclient",
     "github.com/giantswarm/microerror",
     "github.com/giantswarm/micrologger",
     "github.com/giantswarm/micrologger/loggermeta",
