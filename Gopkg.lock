@@ -80,22 +80,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:5164d17414266145c643e4997dacbc32e6e1ad552c3c70a78837f64d9a0140ea"
-  name = "github.com/giantswarm/exporterkit"
-  packages = ["collector"]
-  pruneopts = "UT"
-  revision = "9749deade60f7624620aa7158a4f38c87ea23795"
-
-[[projects]]
-  branch = "master"
-  digest = "1:05cb6533a801e2a154f1d7dd3e6ed3c319d000a3958f8ce30832b079d60ffab2"
+  digest = "1:1acdd05d45c9b3027ff626812ca6b0c409a8db5cca7f08ee72358685e2610e46"
   name = "github.com/giantswarm/k8sclient"
   packages = [
     ".",
     "k8scrdclient",
   ]
   pruneopts = "UT"
-  revision = "8680e194c7eed1bb0121972ca46ca4b0396536fd"
+  revision = "f1e80322a86a661e7b11d5db4e5607052c04e586"
 
 [[projects]]
   branch = "master"
@@ -411,14 +403,6 @@
   ]
   pruneopts = "UT"
   revision = "5d9234df094ce600ff541158d1491aa10d078a47"
-
-[[projects]]
-  branch = "master"
-  digest = "1:b521f10a2d8fa85c04a8ef4e62f2d1e14d303599a55d64dabf9f5a02f84d35eb"
-  name = "golang.org/x/sync"
-  packages = ["errgroup"]
-  pruneopts = "UT"
-  revision = "cd5d95a43a6e21273425c7ae415d3df9ea832eeb"
 
 [[projects]]
   branch = "master"
@@ -793,7 +777,6 @@
     "github.com/giantswarm/apiextensions/pkg/clientset/versioned",
     "github.com/giantswarm/backoff",
     "github.com/giantswarm/e2e-harness/pkg/harness",
-    "github.com/giantswarm/exporterkit/collector",
     "github.com/giantswarm/k8sclient",
     "github.com/giantswarm/microerror",
     "github.com/giantswarm/micrologger",
@@ -812,7 +795,6 @@
     "k8s.io/apimachinery/pkg/runtime/schema",
     "k8s.io/apimachinery/pkg/types",
     "k8s.io/apimachinery/pkg/util/runtime",
-    "k8s.io/apimachinery/pkg/watch",
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/rest",
     "k8s.io/client-go/tools/clientcmd",
