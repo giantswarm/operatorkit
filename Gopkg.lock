@@ -84,7 +84,7 @@
   name = "github.com/giantswarm/k8sclient"
   packages = ["k8scrdclient"]
   pruneopts = "UT"
-  revision = "8680e194c7eed1bb0121972ca46ca4b0396536fd"
+  revision = "059a94fd04e59aceab384413cf9608ae1640a2ca"
 
 [[projects]]
   branch = "master"
