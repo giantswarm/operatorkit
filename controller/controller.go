@@ -55,16 +55,6 @@ type Config struct {
 	// finalizers on runtime objects.
 	K8sClient k8sclient.Interface
 	Logger    micrologger.Logger
-	// ResourceSets is a list of resource sets. A resource set provides a specific
-	// function to initialize the request context and a list of resources to be
-	// executed for a reconciliation loop. That way each runtime object being
-	// reconciled is executed against a desired list of resources. Since runtime
-	// objects may differ in version and/or structure the resource router enables
-	// custom inspection before each reconciliation loop. That way the complete
-	// list of resources being executed for the received runtime object can be
-	// versioned and different resources can be executed depending on the runtime
-	// object being reconciled.
-	ResourceSets []*ResourceSet
 	// NewRuntimeObjectFunc returns a new initialized pointer of a type
 	// implementing the runtime object interface. The object returned is used with
 	// the controller-runtime client to fetch the latest version of the object
@@ -76,6 +66,16 @@ type Config struct {
 	//     }
 	//
 	NewRuntimeObjectFunc func() pkgruntime.Object
+	// ResourceSets is a list of resource sets. A resource set provides a specific
+	// function to initialize the request context and a list of resources to be
+	// executed for a reconciliation loop. That way each runtime object being
+	// reconciled is executed against a desired list of resources. Since runtime
+	// objects may differ in version and/or structure the resource router enables
+	// custom inspection before each reconciliation loop. That way the complete
+	// list of resources being executed for the received runtime object can be
+	// versioned and different resources can be executed depending on the runtime
+	// object being reconciled.
+	ResourceSets []*ResourceSet
 
 	// Name is the name which the controller uses on finalizers for resources.
 	// The name used should be unique in the kubernetes cluster, to ensure that
@@ -92,14 +92,14 @@ type Controller struct {
 	backOffFactory       func() backoff.Interface
 	k8sClient            k8sclient.Interface
 	logger               micrologger.Logger
-	resourceSets         []*ResourceSet
 	newRuntimeObjectFunc func() pkgruntime.Object
+	resourceSets         []*ResourceSet
 
 	bootOnce               sync.Once
 	booted                 chan struct{}
 	errorCollector         chan error
-	removedFinalizersCache *stringCache
 	mutex                  sync.Mutex
+	removedFinalizersCache *stringCache
 
 	name         string
 	resyncPeriod time.Duration
@@ -116,11 +116,11 @@ func New(config Config) (*Controller, error) {
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Logger must not be empty", config)
 	}
-	if len(config.ResourceSets) == 0 {
-		return nil, microerror.Maskf(invalidConfigError, "%T.ResourceSets must not be empty", config)
-	}
 	if config.NewRuntimeObjectFunc == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.NewRuntimeObjectFunc must not be empty", config)
+	}
+	if len(config.ResourceSets) == 0 {
+		return nil, microerror.Maskf(invalidConfigError, "%T.ResourceSets must not be empty", config)
 	}
 
 	if config.Name == "" {
@@ -135,14 +135,14 @@ func New(config Config) (*Controller, error) {
 		backOffFactory:       config.BackOffFactory,
 		k8sClient:            config.K8sClient,
 		logger:               config.Logger,
-		resourceSets:         config.ResourceSets,
 		newRuntimeObjectFunc: config.NewRuntimeObjectFunc,
+		resourceSets:         config.ResourceSets,
 
 		bootOnce:               sync.Once{},
 		booted:                 make(chan struct{}),
 		errorCollector:         make(chan error, 1),
-		removedFinalizersCache: newStringCache(config.ResyncPeriod * 3),
 		mutex:                  sync.Mutex{},
+		removedFinalizersCache: newStringCache(config.ResyncPeriod * 3),
 
 		name:         config.Name,
 		resyncPeriod: config.ResyncPeriod,
@@ -184,77 +184,6 @@ func (c *Controller) DeleteFunc(obj interface{}) {
 	c.deleteFunc(ctx, obj)
 }
 
-func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
-	// DeleteFunc/UpdateFunc is synchronized to make sure only one of them is
-	// executed at a time. DeleteFunc/UpdateFunc is not thread safe. This is
-	// important because the source of truth for an operator are the reconciled
-	// resources. In case we would run the operator logic in parallel, we would
-	// run into race conditions.
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
-	var err error
-
-	var rs *ResourceSet
-	{
-		c.logger.LogCtx(ctx, "level", "debug", "message", "finding resource set")
-
-		rs, err = c.resourceSet(obj)
-		if IsNoResourceSet(err) {
-			c.logger.LogCtx(ctx, "level", "debug", "message", "did not find resource set")
-			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
-			return
-
-		} else if err != nil {
-			c.logger.LogCtx(ctx, "level", "error", "message", "failed finding resource set", "stack", microerror.Stack(err))
-			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
-			return
-		}
-
-		c.logger.LogCtx(ctx, "level", "debug", "message", "found resource set")
-	}
-
-	{
-		// Memorize the old context. We need to use it for logging in
-		// case of InitCtx failure because the context returned by
-		// failing InitCtx can be nil.
-		oldCtx := ctx
-		ctx, err = rs.InitCtx(ctx, obj)
-		if err != nil {
-			c.logger.LogCtx(oldCtx, "level", "error", "message", "failed initializing context", "stack", microerror.Stack(err))
-			c.logger.LogCtx(oldCtx, "level", "debug", "message", "canceling reconciliation")
-			return
-		}
-	}
-
-	hasFinalizer, err := c.hasFinalizer(ctx, obj)
-	if err != nil {
-		c.logger.LogCtx(ctx, "level", "error", "message", "failed checking finalizer", "stack", microerror.Stack(err))
-		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
-		return
-	}
-	if hasFinalizer {
-		err = ProcessDelete(ctx, obj, rs.Resources())
-		if err != nil {
-			c.errorCollector <- err
-			c.logger.LogCtx(ctx, "level", "error", "message", "failed processing event", "stack", microerror.Stack(err))
-			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
-			return
-		}
-	} else {
-		c.logger.LogCtx(ctx, "level", "debug", "message", "did not find any finalizer")
-		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
-		return
-	}
-
-	err = c.removeFinalizer(ctx, obj)
-	if err != nil {
-		c.logger.LogCtx(ctx, "level", "error", "message", "failed removing finalizer", "stack", microerror.Stack(err))
-		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
-		return
-	}
-}
-
 // Reconcile implements the reconciler given to the controller-runtime
 // controller. Reconcile never returns any error as we deal with them in
 // operatorkit internally.
@@ -270,138 +199,10 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 	return res, nil
 }
 
-func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	obj := c.newRuntimeObjectFunc()
-	err := c.k8sClient.CtrlClient().Get(ctx, req.NamespacedName, obj)
-	if err != nil {
-		return reconcile.Result{}, microerror.Mask(err)
-	}
-
-	var m metav1.Object
-	var t metav1.Type
-	{
-		m, err = meta.Accessor(obj)
-		if err != nil {
-			return reconcile.Result{}, microerror.Mask(err)
-		}
-		t, err = meta.TypeAccessor(obj)
-		if err != nil {
-			return reconcile.Result{}, microerror.Mask(err)
-		}
-	}
-
-	if m.GetDeletionTimestamp() != nil {
-		event := "delete"
-
-		deletionTimestampGauge.WithLabelValues(t.GetKind(), m.GetName(), m.GetNamespace()).Set(float64(m.GetDeletionTimestamp().Unix()))
-		t := prometheus.NewTimer(eventHistogram.WithLabelValues(event))
-
-		ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
-		ctx = setLoggerCtxValue(ctx, loggerKeyObject, m.GetSelfLink())
-		ctx = setLoggerCtxValue(ctx, loggerKeyVersion, m.GetResourceVersion())
-
-		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
-		c.deleteFunc(ctx, obj)
-		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled object")
-
-		t.ObserveDuration()
-	} else {
-		event := "update"
-
-		creationTimestampGauge.WithLabelValues(t.GetKind(), m.GetName(), m.GetNamespace()).Set(float64(m.GetCreationTimestamp().Unix()))
-		t := prometheus.NewTimer(eventHistogram.WithLabelValues(event))
-
-		ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
-		ctx = setLoggerCtxValue(ctx, loggerKeyObject, m.GetSelfLink())
-		ctx = setLoggerCtxValue(ctx, loggerKeyVersion, m.GetResourceVersion())
-
-		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
-		c.updateFunc(ctx, obj)
-		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled object")
-
-		t.ObserveDuration()
-	}
-
-	return reconcile.Result{}, nil
-}
-
 // UpdateFunc executes the controller's ProcessUpdate function.
 func (c *Controller) UpdateFunc(oldObj, newObj interface{}) {
 	ctx := context.Background()
 	c.updateFunc(ctx, newObj)
-}
-
-func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
-	// DeleteFunc/UpdateFunc is synchronized to make sure only one of them is
-	// executed at a time. DeleteFunc/UpdateFunc is not thread safe. This is
-	// important because the source of truth for an operator are the reconciled
-	// resources. In case we would run the operator logic in parallel, we would
-	// run into race conditions.
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
-	var err error
-
-	var rs *ResourceSet
-	{
-		c.logger.LogCtx(ctx, "level", "debug", "message", "finding resource set")
-
-		rs, err = c.resourceSet(obj)
-		if IsNoResourceSet(err) {
-			c.logger.LogCtx(ctx, "level", "debug", "message", "did not find resource set")
-			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
-			return
-
-		} else if err != nil {
-			c.logger.LogCtx(ctx, "level", "error", "message", "failed finding resource set", "stack", microerror.Stack(err))
-			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
-			return
-		}
-
-		c.logger.LogCtx(ctx, "level", "debug", "message", "found resource set")
-	}
-
-	{
-		// Memorize the old context. We need to use it for logging in
-		// case of InitCtx failure because the context returned by
-		// failing InitCtx can be nil.
-		oldCtx := ctx
-		ctx, err = rs.InitCtx(ctx, obj)
-		if err != nil {
-			c.logger.LogCtx(oldCtx, "level", "error", "message", "failed initializing context", "stack", microerror.Stack(err))
-			c.logger.LogCtx(oldCtx, "level", "debug", "message", "canceling reconciliation")
-			return
-		}
-	}
-
-	{
-		c.logger.LogCtx(ctx, "level", "debug", "message", "adding finalizer")
-
-		ok, err := c.addFinalizer(ctx, obj)
-		if err != nil {
-			c.logger.LogCtx(ctx, "level", "error", "message", "failed adding finalizer", "stack", microerror.Stack(err))
-			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
-			return
-		}
-
-		if ok {
-			// A finalizer was added, this causes a new update event, so we stop
-			// reconciling here and will pick up the new event.
-			c.logger.LogCtx(ctx, "level", "debug", "message", "added finalizer")
-			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
-			return
-		}
-
-		c.logger.LogCtx(ctx, "level", "debug", "message", "did not add finalizer")
-	}
-
-	err = ProcessUpdate(ctx, obj, rs.Resources())
-	if err != nil {
-		c.errorCollector <- err
-		c.logger.LogCtx(ctx, "level", "error", "message", "failed processing event", "stack", microerror.Stack(err))
-		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
-		return
-	}
 }
 
 func (c *Controller) bootWithError(ctx context.Context) error {
@@ -500,18 +301,203 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 	return nil
 }
 
-func setupSignalHandler() (stopCh <-chan struct{}) {
-	stop := make(chan struct{})
-	c := make(chan os.Signal, 2)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-c
-		close(stop)
-		<-c
-		os.Exit(1) // second signal. Exit directly.
-	}()
+func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
+	// DeleteFunc/UpdateFunc is synchronized to make sure only one of them is
+	// executed at a time. DeleteFunc/UpdateFunc is not thread safe. This is
+	// important because the source of truth for an operator are the reconciled
+	// resources. In case we would run the operator logic in parallel, we would
+	// run into race conditions.
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 
-	return stop
+	var err error
+
+	var rs *ResourceSet
+	{
+		c.logger.LogCtx(ctx, "level", "debug", "message", "finding resource set")
+
+		rs, err = c.resourceSet(obj)
+		if IsNoResourceSet(err) {
+			c.logger.LogCtx(ctx, "level", "debug", "message", "did not find resource set")
+			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
+			return
+
+		} else if err != nil {
+			c.logger.LogCtx(ctx, "level", "error", "message", "failed finding resource set", "stack", microerror.Stack(err))
+			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
+			return
+		}
+
+		c.logger.LogCtx(ctx, "level", "debug", "message", "found resource set")
+	}
+
+	{
+		// Memorize the old context. We need to use it for logging in
+		// case of InitCtx failure because the context returned by
+		// failing InitCtx can be nil.
+		oldCtx := ctx
+		ctx, err = rs.InitCtx(ctx, obj)
+		if err != nil {
+			c.logger.LogCtx(oldCtx, "level", "error", "message", "failed initializing context", "stack", microerror.Stack(err))
+			c.logger.LogCtx(oldCtx, "level", "debug", "message", "canceling reconciliation")
+			return
+		}
+	}
+
+	hasFinalizer, err := c.hasFinalizer(ctx, obj)
+	if err != nil {
+		c.logger.LogCtx(ctx, "level", "error", "message", "failed checking finalizer", "stack", microerror.Stack(err))
+		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
+		return
+	}
+	if hasFinalizer {
+		err = ProcessDelete(ctx, obj, rs.Resources())
+		if err != nil {
+			c.errorCollector <- err
+			c.logger.LogCtx(ctx, "level", "error", "message", "failed processing event", "stack", microerror.Stack(err))
+			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
+			return
+		}
+	} else {
+		c.logger.LogCtx(ctx, "level", "debug", "message", "did not find any finalizer")
+		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
+		return
+	}
+
+	err = c.removeFinalizer(ctx, obj)
+	if err != nil {
+		c.logger.LogCtx(ctx, "level", "error", "message", "failed removing finalizer", "stack", microerror.Stack(err))
+		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
+		return
+	}
+}
+
+func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	obj := c.newRuntimeObjectFunc()
+	err := c.k8sClient.CtrlClient().Get(ctx, req.NamespacedName, obj)
+	if err != nil {
+		return reconcile.Result{}, microerror.Mask(err)
+	}
+
+	var m metav1.Object
+	var t metav1.Type
+	{
+		m, err = meta.Accessor(obj)
+		if err != nil {
+			return reconcile.Result{}, microerror.Mask(err)
+		}
+		t, err = meta.TypeAccessor(obj)
+		if err != nil {
+			return reconcile.Result{}, microerror.Mask(err)
+		}
+	}
+
+	if m.GetDeletionTimestamp() != nil {
+		event := "delete"
+
+		deletionTimestampGauge.WithLabelValues(t.GetKind(), m.GetName(), m.GetNamespace()).Set(float64(m.GetDeletionTimestamp().Unix()))
+		t := prometheus.NewTimer(eventHistogram.WithLabelValues(event))
+
+		ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
+		ctx = setLoggerCtxValue(ctx, loggerKeyObject, m.GetSelfLink())
+		ctx = setLoggerCtxValue(ctx, loggerKeyVersion, m.GetResourceVersion())
+
+		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
+		c.deleteFunc(ctx, obj)
+		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled object")
+
+		t.ObserveDuration()
+	} else {
+		event := "update"
+
+		creationTimestampGauge.WithLabelValues(t.GetKind(), m.GetName(), m.GetNamespace()).Set(float64(m.GetCreationTimestamp().Unix()))
+		t := prometheus.NewTimer(eventHistogram.WithLabelValues(event))
+
+		ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
+		ctx = setLoggerCtxValue(ctx, loggerKeyObject, m.GetSelfLink())
+		ctx = setLoggerCtxValue(ctx, loggerKeyVersion, m.GetResourceVersion())
+
+		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
+		c.updateFunc(ctx, obj)
+		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled object")
+
+		t.ObserveDuration()
+	}
+
+	return reconcile.Result{}, nil
+}
+
+func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
+	// DeleteFunc/UpdateFunc is synchronized to make sure only one of them is
+	// executed at a time. DeleteFunc/UpdateFunc is not thread safe. This is
+	// important because the source of truth for an operator are the reconciled
+	// resources. In case we would run the operator logic in parallel, we would
+	// run into race conditions.
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	var err error
+
+	var rs *ResourceSet
+	{
+		c.logger.LogCtx(ctx, "level", "debug", "message", "finding resource set")
+
+		rs, err = c.resourceSet(obj)
+		if IsNoResourceSet(err) {
+			c.logger.LogCtx(ctx, "level", "debug", "message", "did not find resource set")
+			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
+			return
+
+		} else if err != nil {
+			c.logger.LogCtx(ctx, "level", "error", "message", "failed finding resource set", "stack", microerror.Stack(err))
+			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
+			return
+		}
+
+		c.logger.LogCtx(ctx, "level", "debug", "message", "found resource set")
+	}
+
+	{
+		// Memorize the old context. We need to use it for logging in
+		// case of InitCtx failure because the context returned by
+		// failing InitCtx can be nil.
+		oldCtx := ctx
+		ctx, err = rs.InitCtx(ctx, obj)
+		if err != nil {
+			c.logger.LogCtx(oldCtx, "level", "error", "message", "failed initializing context", "stack", microerror.Stack(err))
+			c.logger.LogCtx(oldCtx, "level", "debug", "message", "canceling reconciliation")
+			return
+		}
+	}
+
+	{
+		c.logger.LogCtx(ctx, "level", "debug", "message", "adding finalizer")
+
+		ok, err := c.addFinalizer(ctx, obj)
+		if err != nil {
+			c.logger.LogCtx(ctx, "level", "error", "message", "failed adding finalizer", "stack", microerror.Stack(err))
+			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
+			return
+		}
+
+		if ok {
+			// A finalizer was added, this causes a new update event, so we stop
+			// reconciling here and will pick up the new event.
+			c.logger.LogCtx(ctx, "level", "debug", "message", "added finalizer")
+			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
+			return
+		}
+
+		c.logger.LogCtx(ctx, "level", "debug", "message", "did not add finalizer")
+	}
+
+	err = ProcessUpdate(ctx, obj, rs.Resources())
+	if err != nil {
+		c.errorCollector <- err
+		c.logger.LogCtx(ctx, "level", "error", "message", "failed processing event", "stack", microerror.Stack(err))
+		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
+		return
+	}
 }
 
 // resourceSet tries to lookup the appropriate resource set based on the
@@ -635,6 +621,20 @@ func setLoggerCtxValue(ctx context.Context, key, value string) context.Context {
 	m.KeyVals[key] = value
 
 	return ctx
+}
+
+func setupSignalHandler() (stopCh <-chan struct{}) {
+	stop := make(chan struct{})
+	c := make(chan os.Signal, 2)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		close(stop)
+		<-c
+		os.Exit(1) // second signal. Exit directly.
+	}()
+
+	return stop
 }
 
 func unsetLoggerCtxValue(ctx context.Context, key string) context.Context {
