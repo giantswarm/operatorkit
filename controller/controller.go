@@ -45,8 +45,7 @@ const (
 )
 
 type Config struct {
-	CRD            *apiextensionsv1beta1.CustomResourceDefinition
-	BackOffFactory func() backoff.Interface
+	CRD *apiextensionsv1beta1.CustomResourceDefinition
 	// K8sClient is the client collection used to setup and manage certain
 	// operatorkit primitives. The CRD Client it provides is used to ensure the
 	// CRD being created, in case the CRD option is configured. The Controller
@@ -107,9 +106,6 @@ type Controller struct {
 
 // New creates a new configured operator controller.
 func New(config Config) (*Controller, error) {
-	if config.BackOffFactory == nil {
-		config.BackOffFactory = func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) }
-	}
 	if config.K8sClient == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.K8sClient must not be empty", config)
 	}
@@ -132,7 +128,7 @@ func New(config Config) (*Controller, error) {
 
 	c := &Controller{
 		crd:                  config.CRD,
-		backOffFactory:       config.BackOffFactory,
+		backOffFactory:       func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) },
 		k8sClient:            config.K8sClient,
 		logger:               config.Logger,
 		newRuntimeObjectFunc: config.NewRuntimeObjectFunc,
