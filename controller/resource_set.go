@@ -38,14 +38,13 @@ type ResourceSet struct {
 }
 
 func NewResourceSet(c ResourceSetConfig) (*ResourceSet, error) {
+	if c.Handles == nil {
+		c.Handles = func(obj interface{}) bool { return true }
+	}
 	if c.InitCtx == nil {
 		c.InitCtx = func(ctx context.Context, obj interface{}) (context.Context, error) {
 			return ctx, nil
 		}
-	}
-
-	if c.Handles == nil {
-		c.Handles = func(obj interface{}) bool { return true }
 	}
 	if c.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Logger must not be empty", c)
@@ -64,6 +63,10 @@ func NewResourceSet(c ResourceSetConfig) (*ResourceSet, error) {
 	return r, nil
 }
 
+func (r *ResourceSet) Handles(obj interface{}) bool {
+	return r.handles(obj)
+}
+
 func (r *ResourceSet) InitCtx(ctx context.Context, obj interface{}) (context.Context, error) {
 	ctx = finalizerskeptcontext.NewContext(ctx, make(chan struct{}))
 	ctx = updateallowedcontext.NewContext(ctx, make(chan struct{}))
@@ -74,10 +77,6 @@ func (r *ResourceSet) InitCtx(ctx context.Context, obj interface{}) (context.Con
 	}
 
 	return ctx, nil
-}
-
-func (r *ResourceSet) Handles(obj interface{}) bool {
-	return r.handles(obj)
 }
 
 func (r *ResourceSet) Resources() []resource.Interface {
