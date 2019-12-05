@@ -76,21 +76,6 @@ jobs:
       TEST_DIR: "controller/integration/test/statusupdate"
     <<: *e2eTest
 
-  e2eTestInformerBasic:
-    environment:
-      TEST_DIR: "informer/integration/test/basic"
-    <<: *e2eTest
-
-  e2eTestInformerCollector:
-    environment:
-      TEST_DIR: "informer/integration/test/collector"
-    <<: *e2eTest
-
-  e2eTestInformerDeletionError:
-    environment:
-      TEST_DIR: "informer/integration/test/deletionerror"
-    <<: *e2eTest
-
 
 
 workflows:
@@ -124,17 +109,5 @@ workflows:
           - build
 
       - e2eTestControllerStatusUpdate:
-          requires:
-          - build
-
-      - e2eTestInformerBasic:
-          requires:
-          - build
-
-      - e2eTestInformerCollector:
-          requires:
-          - build
-
-      - e2eTestInformerDeletionError:
           requires:
           - build

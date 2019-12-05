@@ -6,19 +6,17 @@ import (
 	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/apiextensions/pkg/clientset/versioned"
 	"github.com/giantswarm/e2e-harness/pkg/harness"
-	"github.com/giantswarm/k8sclient/k8scrdclient"
+	"github.com/giantswarm/k8sclient"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/giantswarm/operatorkit/controller"
 	"github.com/giantswarm/operatorkit/controller/integration/testresourceset"
-	"github.com/giantswarm/operatorkit/informer"
 	"github.com/giantswarm/operatorkit/resource"
 )
 
@@ -39,22 +37,7 @@ type Wrapper struct {
 }
 
 func New(config Config) (*Wrapper, error) {
-	restConfig, err := clientcmd.BuildConfigFromFlags("", harness.DefaultKubeConfig)
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
-	k8sClient, err := kubernetes.NewForConfig(restConfig)
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
-	g8sClient, err := versioned.NewForConfig(restConfig)
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
-	k8sExtClient, err := clientset.NewForConfig(restConfig)
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
+	var err error
 
 	if config.Logger == nil {
 		c := micrologger.Config{}
@@ -65,29 +48,16 @@ func New(config Config) (*Wrapper, error) {
 		}
 	}
 
-	var crdClient *k8scrdclient.CRDClient
+	var k8sClient *k8sclient.Clients
 	{
-		c := k8scrdclient.Config{
-			K8sExtClient: k8sExtClient,
-			Logger:       config.Logger,
+		c := k8sclient.ClientsConfig{
+			AddToScheme: v1alpha1.AddToScheme,
+			Logger:      config.Logger,
+
+			KubeConfigPath: harness.DefaultKubeConfig,
 		}
 
-		crdClient, err = k8scrdclient.New(c)
-		if err != nil {
-			return nil, microerror.Mask(err)
-		}
-	}
-
-	var newInformer *informer.Informer
-	{
-		c := informer.Config{
-			Logger:  config.Logger,
-			Watcher: g8sClient.CoreV1alpha1().DrainerConfigs(config.Namespace),
-
-			RateWait:     time.Second * 2,
-			ResyncPeriod: time.Second * 10,
-		}
-		newInformer, err = informer.New(c)
+		k8sClient, err = k8sclient.NewClients(c)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
@@ -97,7 +67,7 @@ func New(config Config) (*Wrapper, error) {
 	{
 		c := testresourceset.Config{
 			HandlesFunc: config.HandlesFunc,
-			K8sClient:   k8sClient,
+			K8sClient:   k8sClient.K8sClient(),
 			Logger:      config.Logger,
 			Resources:   config.Resources,
 
@@ -114,15 +84,17 @@ func New(config Config) (*Wrapper, error) {
 	{
 		c := controller.Config{
 			CRD:       v1alpha1.NewDrainerConfigCRD(),
-			CRDClient: crdClient,
-			Informer:  newInformer,
+			K8sClient: k8sClient,
 			Logger:    config.Logger,
 			ResourceSets: []*controller.ResourceSet{
 				resourceSet,
 			},
-			RESTClient: g8sClient.CoreV1alpha1().RESTClient(),
+			NewRuntimeObjectFunc: func() pkgruntime.Object {
+				return new(v1alpha1.DrainerConfig)
+			},
 
-			Name: config.Name,
+			Name:         config.Name,
+			ResyncPeriod: 2 * time.Second,
 		}
 
 		newController, err = controller.New(c)
@@ -133,8 +105,8 @@ func New(config Config) (*Wrapper, error) {
 
 	wrapper := &Wrapper{
 		controller: newController,
-		g8sClient:  g8sClient,
-		k8sClient:  k8sClient,
+		g8sClient:  k8sClient.G8sClient(),
+		k8sClient:  k8sClient.K8sClient(),
 	}
 
 	return wrapper, nil
