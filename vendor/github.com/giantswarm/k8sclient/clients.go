@@ -18,10 +18,10 @@ import (
 )
 
 type ClientsConfig struct {
-	// AddToScheme is an optional way to extend the known types to the gobal
+	Logger micrologger.Logger
+	// SchemeBuilder is an optional way to extend the known types to the global
 	// client-go scheme. Make use of it for custom CRs.
-	AddToScheme func(*runtime.Scheme) error
-	Logger      micrologger.Logger
+	SchemeBuilder SchemeBuilder
 
 	// KubeConfigPath and RestConfig are mutually exclusive.
 	KubeConfigPath string
@@ -93,11 +93,13 @@ func NewClients(config ClientsConfig) (*Clients, error) {
 
 	var ctrlClient client.Client
 	{
-		if config.AddToScheme != nil {
+		if config.SchemeBuilder != nil {
 			// Extend the global client-go scheme which is used by all the tools under
 			// the hood. The scheme is required for the controller-runtime controller to
 			// be able to watch for runtime objects of a certain type.
-			err = config.AddToScheme(scheme.Scheme)
+			schemeBuilder := runtime.SchemeBuilder(config.SchemeBuilder)
+
+			err = schemeBuilder.AddToScheme(scheme.Scheme)
 			if err != nil {
 				return nil, microerror.Mask(err)
 			}
