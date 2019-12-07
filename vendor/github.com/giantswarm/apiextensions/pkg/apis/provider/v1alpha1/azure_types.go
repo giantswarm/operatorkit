@@ -65,12 +65,12 @@ type AzureConfigSpec struct {
 }
 
 type AzureConfigSpecAzure struct {
-	CredentialSecret CredentialSecret                   `json:"credentialSecret" yaml:"credentialSecret"`
-	DNSZones         AzureConfigSpecAzureDNSZones       `json:"dnsZones" yaml:"dnsZones"`
-	VirtualNetwork   AzureConfigSpecAzureVirtualNetwork `json:"virtualNetwork" yaml:"virtualNetwork"`
-
-	Masters []AzureConfigSpecAzureNode `json:"masters" yaml:"masters"`
-	Workers []AzureConfigSpecAzureNode `json:"workers" yaml:"workers"`
+	AvailabilityZones []int                              `json:"availabilityZones" yaml:"availabilityZones"`
+	CredentialSecret  CredentialSecret                   `json:"credentialSecret" yaml:"credentialSecret"`
+	DNSZones          AzureConfigSpecAzureDNSZones       `json:"dnsZones" yaml:"dnsZones"`
+	Masters           []AzureConfigSpecAzureNode         `json:"masters" yaml:"masters"`
+	VirtualNetwork    AzureConfigSpecAzureVirtualNetwork `json:"virtualNetwork" yaml:"virtualNetwork"`
+	Workers           []AzureConfigSpecAzureNode         `json:"workers" yaml:"workers"`
 }
 
 // AzureConfigSpecAzureDNSZones contains the DNS Zones of the cluster.
@@ -128,7 +128,8 @@ type AzureConfigStatus struct {
 }
 
 type AzureConfigStatusProvider struct {
-	Ingress AzureConfigStatusProviderIngress `json:"ingress" yaml:"ingress"`
+	AvailabilityZones []int                            `json:"availabilityZones" yaml:"availabilityZones"`
+	Ingress           AzureConfigStatusProviderIngress `json:"ingress" yaml:"ingress"`
 }
 
 type AzureConfigStatusProviderIngress struct {
