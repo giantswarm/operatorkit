@@ -33,7 +33,7 @@
   branch = "k8s-1-16"
   name = "github.com/giantswarm/e2e-harness"
 
-[[override]]
+[[constraint]]
   branch = "k8s-1-16"
   name = "github.com/giantswarm/k8sclient"
 
