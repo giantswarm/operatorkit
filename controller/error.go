@@ -25,15 +25,6 @@ func IsInvalidConfig(err error) bool {
 	return microerror.Cause(err) == invalidConfigError
 }
 
-var invalidRESTClientError = &microerror.Error{
-	Kind: "invalidRESTClientError",
-}
-
-// IsInvalidRESTClient asserts invalidRESTClientError.
-func IsInvalidRESTClient(err error) bool {
-	return microerror.Cause(err) == invalidRESTClientError
-}
-
 var noResourceSetError = &microerror.Error{
 	Kind: "noResourceSetError",
 }

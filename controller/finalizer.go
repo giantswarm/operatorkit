@@ -9,7 +9,7 @@ import (
 	"github.com/giantswarm/microerror"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/runtime"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/giantswarm/operatorkit/controller/context/finalizerskeptcontext"
@@ -25,7 +25,7 @@ type patchSpec struct {
 	Value interface{} `json:"value"`
 }
 
-func (f *Controller) addFinalizer(ctx context.Context, obj interface{}) (bool, error) {
+func (c *Controller) addFinalizer(ctx context.Context, obj interface{}) (bool, error) {
 	// We get the accessor of the object which we got passed from the framework.
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
@@ -33,7 +33,7 @@ func (f *Controller) addFinalizer(ctx context.Context, obj interface{}) (bool, e
 	}
 	// We check if the object has a finalizer here, to avoid unnecessary calls to
 	// the k8s api.
-	if containsString(accessor.GetFinalizers(), getFinalizerName(f.name)) {
+	if containsString(accessor.GetFinalizers(), getFinalizerName(c.name)) {
 		return false, nil // object already has the finalizer.
 	}
 
@@ -42,14 +42,14 @@ func (f *Controller) addFinalizer(ctx context.Context, obj interface{}) (bool, e
 		o := func() error {
 			// We get an up to date version of our object from k8s and parse the
 			// response from the RESTClient to runtime object.
-			obj, err := f.restClient.Get().AbsPath(accessor.GetSelfLink()).Do().Get()
-			if runtime.IsNotRegisteredError(err) {
-				return microerror.Mask(invalidRESTClientError)
-			} else if err != nil {
+			newObj := c.newRuntimeObjectFunc()
+
+			err := c.k8sClient.CtrlClient().Get(ctx, types.NamespacedName{Name: accessor.GetName(), Namespace: accessor.GetNamespace()}, newObj)
+			if err != nil {
 				return microerror.Mask(err)
 			}
 
-			patch, stop, err := createAddFinalizerPatch(obj, f.name)
+			patch, stop, err := createAddFinalizerPatch(newObj, c.name)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -65,7 +65,7 @@ func (f *Controller) addFinalizer(ctx context.Context, obj interface{}) (bool, e
 			if err != nil {
 				return microerror.Mask(err)
 			}
-			err = f.restClient.Patch(types.JSONPatchType).AbsPath(accessor.GetSelfLink()).Body(p).Do().Error()
+			err = c.k8sClient.RESTClient().Patch(types.JSONPatchType).AbsPath(accessor.GetSelfLink()).Body(p).Do().Error()
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -75,7 +75,7 @@ func (f *Controller) addFinalizer(ctx context.Context, obj interface{}) (bool, e
 			return nil
 		}
 
-		err = backoff.Retry(o, f.backOffFactory())
+		err = backoff.Retry(o, c.backOffFactory())
 		if err != nil {
 			return false, microerror.Mask(err)
 		}
@@ -146,7 +146,9 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 		c.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("removing finalizer %#q", finalizerName))
 
 		o := func() error {
-			newObject, err := c.restClient.Get().AbsPath(selfLink).Do().Get()
+			newObj := c.newRuntimeObjectFunc()
+
+			err := c.k8sClient.CtrlClient().Get(ctx, types.NamespacedName{Name: accessor.GetName(), Namespace: accessor.GetNamespace()}, newObj)
 			if errors.IsNotFound(err) {
 				// The reconciled object is already gone. Nothing to do anymore.
 				return nil
@@ -154,10 +156,14 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 				return microerror.Mask(err)
 			}
 
-			newAccessor, err := meta.Accessor(newObject)
-			if err != nil {
-				return microerror.Mask(err)
+			var newAccessor metav1.Object
+			{
+				newAccessor, err = meta.Accessor(newObj)
+				if err != nil {
+					return microerror.Mask(err)
+				}
 			}
+
 			patch := []patchSpec{
 				{
 					Op:    "replace",
@@ -170,7 +176,7 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 			if err != nil {
 				return microerror.Mask(err)
 			}
-			err = c.restClient.Patch(types.JSONPatchType).AbsPath(selfLink).Body(p).Do().Error()
+			err = c.k8sClient.RESTClient().Patch(types.JSONPatchType).AbsPath(selfLink).Body(p).Do().Error()
 			if err != nil {
 				return microerror.Mask(err)
 			}

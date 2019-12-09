@@ -2,28 +2,37 @@ package controller
 
 import (
 	"context"
-	"fmt"
 	"os"
-	"strconv"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/giantswarm/backoff"
+	"github.com/giantswarm/k8sclient"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/giantswarm/micrologger/loggermeta"
+	"github.com/giantswarm/to"
 	"github.com/prometheus/client_golang/prometheus"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/rest"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	pkgruntime "k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	"github.com/giantswarm/operatorkit/client/k8scrdclient"
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
-	"github.com/giantswarm/operatorkit/informer"
 	"github.com/giantswarm/operatorkit/resource"
+)
+
+const (
+	DefaultResyncPeriod = 5 * time.Minute
 )
 
 const (
@@ -36,10 +45,26 @@ const (
 )
 
 type Config struct {
-	CRD       *apiextensionsv1beta1.CustomResourceDefinition
-	CRDClient *k8scrdclient.CRDClient
-	Informer  informer.Interface
+	CRD *apiextensionsv1beta1.CustomResourceDefinition
+	// K8sClient is the client collection used to setup and manage certain
+	// operatorkit primitives. The CRD Client it provides is used to ensure the
+	// CRD being created, in case the CRD option is configured. The Controller
+	// Client is used to fetch runtime objects. It therefore must be properly
+	// configured using the AddToScheme option. The REST Client is used to patch
+	// finalizers on runtime objects.
+	K8sClient k8sclient.Interface
 	Logger    micrologger.Logger
+	// NewRuntimeObjectFunc returns a new initialized pointer of a type
+	// implementing the runtime object interface. The object returned is used with
+	// the controller-runtime client to fetch the latest version of the object
+	// itself. That way we can manage all runtime objects in a somewhat generic
+	// way. See the example below.
+	//
+	//     func() pkgruntime.Object {
+	//        return new(corev1.ConfigMap)
+	//     }
+	//
+	NewRuntimeObjectFunc func() pkgruntime.Object
 	// ResourceSets is a list of resource sets. A resource set provides a specific
 	// function to initialize the request context and a list of resources to be
 	// executed for a reconciliation loop. That way each runtime object being
@@ -50,86 +75,73 @@ type Config struct {
 	// versioned and different resources can be executed depending on the runtime
 	// object being reconciled.
 	ResourceSets []*ResourceSet
-	// RESTClient needs to be configured with a serializer capable of serializing
-	// and deserializing the object which is watched by the informer. Otherwise
-	// deserialization will fail when trying to add a finalizer.
-	//
-	// For standard k8s object this is going to be e.g.
-	//
-	// 		k8sClient.CoreV1().RESTClient()
-	//
-	// For CRs of giantswarm this is going to be e.g.
-	//
-	// 		g8sClient.CoreV1alpha1().RESTClient()
-	//
-	RESTClient rest.Interface
 
-	BackOffFactory func() backoff.Interface
 	// Name is the name which the controller uses on finalizers for resources.
 	// The name used should be unique in the kubernetes cluster, to ensure that
 	// two operators which handle the same resource add two distinct finalizers.
 	Name string
+	// ResyncPeriod is the duration after which a complete sync with all known
+	// runtime objects the controller watches is performed. Defaults to
+	// DefaultResyncPeriod.
+	ResyncPeriod time.Duration
 }
 
 type Controller struct {
-	crd          *apiextensionsv1beta1.CustomResourceDefinition
-	crdClient    *k8scrdclient.CRDClient
-	informer     informer.Interface
-	restClient   rest.Interface
-	logger       micrologger.Logger
-	resourceSets []*ResourceSet
+	crd                  *apiextensionsv1beta1.CustomResourceDefinition
+	backOffFactory       func() backoff.Interface
+	k8sClient            k8sclient.Interface
+	logger               micrologger.Logger
+	newRuntimeObjectFunc func() pkgruntime.Object
+	resourceSets         []*ResourceSet
 
 	bootOnce               sync.Once
 	booted                 chan struct{}
 	errorCollector         chan error
-	removedFinalizersCache *stringCache
 	mutex                  sync.Mutex
+	removedFinalizersCache *stringCache
 
-	backOffFactory func() backoff.Interface
-	name           string
+	name         string
+	resyncPeriod time.Duration
 }
 
 // New creates a new configured operator controller.
 func New(config Config) (*Controller, error) {
-	if config.CRD != nil && config.CRDClient == nil || config.CRD == nil && config.CRDClient != nil {
-		return nil, microerror.Maskf(invalidConfigError, "%T.CRD and %T.CRDClient must not be empty when either given", config, config)
-	}
-	if config.Informer == nil {
-		return nil, microerror.Maskf(invalidConfigError, "%T.Informer must not be empty", config)
-	}
-	if config.RESTClient == nil {
+	if config.K8sClient == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.K8sClient must not be empty", config)
 	}
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Logger must not be empty", config)
 	}
+	if config.NewRuntimeObjectFunc == nil {
+		return nil, microerror.Maskf(invalidConfigError, "%T.NewRuntimeObjectFunc must not be empty", config)
+	}
 	if len(config.ResourceSets) == 0 {
 		return nil, microerror.Maskf(invalidConfigError, "%T.ResourceSets must not be empty", config)
 	}
 
-	if config.BackOffFactory == nil {
-		config.BackOffFactory = func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) }
-	}
 	if config.Name == "" {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Name must not be empty", config)
 	}
+	if config.ResyncPeriod == 0 {
+		config.ResyncPeriod = DefaultResyncPeriod
+	}
 
 	c := &Controller{
-		crd:          config.CRD,
-		crdClient:    config.CRDClient,
-		informer:     config.Informer,
-		restClient:   config.RESTClient,
-		logger:       config.Logger,
-		resourceSets: config.ResourceSets,
+		crd:                  config.CRD,
+		backOffFactory:       func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) },
+		k8sClient:            config.K8sClient,
+		logger:               config.Logger,
+		newRuntimeObjectFunc: config.NewRuntimeObjectFunc,
+		resourceSets:         config.ResourceSets,
 
 		bootOnce:               sync.Once{},
 		booted:                 make(chan struct{}),
 		errorCollector:         make(chan error, 1),
-		removedFinalizersCache: newStringCache(config.Informer.ResyncPeriod() * 3),
 		mutex:                  sync.Mutex{},
+		removedFinalizersCache: newStringCache(config.ResyncPeriod * 3),
 
-		backOffFactory: config.BackOffFactory,
-		name:           config.Name,
+		name:         config.Name,
+		resyncPeriod: config.ResyncPeriod,
 	}
 
 	return c, nil
@@ -166,6 +178,123 @@ func (c *Controller) Booted() chan struct{} {
 func (c *Controller) DeleteFunc(obj interface{}) {
 	ctx := context.Background()
 	c.deleteFunc(ctx, obj)
+}
+
+// Reconcile implements the reconciler given to the controller-runtime
+// controller. Reconcile never returns any error as we deal with them in
+// operatorkit internally.
+func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) {
+	ctx := context.Background()
+
+	res, err := c.reconcile(ctx, req)
+	if err != nil {
+		c.logger.LogCtx(ctx, "level", "error", "message", "failed to reconcile", "stack", microerror.Stack(err))
+		return reconcile.Result{}, nil
+	}
+
+	return res, nil
+}
+
+// UpdateFunc executes the controller's ProcessUpdate function.
+func (c *Controller) UpdateFunc(oldObj, newObj interface{}) {
+	ctx := context.Background()
+	c.updateFunc(ctx, newObj)
+}
+
+func (c *Controller) bootWithError(ctx context.Context) error {
+	var err error
+
+	if c.crd != nil {
+		c.logger.LogCtx(ctx, "level", "debug", "message", "ensuring custom resource definition exists")
+
+		err := c.k8sClient.CRDClient().EnsureCreated(ctx, c.crd, c.backOffFactory())
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
+		c.logger.LogCtx(ctx, "level", "debug", "message", "ensured custom resource definition exists")
+	}
+
+	go func() {
+		resetWait := c.resyncPeriod * 4
+
+		for {
+			select {
+			case <-c.errorCollector:
+				errorGauge.Inc()
+			case <-time.After(resetWait):
+				errorGauge.Set(0)
+			}
+		}
+	}()
+
+	// We overwrite the k8s error handlers so they do not intercept our log
+	// streams. The format is way easier to parse for us that way. Here we also
+	// emit metrics for the occured errors to ensure we create more awareness of
+	// anything going wrong in our operators.
+	{
+		utilruntime.ErrorHandlers = []func(err error){
+			func(err error) {
+				// When we see a port forwarding error we ignore it because we cannot do
+				// anything about it. Errors like we check here would have to be dealt
+				// with in the third party tools we use. The port forwarding in general
+				// is broken by design which will go away with Helm 3, soon TM.
+				if IsPortforward(err) {
+					return
+				}
+
+				c.errorCollector <- err
+				c.logger.LogCtx(ctx, "level", "error", "message", "caught third party runtime error", "stack", microerror.Stack(err))
+			},
+		}
+	}
+
+	var mgr manager.Manager
+	{
+		o := manager.Options{
+			// MetricsBindAddress is set to 0 in order to disable it. We do this
+			// ourselves.
+			MetricsBindAddress: "0",
+			SyncPeriod:         to.DurationP(c.resyncPeriod),
+		}
+
+		mgr, err = manager.New(c.k8sClient.RESTConfig(), o)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+	}
+
+	var ctrl controller.Controller
+	{
+		o := controller.Options{
+			MaxConcurrentReconciles: 1,
+			Reconciler:              c,
+		}
+
+		ctrl, err = controller.New(c.name, mgr, o)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+	}
+
+	// Initializing the watch means to have the operator's reconciliation set up.
+	// We put the controller into a booted state by closing its booted channel so
+	// users know when to go ahead. Note that mgr.Start below blocks the boot
+	// process until it ends gracefully or fails.
+	{
+		err = ctrl.Watch(&source.Kind{Type: c.newRuntimeObjectFunc()}, &handler.EnqueueRequestForObject{})
+		if err != nil {
+			return microerror.Mask(err)
+		}
+		close(c.booted)
+
+		err = mgr.Start(setupSignalHandler())
+		if err != nil {
+			return microerror.Mask(err)
+		}
+	}
+
+	return nil
 }
 
 func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
@@ -239,84 +368,59 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 	}
 }
 
-// ProcessEvents takes the event channels created by the operatorkit informer
-// and executes the controller's event functions accordingly.
-func (c *Controller) ProcessEvents(ctx context.Context, deleteChan chan watch.Event, updateChan chan watch.Event, errChan chan error) error {
-	loop := -1
+func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	obj := c.newRuntimeObjectFunc()
+	err := c.k8sClient.CtrlClient().Get(ctx, req.NamespacedName, obj)
+	if err != nil {
+		return reconcile.Result{}, microerror.Mask(err)
+	}
 
-	for {
-		loop++
-
-		// Set loop specific logger context.
-		{
-			ctx = setLoggerCtxValue(ctx, loggerKeyLoop, strconv.Itoa(loop))
+	var m metav1.Object
+	var t metav1.Type
+	{
+		m, err = meta.Accessor(obj)
+		if err != nil {
+			return reconcile.Result{}, microerror.Mask(err)
 		}
-
-		select {
-		case e := <-deleteChan:
-			event := "delete"
-
-			t := prometheus.NewTimer(controllerHistogram.WithLabelValues(event))
-
-			// Set event specific logger context.
-			{
-				ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
-
-				accessor, err := meta.Accessor(e.Object)
-				if err != nil {
-					c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("failed to create accessor %T", e.Object), "stack", microerror.Stack(err))
-				} else {
-					ctx = setLoggerCtxValue(ctx, loggerKeyObject, accessor.GetSelfLink())
-					ctx = setLoggerCtxValue(ctx, loggerKeyVersion, accessor.GetResourceVersion())
-				}
-			}
-
-			c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
-			c.deleteFunc(ctx, e.Object)
-			c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled object")
-
-			t.ObserveDuration()
-		case e := <-updateChan:
-			event := "update"
-
-			t := prometheus.NewTimer(controllerHistogram.WithLabelValues(event))
-
-			// Set event specific logger context.
-			{
-				ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
-
-				accessor, err := meta.Accessor(e.Object)
-				if err != nil {
-					c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("failed to create accessor %T", e.Object), "stack", microerror.Stack(err))
-				} else {
-					ctx = setLoggerCtxValue(ctx, loggerKeyObject, accessor.GetSelfLink())
-					ctx = setLoggerCtxValue(ctx, loggerKeyVersion, accessor.GetResourceVersion())
-				}
-			}
-
-			c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
-			c.updateFunc(ctx, e.Object)
-			c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled object")
-
-			t.ObserveDuration()
-		case err := <-errChan:
-			if IsStatusForbidden(err) {
-				c.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("controller might be missing RBAC rule for %#q CRD", c.crd.Name), "stack", microerror.Stack(err))
-			} else if err != nil {
-				c.logger.LogCtx(ctx, "level", "error", "message", "failed to watch object", "stack", microerror.Stack(err))
-			}
-
-			time.Sleep(time.Second)
-		case <-ctx.Done():
-			return nil
+		t, err = meta.TypeAccessor(obj)
+		if err != nil {
+			return reconcile.Result{}, microerror.Mask(err)
 		}
 	}
-}
 
-// UpdateFunc executes the controller's ProcessUpdate function.
-func (c *Controller) UpdateFunc(oldObj, newObj interface{}) {
-	ctx := context.Background()
-	c.updateFunc(ctx, newObj)
+	if m.GetDeletionTimestamp() != nil {
+		event := "delete"
+
+		deletionTimestampGauge.WithLabelValues(t.GetKind(), m.GetName(), m.GetNamespace()).Set(float64(m.GetDeletionTimestamp().Unix()))
+		t := prometheus.NewTimer(eventHistogram.WithLabelValues(event))
+
+		ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
+		ctx = setLoggerCtxValue(ctx, loggerKeyObject, m.GetSelfLink())
+		ctx = setLoggerCtxValue(ctx, loggerKeyVersion, m.GetResourceVersion())
+
+		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
+		c.deleteFunc(ctx, obj)
+		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled object")
+
+		t.ObserveDuration()
+	} else {
+		event := "update"
+
+		creationTimestampGauge.WithLabelValues(t.GetKind(), m.GetName(), m.GetNamespace()).Set(float64(m.GetCreationTimestamp().Unix()))
+		t := prometheus.NewTimer(eventHistogram.WithLabelValues(event))
+
+		ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
+		ctx = setLoggerCtxValue(ctx, loggerKeyObject, m.GetSelfLink())
+		ctx = setLoggerCtxValue(ctx, loggerKeyVersion, m.GetResourceVersion())
+
+		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
+		c.updateFunc(ctx, obj)
+		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled object")
+
+		t.ObserveDuration()
+	}
+
+	return reconcile.Result{}, nil
 }
 
 func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
@@ -366,9 +470,7 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 		c.logger.LogCtx(ctx, "level", "debug", "message", "adding finalizer")
 
 		ok, err := c.addFinalizer(ctx, obj)
-		if IsInvalidRESTClient(err) {
-			panic("invalid REST client configured for controller")
-		} else if err != nil {
+		if err != nil {
 			c.logger.LogCtx(ctx, "level", "error", "message", "failed adding finalizer", "stack", microerror.Stack(err))
 			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 			return
@@ -392,88 +494,6 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 		return
 	}
-}
-
-func (c *Controller) bootWithError(ctx context.Context) error {
-	if c.crd != nil {
-		c.logger.LogCtx(ctx, "level", "debug", "message", "ensuring custom resource definition exists")
-
-		err := c.crdClient.EnsureCreated(ctx, c.crd, c.backOffFactory())
-		if err != nil {
-			return microerror.Mask(err)
-		}
-
-		c.logger.LogCtx(ctx, "level", "debug", "message", "ensured custom resource definition exists")
-	}
-
-	{
-		c.logger.LogCtx(ctx, "level", "debug", "message", "booting informer")
-
-		err := c.informer.Boot(ctx)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-
-		c.logger.LogCtx(ctx, "level", "debug", "message", "booted informer")
-	}
-
-	go func() {
-		resetWait := c.informer.ResyncPeriod() * 4
-
-		for {
-			select {
-			case <-c.errorCollector:
-				controllerErrorGauge.Inc()
-			case <-time.After(resetWait):
-				controllerErrorGauge.Set(0)
-			}
-		}
-	}()
-
-	// We overwrite the k8s error handlers so they do not intercept our log
-	// streams. The format is way easier to parse for us that way. Here we also
-	// emit metrics for the occured errors to ensure we create more awareness of
-	// anything going wrong in our operators.
-	{
-		runtime.ErrorHandlers = []func(err error){
-			func(err error) {
-				// When we see a port forwarding error we ignore it because we cannot do
-				// anything about it. Errors like we check here would have to be dealt
-				// with in the third party tools we use. The port forwarding in general
-				// is broken by design which will go away with Helm 3, soon TM.
-				if IsPortforward(err) {
-					return
-				}
-
-				c.errorCollector <- err
-				c.logger.LogCtx(ctx, "level", "error", "message", "caught third party runtime error", "stack", microerror.Stack(err))
-			},
-		}
-	}
-
-	// Initializing the watch gives us all necessary event channels we need to
-	// further process them within the controller. Once we got the event channels
-	// everything is set up for the operator's reconciliation. We put the
-	// controller into a booted state by closing its booted channel so users know
-	// when to go ahead. Note that ProcessEvents below blocks the boot process
-	// until it fails.
-	{
-		c.logger.LogCtx(ctx, "level", "debug", "message", "starting list-watch")
-
-		deleteChan, updateChan, errChan := c.informer.Watch(ctx)
-		close(c.booted)
-
-		c.logger.LogCtx(ctx, "level", "debug", "message", "processing object events")
-
-		err := c.ProcessEvents(ctx, deleteChan, updateChan, errChan)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-
-		c.logger.LogCtx(ctx, "level", "debug", "message", "processed object events")
-	}
-
-	return nil
 }
 
 // resourceSet tries to lookup the appropriate resource set based on the
@@ -597,6 +617,20 @@ func setLoggerCtxValue(ctx context.Context, key, value string) context.Context {
 	m.KeyVals[key] = value
 
 	return ctx
+}
+
+func setupSignalHandler() (stopCh <-chan struct{}) {
+	stop := make(chan struct{})
+	c := make(chan os.Signal, 2)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		close(stop)
+		<-c
+		os.Exit(1) // second signal. Exit directly.
+	}()
+
+	return stop
 }
 
 func unsetLoggerCtxValue(ctx context.Context, key string) context.Context {

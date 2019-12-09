@@ -3,19 +3,18 @@ package configmap
 import (
 	"time"
 
+	"github.com/giantswarm/e2e-harness/pkg/harness"
+	"github.com/giantswarm/k8sclient"
+	"github.com/giantswarm/microerror"
+	"github.com/giantswarm/micrologger"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
-
-	"github.com/giantswarm/e2e-harness/pkg/harness"
-	"github.com/giantswarm/microerror"
-	"github.com/giantswarm/micrologger"
 
 	"github.com/giantswarm/operatorkit/controller"
 	"github.com/giantswarm/operatorkit/controller/integration/testresourceset"
-	"github.com/giantswarm/operatorkit/informer"
 	"github.com/giantswarm/operatorkit/resource"
 )
 
@@ -33,14 +32,7 @@ type Wrapper struct {
 }
 
 func New(config Config) (*Wrapper, error) {
-	restConfig, err := clientcmd.BuildConfigFromFlags("", harness.DefaultKubeConfig)
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
-	k8sClient, err := kubernetes.NewForConfig(restConfig)
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
+	var err error
 
 	var newLogger micrologger.Logger
 	{
@@ -52,16 +44,15 @@ func New(config Config) (*Wrapper, error) {
 		}
 	}
 
-	var newInformer *informer.Informer
+	var k8sClient *k8sclient.Clients
 	{
-		c := informer.Config{
-			Logger:  newLogger,
-			Watcher: k8sClient.CoreV1().ConfigMaps(config.Namespace),
+		c := k8sclient.ClientsConfig{
+			Logger: newLogger,
 
-			RateWait:     time.Second * 2,
-			ResyncPeriod: time.Second * 10,
+			KubeConfigPath: harness.DefaultKubeConfig,
 		}
-		newInformer, err = informer.New(c)
+
+		k8sClient, err = k8sclient.NewClients(c)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
@@ -70,7 +61,7 @@ func New(config Config) (*Wrapper, error) {
 	var resourceSet *controller.ResourceSet
 	{
 		c := testresourceset.Config{
-			K8sClient: k8sClient,
+			K8sClient: k8sClient.K8sClient(),
 			Logger:    newLogger,
 			Resources: config.Resources,
 
@@ -86,14 +77,17 @@ func New(config Config) (*Wrapper, error) {
 	var newController *controller.Controller
 	{
 		c := controller.Config{
-			Informer: newInformer,
-			Logger:   newLogger,
+			K8sClient: k8sClient,
+			Logger:    newLogger,
 			ResourceSets: []*controller.ResourceSet{
 				resourceSet,
 			},
-			RESTClient: k8sClient.CoreV1().RESTClient(),
+			NewRuntimeObjectFunc: func() pkgruntime.Object {
+				return new(corev1.ConfigMap)
+			},
 
-			Name: config.Name,
+			Name:         config.Name,
+			ResyncPeriod: 2 * time.Second,
 		}
 
 		newController, err = controller.New(c)
@@ -104,7 +98,7 @@ func New(config Config) (*Wrapper, error) {
 
 	wrapper := &Wrapper{
 		controller: newController,
-		k8sClient:  k8sClient,
+		k8sClient:  k8sClient.K8sClient(),
 	}
 
 	return wrapper, nil
