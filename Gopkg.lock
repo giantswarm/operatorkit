@@ -43,7 +43,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:fe0bfabd93de8e05804c44a8b1ab0ff8b5e6f7a4408a7282ed87b711ec2b2933"
+  digest = "1:2f9b3a4dc1447d6b0143e2416125989df27d522989afc22031740ff4782befc1"
   name = "github.com/giantswarm/apiextensions"
   packages = [
     "pkg/apis/application/v1alpha1",
@@ -60,7 +60,7 @@
     "pkg/clientset/versioned/typed/release/v1alpha1",
   ]
   pruneopts = "UT"
-  revision = "4a323ea2f6647e7b1b037abffc7acf30a923a604"
+  revision = "a4fd7939e26e7e2cd681af032963a1597ffae781"
 
 [[projects]]
   branch = "master"
@@ -76,18 +76,18 @@
   name = "github.com/giantswarm/e2e-harness"
   packages = ["pkg/harness"]
   pruneopts = "UT"
-  revision = "f54d8a266f15340b465463a8b8b972f1f430a69c"
+  revision = "be7852f38d3ea98622ce0542bc39cc522daaf6f9"
 
 [[projects]]
   branch = "master"
-  digest = "1:e4d78572f2a3bee23e41c567dd82fc22018c8f0d736aa376d8db86448f43a7db"
+  digest = "1:ca9ad5887021e13fca3a1aa33a58668a0061b3a03bd7dfc2d36c38dedf56f572"
   name = "github.com/giantswarm/k8sclient"
   packages = [
     ".",
     "k8scrdclient",
   ]
   pruneopts = "UT"
-  revision = "059a94fd04e59aceab384413cf9608ae1640a2ca"
+  revision = "6cb127468cd6b30eaf8030b875f796e34b481938"
 
 [[projects]]
   branch = "master"
@@ -391,7 +391,7 @@
     "idna",
   ]
   pruneopts = "UT"
-  revision = "1ddd1de85cb0337b623b740a609d35817d516a8d"
+  revision = "e7e4b65ae66375ec1e85afc8e6b9b4933ae4da81"
 
 [[projects]]
   branch = "master"
@@ -509,10 +509,11 @@
   version = "v2.2.2"
 
 [[projects]]
-  digest = "1:975093e79aee83503409c504150df7f727c34395553b49f2a4787a58a95097d2"
+  digest = "1:41a8785ce0732e00b09a1a95f23c826e2864e6f6b2a5d305f412687f4f936c76"
   name = "k8s.io/api"
   packages = [
     "admission/v1beta1",
+    "admissionregistration/v1",
     "admissionregistration/v1beta1",
     "apps/v1",
     "apps/v1beta1",
@@ -532,6 +533,7 @@
     "coordination/v1",
     "coordination/v1beta1",
     "core/v1",
+    "discovery/v1alpha1",
     "events/v1beta1",
     "extensions/v1beta1",
     "networking/v1",
@@ -551,27 +553,30 @@
     "storage/v1beta1",
   ]
   pruneopts = "UT"
-  revision = "bd6ac527cfd24ad928f66798231e5bcf7f37321b"
-  version = "kubernetes-1.15.4"
+  revision = "16d7abae0d2a8ab2a6a7ad1bf3300eaacd541f56"
+  version = "kubernetes-1.16.3"
 
 [[projects]]
-  digest = "1:720f17872db890bede54ef50268f5b0a0c21eb8e3d4413e0e2b060103966476a"
+  digest = "1:5750bbcf3051ea23b48bfb39a43f20e0af7a0be569169b916bf2fcb016ede393"
   name = "k8s.io/apiextensions-apiserver"
   packages = [
     "pkg/apis/apiextensions",
+    "pkg/apis/apiextensions/v1",
     "pkg/apis/apiextensions/v1beta1",
     "pkg/client/clientset/clientset",
     "pkg/client/clientset/clientset/scheme",
+    "pkg/client/clientset/clientset/typed/apiextensions/v1",
     "pkg/client/clientset/clientset/typed/apiextensions/v1beta1",
   ]
   pruneopts = "UT"
-  revision = "3de75813f60447b64b34060fdaabd9bc23627eba"
-  version = "kubernetes-1.15.4"
+  revision = "0278775368336f7d84795d0a903ea2a3a83cfd49"
+  version = "kubernetes-1.16.3"
 
 [[projects]]
-  digest = "1:377ac888b5c59cd1b2fd55c67b81753dd1305d4a3cd0514f10750429cf67b924"
+  digest = "1:be351cc502067780105d5f692a4cfb0275c6f68e3accae569c64bb8d2dafe33c"
   name = "k8s.io/apimachinery"
   packages = [
+    "pkg/api/equality",
     "pkg/api/errors",
     "pkg/api/meta",
     "pkg/api/resource",
@@ -617,17 +622,18 @@
     "third_party/forked/golang/reflect",
   ]
   pruneopts = "UT"
-  revision = "f2f3a405f61d6c2cdc0d00687c1b5d90de91e9f0"
-  version = "kubernetes-1.15.4"
+  revision = "72ed19daf4bb788ae595ae4103c404cb0fa09c84"
+  version = "kubernetes-1.16.3"
 
 [[projects]]
-  digest = "1:6289634ebd8e175f1cacf0b47f6f8b3e43108ca749390489570966c862224070"
+  digest = "1:4b5220cc88247d3d12d33fdd5bea87b57995722e9070b3bc8ecc5de539f5b6c6"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
     "dynamic",
     "kubernetes",
     "kubernetes/scheme",
+    "kubernetes/typed/admissionregistration/v1",
     "kubernetes/typed/admissionregistration/v1beta1",
     "kubernetes/typed/apps/v1",
     "kubernetes/typed/apps/v1beta1",
@@ -647,6 +653,7 @@
     "kubernetes/typed/coordination/v1",
     "kubernetes/typed/coordination/v1beta1",
     "kubernetes/typed/core/v1",
+    "kubernetes/typed/discovery/v1alpha1",
     "kubernetes/typed/events/v1beta1",
     "kubernetes/typed/extensions/v1beta1",
     "kubernetes/typed/networking/v1",
@@ -695,8 +702,8 @@
     "util/workqueue",
   ]
   pruneopts = "UT"
-  revision = "06eb1244587a17d4994ff9de4ce93756a2f16f0b"
-  version = "kubernetes-1.15.4"
+  revision = "6c5935290e3335b200f75d874a19be3093e9c36b"
+  version = "kubernetes-1.16.3"
 
 [[projects]]
   digest = "1:93e82f25d75aba18436ad1ac042cb49493f096011f2541075721ed6f9e05c044"
@@ -728,7 +735,7 @@
   revision = "6ca3b61696b65b0e81f1a39b4937fc2d2994ed6a"
 
 [[projects]]
-  digest = "1:4e1e8cff108d6dc130a2b01aa03435e8151d37e84c9c9353f854ae66df988a7f"
+  digest = "1:8053263951e435c10bfb257f59063caafdb5f7de5ee35336383c84949bb84a25"
   name = "sigs.k8s.io/controller-runtime"
   packages = [
     "pkg/cache",
@@ -738,6 +745,7 @@
     "pkg/controller",
     "pkg/event",
     "pkg/handler",
+    "pkg/healthz",
     "pkg/internal/controller",
     "pkg/internal/controller/metrics",
     "pkg/internal/log",
@@ -758,8 +766,8 @@
     "pkg/webhook/internal/metrics",
   ]
   pruneopts = "UT"
-  revision = "d21241119ea4de139f1892ba2f5bc72c96d07f3f"
-  version = "v0.3.0"
+  revision = "198197fe0fd7553cadd8afcd3338f8ee4b8a7e3f"
+  version = "v0.4.0"
 
 [[projects]]
   digest = "1:7719608fe0b52a4ece56c2dde37bedd95b938677d1ab0f84b8a7852e4c59f849"
