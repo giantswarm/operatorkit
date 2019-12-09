@@ -27,20 +27,20 @@
 
 
 [[constraint]]
-  branch = "k8s-1-16"
   name = "github.com/giantswarm/apiextensions"
+  branch = "master"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/giantswarm/backoff"
+  branch = "master"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/giantswarm/microerror"
+  branch = "master"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/giantswarm/micrologger"
+  branch = "master"
 
 [[constraint]]
   name = "k8s.io/api"

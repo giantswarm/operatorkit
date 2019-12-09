@@ -42,8 +42,8 @@
   revision = "25d852aebe32c875e9c044af3eef9c7dc6bc777f"
 
 [[projects]]
-  branch = "k8s-1-16"
-  digest = "1:a1f66d90646e72d72e99c53053879efa5bb32c0c8a15960a064f547c6c5d5ef7"
+  branch = "master"
+  digest = "1:2f9b3a4dc1447d6b0143e2416125989df27d522989afc22031740ff4782befc1"
   name = "github.com/giantswarm/apiextensions"
   packages = [
     "pkg/apis/application/v1alpha1",
@@ -60,7 +60,7 @@
     "pkg/clientset/versioned/typed/release/v1alpha1",
   ]
   pruneopts = "UT"
-  revision = "e7e1dc9f9facd2257190cde1e1c2d50cd28bcee9"
+  revision = "a4fd7939e26e7e2cd681af032963a1597ffae781"
 
 [[projects]]
   branch = "master"
@@ -71,23 +71,23 @@
   revision = "4dd4911251929a0ac4c4f3d8c4bda482a9e09f30"
 
 [[projects]]
-  branch = "k8s-1-16"
+  branch = "master"
   digest = "1:4709889b1b468e3ac4d014d746c1411b82f845561634fcf82070512b6a624968"
   name = "github.com/giantswarm/e2e-harness"
   packages = ["pkg/harness"]
   pruneopts = "UT"
-  revision = "720d188d8bb6ce345d6be92ae2fea964bb770584"
+  revision = "be7852f38d3ea98622ce0542bc39cc522daaf6f9"
 
 [[projects]]
-  branch = "k8s-1-16"
-  digest = "1:b5484a6bd3dcab64e370d0f40a32c9ee23ffe183ca47a7adee19b41c44d72e0c"
+  branch = "master"
+  digest = "1:ca9ad5887021e13fca3a1aa33a58668a0061b3a03bd7dfc2d36c38dedf56f572"
   name = "github.com/giantswarm/k8sclient"
   packages = [
     ".",
     "k8scrdclient",
   ]
   pruneopts = "UT"
-  revision = "98598cd258a0dc7738d5926159bb196ef0db3156"
+  revision = "6cb127468cd6b30eaf8030b875f796e34b481938"
 
 [[projects]]
   branch = "master"
