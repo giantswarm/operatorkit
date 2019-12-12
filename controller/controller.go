@@ -14,7 +14,6 @@ import (
 	"github.com/giantswarm/micrologger"
 	"github.com/giantswarm/micrologger/loggermeta"
 	"github.com/giantswarm/to"
-	"github.com/prometheus/client_golang/prometheus"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	"github.com/giantswarm/operatorkit/controller/collector"
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
 	"github.com/giantswarm/operatorkit/resource"
@@ -99,6 +99,7 @@ type Controller struct {
 	errorCollector         chan error
 	mutex                  sync.Mutex
 	removedFinalizersCache *stringCache
+	collector              *collector.Set
 
 	name         string
 	resyncPeriod time.Duration
@@ -126,6 +127,21 @@ func New(config Config) (*Controller, error) {
 		config.ResyncPeriod = DefaultResyncPeriod
 	}
 
+	var timestampCollector *collector.Set
+	{
+		c := collector.SetConfig{
+			Logger:  config.Logger,
+			Watcher: config.Watcher,
+
+			ListOptions: config.ListOptions,
+		}
+
+		timestampCollector, err := collector.NewSet(c)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+	}
+
 	c := &Controller{
 		crd:                  config.CRD,
 		backOffFactory:       func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) },
@@ -139,6 +155,7 @@ func New(config Config) (*Controller, error) {
 		errorCollector:         make(chan error, 1),
 		mutex:                  sync.Mutex{},
 		removedFinalizersCache: newStringCache(config.ResyncPeriod * 3),
+		collector:              timestampCollector,
 
 		name:         config.Name,
 		resyncPeriod: config.ResyncPeriod,
@@ -294,6 +311,12 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 		}
 	}
 
+	// Boot the collector
+	err = c.collector.Boot(ctx)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
 	return nil
 }
 
@@ -376,13 +399,8 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	var m metav1.Object
-	var t metav1.Type
 	{
 		m, err = meta.Accessor(obj)
-		if err != nil {
-			return reconcile.Result{}, microerror.Mask(err)
-		}
-		t, err = meta.TypeAccessor(obj)
 		if err != nil {
 			return reconcile.Result{}, microerror.Mask(err)
 		}
@@ -391,9 +409,6 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reco
 	if m.GetDeletionTimestamp() != nil {
 		event := "delete"
 
-		deletionTimestampGauge.WithLabelValues(t.GetKind(), m.GetName(), m.GetNamespace()).Set(float64(m.GetDeletionTimestamp().Unix()))
-		t := prometheus.NewTimer(eventHistogram.WithLabelValues(event))
-
 		ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
 		ctx = setLoggerCtxValue(ctx, loggerKeyObject, m.GetSelfLink())
 		ctx = setLoggerCtxValue(ctx, loggerKeyVersion, m.GetResourceVersion())
@@ -401,13 +416,8 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reco
 		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
 		c.deleteFunc(ctx, obj)
 		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled object")
-
-		t.ObserveDuration()
 	} else {
 		event := "update"
-
-		creationTimestampGauge.WithLabelValues(t.GetKind(), m.GetName(), m.GetNamespace()).Set(float64(m.GetCreationTimestamp().Unix()))
-		t := prometheus.NewTimer(eventHistogram.WithLabelValues(event))
 
 		ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
 		ctx = setLoggerCtxValue(ctx, loggerKeyObject, m.GetSelfLink())
@@ -416,8 +426,6 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reco
 		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
 		c.updateFunc(ctx, obj)
 		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled object")
-
-		t.ObserveDuration()
 	}
 
 	return reconcile.Result{}, nil
