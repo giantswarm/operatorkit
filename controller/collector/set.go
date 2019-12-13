@@ -27,10 +27,7 @@ func NewSet(config SetConfig) (*Set, error) {
 	var timestampCollector *Timestamp
 	{
 		c := TimestampConfig{
-			Logger:  config.Logger,
-			Watcher: config.Watcher,
-
-			ListOptions: config.ListOptions,
+			Logger: config.Logger,
 		}
 
 		timestampCollector, err = NewTimestamp(c)

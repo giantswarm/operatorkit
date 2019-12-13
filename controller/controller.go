@@ -130,10 +130,7 @@ func New(config Config) (*Controller, error) {
 	var timestampCollector *collector.Set
 	{
 		c := collector.SetConfig{
-			Logger:  config.Logger,
-			Watcher: config.Watcher,
-
-			ListOptions: config.ListOptions,
+			Logger: config.Logger,
 		}
 
 		timestampCollector, err := collector.NewSet(c)
