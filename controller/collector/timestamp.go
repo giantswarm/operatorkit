@@ -1,10 +1,13 @@
 package collector
 
 import (
+	"github.com/prometheus/client_golang/prometheus"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"k8s.io/apimachinery/pkg/api/meta"
+
+	"github.com/giantswarm/k8sclient"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-	"github.com/prometheus/client_golang/prometheus"
-	"k8s.io/apimachinery/pkg/api/meta"
 )
 
 var (
@@ -31,20 +34,30 @@ var (
 )
 
 type TimestampConfig struct {
-	Logger micrologger.Logger
+	Logger    micrologger.Logger
+	K8sClient k8sclient.Interface
+	CRD       *apiextensionsv1beta1.CustomResourceDefinition
 }
 
 type Timestamp struct {
-	logger micrologger.Logger
+	logger    micrologger.Logger
+	K8sClient k8sclient.Interface
+	crd       *apiextensionsv1beta1.CustomResourceDefinition
 }
 
 func NewTimestamp(config TimestampConfig) (*Timestamp, error) {
+
+	if config.K8sClient == nil {
+		return nil, microerror.Maskf(invalidConfigError, "%T.K8sClient must not be empty", config)
+	}
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Logger must not be empty", config)
 	}
 
 	t := &Timestamp{
-		logger: config.Logger,
+		logger:    config.Logger,
+		K8sClient: config.K8sClient,
+		crd:       config.CRD,
 	}
 
 	return t, nil
@@ -52,11 +65,20 @@ func NewTimestamp(config TimestampConfig) (*Timestamp, error) {
 
 func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
 
+	m, err := meta.Accessor(t.crd)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+	k, err := meta.TypeAccessor(t.crd)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
 	ch <- prometheus.MustNewConstMetric(
 		creationTimestampDesc,
 		prometheus.GaugeValue,
 		float64(m.GetCreationTimestamp().Unix()),
-		t.GetKind(),
+		k.GetKind(),
 		m.GetName(),
 		m.GetNamespace(),
 	)
@@ -67,7 +89,7 @@ func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
 			deletionTimestampDesc,
 			prometheus.GaugeValue,
 			float64(m.GetDeletionTimestamp().Unix()),
-			t.GetKind(),
+			k.GetKind(),
 			m.GetName(),
 			m.GetNamespace(),
 		)

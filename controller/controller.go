@@ -127,16 +127,15 @@ func New(config Config) (*Controller, error) {
 		config.ResyncPeriod = DefaultResyncPeriod
 	}
 
-	var timestampCollector *collector.Set
-	{
-		c := collector.SetConfig{
-			Logger: config.Logger,
-		}
+	controllerConfig := collector.SetConfig{
+		Logger:    config.Logger,
+		K8sClient: config.K8sClient,
+		CRD:       config.CRD,
+	}
 
-		timestampCollector, err := collector.NewSet(c)
-		if err != nil {
-			return nil, microerror.Mask(err)
-		}
+	timestampCollector, err := collector.NewSet(controllerConfig)
+	if err != nil {
+		return nil, microerror.Mask(err)
 	}
 
 	c := &Controller{
@@ -165,6 +164,7 @@ func (c *Controller) Boot(ctx context.Context) {
 	ctx = setLoggerCtxValue(ctx, loggerKeyController, c.name)
 
 	c.bootOnce.Do(func() {
+
 		operation := func() error {
 			err := c.bootWithError(ctx)
 			if err != nil {
@@ -227,6 +227,13 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 		}
 
 		c.logger.LogCtx(ctx, "level", "debug", "message", "ensured custom resource definition exists")
+
+		// Boot the collector
+		err = c.collector.Boot(ctx)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
 	}
 
 	go func() {
@@ -306,12 +313,6 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 		if err != nil {
 			return microerror.Mask(err)
 		}
-	}
-
-	// Boot the collector
-	err = c.collector.Boot(ctx)
-	if err != nil {
-		return microerror.Mask(err)
 	}
 
 	return nil
