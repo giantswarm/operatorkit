@@ -21,8 +21,10 @@ import (
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -38,7 +40,6 @@ const (
 const (
 	loggerKeyController = "controller"
 	loggerKeyEvent      = "event"
-	loggerKeyLoop       = "loop"
 	loggerKeyObject     = "object"
 	loggerKeyResource   = "resource"
 	loggerKeyVersion    = "version"
@@ -54,6 +55,8 @@ type Config struct {
 	// finalizers on runtime objects.
 	K8sClient k8sclient.Interface
 	Logger    micrologger.Logger
+	// MatchLabel are used to filter objects before it pass to controller.
+	MatchLabels map[string]string
 	// NewRuntimeObjectFunc returns a new initialized pointer of a type
 	// implementing the runtime object interface. The object returned is used with
 	// the controller-runtime client to fetch the latest version of the object
@@ -91,6 +94,7 @@ type Controller struct {
 	backOffFactory       func() backoff.Interface
 	k8sClient            k8sclient.Interface
 	logger               micrologger.Logger
+	matchLabels          map[string]string
 	newRuntimeObjectFunc func() pkgruntime.Object
 	resourceSets         []*ResourceSet
 
@@ -131,6 +135,7 @@ func New(config Config) (*Controller, error) {
 		backOffFactory:       func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) },
 		k8sClient:            config.K8sClient,
 		logger:               config.Logger,
+		matchLabels:          config.MatchLabels,
 		newRuntimeObjectFunc: config.NewRuntimeObjectFunc,
 		resourceSets:         config.ResourceSets,
 
@@ -282,7 +287,23 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 	// users know when to go ahead. Note that mgr.Start below blocks the boot
 	// process until it ends gracefully or fails.
 	{
-		err = ctrl.Watch(&source.Kind{Type: c.newRuntimeObjectFunc()}, &handler.EnqueueRequestForObject{})
+		err = ctrl.Watch(
+			&source.Kind{Type: c.newRuntimeObjectFunc()},
+			&handler.EnqueueRequestForObject{},
+			predicate.Funcs{
+				CreateFunc: func(e event.CreateEvent) bool {
+					return matchLabels(c.matchLabels, e.Meta.GetLabels())
+				},
+				DeleteFunc: func(e event.DeleteEvent) bool {
+					return matchLabels(c.matchLabels, e.Meta.GetLabels())
+				},
+				UpdateFunc: func(e event.UpdateEvent) bool {
+					return matchLabels(c.matchLabels, e.MetaNew.GetLabels())
+				},
+				GenericFunc: func(e event.GenericEvent) bool {
+					return matchLabels(c.matchLabels, e.Meta.GetLabels())
+				},
+			})
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -644,4 +665,15 @@ func unsetLoggerCtxValue(ctx context.Context, key string) context.Context {
 	delete(m.KeyVals, key)
 
 	return ctx
+}
+
+func matchLabels(sourceLabels, targetLabels map[string]string) bool {
+	for k, v := range sourceLabels {
+		if targetValue, ok := targetLabels[k]; !ok {
+			return false
+		} else if targetValue != v {
+			return false
+		}
+	}
+	return true
 }
