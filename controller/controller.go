@@ -55,7 +55,7 @@ type Config struct {
 	// finalizers on runtime objects.
 	K8sClient k8sclient.Interface
 	Logger    micrologger.Logger
-	// MatchLabel are used to filter objects before it pass to controller.
+	// MatchLabel are used to filter objects before passing them to the controller.
 	MatchLabels map[string]string
 	// NewRuntimeObjectFunc returns a new initialized pointer of a type
 	// implementing the runtime object interface. The object returned is used with
