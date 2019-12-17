@@ -283,31 +283,29 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 	}
 
 	// Initializing the watch means to have the operator's reconciliation set up.
-	// We put the controller into a booted state by closing its booted channel so
-	// users know when to go ahead. Note that mgr.Start below blocks the boot
-	// process until it ends gracefully or fails.
+	// We put the controller into a booted state by closing its booted channel
+	// once so users know when to go ahead. Note that mgr.Start below blocks the
+	// boot process until it ends gracefully or fails.
 	{
 		err = ctrl.Watch(
 			&source.Kind{Type: c.newRuntimeObjectFunc()},
 			&handler.EnqueueRequestForObject{},
 			predicate.Funcs{
-				CreateFunc: func(e event.CreateEvent) bool {
-					return matchLabels(c.matchLabels, e.Meta.GetLabels())
-				},
-				DeleteFunc: func(e event.DeleteEvent) bool {
-					return matchLabels(c.matchLabels, e.Meta.GetLabels())
-				},
-				UpdateFunc: func(e event.UpdateEvent) bool {
-					return matchLabels(c.matchLabels, e.MetaNew.GetLabels())
-				},
-				GenericFunc: func(e event.GenericEvent) bool {
-					return matchLabels(c.matchLabels, e.Meta.GetLabels())
-				},
-			})
+				CreateFunc:  func(e event.CreateEvent) bool { return matchLabels(c.matchLabels, e.Meta.GetLabels()) },
+				DeleteFunc:  func(e event.DeleteEvent) bool { return matchLabels(c.matchLabels, e.Meta.GetLabels()) },
+				UpdateFunc:  func(e event.UpdateEvent) bool { return matchLabels(c.matchLabels, e.MetaNew.GetLabels()) },
+				GenericFunc: func(e event.GenericEvent) bool { return matchLabels(c.matchLabels, e.Meta.GetLabels()) },
+			},
+		)
 		if err != nil {
 			return microerror.Mask(err)
 		}
-		close(c.booted)
+
+		select {
+		case <-c.booted:
+		default:
+			close(c.booted)
+		}
 
 		err = mgr.Start(setupSignalHandler())
 		if err != nil {
