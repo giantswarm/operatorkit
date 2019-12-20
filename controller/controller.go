@@ -16,6 +16,7 @@ import (
 	"github.com/giantswarm/to"
 	"github.com/prometheus/client_golang/prometheus"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
@@ -390,7 +391,15 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	obj := c.newRuntimeObjectFunc()
 	err := c.k8sClient.CtrlClient().Get(ctx, req.NamespacedName, obj)
-	if err != nil {
+	if errors.IsNotFound(err) {
+		// At this point the controller-runtime cache dispatches a runtime object
+		// which is already being deleted, which is why it cannot be found here
+		// anymore. We then likely perceive the last delete event of that runtime
+		// object and it got purged from the controller-runtime cache. We do not
+		// need to log these errors and just stop processing here in a more graceful
+		// way.
+		return reconcile.Result{}, nil
+	} else if err != nil {
 		return reconcile.Result{}, microerror.Mask(err)
 	}
 
