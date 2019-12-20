@@ -87,6 +87,8 @@ type Config struct {
 	// runtime objects the controller watches is performed. Defaults to
 	// DefaultResyncPeriod.
 	ResyncPeriod time.Duration
+	// SkipFinalizer decides whether or not to add a finalizer to the custom resource.
+	SkipFinalizer bool
 }
 
 type Controller struct {
@@ -104,8 +106,9 @@ type Controller struct {
 	mutex                  sync.Mutex
 	removedFinalizersCache *stringCache
 
-	name         string
-	resyncPeriod time.Duration
+	name          string
+	resyncPeriod  time.Duration
+	skipFinalizer bool
 }
 
 // New creates a new configured operator controller.
@@ -145,8 +148,9 @@ func New(config Config) (*Controller, error) {
 		mutex:                  sync.Mutex{},
 		removedFinalizersCache: newStringCache(config.ResyncPeriod * 3),
 
-		name:         config.Name,
-		resyncPeriod: config.ResyncPeriod,
+		name:          config.Name,
+		resyncPeriod:  config.ResyncPeriod,
+		skipFinalizer: config.SkipFinalizer,
 	}
 
 	return c, nil
@@ -485,7 +489,7 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 		}
 	}
 
-	{
+	if !c.skipFinalizer {
 		c.logger.LogCtx(ctx, "level", "debug", "message", "adding finalizer")
 
 		ok, err := c.addFinalizer(ctx, obj)
