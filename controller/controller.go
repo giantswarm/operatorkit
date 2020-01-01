@@ -21,13 +21,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
@@ -270,44 +269,37 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 		}
 	}
 
-	var ctrl controller.Controller
 	{
-		o := controller.Options{
-			MaxConcurrentReconciles: 1,
-			Reconciler:              c,
-		}
-
-		ctrl, err = controller.New(c.name, mgr, o)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-	}
-
-	// Initializing the watch means to have the operator's reconciliation set up.
-	// We put the controller into a booted state by closing its booted channel
-	// once so users know when to go ahead. Note that mgr.Start below blocks the
-	// boot process until it ends gracefully or fails.
-	{
-		err = ctrl.Watch(
-			&source.Kind{Type: c.newRuntimeObjectFunc()},
-			&handler.EnqueueRequestForObject{},
-			predicate.Funcs{
+		// We build our controller and set up its reconciliation.
+		// We use the Complete() method instead of Build() because we don't
+		// need the controller instance.
+		err = builder.
+			ControllerManagedBy(mgr).
+			For(c.newRuntimeObjectFunc()).
+			WithOptions(controller.Options{
+				MaxConcurrentReconciles: 1,
+				Reconciler:              c,
+			}).
+			WithEventFilter(predicate.Funcs{
 				CreateFunc:  func(e event.CreateEvent) bool { return matchLabels(c.matchLabels, e.Meta.GetLabels()) },
 				DeleteFunc:  func(e event.DeleteEvent) bool { return matchLabels(c.matchLabels, e.Meta.GetLabels()) },
 				UpdateFunc:  func(e event.UpdateEvent) bool { return matchLabels(c.matchLabels, e.MetaNew.GetLabels()) },
 				GenericFunc: func(e event.GenericEvent) bool { return matchLabels(c.matchLabels, e.Meta.GetLabels()) },
-			},
-		)
+			}).
+			Complete(c)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
+		// We put the controller into a booted state by closing its booted
+		// channel once so users know when to go ahead.
 		select {
 		case <-c.booted:
 		default:
 			close(c.booted)
 		}
 
+		// mgr.Start() blocks the boot process until it ends gracefully or fails.
 		err = mgr.Start(setupSignalHandler())
 		if err != nil {
 			return microerror.Mask(err)
