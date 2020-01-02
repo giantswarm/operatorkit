@@ -45,6 +45,8 @@ const (
 	loggerKeyVersion    = "version"
 )
 
+const DisableMetricsServing = "0"
+
 type Config struct {
 	CRD *apiextensionsv1beta1.CustomResourceDefinition
 	// K8sClient is the client collection used to setup and manage certain
@@ -259,7 +261,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 		o := manager.Options{
 			// MetricsBindAddress is set to 0 in order to disable it. We do this
 			// ourselves.
-			MetricsBindAddress: "0",
+			MetricsBindAddress: DisableMetricsServing,
 			SyncPeriod:         to.DurationP(c.resyncPeriod),
 		}
 
