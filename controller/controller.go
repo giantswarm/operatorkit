@@ -180,12 +180,6 @@ func (c *Controller) Booted() chan struct{} {
 	return c.booted
 }
 
-// DeleteFunc executes the controller's ProcessDelete function.
-func (c *Controller) DeleteFunc(obj interface{}) {
-	ctx := context.Background()
-	c.deleteFunc(ctx, obj)
-}
-
 // Reconcile implements the reconciler given to the controller-runtime
 // controller. Reconcile never returns any error as we deal with them in
 // operatorkit internally.
@@ -199,12 +193,6 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 	}
 
 	return res, nil
-}
-
-// UpdateFunc executes the controller's ProcessUpdate function.
-func (c *Controller) UpdateFunc(oldObj, newObj interface{}) {
-	ctx := context.Background()
-	c.updateFunc(ctx, newObj)
 }
 
 func (c *Controller) bootWithError(ctx context.Context) error {

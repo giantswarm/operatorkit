@@ -9,6 +9,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/giantswarm/operatorkit/controller/integration/wrapper"
 	"github.com/giantswarm/operatorkit/controller/integration/wrapper/configmap"
@@ -60,7 +62,7 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 		Data: map[string]string{},
 	}
 	// We create an object which does not have any finalizers.
-	createdObj, err := testWrapper.CreateObject(testNamespace, cm)
+	_, err = testWrapper.CreateObject(testNamespace, cm)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -77,13 +79,25 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 		t.Fatal("expected", nil, "got", err)
 	}
 
-	// We directly pass the _old_ configmap to UpdateFunc.
+	// We reconcile the ConfigMap using its name and namespace.
 	// This is expected to only add one finalizer, we want to make sure that we
 	// only use the latest ResourceVersion of an object.
-	operatorkitController.UpdateFunc(nil, createdObj)
+	_, err = operatorkitController.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{
+		Name:      cm.GetName(),
+		Namespace: cm.GetNamespace(),
+	}})
+	if err != nil {
+		t.Fatal("failed reconciliation", nil, "got", err)
+	}
 
-	// We run UpdateFunc multiple times on the old object to check for duplicates.
-	operatorkitController.UpdateFunc(nil, createdObj)
+	// We run Reconcile multiple times to check for duplicates.
+	_, err = operatorkitController.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{
+		Name:      cm.GetName(),
+		Namespace: cm.GetNamespace(),
+	}})
+	if err != nil {
+		t.Fatal("failed reconciliation", nil, "got", err)
+	}
 
 	// We get the current configmap.
 	resultObj, err := testWrapper.GetObject(configMapName, testNamespace)
@@ -127,7 +141,11 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	}
 
 	// We directly pass the object to DeleteFunc to remove the finalizer.
-	operatorkitController.DeleteFunc(resultObj)
+	// We run Reconcile multiple times to check for duplicates.
+	_, _ = operatorkitController.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{
+		Name:      cm.GetName(),
+		Namespace: cm.GetNamespace(),
+	}})
 
 	// We verify that our object is completely gone now.
 	_, err = testWrapper.GetObject(configMapName, testNamespace)
