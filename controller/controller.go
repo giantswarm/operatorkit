@@ -133,9 +133,9 @@ func New(config Config) (*Controller, error) {
 	}
 
 	controllerConfig := collector.SetConfig{
-		Logger:    config.Logger,
-		K8sClient: config.K8sClient,
-		CRD:       config.CRD,
+		Logger:               config.Logger,
+		K8sClient:            config.K8sClient,
+		NewRuntimeObjectFunc: config.NewRuntimeObjectFunc,
 	}
 
 	timestampCollector, err := collector.NewSet(controllerConfig)
@@ -212,6 +212,12 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 func (c *Controller) bootWithError(ctx context.Context) error {
 	var err error
 
+	// Boot the collector
+	err = c.collector.Boot(ctx)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
 	if c.crd != nil {
 		c.logger.LogCtx(ctx, "level", "debug", "message", "ensuring custom resource definition exists")
 
@@ -221,12 +227,6 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 		}
 
 		c.logger.LogCtx(ctx, "level", "debug", "message", "ensured custom resource definition exists")
-
-		// Boot the collector
-		err = c.collector.Boot(ctx)
-		if err != nil {
-			return microerror.Mask(err)
-		}
 
 	}
 

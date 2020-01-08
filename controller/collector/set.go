@@ -1,18 +1,17 @@
 package collector
 
 import (
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-
 	"github.com/giantswarm/exporterkit/collector"
 	"github.com/giantswarm/k8sclient"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 type SetConfig struct {
-	Logger    micrologger.Logger
-	K8sClient k8sclient.Interface
-	CRD       *apiextensionsv1beta1.CustomResourceDefinition
+	Logger               micrologger.Logger
+	K8sClient            k8sclient.Interface
+	NewRuntimeObjectFunc func() runtime.Object
 }
 
 // Set is basically only a wrapper for the informer's collector implementations.
@@ -28,9 +27,9 @@ func NewSet(config SetConfig) (*Set, error) {
 	var timestampCollector *Timestamp
 	{
 		c := TimestampConfig{
-			Logger:    config.Logger,
-			K8sClient: config.K8sClient,
-			CRD:       config.CRD,
+			Logger:               config.Logger,
+			K8sClient:            config.K8sClient,
+			NewRuntimeObjectFunc: config.NewRuntimeObjectFunc,
 		}
 
 		timestampCollector, err = NewTimestamp(c)

@@ -1,13 +1,14 @@
 package collector
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	"k8s.io/apimachinery/pkg/api/meta"
+	"context"
 
 	"github.com/giantswarm/k8sclient"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
+	"github.com/prometheus/client_golang/prometheus"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 var (
@@ -34,15 +35,15 @@ var (
 )
 
 type TimestampConfig struct {
-	Logger    micrologger.Logger
-	K8sClient k8sclient.Interface
-	CRD       *apiextensionsv1beta1.CustomResourceDefinition
+	Logger               micrologger.Logger
+	K8sClient            k8sclient.Interface
+	NewRuntimeObjectFunc func() runtime.Object
 }
 
 type Timestamp struct {
-	logger    micrologger.Logger
-	K8sClient k8sclient.Interface
-	crd       *apiextensionsv1beta1.CustomResourceDefinition
+	logger               micrologger.Logger
+	k8sClient            k8sclient.Interface
+	newRuntimeObjectFunc func() runtime.Object
 }
 
 func NewTimestamp(config TimestampConfig) (*Timestamp, error) {
@@ -55,9 +56,9 @@ func NewTimestamp(config TimestampConfig) (*Timestamp, error) {
 	}
 
 	t := &Timestamp{
-		logger:    config.Logger,
-		K8sClient: config.K8sClient,
-		crd:       config.CRD,
+		logger:               config.Logger,
+		k8sClient:            config.K8sClient,
+		newRuntimeObjectFunc: config.NewRuntimeObjectFunc,
 	}
 
 	return t, nil
@@ -65,34 +66,50 @@ func NewTimestamp(config TimestampConfig) (*Timestamp, error) {
 
 func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
 
-	m, err := meta.Accessor(t.crd)
-	if err != nil {
-		return microerror.Mask(err)
-	}
-	k, err := meta.TypeAccessor(t.crd)
+	ctx := context.Background()
+	list := t.newRuntimeObjectFunc()
+
+	err := t.k8sClient.CtrlClient().List(ctx, list)
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
-	ch <- prometheus.MustNewConstMetric(
-		creationTimestampDesc,
-		prometheus.GaugeValue,
-		float64(m.GetCreationTimestamp().Unix()),
-		k.GetKind(),
-		m.GetName(),
-		m.GetNamespace(),
-	)
+	objects, err := meta.ExtractList(list)
+	if err != nil {
+		return microerror.Mask(err)
+	}
 
-	if m.GetDeletionTimestamp() != nil {
+	for _, object := range objects {
+
+		m, err := meta.Accessor(object)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+		k, err := meta.TypeAccessor(object)
+		if err != nil {
+			return microerror.Mask(err)
+		}
 
 		ch <- prometheus.MustNewConstMetric(
-			deletionTimestampDesc,
+			creationTimestampDesc,
 			prometheus.GaugeValue,
-			float64(m.GetDeletionTimestamp().Unix()),
+			float64(m.GetCreationTimestamp().Unix()),
 			k.GetKind(),
 			m.GetName(),
 			m.GetNamespace(),
 		)
+
+		if m.GetDeletionTimestamp() != nil {
+
+			ch <- prometheus.MustNewConstMetric(
+				deletionTimestampDesc,
+				prometheus.GaugeValue,
+				float64(m.GetDeletionTimestamp().Unix()),
+				k.GetKind(),
+				m.GetName(),
+				m.GetNamespace(),
+			)
+		}
 	}
 
 	return nil
