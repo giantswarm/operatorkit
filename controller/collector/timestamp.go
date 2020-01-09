@@ -67,50 +67,49 @@ func NewTimestamp(config TimestampConfig) (*Timestamp, error) {
 func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
 
 	ctx := context.Background()
-	list := t.newRuntimeObjectFunc()
-
-	err := t.k8sClient.CtrlClient().List(ctx, list)
+	object := t.newRuntimeObjectFunc()
+	err := t.k8sClient.CtrlClient().List(ctx, object)
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
-	objects, err := meta.ExtractList(list)
+	//objects, err := meta.ExtractList(list)
+	//if err != nil {
+	//	return microerror.Mask(err)
+	//}
+
+	//for _, object := range objects {
+
+	m, err := meta.Accessor(object)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+	k, err := meta.TypeAccessor(object)
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
-	for _, object := range objects {
+	ch <- prometheus.MustNewConstMetric(
+		creationTimestampDesc,
+		prometheus.GaugeValue,
+		float64(m.GetCreationTimestamp().Unix()),
+		k.GetKind(),
+		m.GetName(),
+		m.GetNamespace(),
+	)
 
-		m, err := meta.Accessor(object)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-		k, err := meta.TypeAccessor(object)
-		if err != nil {
-			return microerror.Mask(err)
-		}
+	if m.GetDeletionTimestamp() != nil {
 
 		ch <- prometheus.MustNewConstMetric(
-			creationTimestampDesc,
+			deletionTimestampDesc,
 			prometheus.GaugeValue,
-			float64(m.GetCreationTimestamp().Unix()),
+			float64(m.GetDeletionTimestamp().Unix()),
 			k.GetKind(),
 			m.GetName(),
 			m.GetNamespace(),
 		)
-
-		if m.GetDeletionTimestamp() != nil {
-
-			ch <- prometheus.MustNewConstMetric(
-				deletionTimestampDesc,
-				prometheus.GaugeValue,
-				float64(m.GetDeletionTimestamp().Unix()),
-				k.GetKind(),
-				m.GetName(),
-				m.GetNamespace(),
-			)
-		}
 	}
+	//}
 
 	return nil
 
