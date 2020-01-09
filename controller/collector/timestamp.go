@@ -8,6 +8,7 @@ import (
 	"github.com/giantswarm/micrologger"
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -67,19 +68,14 @@ func NewTimestamp(config TimestampConfig) (*Timestamp, error) {
 func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
 
 	ctx := context.Background()
-	list := t.newRuntimeObjectFunc()
+	list := &unstructured.UnstructuredList{}
 
 	err := t.k8sClient.CtrlClient().List(ctx, list)
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
-	objects, err := meta.ExtractList(list)
-	if err != nil {
-		return microerror.Mask(err)
-	}
-
-	for _, object := range objects {
+	for _, object := range list.Items {
 
 		m, err := meta.Accessor(object)
 		if err != nil {
