@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 var (
@@ -68,9 +69,14 @@ func NewTimestamp(config TimestampConfig) (*Timestamp, error) {
 func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
 
 	ctx := context.Background()
-	list := &unstructured.UnstructuredList{}
 
-	err := t.k8sClient.CtrlClient().List(ctx, list)
+	gvk, err := apiutil.GVKForObject(t.newRuntimeObjectFunc(), t.k8sClient.Scheme())
+	if err != nil {
+		return microerror.Mask(err)
+	}
+	list := &unstructured.UnstructuredList{}
+	list.SetGroupVersionKind(gvk)
+	err = t.k8sClient.CtrlClient().List(ctx, list)
 	if err != nil {
 		return microerror.Mask(err)
 	}
