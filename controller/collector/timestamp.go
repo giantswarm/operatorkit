@@ -69,13 +69,13 @@ func NewTimestamp(config TimestampConfig) (*Timestamp, error) {
 func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
 
 	ctx := context.Background()
-
 	gvk, err := apiutil.GVKForObject(t.newRuntimeObjectFunc(), t.k8sClient.Scheme())
 	if err != nil {
 		return microerror.Mask(err)
 	}
 	list := &unstructured.UnstructuredList{}
 	list.SetGroupVersionKind(gvk)
+	list.SetKind(list.GetKind() + "List")
 	err = t.k8sClient.CtrlClient().List(ctx, list)
 	if err != nil {
 		return microerror.Mask(err)
