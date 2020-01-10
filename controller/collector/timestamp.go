@@ -9,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 var (
@@ -35,13 +36,15 @@ var (
 )
 
 type TimestampConfig struct {
-	Logger    micrologger.Logger
-	K8sClient k8sclient.Interface
+	Logger               micrologger.Logger
+	K8sClient            k8sclient.Interface
+	NewRuntimeObjectFunc func() runtime.Object
 }
 
 type Timestamp struct {
-	logger    micrologger.Logger
-	k8sClient k8sclient.Interface
+	logger               micrologger.Logger
+	k8sClient            k8sclient.Interface
+	newRuntimeObjectFunc func() runtime.Object
 }
 
 func NewTimestamp(config TimestampConfig) (*Timestamp, error) {
@@ -54,8 +57,9 @@ func NewTimestamp(config TimestampConfig) (*Timestamp, error) {
 	}
 
 	t := &Timestamp{
-		logger:    config.Logger,
-		k8sClient: config.K8sClient,
+		logger:               config.Logger,
+		k8sClient:            config.K8sClient,
+		newRuntimeObjectFunc: config.NewRuntimeObjectFunc,
 	}
 
 	return t, nil

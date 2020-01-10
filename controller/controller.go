@@ -133,8 +133,9 @@ func New(config Config) (*Controller, error) {
 	}
 
 	controllerConfig := collector.SetConfig{
-		Logger:    config.Logger,
-		K8sClient: config.K8sClient,
+		Logger:               config.Logger,
+		K8sClient:            config.K8sClient,
+		NewRuntimeObjectFunc: config.NewRuntimeObjectFunc,
 	}
 
 	timestampCollector, err := collector.NewSet(controllerConfig)
