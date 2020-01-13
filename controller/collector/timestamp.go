@@ -2,6 +2,7 @@ package collector
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/giantswarm/k8sclient"
 	"github.com/giantswarm/microerror"
@@ -73,15 +74,25 @@ func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
 	if err != nil {
 		return microerror.Mask(err)
 	}
+
+	fmt.Printf("%#v\n", gvk)
+
 	list := &unstructured.UnstructuredList{}
 	list.SetGroupVersionKind(gvk)
 	list.SetKind(list.GetKind() + "List")
+
+	fmt.Printf(list.GetKind())
+	fmt.Printf(list.GetAPIVersion())
+
 	err = t.k8sClient.CtrlClient().List(ctx, list)
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
 	for _, object := range list.Items {
+
+		fmt.Printf(object.GetKind())
+		fmt.Printf(object.GetAPIVersion())
 
 		m, err := meta.Accessor(object)
 		if err != nil {
