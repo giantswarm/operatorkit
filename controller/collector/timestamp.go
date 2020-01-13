@@ -14,7 +14,7 @@ import (
 
 var (
 	creationTimestampDesc *prometheus.Desc = prometheus.NewDesc(
-		prometheus.BuildFQName("operatorkit", "informer", "creation_timestamp"),
+		prometheus.BuildFQName("operatorkit", "controller", "creation_timestamp"),
 		"CreationTimestamp of watched runtime objects.",
 		[]string{
 			"kind",
@@ -24,7 +24,7 @@ var (
 		nil,
 	)
 	deletionTimestampDesc *prometheus.Desc = prometheus.NewDesc(
-		prometheus.BuildFQName("operatorkit", "informer", "deletion_timestamp"),
+		prometheus.BuildFQName("operatorkit", "controller", "deletion_timestamp"),
 		"DeletionTimestamp of watched runtime objects.",
 		[]string{
 			"kind",

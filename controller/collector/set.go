@@ -14,7 +14,7 @@ type SetConfig struct {
 	NewRuntimeObjectFunc func() runtime.Object
 }
 
-// Set is basically only a wrapper for the informer's collector implementations.
+// Set is basically only a wrapper for the collector implementations.
 // It eases the initialization and prevents some weird import mess so we do not
 // have to alias packages.
 type Set struct {
