@@ -48,7 +48,6 @@ type Timestamp struct {
 }
 
 func NewTimestamp(config TimestampConfig) (*Timestamp, error) {
-
 	if config.K8sClient == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.K8sClient must not be empty", config)
 	}
@@ -61,12 +60,10 @@ func NewTimestamp(config TimestampConfig) (*Timestamp, error) {
 		k8sClient:            config.K8sClient,
 		newRuntimeObjectFunc: config.NewRuntimeObjectFunc,
 	}
-
 	return t, nil
 }
 
 func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
-
 	ctx := context.Background()
 	gvk, err := apiutil.GVKForObject(t.newRuntimeObjectFunc(), t.k8sClient.Scheme())
 	if err != nil {
@@ -105,9 +102,7 @@ func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
 			)
 		}
 	}
-
 	return nil
-
 }
 
 func (t *Timestamp) Describe(ch chan<- *prometheus.Desc) error {

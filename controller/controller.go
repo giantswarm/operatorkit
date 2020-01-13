@@ -8,6 +8,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/k8sclient"
 	"github.com/giantswarm/microerror"
@@ -227,7 +229,6 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 		}
 
 		c.logger.LogCtx(ctx, "level", "debug", "message", "ensured custom resource definition exists")
-
 	}
 
 	go func() {
@@ -423,6 +424,7 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reco
 	if m.GetDeletionTimestamp() != nil {
 		event := "delete"
 
+		t := prometheus.NewTimer(eventHistogram.WithLabelValues(event))
 		ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
 		ctx = setLoggerCtxValue(ctx, loggerKeyObject, m.GetSelfLink())
 		ctx = setLoggerCtxValue(ctx, loggerKeyVersion, m.GetResourceVersion())
@@ -430,9 +432,12 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reco
 		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
 		c.deleteFunc(ctx, obj)
 		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled object")
+
+		t.ObserveDuration()
 	} else {
 		event := "update"
 
+		t := prometheus.NewTimer(eventHistogram.WithLabelValues(event))
 		ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
 		ctx = setLoggerCtxValue(ctx, loggerKeyObject, m.GetSelfLink())
 		ctx = setLoggerCtxValue(ctx, loggerKeyVersion, m.GetResourceVersion())
@@ -440,6 +445,8 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reco
 		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
 		c.updateFunc(ctx, obj)
 		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled object")
+
+		t.ObserveDuration()
 	}
 
 	return reconcile.Result{}, nil
