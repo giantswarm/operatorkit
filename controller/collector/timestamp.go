@@ -2,13 +2,11 @@ package collector
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/giantswarm/k8sclient"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/prometheus/client_golang/prometheus"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -75,14 +73,9 @@ func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
 		return microerror.Mask(err)
 	}
 
-	fmt.Printf("%#v\n", gvk)
-
 	list := &unstructured.UnstructuredList{}
 	list.SetGroupVersionKind(gvk)
 	list.SetKind(list.GetKind() + "List")
-
-	fmt.Printf(list.GetKind())
-	fmt.Printf(list.GetAPIVersion())
 
 	err = t.k8sClient.CtrlClient().List(ctx, list)
 	if err != nil {
@@ -91,36 +84,24 @@ func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
 
 	for _, object := range list.Items {
 
-		fmt.Printf(object.GetKind())
-		fmt.Printf(object.GetAPIVersion())
-
-		m, err := meta.Accessor(object)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-		k, err := meta.TypeAccessor(object)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-
 		ch <- prometheus.MustNewConstMetric(
 			creationTimestampDesc,
 			prometheus.GaugeValue,
-			float64(m.GetCreationTimestamp().Unix()),
-			k.GetKind(),
-			m.GetName(),
-			m.GetNamespace(),
+			float64(object.GetCreationTimestamp().Unix()),
+			object.GetKind(),
+			object.GetName(),
+			object.GetNamespace(),
 		)
 
-		if m.GetDeletionTimestamp() != nil {
+		if object.GetDeletionTimestamp() != nil {
 
 			ch <- prometheus.MustNewConstMetric(
 				deletionTimestampDesc,
 				prometheus.GaugeValue,
-				float64(m.GetDeletionTimestamp().Unix()),
-				k.GetKind(),
-				m.GetName(),
-				m.GetNamespace(),
+				float64(object.GetDeletionTimestamp().Unix()),
+				object.GetKind(),
+				object.GetName(),
+				object.GetNamespace(),
 			)
 		}
 	}
