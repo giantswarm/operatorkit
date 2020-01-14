@@ -40,12 +40,13 @@ import (
 const (
 	DefaultResyncPeriod   = 5 * time.Minute
 	DisableMetricsServing = "0"
-	loggerKeyController   = "controller"
-	loggerKeyEvent        = "event"
-	loggerKeyLoop         = "loop"
-	loggerKeyObject       = "object"
-	loggerKeyResource     = "resource"
-	loggerKeyVersion      = "version"
+
+	loggerKeyController = "controller"
+	loggerKeyEvent      = "event"
+	loggerKeyLoop       = "loop"
+	loggerKeyObject     = "object"
+	loggerKeyResource   = "resource"
+	loggerKeyVersion    = "version"
 )
 
 type Config struct {
