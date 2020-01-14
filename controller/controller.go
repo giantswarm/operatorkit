@@ -34,18 +34,14 @@ import (
 )
 
 const (
-	DefaultResyncPeriod = 5 * time.Minute
+	DefaultResyncPeriod   = 5 * time.Minute
+	DisableMetricsServing = "0"
+	loggerKeyController   = "controller"
+	loggerKeyEvent        = "event"
+	loggerKeyObject       = "object"
+	loggerKeyResource     = "resource"
+	loggerKeyVersion      = "version"
 )
-
-const (
-	loggerKeyController = "controller"
-	loggerKeyEvent      = "event"
-	loggerKeyObject     = "object"
-	loggerKeyResource   = "resource"
-	loggerKeyVersion    = "version"
-)
-
-const DisableMetricsServing = "0"
 
 type Config struct {
 	CRD *apiextensionsv1beta1.CustomResourceDefinition
