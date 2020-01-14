@@ -69,10 +69,9 @@ func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
 	if err != nil {
 		return microerror.Mask(err)
 	}
-
+	gvk.Kind += "List"
 	list := &unstructured.UnstructuredList{}
 	list.SetGroupVersionKind(gvk)
-	list.SetKind(list.GetKind() + "List")
 
 	err = t.k8sClient.CtrlClient().List(ctx, list)
 	if err != nil {
@@ -80,7 +79,6 @@ func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
 	}
 
 	for _, object := range list.Items {
-
 		ch <- prometheus.MustNewConstMetric(
 			creationTimestampDesc,
 			prometheus.GaugeValue,
@@ -91,7 +89,6 @@ func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
 		)
 
 		if object.GetDeletionTimestamp() != nil {
-
 			ch <- prometheus.MustNewConstMetric(
 				deletionTimestampDesc,
 				prometheus.GaugeValue,
