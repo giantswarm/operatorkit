@@ -8,9 +8,10 @@ import (
 // Kubernetes is a data structure to hold Kubernetes specific command line
 // configuration flags.
 type Kubernetes struct {
-	Address    string
-	InCluster  string
-	KubeConfig string
-	TLS        tls.TLS
-	Watch      watch.Watch
+	Address        string
+	InCluster      string
+	KubeConfig     string
+	KubeConfigPath string
+	TLS            tls.TLS
+	Watch          watch.Watch
 }

@@ -27,37 +27,9 @@ var (
 		},
 		[]string{"event"},
 	)
-	creationTimestampGauge = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Namespace: PrometheusNamespace,
-			Subsystem: PrometheusSubsystem,
-			Name:      "creation_timestamp",
-			Help:      "CreationTimestamp of watched runtime objects.",
-		},
-		[]string{
-			"kind",
-			"name",
-			"namespace",
-		},
-	)
-	deletionTimestampGauge = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Namespace: PrometheusNamespace,
-			Subsystem: PrometheusSubsystem,
-			Name:      "deletion_timestamp",
-			Help:      "DeletionTimestamp of watched runtime objects.",
-		},
-		[]string{
-			"kind",
-			"name",
-			"namespace",
-		},
-	)
 )
 
 func init() {
 	prometheus.MustRegister(errorGauge)
 	prometheus.MustRegister(eventHistogram)
-	prometheus.MustRegister(creationTimestampGauge)
-	prometheus.MustRegister(deletionTimestampGauge)
 }
