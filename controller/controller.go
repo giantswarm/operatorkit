@@ -8,13 +8,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/k8sclient"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/giantswarm/micrologger/loggermeta"
 	"github.com/giantswarm/to"
-	"github.com/prometheus/client_golang/prometheus"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -29,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	"github.com/giantswarm/operatorkit/controller/collector"
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
 	"github.com/giantswarm/operatorkit/resource"
@@ -104,6 +106,7 @@ type Controller struct {
 	errorCollector         chan error
 	mutex                  sync.Mutex
 	removedFinalizersCache *stringCache
+	collector              *collector.Set
 
 	name         string
 	resyncPeriod time.Duration
@@ -131,6 +134,17 @@ func New(config Config) (*Controller, error) {
 		config.ResyncPeriod = DefaultResyncPeriod
 	}
 
+	controllerConfig := collector.SetConfig{
+		Logger:               config.Logger,
+		K8sClient:            config.K8sClient,
+		NewRuntimeObjectFunc: config.NewRuntimeObjectFunc,
+	}
+
+	timestampCollector, err := collector.NewSet(controllerConfig)
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
 	c := &Controller{
 		crd:                  config.CRD,
 		backOffFactory:       func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) },
@@ -145,6 +159,7 @@ func New(config Config) (*Controller, error) {
 		errorCollector:         make(chan error, 1),
 		mutex:                  sync.Mutex{},
 		removedFinalizersCache: newStringCache(config.ResyncPeriod * 3),
+		collector:              timestampCollector,
 
 		name:         config.Name,
 		resyncPeriod: config.ResyncPeriod,
@@ -197,6 +212,12 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 
 func (c *Controller) bootWithError(ctx context.Context) error {
 	var err error
+
+	// Boot the collector
+	err = c.collector.Boot(ctx)
+	if err != nil {
+		return microerror.Mask(err)
+	}
 
 	if c.crd != nil {
 		c.logger.LogCtx(ctx, "level", "debug", "message", "ensuring custom resource definition exists")
@@ -392,13 +413,8 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	var m metav1.Object
-	var t metav1.Type
 	{
 		m, err = meta.Accessor(obj)
-		if err != nil {
-			return reconcile.Result{}, microerror.Mask(err)
-		}
-		t, err = meta.TypeAccessor(obj)
 		if err != nil {
 			return reconcile.Result{}, microerror.Mask(err)
 		}
@@ -407,9 +423,7 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reco
 	if m.GetDeletionTimestamp() != nil {
 		event := "delete"
 
-		deletionTimestampGauge.WithLabelValues(t.GetKind(), m.GetName(), m.GetNamespace()).Set(float64(m.GetDeletionTimestamp().Unix()))
 		t := prometheus.NewTimer(eventHistogram.WithLabelValues(event))
-
 		ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
 		ctx = setLoggerCtxValue(ctx, loggerKeyObject, m.GetSelfLink())
 		ctx = setLoggerCtxValue(ctx, loggerKeyVersion, m.GetResourceVersion())
@@ -422,9 +436,7 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reco
 	} else {
 		event := "update"
 
-		creationTimestampGauge.WithLabelValues(t.GetKind(), m.GetName(), m.GetNamespace()).Set(float64(m.GetCreationTimestamp().Unix()))
 		t := prometheus.NewTimer(eventHistogram.WithLabelValues(event))
-
 		ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
 		ctx = setLoggerCtxValue(ctx, loggerKeyObject, m.GetSelfLink())
 		ctx = setLoggerCtxValue(ctx, loggerKeyVersion, m.GetResourceVersion())
