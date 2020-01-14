@@ -4,7 +4,9 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"strconv"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -38,11 +40,13 @@ import (
 const (
 	DefaultResyncPeriod   = 5 * time.Minute
 	DisableMetricsServing = "0"
-	loggerKeyController   = "controller"
-	loggerKeyEvent        = "event"
-	loggerKeyObject       = "object"
-	loggerKeyResource     = "resource"
-	loggerKeyVersion      = "version"
+
+	loggerKeyController = "controller"
+	loggerKeyEvent      = "event"
+	loggerKeyLoop       = "loop"
+	loggerKeyObject     = "object"
+	loggerKeyResource   = "resource"
+	loggerKeyVersion    = "version"
 )
 
 type Config struct {
@@ -100,10 +104,11 @@ type Controller struct {
 
 	bootOnce               sync.Once
 	booted                 chan struct{}
+	collector              *collector.Set
 	errorCollector         chan error
+	loop                   int64
 	mutex                  sync.Mutex
 	removedFinalizersCache *stringCache
-	collector              *collector.Set
 
 	name         string
 	resyncPeriod time.Duration
@@ -153,10 +158,11 @@ func New(config Config) (*Controller, error) {
 
 		bootOnce:               sync.Once{},
 		booted:                 make(chan struct{}),
+		collector:              timestampCollector,
 		errorCollector:         make(chan error, 1),
+		loop:                   -1,
 		mutex:                  sync.Mutex{},
 		removedFinalizersCache: newStringCache(config.ResyncPeriod * 3),
-		collector:              timestampCollector,
 
 		name:         config.Name,
 		resyncPeriod: config.ResyncPeriod,
@@ -197,6 +203,14 @@ func (c *Controller) Booted() chan struct{} {
 // operatorkit internally.
 func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	ctx := context.Background()
+
+	// Add common keys to the logger context.
+	{
+		loop := atomic.AddInt64(&c.loop, 1)
+
+		ctx = setLoggerCtxValue(ctx, loggerKeyController, c.name)
+		ctx = setLoggerCtxValue(ctx, loggerKeyLoop, strconv.FormatInt(loop, 10))
+	}
 
 	res, err := c.reconcile(ctx, req)
 	if err != nil {
