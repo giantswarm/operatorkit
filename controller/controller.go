@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -59,8 +60,8 @@ type Config struct {
 	// finalizers on runtime objects.
 	K8sClient k8sclient.Interface
 	Logger    micrologger.Logger
-	// MatchLabel are used to filter objects before passing them to the controller.
-	MatchLabels map[string]string
+	// Selector is used to filter objects before passing them to the controller.
+	Selector labels.Selector
 	// NewRuntimeObjectFunc returns a new initialized pointer of a type
 	// implementing the runtime object interface. The object returned is used with
 	// the controller-runtime client to fetch the latest version of the object
@@ -98,7 +99,7 @@ type Controller struct {
 	backOffFactory       func() backoff.Interface
 	k8sClient            k8sclient.Interface
 	logger               micrologger.Logger
-	matchLabels          map[string]string
+	selector             labels.Selector
 	newRuntimeObjectFunc func() pkgruntime.Object
 	resourceSets         []*ResourceSet
 
@@ -152,7 +153,7 @@ func New(config Config) (*Controller, error) {
 		backOffFactory:       func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) },
 		k8sClient:            config.K8sClient,
 		logger:               config.Logger,
-		matchLabels:          config.MatchLabels,
+		selector:             config.Selector,
 		newRuntimeObjectFunc: config.NewRuntimeObjectFunc,
 		resourceSets:         config.ResourceSets,
 
@@ -302,10 +303,10 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 				Reconciler:              c,
 			}).
 			WithEventFilter(predicate.Funcs{
-				CreateFunc:  func(e event.CreateEvent) bool { return matchLabels(c.matchLabels, e.Meta.GetLabels()) },
-				DeleteFunc:  func(e event.DeleteEvent) bool { return matchLabels(c.matchLabels, e.Meta.GetLabels()) },
-				UpdateFunc:  func(e event.UpdateEvent) bool { return matchLabels(c.matchLabels, e.MetaNew.GetLabels()) },
-				GenericFunc: func(e event.GenericEvent) bool { return matchLabels(c.matchLabels, e.Meta.GetLabels()) },
+				CreateFunc:  func(e event.CreateEvent) bool { return c.selector.Matches(newMapLabels(e.Meta.GetLabels())) },
+				DeleteFunc:  func(e event.DeleteEvent) bool { return c.selector.Matches(newMapLabels(e.Meta.GetLabels())) },
+				UpdateFunc:  func(e event.UpdateEvent) bool { return c.selector.Matches(newMapLabels(e.MetaNew.GetLabels())) },
+				GenericFunc: func(e event.GenericEvent) bool { return c.selector.Matches(newMapLabels(e.Meta.GetLabels())) },
 			}).
 			Complete(c)
 		if err != nil {
@@ -676,15 +677,4 @@ func unsetLoggerCtxValue(ctx context.Context, key string) context.Context {
 	delete(m.KeyVals, key)
 
 	return ctx
-}
-
-func matchLabels(sourceLabels, targetLabels map[string]string) bool {
-	for k, v := range sourceLabels {
-		if targetValue, ok := targetLabels[k]; !ok {
-			return false
-		} else if targetValue != v {
-			return false
-		}
-	}
-	return true
 }
