@@ -60,8 +60,6 @@ type Config struct {
 	// finalizers on runtime objects.
 	K8sClient k8sclient.Interface
 	Logger    micrologger.Logger
-	// Selector is used to filter objects before passing them to the controller.
-	Selector labels.Selector
 	// NewRuntimeObjectFunc returns a new initialized pointer of a type
 	// implementing the runtime object interface. The object returned is used with
 	// the controller-runtime client to fetch the latest version of the object
@@ -83,6 +81,8 @@ type Config struct {
 	// versioned and different resources can be executed depending on the runtime
 	// object being reconciled.
 	ResourceSets []*ResourceSet
+	// Selector is used to filter objects before passing them to the controller.
+	Selector labels.Selector
 
 	// Name is the name which the controller uses on finalizers for resources.
 	// The name used should be unique in the kubernetes cluster, to ensure that
@@ -95,13 +95,13 @@ type Config struct {
 }
 
 type Controller struct {
-	crd                  *apiextensionsv1beta1.CustomResourceDefinition
 	backOffFactory       func() backoff.Interface
+	crd                  *apiextensionsv1beta1.CustomResourceDefinition
 	k8sClient            k8sclient.Interface
 	logger               micrologger.Logger
-	selector             labels.Selector
 	newRuntimeObjectFunc func() pkgruntime.Object
 	resourceSets         []*ResourceSet
+	selector             labels.Selector
 
 	bootOnce               sync.Once
 	booted                 chan struct{}
@@ -128,6 +128,9 @@ func New(config Config) (*Controller, error) {
 	}
 	if len(config.ResourceSets) == 0 {
 		return nil, microerror.Maskf(invalidConfigError, "%T.ResourceSets must not be empty", config)
+	}
+	if config.Selector == nil {
+		config.Selector = labels.Everything()
 	}
 
 	if config.Name == "" {
