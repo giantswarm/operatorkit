@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -59,8 +60,6 @@ type Config struct {
 	// finalizers on runtime objects.
 	K8sClient k8sclient.Interface
 	Logger    micrologger.Logger
-	// MatchLabel are used to filter objects before passing them to the controller.
-	MatchLabels map[string]string
 	// NewRuntimeObjectFunc returns a new initialized pointer of a type
 	// implementing the runtime object interface. The object returned is used with
 	// the controller-runtime client to fetch the latest version of the object
@@ -82,6 +81,8 @@ type Config struct {
 	// versioned and different resources can be executed depending on the runtime
 	// object being reconciled.
 	ResourceSets []*ResourceSet
+	// Selector is used to filter objects before passing them to the controller.
+	Selector labels.Selector
 
 	// Name is the name which the controller uses on finalizers for resources.
 	// The name used should be unique in the kubernetes cluster, to ensure that
@@ -94,13 +95,13 @@ type Config struct {
 }
 
 type Controller struct {
-	crd                  *apiextensionsv1beta1.CustomResourceDefinition
 	backOffFactory       func() backoff.Interface
+	crd                  *apiextensionsv1beta1.CustomResourceDefinition
 	k8sClient            k8sclient.Interface
 	logger               micrologger.Logger
-	matchLabels          map[string]string
 	newRuntimeObjectFunc func() pkgruntime.Object
 	resourceSets         []*ResourceSet
+	selector             labels.Selector
 
 	bootOnce               sync.Once
 	booted                 chan struct{}
@@ -128,6 +129,9 @@ func New(config Config) (*Controller, error) {
 	if len(config.ResourceSets) == 0 {
 		return nil, microerror.Maskf(invalidConfigError, "%T.ResourceSets must not be empty", config)
 	}
+	if config.Selector == nil {
+		config.Selector = labels.Everything()
+	}
 
 	if config.Name == "" {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Name must not be empty", config)
@@ -152,7 +156,7 @@ func New(config Config) (*Controller, error) {
 		backOffFactory:       func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) },
 		k8sClient:            config.K8sClient,
 		logger:               config.Logger,
-		matchLabels:          config.MatchLabels,
+		selector:             config.Selector,
 		newRuntimeObjectFunc: config.NewRuntimeObjectFunc,
 		resourceSets:         config.ResourceSets,
 
@@ -302,10 +306,10 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 				Reconciler:              c,
 			}).
 			WithEventFilter(predicate.Funcs{
-				CreateFunc:  func(e event.CreateEvent) bool { return matchLabels(c.matchLabels, e.Meta.GetLabels()) },
-				DeleteFunc:  func(e event.DeleteEvent) bool { return matchLabels(c.matchLabels, e.Meta.GetLabels()) },
-				UpdateFunc:  func(e event.UpdateEvent) bool { return matchLabels(c.matchLabels, e.MetaNew.GetLabels()) },
-				GenericFunc: func(e event.GenericEvent) bool { return matchLabels(c.matchLabels, e.Meta.GetLabels()) },
+				CreateFunc:  func(e event.CreateEvent) bool { return c.selector.Matches(labels.Set(e.Meta.GetLabels())) },
+				DeleteFunc:  func(e event.DeleteEvent) bool { return c.selector.Matches(labels.Set(e.Meta.GetLabels())) },
+				UpdateFunc:  func(e event.UpdateEvent) bool { return c.selector.Matches(labels.Set(e.MetaNew.GetLabels())) },
+				GenericFunc: func(e event.GenericEvent) bool { return c.selector.Matches(labels.Set(e.Meta.GetLabels())) },
 			}).
 			Complete(c)
 		if err != nil {
@@ -676,15 +680,4 @@ func unsetLoggerCtxValue(ctx context.Context, key string) context.Context {
 	delete(m.KeyVals, key)
 
 	return ctx
-}
-
-func matchLabels(sourceLabels, targetLabels map[string]string) bool {
-	for k, v := range sourceLabels {
-		if targetValue, ok := targetLabels[k]; !ok {
-			return false
-		} else if targetValue != v {
-			return false
-		}
-	}
-	return true
 }
