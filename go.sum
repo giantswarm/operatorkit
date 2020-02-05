@@ -74,14 +74,15 @@ github.com/giantswarm/exporterkit v0.0.0-20190619131829-9749deade60f h1:k5IxVNqF
 github.com/giantswarm/exporterkit v0.0.0-20190619131829-9749deade60f/go.mod h1:WqCQegDVeYHe7gkh4Ob1pJl+IjZG+XiHVEqr+bDRiPQ=
 github.com/giantswarm/k8sclient v0.0.0-20191209120459-6cb127468cd6 h1:vr+QDUGxyr+ugXgBERliRqDZB0AEKRcTzswE2uIn6xw=
 github.com/giantswarm/k8sclient v0.0.0-20191209120459-6cb127468cd6/go.mod h1:XH0Ea+GvJOStcuamQyFSJXIQasGcPpHnWnHQVyG7AJc=
-github.com/giantswarm/microerror v0.0.0-20191011121515-e0ebc4ecf5a5 h1:ZjMQRWyxNkGlFP8yOf+G86XH7DugnigsBpzie1R/nxM=
-github.com/giantswarm/microerror v0.0.0-20191011121515-e0ebc4ecf5a5/go.mod h1://Lo9dKJ8P2TBciuky5fDHEItccyvZOWE+B/0JiJT8A=
-github.com/giantswarm/micrologger v0.0.0-20191014091141-d866337f7393 h1:iwdDYJLDPkWo71fPO57Q40qNsjpXlH/KNznqgByo0xA=
-github.com/giantswarm/micrologger v0.0.0-20191014091141-d866337f7393/go.mod h1:2O9GG1AfKI8px8oseWx+TTD6A6aEdUo16ZjAKv2wOVk=
+github.com/giantswarm/microerror v0.1.1-0.20200205143715-01b76f66cae6 h1:lJr756ZiXB9+n9pCUjMMNKKf+Lli3qQsybugFxx7Gjo=
+github.com/giantswarm/microerror v0.1.1-0.20200205143715-01b76f66cae6/go.mod h1://Lo9dKJ8P2TBciuky5fDHEItccyvZOWE+B/0JiJT8A=
+github.com/giantswarm/micrologger v0.0.0-20200205144836-079154bcae45 h1:wuqW13kKFlEZpmm7VcIL9zew6uqFXk+fk1XbnDL8t8k=
+github.com/giantswarm/micrologger v0.0.0-20200205144836-079154bcae45/go.mod h1:QJfaltttYGSmImneAb8OYjT7s2E0v5XSwnMKk2lDav0=
 github.com/giantswarm/to v0.0.0-20191022113953-f2078541ec95 h1:d4KoEpcNgoUiYQl3vBq6w9nDVkbQz0/tRbkdzJPQ234=
 github.com/giantswarm/to v0.0.0-20191022113953-f2078541ec95/go.mod h1:RTRtw+Dyk6YqoiNBOGLO981BqhibtVwogdaFIMO1y/A=
 github.com/globalsign/mgo v0.0.0-20180905125535-1ca0a4f7cbcb/go.mod h1:xkRDCp4j0OGD1HRkm4kmhM+pmpv3AKq5SU7GMg4oO/Q=
 github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8/go.mod h1:xkRDCp4j0OGD1HRkm4kmhM+pmpv3AKq5SU7GMg4oO/Q=
+github.com/go-kit/kit v0.6.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
 github.com/go-kit/kit v0.8.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
 github.com/go-kit/kit v0.9.0 h1:wDJmvq38kDhkVxi50ni9ykkdUr1PKgqKOoi01fa0Mdk=
 github.com/go-kit/kit v0.9.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
@@ -126,6 +127,7 @@ github.com/go-openapi/swag v0.18.0/go.mod h1:AByQ+nYG6gQg71GINrmuDXCPWdL640yX49/
 github.com/go-openapi/swag v0.19.2/go.mod h1:POnQmlKehdgb5mhVOsnJFsivZCEZ/vjK9gh66Z9tfKk=
 github.com/go-openapi/validate v0.18.0/go.mod h1:Uh4HdOzKt19xGIGm1qHf/ofbX1YQ4Y+MYsct2VUrAJ4=
 github.com/go-openapi/validate v0.19.2/go.mod h1:1tRCw7m3jtI8eNWEEliiAqUIcBztB2KDnRCRMUi7GTA=
+github.com/go-stack/stack v1.7.0/go.mod h1:v0f6uXyyMGvRgIKkXu+yp6POWl0qKG85gN/melR3HDY=
 github.com/go-stack/stack v1.8.0 h1:5SgMzNM5HxrEjV0ww2lTmX6E2Izsfxas4+YHWRs3Lsk=
 github.com/go-stack/stack v1.8.0/go.mod h1:v0f6uXyyMGvRgIKkXu+yp6POWl0qKG85gN/melR3HDY=
 github.com/gogo/protobuf v1.1.1/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7atdtwQ=
@@ -187,8 +189,6 @@ github.com/json-iterator/go v1.1.7/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/u
 github.com/json-iterator/go v1.1.8 h1:QiWkFLKq0T7mpzwOTu6BzNDbfTE8OLrYhVKYMLF46Ok=
 github.com/json-iterator/go v1.1.8/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
-github.com/juju/errgo v0.0.0-20140925100237-08cceb5d0b53 h1:tGpfbOOO0SV3qtMUx8O9RbJeei6VDBwnpQQ0JYIFaVg=
-github.com/juju/errgo v0.0.0-20140925100237-08cceb5d0b53/go.mod h1:ZtgUe3RyZisw/AlQjgU9DeO3hqUH9E/bkreI2FLg/QY=
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
 github.com/kisielk/errcheck v1.2.0/go.mod h1:/BMXB+zMLi60iA8Vv6Ksmxu/1UDYcXs4uQLJ+jE2L00=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=

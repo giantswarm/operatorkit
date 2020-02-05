@@ -11,15 +11,14 @@ require (
 	github.com/giantswarm/e2e-harness v0.1.1-0.20191209134222-be7852f38d3e
 	github.com/giantswarm/exporterkit v0.0.0-20190619131829-9749deade60f
 	github.com/giantswarm/k8sclient v0.0.0-20191209120459-6cb127468cd6
-	github.com/giantswarm/microerror v0.0.0-20191011121515-e0ebc4ecf5a5
-	github.com/giantswarm/micrologger v0.0.0-20191014091141-d866337f7393
+	github.com/giantswarm/microerror v0.1.1-0.20200205143715-01b76f66cae6
+	github.com/giantswarm/micrologger v0.0.0-20200205144836-079154bcae45
 	github.com/giantswarm/to v0.0.0-20191022113953-f2078541ec95
 	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
 	github.com/hashicorp/golang-lru v0.5.3 // indirect
 	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/json-iterator/go v1.1.8 // indirect
-	github.com/juju/errgo v0.0.0-20140925100237-08cceb5d0b53 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.0.0
 	github.com/prometheus/client_model v0.1.0 // indirect
