@@ -42,7 +42,7 @@
   name = "github.com/giantswarm/microerror"
 
 [[constraint]]
-  branch = "master"
+  version = "v0.1.0"
   name = "github.com/giantswarm/micrologger"
 
 [[constraint]]

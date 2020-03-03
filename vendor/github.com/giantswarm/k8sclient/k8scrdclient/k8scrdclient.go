@@ -40,16 +40,53 @@ func New(config Config) (*CRDClient, error) {
 
 // EnsureCreated ensures the given CRD exists, is active (aka. established) and
 // does not have conflicting names.
-func (c *CRDClient) EnsureCreated(ctx context.Context, customResource *apiextensionsv1beta1.CustomResourceDefinition, backOff backoff.Interface) error {
-	_, err := c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Create(customResource)
+func (c *CRDClient) EnsureCreated(ctx context.Context, crd *apiextensionsv1beta1.CustomResourceDefinition, b backoff.Interface) error {
+	var err error
+
+	err = c.ensureCreated(ctx, crd, b)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	err = c.ensureStatusSubresourceCreated(ctx, crd, b)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	return nil
+}
+
+// EnsureDeleted ensures the given CRD does not exist.
+func (c *CRDClient) EnsureDeleted(ctx context.Context, crd *apiextensionsv1beta1.CustomResourceDefinition, b backoff.Interface) error {
+	o := func() error {
+		err := c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(crd.Name, nil)
+		if errors.IsNotFound(err) {
+			// Fall trough. We reached our goal.
+		} else if err != nil {
+			return microerror.Mask(err)
+		}
+
+		return nil
+	}
+
+	err := backoff.Retry(o, b)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	return nil
+}
+
+func (c *CRDClient) ensureCreated(ctx context.Context, crd *apiextensionsv1beta1.CustomResourceDefinition, b backoff.Interface) error {
+	_, err := c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Create(crd)
 	if errors.IsAlreadyExists(err) {
 		// Fall trough. We need to check CRD status.
 	} else if err != nil {
 		return microerror.Mask(err)
 	}
 
-	operation := func() error {
-		manifest, err := c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Get(customResource.Name, metav1.GetOptions{})
+	o := func() error {
+		manifest, err := c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Get(crd.Name, metav1.GetOptions{})
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -70,39 +107,13 @@ func (c *CRDClient) EnsureCreated(ctx context.Context, customResource *apiextens
 		return microerror.Mask(notEstablishedError)
 	}
 
-	err = backoff.Retry(operation, backOff)
+	err = backoff.Retry(o, b)
 	if err != nil {
-		deleteErr := c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(customResource.Name, nil)
+		deleteErr := c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(crd.Name, nil)
 		if deleteErr != nil {
 			return microerror.Mask(deleteErr)
 		}
 
-		return microerror.Mask(err)
-	}
-
-	err = c.ensureStatusSubresourceCreated(ctx, customResource, backOff)
-	if err != nil {
-		return microerror.Mask(err)
-	}
-
-	return nil
-}
-
-// EnsureDeleted ensures the given CRD does not exist.
-func (c *CRDClient) EnsureDeleted(ctx context.Context, customResource *apiextensionsv1beta1.CustomResourceDefinition, backOff backoff.Interface) error {
-	operation := func() error {
-		err := c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(customResource.Name, nil)
-		if errors.IsNotFound(err) {
-			// Fall trough. We reached our goal.
-		} else if err != nil {
-			return microerror.Mask(err)
-		}
-
-		return nil
-	}
-
-	err := backoff.Retry(operation, backOff)
-	if err != nil {
 		return microerror.Mask(err)
 	}
 
@@ -112,21 +123,21 @@ func (c *CRDClient) EnsureDeleted(ctx context.Context, customResource *apiextens
 // ensureStatusSubresourceCreated ensures if the CRD has a status subresource
 // it is created. This is needed if a previous version of the CRD without the
 // status subresource is present.
-func (c *CRDClient) ensureStatusSubresourceCreated(ctx context.Context, customResource *apiextensionsv1beta1.CustomResourceDefinition, backOff backoff.Interface) error {
-	if customResource.Spec.Subresources == nil || customResource.Spec.Subresources.Status == nil {
+func (c *CRDClient) ensureStatusSubresourceCreated(ctx context.Context, crd *apiextensionsv1beta1.CustomResourceDefinition, b backoff.Interface) error {
+	if crd.Spec.Subresources == nil || crd.Spec.Subresources.Status == nil {
 		// Nothing to do.
 		return nil
 	}
 
-	operation := func() error {
-		manifest, err := c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Get(customResource.Name, metav1.GetOptions{})
+	o := func() error {
+		manifest, err := c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Get(crd.Name, metav1.GetOptions{})
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
 		if manifest.Spec.Subresources == nil || manifest.Spec.Subresources.Status == nil {
-			customResource.SetResourceVersion(manifest.ResourceVersion)
-			_, err = c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Update(customResource)
+			crd.SetResourceVersion(manifest.ResourceVersion)
+			_, err = c.k8sExtClient.ApiextensionsV1beta1().CustomResourceDefinitions().Update(crd)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -135,7 +146,7 @@ func (c *CRDClient) ensureStatusSubresourceCreated(ctx context.Context, customRe
 		return nil
 	}
 
-	err := backoff.Retry(operation, backOff)
+	err := backoff.Retry(o, b)
 	if err != nil {
 		return microerror.Mask(err)
 	}
