@@ -76,7 +76,7 @@
   name = "github.com/giantswarm/e2e-harness"
   packages = ["pkg/harness"]
   pruneopts = "UT"
-  revision = "be7852f38d3ea98622ce0542bc39cc522daaf6f9"
+  revision = "056fbe4ee7d617af09a5e0faed14af86b32aafea"
 
 [[projects]]
   branch = "master"
@@ -84,18 +84,18 @@
   name = "github.com/giantswarm/exporterkit"
   packages = ["collector"]
   pruneopts = "UT"
-  revision = "9749deade60f7624620aa7158a4f38c87ea23795"
+  revision = "4a78fcf3b86d91e1354f5ebc9f21fe2b4ac3041e"
 
 [[projects]]
   branch = "master"
-  digest = "1:ca9ad5887021e13fca3a1aa33a58668a0061b3a03bd7dfc2d36c38dedf56f572"
+  digest = "1:a6fdcbdc9a98d2174017f2a00e32e835c3ee6739e15a476285e981ab6d7e4627"
   name = "github.com/giantswarm/k8sclient"
   packages = [
     ".",
     "k8scrdclient",
   ]
   pruneopts = "UT"
-  revision = "6cb127468cd6b30eaf8030b875f796e34b481938"
+  revision = "78de8231ec254eba941e9999c2b13581b2d2103b"
 
 [[projects]]
   branch = "master"
@@ -106,8 +106,7 @@
   revision = "e0ebc4ecf5a515b8f2a33257d08962e387120a77"
 
 [[projects]]
-  branch = "master"
-  digest = "1:c313924ca7110c452a83502384552f4dd2ed25dd0f3ab8aa8a34707315243561"
+  digest = "1:c497795cf3848ef5a655d53f24dfc670c72f9b2fc41eeda495d66542ae6bd017"
   name = "github.com/giantswarm/micrologger"
   packages = [
     ".",
@@ -115,7 +114,8 @@
     "microloggertest",
   ]
   pruneopts = "UT"
-  revision = "d866337f739365a54de5924b8a7b29df17693ef8"
+  revision = "c87486c7d20d7878ad57a09d379d7d59328b472e"
+  version = "v0.1.0"
 
 [[projects]]
   branch = "master"
@@ -818,6 +818,8 @@
     "k8s.io/apimachinery/pkg/api/errors",
     "k8s.io/apimachinery/pkg/api/meta",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
+    "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured",
+    "k8s.io/apimachinery/pkg/labels",
     "k8s.io/apimachinery/pkg/runtime",
     "k8s.io/apimachinery/pkg/runtime/schema",
     "k8s.io/apimachinery/pkg/types",
@@ -825,6 +827,7 @@
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/tools/clientcmd",
     "sigs.k8s.io/controller-runtime/pkg/builder",
+    "sigs.k8s.io/controller-runtime/pkg/client/apiutil",
     "sigs.k8s.io/controller-runtime/pkg/controller",
     "sigs.k8s.io/controller-runtime/pkg/event",
     "sigs.k8s.io/controller-runtime/pkg/manager",
