@@ -34,13 +34,17 @@
   name = "github.com/giantswarm/backoff"
   branch = "master"
 
-[[constraint]]
+[[override]]
   name = "github.com/giantswarm/microerror"
-  branch = "master"
+  version = "~0.1.0"
+
+[[override]]
+  name = "github.com/giantswarm/micrologger"
+  version = "~0.1.0"
 
 [[constraint]]
-  name = "github.com/giantswarm/micrologger"
-  version = "v0.1.0"
+  name = "github.com/google/go-cmp"
+  version = "0.4.0"
 
 [[constraint]]
   name = "k8s.io/api"

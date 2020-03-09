@@ -2,12 +2,12 @@
 
 
 [[projects]]
-  branch = "master"
-  digest = "1:9c432418e5180be62a4bf565761eb2c618fc4ff9b7efa9a260c92068f453e28a"
+  digest = "1:98e9dc8d46288ca1cbcd2925710b5fc684514ddba062e109f35a40ad5e81de8f"
   name = "github.com/giantswarm/microerror"
   packages = ["."]
   pruneopts = ""
-  revision = "a8d5d4f526c526b4b773062958847fe7e0b7f449"
+  revision = "e8fe0fa9c0097ca80d8b773e1d728843447f9233"
+  version = "v0.1.0"
 
 [[projects]]
   digest = "1:44ec1082ba97d89ce860abcc6ee3f0cf24e658d3efb8531b0f0a52f0781e4243"
