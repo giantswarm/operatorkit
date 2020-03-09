@@ -76,7 +76,7 @@
   name = "github.com/giantswarm/e2e-harness"
   packages = ["pkg/harness"]
   pruneopts = "UT"
-  revision = "056fbe4ee7d617af09a5e0faed14af86b32aafea"
+  revision = "2760a445eb3c77031818fd205acbcefae086b4da"
 
 [[projects]]
   branch = "master"
@@ -84,29 +84,30 @@
   name = "github.com/giantswarm/exporterkit"
   packages = ["collector"]
   pruneopts = "UT"
-  revision = "4a78fcf3b86d91e1354f5ebc9f21fe2b4ac3041e"
+  revision = "f0bfcc3891312fd674c9bdfb6ebeb744abca6cdc"
 
 [[projects]]
   branch = "master"
-  digest = "1:a6fdcbdc9a98d2174017f2a00e32e835c3ee6739e15a476285e981ab6d7e4627"
+  digest = "1:eee5eee4db800350e069f7a0a1b755117afec33580075d0d15b5282f90e1fc35"
   name = "github.com/giantswarm/k8sclient"
   packages = [
     ".",
     "k8scrdclient",
+    "k8sversion",
   ]
   pruneopts = "UT"
-  revision = "78de8231ec254eba941e9999c2b13581b2d2103b"
+  revision = "8d7dfa9a434ba3c5cc08c22b6739a829c8e82e38"
 
 [[projects]]
-  branch = "master"
-  digest = "1:d80347cb345b2986422040821735ae0efba8b8093b765b146b90796d926b85b4"
+  digest = "1:701a5f5a7297ced0c7b9aeeba6a40ef47663b956d56e7acd09fe0d1c31eb1e4b"
   name = "github.com/giantswarm/microerror"
   packages = ["."]
   pruneopts = "UT"
-  revision = "e0ebc4ecf5a515b8f2a33257d08962e387120a77"
+  revision = "e8fe0fa9c0097ca80d8b773e1d728843447f9233"
+  version = "v0.1.0"
 
 [[projects]]
-  digest = "1:c497795cf3848ef5a655d53f24dfc670c72f9b2fc41eeda495d66542ae6bd017"
+  digest = "1:4e616fe01d486048e77342e2c5e638f8744ec6da802335633740aafb057f50d8"
   name = "github.com/giantswarm/micrologger"
   packages = [
     ".",
@@ -114,8 +115,8 @@
     "microloggertest",
   ]
   pruneopts = "UT"
-  revision = "c87486c7d20d7878ad57a09d379d7d59328b472e"
-  version = "v0.1.0"
+  revision = "c4d217562e3d493e3ff571707346a5a2653475cb"
+  version = "v0.1.1"
 
 [[projects]]
   branch = "master"
