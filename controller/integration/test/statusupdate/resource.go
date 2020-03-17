@@ -1,3 +1,5 @@
+// +build k8srequired
+
 package statusupdate
 
 import (
@@ -8,6 +10,7 @@ import (
 	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/k8sclient"
 	"github.com/giantswarm/microerror"
+	"github.com/giantswarm/micrologger"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/giantswarm/operatorkit/controller/integration/env"
@@ -31,13 +34,25 @@ func NewResource(config ResourceConfig) (*Resource, error) {
 		return nil, microerror.Maskf(invalidConfigError, "%T.T must not be empty", config)
 	}
 
+	var err error
+
+	var newLogger micrologger.Logger
+	{
+		c := micrologger.Config{}
+
+		newLogger, err = micrologger.New(c)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+	}
+
 	var k8sClient *k8sclient.Clients
 	{
 		c := k8sclient.ClientsConfig{
 			SchemeBuilder: k8sclient.SchemeBuilder{
 				v1alpha1.AddToScheme,
 			},
-			Logger: config.Logger,
+			Logger: newLogger,
 
 			KubeConfigPath: env.KubeConfigPath(),
 		}
