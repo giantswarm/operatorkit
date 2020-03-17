@@ -99,6 +99,7 @@ func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
 			)
 		}
 	}
+
 	return nil
 }
 
