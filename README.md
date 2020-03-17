@@ -79,7 +79,7 @@ The tests need to figure out how to connect to the Kubernetes cluster. Therefore
 we need to set an environment variable pointing to your local kube config.
 
 ```
-export E2E_KUBECONFIG=<your-path>/.kube/config
+export E2E_KUBECONFIG=~/.kube/config
 ```
 
 Now you can easily run the integration tests.
