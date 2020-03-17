@@ -1,5 +1,3 @@
-// +build k8srequired
-
 package statusupdate
 
 import (
@@ -8,11 +6,11 @@ import (
 	"testing"
 
 	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
-	"github.com/giantswarm/apiextensions/pkg/clientset/versioned"
-	"github.com/giantswarm/e2e-harness/pkg/harness"
+	"github.com/giantswarm/k8sclient"
 	"github.com/giantswarm/microerror"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/clientcmd"
+
+	"github.com/giantswarm/operatorkit/controller/integration/env"
 )
 
 type ResourceConfig struct {
@@ -22,7 +20,7 @@ type ResourceConfig struct {
 type Resource struct {
 	t *testing.T
 
-	g8sClient versioned.Interface
+	k8sClient k8sclient.Interface
 
 	executionCount int
 	mutex          sync.Mutex
@@ -33,13 +31,18 @@ func NewResource(config ResourceConfig) (*Resource, error) {
 		return nil, microerror.Maskf(invalidConfigError, "%T.T must not be empty", config)
 	}
 
-	var g8sClient versioned.Interface
+	var k8sClient *k8sclient.Clients
 	{
-		restConfig, err := clientcmd.BuildConfigFromFlags("", harness.DefaultKubeConfig)
-		if err != nil {
-			return nil, microerror.Mask(err)
+		c := k8sclient.ClientsConfig{
+			SchemeBuilder: k8sclient.SchemeBuilder{
+				v1alpha1.AddToScheme,
+			},
+			Logger: config.Logger,
+
+			KubeConfigPath: env.KubeConfigPath(),
 		}
-		g8sClient, err = versioned.NewForConfig(restConfig)
+
+		k8sClient, err = k8sclient.NewClients(c)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
@@ -48,7 +51,7 @@ func NewResource(config ResourceConfig) (*Resource, error) {
 	r := &Resource{
 		t: config.T,
 
-		g8sClient: g8sClient,
+		k8sClient: k8sClient,
 
 		executionCount: 0,
 		mutex:          sync.Mutex{},
@@ -67,7 +70,7 @@ func (r *Resource) EnsureCreated(ctx context.Context, obj interface{}) error {
 	{
 		curObj := obj.(*v1alpha1.DrainerConfig)
 
-		newObj, err := r.g8sClient.CoreV1alpha1().DrainerConfigs(curObj.GetNamespace()).Get(curObj.GetName(), metav1.GetOptions{})
+		newObj, err := r.k8sClient.G8sClient().CoreV1alpha1().DrainerConfigs(curObj.GetNamespace()).Get(curObj.GetName(), metav1.GetOptions{})
 		if err != nil {
 			r.t.Fatal("expected", nil, "got", err)
 		}
@@ -82,7 +85,7 @@ func (r *Resource) EnsureCreated(ctx context.Context, obj interface{}) error {
 		}
 		customResource.Status.Conditions = append(customResource.Status.Conditions, newCondition)
 
-		_, err := r.g8sClient.CoreV1alpha1().DrainerConfigs(customResource.GetNamespace()).UpdateStatus(&customResource)
+		_, err := r.k8sClient.G8sClient().CoreV1alpha1().DrainerConfigs(customResource.GetNamespace()).UpdateStatus(&customResource)
 		if err != nil {
 			r.t.Fatal("expected", nil, "got", err)
 		}

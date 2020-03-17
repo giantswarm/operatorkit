@@ -8,7 +8,6 @@ import (
 	"github.com/giantswarm/k8sclient"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-	"github.com/giantswarm/release-operator/integration/env"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,6 +15,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/giantswarm/operatorkit/controller"
+	"github.com/giantswarm/operatorkit/controller/integration/env"
 	"github.com/giantswarm/operatorkit/controller/integration/testresourceset"
 	"github.com/giantswarm/operatorkit/resource"
 )
