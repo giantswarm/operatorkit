@@ -5,10 +5,10 @@ import (
 
 	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/apiextensions/pkg/clientset/versioned"
-	"github.com/giantswarm/e2e-harness/pkg/harness"
 	"github.com/giantswarm/k8sclient"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
+	"github.com/giantswarm/release-operator/integration/env"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -56,7 +56,7 @@ func New(config Config) (*Wrapper, error) {
 			},
 			Logger: config.Logger,
 
-			KubeConfigPath: harness.DefaultKubeConfig,
+			KubeConfigPath: env.KubeConfigPath(),
 		}
 
 		k8sClient, err = k8sclient.NewClients(c)
