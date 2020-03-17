@@ -1,123 +1,154 @@
 package v1alpha1
 
 import (
-	"github.com/ghodss/yaml"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 const (
-	kindRelease = "Release"
-
-	ChangelogKindAdded      ReleaseChangelogKind = "added"
-	ChangelogKindChanged    ReleaseChangelogKind = "changed"
-	ChangelogKindDeprecated ReleaseChangelogKind = "deprecated"
-	ChangelogKindFixed      ReleaseChangelogKind = "fixed"
-	ChangelogKindRemoved    ReleaseChangelogKind = "removed"
-	ChangelogKindSecurity   ReleaseChangelogKind = "security"
-)
-
-const releaseCRDYAML = `
-apiVersion: apiextensions.k8s.io/v1beta1
+	crDocsAnnotation         = "giantswarm.io/docs"
+	kindRelease              = "Release"
+	releaseDocumentationLink = "https://pkg.go.dev/github.com/giantswarm/apiextensions/pkg/apis/release/v1alpha1?tab=doc#Release"
+	releaseCRDYAML           = `apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   name: releases.release.giantswarm.io
 spec:
+  additionalPrinterColumns:
+    - name: Kubernetes version
+      type: string
+      description: Version of the kubernetes component in this release
+      JSONPath: .spec.components[?(@.name=="kubernetes")].version
+    - name: State
+      type: string
+      description: State of the release
+      JSONPath: .spec.state
+    - name: Age
+      type: date
+      description: Time since release creation
+      JSONPath: .spec.date
   group: release.giantswarm.io
-  scope: Cluster
-  version: v1alpha1
   names:
     kind: Release
     plural: releases
+    shortNames:
+    - rel
     singular: release
-  subresources:
-    status: {}
+  preserveUnknownFields: false
+  scope: Cluster
   validation:
     openAPIV3Schema:
+      description: |
+        A Release holds information about a particular version of the Giant Swarm platform which
+        can be used as a target for creation or upgrade of a cluster. It is a tested package
+        comprising a particular Kubernetes version along with compatible Giant Swarm operators,
+        monitoring, and default apps.
       properties:
-        spec:
-          type: object
+        metadata:
           properties:
-            changelog:
-              type: array
-              minItems: 1
+            name:
+              pattern: ^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$
+              type: string
+          type: object
+        spec:
+          description: |
+            Spec holds the data defining the desired state of a release.
+          properties:
+            date:
+              type: string
+              format: date-time
+            apps:
+              description: |
+                Apps is a list of Giant Swarm-managed apps which will be installed by default
+                on clusters created with this release version.
               items:
-                type: object
                 properties:
-                  component:
+                  componentVersion:
+                    description: |
+                      Component version is the upstream version of this app. It may be empty if this
+                      is a Giant Swarm developed app.
+                    pattern: ^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$
                     type: string
-                    minLength: 3
-                  description:
+                  name:
+                    description: |
+                      Name is the name of the app.
+                    minLength: 1
                     type: string
-                    minLength: 3
-                  kind:
-                    enum:
-                    - added
-                    - changed
-                    - deprecated
-                    - fixed
-                    - removed
-                    - security
+                  version:
+                    description: |
+                      Version is the internal version of the app managed by Giant Swarm. Because apps
+                      may be released without upstream changes, this will generally differ from the
+                      component version.
+                    pattern: ^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$
+                    type: string
                 required:
-                - component
-                - description
-                - kind
-            components:
-              type: array
-              minItems: 1
-              items:
+                - name
+                - version
                 type: object
+              type: array
+            components:
+              description: |
+                Components is a list of internal and upstream components making up the core of the cluster.
+              items:
                 properties:
                   name:
+                    description: |
+                      Name is the name of the component.
+                    minLength: 1
                     type: string
-                    minLength: 3
                   version:
+                    description: |
+                      Version is the semantic version of the component.
+                    pattern: ^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$
                     type: string
-                    minLength: 5
-            parentVersion:
+                required:
+                - name
+                - version
+                type: object
+              minItems: 1
+              type: array
+            state:
+              description: |
+                State indicates how this release should be used. "wip" means the release is a work
+                in progress. "deprecated" means old clusters using this version will continue to function
+                but new clusters should use a more recent release. "active" means this is a current
+                supported release.
+              pattern: ^(active|deprecated|wip)$
               type: string
-              pattern: "^\\d+\\.\\d+\\.\\d+$"
-            version:
-              type: string
-              minLength: 5
           required:
-          - changelog
           - components
-          - parentVersion
-          - version
-        status:
+          - apps
+          - state
+          - date
           type: object
-          properties:
-            cycle:
-              type: object
-              properties:
-                disabledDate:
-                  type: string
-                  format: date
-                enabledDate:
-                  type: string
-                  format: date
-                phase:
-                  enum:
-                  - upcoming
-                  - enabled
-                  - disabled
-                  - eol
-              required:
-              - phase
+      required:
+      - metadata
+      type: object
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
 `
+)
 
-type ReleaseChangelogKind string
+type ReleaseState string
 
-var releaseCRD *apiextensionsv1beta1.CustomResourceDefinition
+var (
+	stateActive     ReleaseState = "active"
+	stateDeprecated ReleaseState = "deprecated"
+	stateWIP        ReleaseState = "wip"
+	releaseCRD      *apiextensionsv1beta1.CustomResourceDefinition
+)
 
 func init() {
-	err := yaml.Unmarshal([]byte(releaseCRDYAML), &releaseCRD)
+	err := yaml.UnmarshalStrict([]byte(releaseCRDYAML), &releaseCRD)
 	if err != nil {
 		panic(err)
 	}
 }
 
+// NewReleaseCRD returns a new custom resource definition for Release.
 func NewReleaseCRD() *apiextensionsv1beta1.CustomResourceDefinition {
 	return releaseCRD.DeepCopy()
 }
@@ -129,88 +160,56 @@ func NewReleaseTypeMeta() metav1.TypeMeta {
 	}
 }
 
+func NewReleaseCR() *Release {
+	return &Release{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				crDocsAnnotation: releaseDocumentationLink,
+			},
+		},
+		TypeMeta: NewReleaseTypeMeta(),
+	}
+}
+
 // +genclient
 // +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Release CRs might look something like the following.
+// Release is a Kubernetes resource (CR) which is based on the Release CRD defined above.
 //
-//	apiVersion: "release.giantswarm.io/v1alpha1"
-//	kind: "Release"
-//	metadata:
-//	  name: "aws.v6.1.0"
-//	  labels:
-//	    giantswarm.io/managed-by: "app-operator"
-//	    giantswarm.io/provider: "aws"
-//	spec:
-//	  changelog:
-//	    - component: "cloudconfig"
-//	      description: "Replace cloudinit with ignition."
-//	      kind: "changed"
-//	  components:
-//	    - name: "aws-operator"
-//	      version: "4.6.0"
-//	    - name: "cert-operator"
-//	      version: "0.1.0"
-//	    - name: "chart-operator"
-//	      version: "0.5.0"
-//	    - name: "cluster-operator"
-//	      version: "0.10.0"
-//	  parentVersion: "6.0.1"
-//	  version: "6.1.0"
-//	status:
-//	  cycle:
-//	    phase: "eol"
-//	    enabledDate: 2019-01-08
-//	    disabledDate: 2019-01-12
-//
+// An example Release resource can be viewed here
+// https://github.com/giantswarm/apiextensions/blob/master/docs/cr/release.giantswarm.io_v1alpha1_release.yaml
 type Release struct {
 	metav1.TypeMeta   `json:",inline" yaml:",inline"`
 	metav1.ObjectMeta `json:"metadata" yaml:"metadata"`
-	Spec              ReleaseSpec   `json:"spec" yaml:"spec"`
-	Status            ReleaseStatus `json:"status,omitempty" yaml:"status,omitempty"`
+	Spec              ReleaseSpec `json:"spec" yaml:"spec"`
 }
 
 type ReleaseSpec struct {
-	// Changelog is the changelog since ParentVersion.
-	Changelog []ReleaseSpecChangelogEntry `json:"changelog" yaml:"changelog"`
-	// Components describes components managing this release.
+	// Apps describes apps used in this release.
+	Apps []ReleaseSpecApp `json:"apps" yaml:"apps"`
+	// Components describes components used in this release.
 	Components []ReleaseSpecComponent `json:"components" yaml:"components"`
-	// ParentVersion is a version from which the changes in changelog are
-	// described. We need that because we may introduce bug fixes after
-	// next major release and then taking previous semver version may not
-	// render correct changelog. This should always be in the semver format
-	// without the "v" prefix.
-	ParentVersion string `json:"parentVersion" yaml:"parentVersion"`
-	// Version is the version of the release. Releases with semver version
-	// (without the "v" prefix) are taken from control-plane AppCatalog.
-	// All other releases are taken from control-plane-test AppCatalog.
-	Version string `json:"version" yaml:"version"`
+	// Date that the release became active.
+	Date *DeepCopyTime `json:"date" yaml:"date"`
+	// State indicates the availability of the release: deprecated, active, or wip.
+	State ReleaseState `json:"state" yaml:"state"`
 }
-
-type ReleaseSpecChangelogEntry struct {
-	// Component name.
-	Component string `json:"component" yaml:"component"`
-	// Description of the component changes expressed in full sentence.
-	Description string `json:"description" yaml:"description"`
-	// Kind of the component changes. It can be one of: "added", "changed",
-	// "deprecated", "fixed", "removed", "security".
-	Kind ReleaseChangelogKind `json:"kind" yaml:"kind"`
-}
-
-type ReleaseSpecChangelogEntryKind string
 
 type ReleaseSpecComponent struct {
-	// Name of the release component.
+	// Name of the component.
 	Name string `json:"name" yaml:"name"`
-	// Version of the release component.
+	// Version of the component.
 	Version string `json:"version" yaml:"version"`
 }
 
-type ReleaseStatus struct {
-	// Cycle is the most recent observed copy of the specification of the
-	// ReleaseCycle CR referencing this Release CR.
-	Cycle ReleaseCycleSpec `json:"cycle,omitempty" yaml:"cycle,omitempty"`
+type ReleaseSpecApp struct {
+	// Version of the upstream component used in the app.
+	ComponentVersion string `json:"componentVersion,omitempty" yaml:"componentVersion,omitempty"`
+	// Name of the app.
+	Name string `json:"name" yaml:"name"`
+	// Version of the app.
+	Version string `json:"version" yaml:"version"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

@@ -1,5 +1,5 @@
 /*
-Copyright 2019 Giant Swarm GmbH.
+Copyright 2020 Giant Swarm GmbH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,9 +19,10 @@ limitations under the License.
 package v1alpha1
 
 import (
+	rest "k8s.io/client-go/rest"
+
 	v1alpha1 "github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/apiextensions/pkg/clientset/versioned/scheme"
-	rest "k8s.io/client-go/rest"
 )
 
 type CoreV1alpha1Interface interface {
@@ -34,6 +35,7 @@ type CoreV1alpha1Interface interface {
 	DrainerConfigsGetter
 	DraughtsmanConfigsGetter
 	FlannelConfigsGetter
+	IgnitionsGetter
 	IngressConfigsGetter
 	KVMClusterConfigsGetter
 	NodeConfigsGetter
@@ -75,6 +77,10 @@ func (c *CoreV1alpha1Client) DraughtsmanConfigs(namespace string) DraughtsmanCon
 
 func (c *CoreV1alpha1Client) FlannelConfigs(namespace string) FlannelConfigInterface {
 	return newFlannelConfigs(c, namespace)
+}
+
+func (c *CoreV1alpha1Client) Ignitions(namespace string) IgnitionInterface {
+	return newIgnitions(c, namespace)
 }
 
 func (c *CoreV1alpha1Client) IngressConfigs(namespace string) IngressConfigInterface {

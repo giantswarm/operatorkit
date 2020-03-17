@@ -7,7 +7,9 @@ import (
 )
 
 const (
-	kindAppCatalog = "AppCatalog"
+	crDocsAnnotation            = "giantswarm.io/docs"
+	kindAppCatalog              = "AppCatalog"
+	appCatalogDocumentationLink = "https://pkg.go.dev/github.com/giantswarm/apiextensions/pkg/apis/application/v1alpha1?tab=doc#AppCatalog"
 )
 
 const appCatalogCRDYAML = `
@@ -27,45 +29,72 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
+      description: |
+        An AppCatalog defines a collection of apps to install in one or several clusters.
       properties:
         spec:
           type: object
           properties:
             title:
+              description: |
+                User-friendly name of the catalog.    
               type: string
             description:
+              description: |
+                Additional information regarding the purpose and other details of the catalog.
               type: string
             config:
+              description: |
+                Configuration to be applied when apps from this catalog are deployed.
               type: object
               properties:
                 configMap:
+                  description: |
+                    References a ConfigMap containing catalog values that should be applied to
+                    apps installed from this catalog.
                   type: object
                   properties:
                     name:
+                      description: |
+                        Name of the ConfigMap resource.
                       type: string
                     namespace:
-                      type: string
-                    resourceVersion:
+                      description: |
+                        Namespace holding the ConfigMap resource.
                       type: string
                   required: ["name", "namespace"]
                 secret:
+                  description: |
+                    References a secret containing catalog values that should be applied to
+                    apps installed from this catalog.
                   type: object
                   properties:
                     name:
+                      description: |
+                        Name of the Secret resource.
                       type: string
                     namespace:
-                      type: string
-                    resourceVersion:
+                      description: |
+                        Namespace holding the Secret resource.
                       type: string
                   required: ["name", "namespace"]
             logoURL:
+              description: |
+                URL of a logo image file to be used when displaying this catalog.
               type: string
             storage:
+              description: |
+                References a map containing values that should be applied to this catalog.
               type: object 
               properties:
                 type:
+                  description: |
+                    Indicates which repository type would be used for this AppCatalog.
+                    Example: 'helm'
                   type: string
                 URL:
+                  description: |
+                    URL to the app repository.
                   type: string
                   format: uri 
               required: ["type", "URL"]
@@ -105,6 +134,18 @@ func NewAppCatalogTypeMeta() metav1.TypeMeta {
 	return metav1.TypeMeta{
 		APIVersion: SchemeGroupVersion.String(),
 		Kind:       kindAppCatalog,
+	}
+}
+
+// NewAppCatalogCR returns an AppCatalog Custom Resource.
+func NewAppCatalogCR() *AppCatalog {
+	return &AppCatalog{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				crDocsAnnotation: appCatalogDocumentationLink,
+			},
+		},
+		TypeMeta: NewAppCatalogTypeMeta(),
 	}
 }
 

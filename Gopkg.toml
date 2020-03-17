@@ -21,13 +21,13 @@
 
 
 
-[[constraint]]
-  branch = "master"
+[[override]]
   name = "github.com/giantswarm/apiextensions"
+  version = "~0.1.0"
 
-[[constraint]]
-  branch = "master"
+[[override]]
   name = "github.com/giantswarm/backoff"
+  version = "~0.1.0"
 
 [[constraint]]
   branch = "master"
@@ -37,13 +37,13 @@
   branch = "master"
   name = "github.com/giantswarm/k8sclient"
 
-[[constraint]]
-  version = "~0.1.0"
+[[override]]
   name = "github.com/giantswarm/microerror"
-
-[[constraint]]
   version = "~0.1.0"
+
+[[override]]
   name = "github.com/giantswarm/micrologger"
+  version = "~0.1.0"
 
 [[constraint]]
   name = "github.com/patrickmn/go-cache"

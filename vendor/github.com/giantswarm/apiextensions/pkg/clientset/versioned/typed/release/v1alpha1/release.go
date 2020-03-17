@@ -1,5 +1,5 @@
 /*
-Copyright 2019 Giant Swarm GmbH.
+Copyright 2020 Giant Swarm GmbH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,12 +21,13 @@ package v1alpha1
 import (
 	"time"
 
-	v1alpha1 "github.com/giantswarm/apiextensions/pkg/apis/release/v1alpha1"
-	scheme "github.com/giantswarm/apiextensions/pkg/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	rest "k8s.io/client-go/rest"
+
+	v1alpha1 "github.com/giantswarm/apiextensions/pkg/apis/release/v1alpha1"
+	scheme "github.com/giantswarm/apiextensions/pkg/clientset/versioned/scheme"
 )
 
 // ReleasesGetter has a method to return a ReleaseInterface.
@@ -39,7 +40,6 @@ type ReleasesGetter interface {
 type ReleaseInterface interface {
 	Create(*v1alpha1.Release) (*v1alpha1.Release, error)
 	Update(*v1alpha1.Release) (*v1alpha1.Release, error)
-	UpdateStatus(*v1alpha1.Release) (*v1alpha1.Release, error)
 	Delete(name string, options *v1.DeleteOptions) error
 	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
 	Get(name string, options v1.GetOptions) (*v1alpha1.Release, error)
@@ -120,21 +120,6 @@ func (c *releases) Update(release *v1alpha1.Release) (result *v1alpha1.Release, 
 	err = c.client.Put().
 		Resource("releases").
 		Name(release.Name).
-		Body(release).
-		Do().
-		Into(result)
-	return
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-
-func (c *releases) UpdateStatus(release *v1alpha1.Release) (result *v1alpha1.Release, err error) {
-	result = &v1alpha1.Release{}
-	err = c.client.Put().
-		Resource("releases").
-		Name(release.Name).
-		SubResource("status").
 		Body(release).
 		Do().
 		Into(result)
