@@ -76,14 +76,6 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:4709889b1b468e3ac4d014d746c1411b82f845561634fcf82070512b6a624968"
-  name = "github.com/giantswarm/e2e-harness"
-  packages = ["pkg/harness"]
-  pruneopts = "UT"
-  revision = "2760a445eb3c77031818fd205acbcefae086b4da"
-
-[[projects]]
-  branch = "master"
   digest = "1:5164d17414266145c643e4997dacbc32e6e1ad552c3c70a78837f64d9a0140ea"
   name = "github.com/giantswarm/exporterkit"
   packages = ["collector"]
@@ -121,14 +113,6 @@
   pruneopts = "UT"
   revision = "c4d217562e3d493e3ff571707346a5a2653475cb"
   version = "v0.1.1"
-
-[[projects]]
-  digest = "1:d8d61e8bb038d420b80a2722e4b6ce7dec8a48345a080974fd0d98567ab385c0"
-  name = "github.com/giantswarm/release-operator"
-  packages = ["integration/env"]
-  pruneopts = "UT"
-  revision = "2358d7d408f4f17f3c69227b893aa55064a38dde"
-  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -365,17 +349,6 @@
   version = "v0.0.10"
 
 [[projects]]
-  digest = "1:bb495ec276ab82d3dd08504bbc0594a65de8c3b22c6f2aaa92d05b73fbf3a82e"
-  name = "github.com/spf13/afero"
-  packages = [
-    ".",
-    "mem",
-  ]
-  pruneopts = "UT"
-  revision = "588a75ec4f32903aa5e39a2619ba6a4631e28424"
-  version = "v1.2.2"
-
-[[projects]]
   digest = "1:524b71991fc7d9246cc7dc2d9e0886ccb97648091c63e30eef619e6862c955dd"
   name = "github.com/spf13/pflag"
   packages = ["."]
@@ -522,12 +495,12 @@
   version = "v0.9.1"
 
 [[projects]]
-  digest = "1:4d2e5a73dc1500038e504a8d78b986630e3626dc027bc030ba5c75da257cdb96"
+  digest = "1:55b110c99c5fdc4f14930747326acce56b52cfce60b24b1c03ef686ac0e46bb1"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   pruneopts = "UT"
-  revision = "51d6538a90f86fe93ac480b35f37b2be17fef232"
-  version = "v2.2.2"
+  revision = "53403b58ad1b561927d19068c655246f2db79d48"
+  version = "v2.2.8"
 
 [[projects]]
   digest = "1:41a8785ce0732e00b09a1a95f23c826e2864e6f6b2a5d305f412687f4f936c76"
@@ -808,14 +781,12 @@
     "github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1",
     "github.com/giantswarm/apiextensions/pkg/clientset/versioned",
     "github.com/giantswarm/backoff",
-    "github.com/giantswarm/e2e-harness/pkg/harness",
     "github.com/giantswarm/exporterkit/collector",
     "github.com/giantswarm/k8sclient",
     "github.com/giantswarm/microerror",
     "github.com/giantswarm/micrologger",
     "github.com/giantswarm/micrologger/loggermeta",
     "github.com/giantswarm/micrologger/microloggertest",
-    "github.com/giantswarm/release-operator/integration/env",
     "github.com/giantswarm/to",
     "github.com/patrickmn/go-cache",
     "github.com/prometheus/client_golang/prometheus",
@@ -831,7 +802,6 @@
     "k8s.io/apimachinery/pkg/types",
     "k8s.io/apimachinery/pkg/util/runtime",
     "k8s.io/client-go/kubernetes",
-    "k8s.io/client-go/tools/clientcmd",
     "sigs.k8s.io/controller-runtime/pkg/builder",
     "sigs.k8s.io/controller-runtime/pkg/client/apiutil",
     "sigs.k8s.io/controller-runtime/pkg/controller",
