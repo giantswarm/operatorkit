@@ -80,11 +80,10 @@
   name = "github.com/giantswarm/exporterkit"
   packages = ["collector"]
   pruneopts = "UT"
-  revision = "f0bfcc3891312fd674c9bdfb6ebeb744abca6cdc"
+  revision = "f7504ae3fb4b05feef840a5cf4d6837d0e6a4bc1"
 
 [[projects]]
-  branch = "master"
-  digest = "1:9ab4bcbb62ab50336c1fe3cd8f721d624ca48c367713864e5910fdfc84a1edf6"
+  digest = "1:101e392ab6d9e0cd85edb3a62723636e6191bb227d001920a7ac0086c45cb1ab"
   name = "github.com/giantswarm/k8sclient"
   packages = [
     ".",
@@ -92,7 +91,8 @@
     "k8sversion",
   ]
   pruneopts = "UT"
-  revision = "ac9ba435f0b7b584dd07a5cbb9e05034460ca401"
+  revision = "3d89b4e3a990332d09442de0545cd22b67473fae"
+  version = "v0.1.0"
 
 [[projects]]
   digest = "1:701a5f5a7297ced0c7b9aeeba6a40ef47663b956d56e7acd09fe0d1c31eb1e4b"
@@ -726,7 +726,7 @@
     "trace",
   ]
   pruneopts = "UT"
-  revision = "0a110f9eb7ab662220ed640640f50c4be9b6b485"
+  revision = "d1ab8797c55812f4fefe2c7b00a0d04a4740a93c"
 
 [[projects]]
   digest = "1:1467ce430fe64e79b42e62d087dbcc58aaaa6d862f92f5d4daae68545af8507e"
