@@ -85,7 +85,7 @@ export E2E_KUBECONFIG=~/.kube/config
 Now you can easily run the integration tests.
 
 ```
-go test -v -tags=k8srequired ./controller/integration/test/<test-name>
+go test -v -tags=k8srequired ./integration/test/<test-name>
 ```
 
 Once you did your testing you may want to delete your local test cluster again.
