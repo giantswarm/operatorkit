@@ -29,9 +29,9 @@
   name = "github.com/giantswarm/backoff"
   version = "~0.1.0"
 
-[[constraint]]
-  branch = "master"
+[[override]]
   name = "github.com/giantswarm/k8sclient"
+  version = "~0.1.0"
 
 [[override]]
   name = "github.com/giantswarm/microerror"

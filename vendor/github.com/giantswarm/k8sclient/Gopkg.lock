@@ -2,12 +2,12 @@
 
 
 [[projects]]
-  digest = "1:166438587ed45ac211dab8a3ecebf4fa0c186d0db63430fb9127bbc2e5fcdc67"
+  digest = "1:2209584c0f7c9b68c23374e659357ab546e1b70eec2761f03280f69a8fd23d77"
   name = "github.com/cenkalti/backoff"
   packages = ["."]
   pruneopts = "UT"
-  revision = "5267b6dd4d2666b980a911bf235efa276222cbe2"
-  version = "v2.2.1"
+  revision = "2ea60e5f094469f9e65adb9cd103795b73ae743e"
+  version = "v2.0.0"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -34,7 +34,7 @@
   revision = "25d852aebe32c875e9c044af3eef9c7dc6bc777f"
 
 [[projects]]
-  digest = "1:2e5292ca7e290a14dac63dd9456678796cbfc0a9b2c393f727e817f8166972c2"
+  digest = "1:563b512507b12d48276d0ecedecfe83801e8ffc006a05f3f64312f737d62ccad"
   name = "github.com/giantswarm/apiextensions"
   packages = [
     "pkg/apis/application/v1alpha1",
@@ -55,16 +55,16 @@
     "pkg/clientset/versioned/typed/release/v1alpha1",
   ]
   pruneopts = "UT"
-  revision = "4fafaaae7e2eb887a8a268213f28a518a1618c3d"
-  version = "v0.1.0"
+  revision = "9552ed6bec737d139a14042569f7f96bc32d5a00"
+  version = "v0.1.1"
 
 [[projects]]
-  branch = "master"
-  digest = "1:6df5c1a6d380ca9d4fe8b7555f308dab0f7ee0a4cda309accd1e47d542e0fbe1"
+  digest = "1:df7d76eb372d1e1739a53d84579ba1d82306223e25a98de86642690edc76ec8a"
   name = "github.com/giantswarm/backoff"
   packages = ["."]
   pruneopts = "UT"
-  revision = "b7cb1852522df6a628bf5761a352ac634a566145"
+  revision = "5a00f7bb987700c7c202cf2e44917e2b3b86d12b"
+  version = "v0.1.0"
 
 [[projects]]
   digest = "1:701a5f5a7297ced0c7b9aeeba6a40ef47663b956d56e7acd09fe0d1c31eb1e4b"
@@ -131,8 +131,8 @@
     "ptypes/timestamp",
   ]
   pruneopts = "UT"
-  revision = "5d5b4c10bd43f85e63bd9e4a3fa9b1ea2ef88af2"
-  version = "v1.3.4"
+  revision = "84668698ea25b64748563aa20726db66a6b8d299"
+  version = "v1.3.5"
 
 [[projects]]
   digest = "1:0aeda02073125667ac6c9df50c7921cb22c08a4accdc54589c697a7e76be65c2"
@@ -230,7 +230,7 @@
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = "UT"
-  revision = "78000ba7a073cafc0278790f6bce552a0f25850e"
+  revision = "1b76d66859c6111b3d5c3ea6600ea44dc188bf12"
 
 [[projects]]
   branch = "master"
@@ -260,14 +260,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:e32edd8d81fe0447cb6855e2d2b0549b63717539513e09b3a1e4bb20d48f46c6"
+  digest = "1:70ad9a7394ce9ae89ca0ded5c02ddb0135ccfc636d41a4d3b7c3a5c8cf39fd53"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "UT"
-  revision = "5c8b2ff67527cb88b770f693cebf3799036d8bc0"
+  revision = "5766fd39f98ddd8d769ad4aedcee557dd28de90f"
 
 [[projects]]
   digest = "1:8d8faad6b12a3a4c819a3f9618cb6ee1fa1cfc33253abeeea8b55336721e3405"
@@ -541,7 +541,7 @@
     "pointer",
   ]
   pruneopts = "UT"
-  revision = "0a110f9eb7ab662220ed640640f50c4be9b6b485"
+  revision = "d1ab8797c55812f4fefe2c7b00a0d04a4740a93c"
 
 [[projects]]
   digest = "1:9521edfb79fb1624a4616a8602d4c069af8b465144b1aebb89b5f1e6f99a4d5c"
