@@ -33,6 +33,8 @@ var knownTypes = []runtime.Object{
 	&DraughtsmanConfigList{},
 	&FlannelConfig{},
 	&FlannelConfigList{},
+	&Ignition{},
+	&IgnitionList{},
 	&IngressConfig{},
 	&IngressConfigList{},
 	&NodeConfig{},

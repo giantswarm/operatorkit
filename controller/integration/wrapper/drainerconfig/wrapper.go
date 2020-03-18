@@ -5,7 +5,6 @@ import (
 
 	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/apiextensions/pkg/clientset/versioned"
-	"github.com/giantswarm/e2e-harness/pkg/harness"
 	"github.com/giantswarm/k8sclient"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
@@ -16,6 +15,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/giantswarm/operatorkit/controller"
+	"github.com/giantswarm/operatorkit/controller/integration/env"
 	"github.com/giantswarm/operatorkit/controller/integration/testresourceset"
 	"github.com/giantswarm/operatorkit/resource"
 )
@@ -56,7 +56,7 @@ func New(config Config) (*Wrapper, error) {
 			},
 			Logger: config.Logger,
 
-			KubeConfigPath: harness.DefaultKubeConfig,
+			KubeConfigPath: env.KubeConfigPath(),
 		}
 
 		k8sClient, err = k8sclient.NewClients(c)

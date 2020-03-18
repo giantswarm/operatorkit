@@ -7,7 +7,8 @@ import (
 )
 
 const (
-	kindApp = "App"
+	kindApp              = "App"
+	appDocumentationLink = "https://pkg.go.dev/github.com/giantswarm/apiextensions/pkg/apis/application/v1alpha1?tab=doc#App"
 )
 
 const appCRDYAML = `
@@ -27,72 +28,127 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
+      description: |
+        Defines an App resource, which represents an application to be running in a Kubernetes cluster.
+        Reconciled by app-operator.
       properties:
         spec:
           type: object
           properties:
             catalog:
+              description: |
+                Name of the AppCatalog to install this app from. Find more information in the AppCatalog
+                CRD documentation.
               type: string
             name:
+              description: |
+                Name of this App.
               type: string
             namespace:
+              description: |
+                Kubernetes namespace in which to install the workloads defined by this App.
               type: string
             version:
+              description: Version of the app to be deployed.
               type: string
             config:
+              description: |
+                Configuration details for the app.
               type: object
               properties:
                 configMap:
+                  description: |
+                    If present, points to a ConfigMap resource that holds configuration data
+                    used by the app.
                   type: object
                   properties:
                     name:
+                      description: |
+                        Name of the ConfigMap.
                       type: string
                     namespace:
+                      description: |
+                        Namespace to find the ConfigMap in.
                       type: string
                   required: ["name", "namespace"]
                 secret:
+                  description: |
+                    If present, points to a Secret resoure that can be used by the app.
                   type: object
                   properties:
                     name:
+                      description: |
+                        Name of the Secret.
                       type: string
                     namespace:
+                      description: |
+                        Namespace to find the Secret in.
                       type: string
                   required: ["name", "namespace"]
             kubeConfig:
+              description: |
+                The kubeconfig to use to connect to the tenant cluster when deploying the app.
               type: object
               properties:
                 inCluster:
+                  description: |
+                    Defines whether to use inCluster credentials. If true, the context and secret
+                    properties must not be set.
                   type: boolean
                 context:
+                  description: |
+                    Kubeconfig context part to use when not using inCluster credentials.
                   type: object
                   properties:
                     name:
+                      description: |
+                        Context name.
                       type: string
                 secret:
+                  description: |
+                    References a Secret resource holding the kubeconfig details, if not using inCluster credentials.
                   type: object
                   properties:
                     name:
+                      description: |
+                        Name of the Secret resource.
                       type: string
                     namespace:
+                      description: |
+                        Namespace holding the Secret resource.
                       type: string
                   required: ["name", "namespace"]
             userConfig:
+              description: |
+                Additional and optional user-provided configuration for the app.
               type: object
               properties:
                 configMap:
+                  description: |
+                    Reference to an optional ConfigMap.
                   type: object
                   properties:
                     name:
+                      description: |
+                        Name of the ConfigMap resource.
                       type: string
                     namespace:
+                      description: |
+                        Namespace holding the ConfigMap resource.
                       type: string
                   required: ["name", "namespace"]
                 secret:
+                  description: |
+                    Reference to an optional Secret resource.
                   type: object
                   properties:
                     name:
+                      description: |
+                        Name of the Secret resource.
                       type: string
                     namespace:
+                      description: |
+                        Namespace holding the Secret resource.
                       type: string
                   required: ["name", "namespace"]
           required: ["catalog", "name", "namespace", "version"]
@@ -134,48 +190,60 @@ func NewAppTypeMeta() metav1.TypeMeta {
 	}
 }
 
+// NewAppCR returns an App Custom Resource.
+func NewAppCR() *App {
+	return &App{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				crDocsAnnotation: appDocumentationLink,
+			},
+		},
+		TypeMeta: NewAppTypeMeta(),
+	}
+}
+
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // App CRs might look something like the following.
 //
-//    apiVersion: application.giantswarm.io/v1alpha1
-//    kind: App
-//    metadata:
-//      name: "prometheus"
-//      labels:
-//        app-operator.giantswarm.io/version: "1.0.0"
+//     apiVersion: application.giantswarm.io/v1alpha1
+//     kind: App
+//     metadata:
+//       name: "prometheus"
+//       labels:
+//         app-operator.giantswarm.io/version: "1.0.0"
 //
-//    spec:
-//      catalog: "giantswarm"
-//      name: "prometheus"
-//      namespace: "monitoring"
-//      version: "1.0.0"
-//      config:
-//        configMap:
-//          name: "prometheus-values"
-//          namespace: "monitoring"
-//        secret:
-//          name: "prometheus-secrets"
-//          namespace: "monitoring"
-//        kubeConfig:
-//          inCluster: false
-//          context:
-//            name: "giantswarm-12345"
-//          secret:
-//            name: "giantswarm-12345"
-//            namespace: "giantswarm"
-//          userConfig:
-//            configMap:
-//              name: "prometheus-user-values"
-//              namespace: "monitoring"
+//     spec:
+//       catalog: "giantswarm"
+//       name: "prometheus"
+//       namespace: "monitoring"
+//       version: "1.0.0"
+//       config:
+//         configMap:
+//           name: "prometheus-values"
+//           namespace: "monitoring"
+//         secret:
+//           name: "prometheus-secrets"
+//           namespace: "monitoring"
+//       kubeConfig:
+//         inCluster: false
+//         context:
+//           name: "giantswarm-12345"
+//         secret:
+//           name: "giantswarm-12345"
+//           namespace: "giantswarm"
+//         userConfig:
+//           configMap:
+//             name: "prometheus-user-values"
+//             namespace: "monitoring"
 //
-//    status:
-// 	appVersion: "2.4.3" # Optional value from Chart.yaml with the version of the deployed app.
-//      release:
-//        lastDeployed: "2018-11-30T21:06:20Z"
-//        status: "DEPLOYED"
-//      version: "1.1.0" # Required value from Chart.yaml with the version of the chart.
+//     status:
+//       appVersion: "2.4.3" # Optional value from Chart.yaml with the version of the deployed app.
+//       release:
+//         lastDeployed: "2018-11-30T21:06:20Z"
+//         status: "DEPLOYED"
+//       version: "1.1.0" # Required value from Chart.yaml with the version of the chart.
 //
 type App struct {
 	metav1.TypeMeta   `json:",inline"`

@@ -113,20 +113,20 @@ func parseSemver(v string) (major int, minor int, patch int, err error) {
 
 	switch submatches[2] {
 	case "alpha":
-		major = versionTypeAlpha
+		minor = versionTypeAlpha
 	case "beta":
-		major = versionTypeBeta
+		minor = versionTypeBeta
 	case "":
-		major = versionTypeGA
+		minor = versionTypeGA
 	default:
 		return 0, 0, 0, microerror.Maskf(invalidKubeVersionError, v)
 	}
 
-	minor, err = strconv.Atoi(submatches[1])
+	major, err = strconv.Atoi(submatches[1])
 	if err != nil {
 		return 0, 0, 0, microerror.Maskf(invalidKubeVersionError, v)
 	}
-	if major != versionTypeGA {
+	if minor != versionTypeGA {
 		patch, err = strconv.Atoi(submatches[3])
 		if err != nil {
 			return 0, 0, 0, microerror.Maskf(invalidKubeVersionError, v)

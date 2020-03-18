@@ -64,6 +64,38 @@ operators][operators].
 
 [Giant Swarm operators][giantswarm-operators] using operatorkit.
 
+
+
+## Integration Tests
+
+You can simply create a [`kind`](https://github.com/kubernetes-sigs/kind/)
+cluster to run the integration tests.
+
+```
+kind create cluster
+```
+
+The tests need to figure out how to connect to the Kubernetes cluster. Therefore
+we need to set an environment variable pointing to your local kube config.
+
+```
+export E2E_KUBECONFIG=~/.kube/config
+```
+
+Now you can easily run the integration tests.
+
+```
+go test -v -tags=k8srequired ./controller/integration/test/<test-name>
+```
+
+Once you did your testing you may want to delete your local test cluster again.
+
+```
+kind delete cluster
+```
+
+
+
 ## Example
 
 For the detailed implementation in the state of art, please see [giantswarm/aws-operator](https://github.com/giantswarm/aws-operator).
