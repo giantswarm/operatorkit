@@ -1,10 +1,8 @@
-package drainerconfig
+package configmap
 
 import (
 	"time"
 
-	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
-	"github.com/giantswarm/apiextensions/pkg/clientset/versioned"
 	"github.com/giantswarm/k8sclient"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
@@ -15,15 +13,13 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/giantswarm/operatorkit/controller"
-	"github.com/giantswarm/operatorkit/controller/integration/env"
-	"github.com/giantswarm/operatorkit/controller/integration/testresourceset"
+	"github.com/giantswarm/operatorkit/integration/env"
+	"github.com/giantswarm/operatorkit/integration/testresourceset"
 	"github.com/giantswarm/operatorkit/resource"
 )
 
 type Config struct {
-	HandlesFunc func(obj interface{}) bool
-	Logger      micrologger.Logger
-	Resources   []resource.Interface
+	Resources []resource.Interface
 
 	Name      string
 	Namespace string
@@ -32,17 +28,17 @@ type Config struct {
 type Wrapper struct {
 	controller *controller.Controller
 
-	g8sClient versioned.Interface
 	k8sClient kubernetes.Interface
 }
 
 func New(config Config) (*Wrapper, error) {
 	var err error
 
-	if config.Logger == nil {
+	var newLogger micrologger.Logger
+	{
 		c := micrologger.Config{}
 
-		config.Logger, err = micrologger.New(c)
+		newLogger, err = micrologger.New(c)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
@@ -51,10 +47,7 @@ func New(config Config) (*Wrapper, error) {
 	var k8sClient *k8sclient.Clients
 	{
 		c := k8sclient.ClientsConfig{
-			SchemeBuilder: k8sclient.SchemeBuilder{
-				v1alpha1.AddToScheme,
-			},
-			Logger: config.Logger,
+			Logger: newLogger,
 
 			KubeConfigPath: env.KubeConfigPath(),
 		}
@@ -68,10 +61,9 @@ func New(config Config) (*Wrapper, error) {
 	var resourceSet *controller.ResourceSet
 	{
 		c := testresourceset.Config{
-			HandlesFunc: config.HandlesFunc,
-			K8sClient:   k8sClient.K8sClient(),
-			Logger:      config.Logger,
-			Resources:   config.Resources,
+			K8sClient: k8sClient.K8sClient(),
+			Logger:    newLogger,
+			Resources: config.Resources,
 
 			ProjectName: config.Name,
 		}
@@ -85,14 +77,13 @@ func New(config Config) (*Wrapper, error) {
 	var newController *controller.Controller
 	{
 		c := controller.Config{
-			CRD:       v1alpha1.NewDrainerConfigCRD(),
 			K8sClient: k8sClient,
-			Logger:    config.Logger,
+			Logger:    newLogger,
 			ResourceSets: []*controller.ResourceSet{
 				resourceSet,
 			},
 			NewRuntimeObjectFunc: func() pkgruntime.Object {
-				return new(v1alpha1.DrainerConfig)
+				return new(corev1.ConfigMap)
 			},
 
 			Name:         config.Name,
@@ -107,7 +98,6 @@ func New(config Config) (*Wrapper, error) {
 
 	wrapper := &Wrapper{
 		controller: newController,
-		g8sClient:  k8sClient.G8sClient(),
 		k8sClient:  k8sClient.K8sClient(),
 	}
 

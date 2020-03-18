@@ -31,42 +31,42 @@ workflows:
 
       - architect/integration-test:
           name: integration-test-basic
-          test-dir: "controller/integration/test/basic"
+          test-dir: "integration/test/basic"
           requires:
             - build
 
       - architect/integration-test:
           name: integration-test-controlflow
-          test-dir: "controller/integration/test/controlflow"
+          test-dir: "integration/test/controlflow"
           requires:
             - build
 
       - architect/integration-test:
           name: integration-test-error
-          test-dir: "controller/integration/test/error"
+          test-dir: "integration/test/error"
           requires:
             - build
 
       - architect/integration-test:
           name: integration-test-finalizer
-          test-dir: "controller/integration/test/finalizer"
+          test-dir: "integration/test/finalizer"
           requires:
             - build
 
       - architect/integration-test:
           name: integration-test-parallel
-          test-dir: "controller/integration/test/parallel"
+          test-dir: "integration/test/parallel"
           requires:
             - build
 
       - architect/integration-test:
           name: integration-test-reconciliation
-          test-dir: "controller/integration/test/reconciliation"
+          test-dir: "integration/test/reconciliation"
           requires:
             - build
 
       - architect/integration-test:
           name: integration-test-statusupdate
-          test-dir: "controller/integration/test/statusupdate"
+          test-dir: "integration/test/statusupdate"
           requires:
             - build

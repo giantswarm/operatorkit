@@ -6,7 +6,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/giantswarm/operatorkit/controller"
-	"github.com/giantswarm/operatorkit/controller/integration/testresource"
+	"github.com/giantswarm/operatorkit/integration/testresource"
 	"github.com/giantswarm/operatorkit/resource"
 )
 
