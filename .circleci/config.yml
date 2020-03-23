@@ -1,25 +1,7 @@
 version: 2.1
 
 orbs:
-  architect: giantswarm/architect@0.8.3
-
-jobs:
-  build:
-    machine: true
-    steps:
-    - checkout
-    - run: |
-        wget -q $(curl -sS -H "Authorization: token $RELEASE_TOKEN" https://api.github.com/repos/giantswarm/architect/releases/latest | grep browser_download_url | head -n 1 | cut -d '"' -f 4)
-        chmod +x ./architect
-        ./architect version
-    - run: ./architect build
-    - store_test_results:
-        path: /tmp/results
-    - persist_to_workspace:
-        root: .
-        paths:
-        - ./operatorkit
-        - ./architect
+  architect: giantswarm/architect@0.7.0
 
 workflows:
   build:
