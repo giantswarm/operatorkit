@@ -4,10 +4,12 @@ orbs:
   architect: giantswarm/architect@0.7.0
 
 workflows:
-  build:
+  test:
     jobs:
-      - build:
+      - architect/go-test:
+          name: go-test
           filters:
+            # Trigger job also on git tag.
             tags:
               only: /^v.*/
 
@@ -15,40 +17,40 @@ workflows:
           name: integration-test-basic
           test-dir: "integration/test/basic"
           requires:
-            - build
+            - go-test
 
       - architect/integration-test:
           name: integration-test-controlflow
           test-dir: "integration/test/controlflow"
           requires:
-            - build
+            - go-test
 
       - architect/integration-test:
           name: integration-test-error
           test-dir: "integration/test/error"
           requires:
-            - build
+            - go-test
 
       - architect/integration-test:
           name: integration-test-finalizer
           test-dir: "integration/test/finalizer"
           requires:
-            - build
+            - go-test
 
       - architect/integration-test:
           name: integration-test-parallel
           test-dir: "integration/test/parallel"
           requires:
-            - build
+            - go-test
 
       - architect/integration-test:
           name: integration-test-reconciliation
           test-dir: "integration/test/reconciliation"
           requires:
-            - build
+            - go-test
 
       - architect/integration-test:
           name: integration-test-statusupdate
           test-dir: "integration/test/statusupdate"
           requires:
-            - build
+            - go-test
