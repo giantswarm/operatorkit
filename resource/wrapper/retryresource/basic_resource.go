@@ -56,7 +56,7 @@ func (r *basicResource) EnsureCreated(ctx context.Context, obj interface{}) erro
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", microerror.Stack(err))
+		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", microerror.JSON(err))
 	}
 
 	err = backoff.RetryNotify(o, r.backOff, n)
@@ -80,7 +80,7 @@ func (r *basicResource) EnsureDeleted(ctx context.Context, obj interface{}) erro
 	}
 
 	n := func(err error, dur time.Duration) {
-		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", microerror.Stack(err))
+		r.logger.LogCtx(ctx, "level", "warning", "message", "retrying due to error", "stack", microerror.JSON(err))
 	}
 
 	err = backoff.RetryNotify(o, r.backOff, n)

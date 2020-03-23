@@ -8,7 +8,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-var unknownError = microerror.New("unknown error")
+var unknownError = &microerror.Error{
+	Kind: "unknownError",
+}
 
 func Test_IsStatusForbidden(t *testing.T) {
 	testCases := []struct {
