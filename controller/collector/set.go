@@ -26,11 +26,7 @@ func NewSet(config SetConfig) (*Set, error) {
 
 	var timestampCollector *Timestamp
 	{
-		c := TimestampConfig{
-			Logger:               config.Logger,
-			K8sClient:            config.K8sClient,
-			NewRuntimeObjectFunc: config.NewRuntimeObjectFunc,
-		}
+		c := TimestampConfig(config)
 
 		timestampCollector, err = NewTimestamp(c)
 		if err != nil {

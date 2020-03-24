@@ -53,7 +53,7 @@ func (r *Resource) newDeleteChangeForUpdatePatch(ctx context.Context, obj, curre
 
 	var configMapsToDelete []*corev1.ConfigMap
 	{
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("computing ConfigMaps to delete"))
+		r.logger.LogCtx(ctx, "level", "debug", "message", "computing ConfigMaps to delete")
 
 		for _, c := range currentConfigMaps {
 			if !containsConfigMap(desiredConfigMaps, c) {

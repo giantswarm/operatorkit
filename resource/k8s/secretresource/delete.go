@@ -53,7 +53,7 @@ func (r *Resource) newDeleteChangeForUpdatePatch(ctx context.Context, obj, curre
 
 	var secretsToDelete []*corev1.Secret
 	{
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("computing Secrets to delete"))
+		r.logger.LogCtx(ctx, "level", "debug", "message", "computing Secrets to delete")
 
 		for _, c := range currentSecrets {
 			if !containsSecret(c, desiredSecrets) {
