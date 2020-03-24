@@ -44,7 +44,7 @@ func (r *Resource) newCreateChange(ctx context.Context, obj, currentState, desir
 
 	var configMapsToCreate []*corev1.ConfigMap
 	{
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("computing ConfigMaps to create "))
+		r.logger.LogCtx(ctx, "level", "debug", "message", "computing ConfigMaps to create")
 
 		for _, d := range desiredConfigMaps {
 			if !containsConfigMap(currentConfigMaps, d) {

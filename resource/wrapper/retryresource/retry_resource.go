@@ -65,11 +65,7 @@ func New(config Config) (resource.Interface, error) {
 	// If crud.Interface can't be extracted resource wrap only resource.Interface
 	// EnsureCreated and EnsureDeleted methods with retries.
 	{
-		c := basicResourceConfig{
-			BackOff:  config.BackOff,
-			Logger:   config.Logger,
-			Resource: config.Resource,
-		}
+		c := basicResourceConfig(config)
 
 		r, err := newBasicResource(c)
 		if err != nil {

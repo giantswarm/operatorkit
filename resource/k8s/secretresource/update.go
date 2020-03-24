@@ -40,7 +40,7 @@ func (r *Resource) newUpdateChange(ctx context.Context, obj, currentState, desir
 
 	var secretsToUpdate []*corev1.Secret
 	{
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("computing Secrets to update"))
+		r.logger.LogCtx(ctx, "level", "debug", "message", "computing Secrets to update")
 
 		for _, c := range currentSecrets {
 			for _, d := range desiredSecrets {

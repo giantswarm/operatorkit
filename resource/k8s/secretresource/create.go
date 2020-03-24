@@ -44,7 +44,7 @@ func (r *Resource) newCreateChange(ctx context.Context, obj, currentState, desir
 
 	var secretsToCreate []*corev1.Secret
 	{
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("computing Secrets to create "))
+		r.logger.LogCtx(ctx, "level", "debug", "message", "computing Secrets to create ")
 
 		for _, d := range desiredSecrets {
 			if !containsSecret(d, currentSecrets) {

@@ -40,7 +40,7 @@ func (r *Resource) newUpdateChange(ctx context.Context, obj, currentState, desir
 
 	var configMapsToUpdate []*corev1.ConfigMap
 	{
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("computing ConfigMaps to update"))
+		r.logger.LogCtx(ctx, "level", "debug", "message", "computing ConfigMaps to update")
 
 		for _, c := range currentConfigMaps {
 			for _, d := range desiredConfigMaps {
