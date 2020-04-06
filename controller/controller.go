@@ -11,6 +11,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/getsentry/sentry-go"
+
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/k8sclient/v3/pkg/k8sclient"
 	"github.com/giantswarm/microerror"
@@ -240,11 +242,25 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 		return microerror.Mask(err)
 	}
 
+	if c.crd != nil {
+		c.logger.LogCtx(ctx, "level", "debug", "message", "ensuring custom resource definition exists")
+
+		err := c.k8sClient.CRDClient().EnsureCreated(ctx, c.crd, c.backOffFactory())
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
+		c.logger.LogCtx(ctx, "level", "debug", "message", "ensured custom resource definition exists")
+	}
+
 	go func() {
 		for {
-			resetWait := c.resyncPeriod * 4
-			time.Sleep(resetWait)
-			errorGauge.Set(0)
+			select {
+			case <-c.errorCollector:
+				errorGauge.Inc()
+			case <-time.After(resetWait):
+				errorGauge.Set(0)
+			}
 		}
 	}()
 
