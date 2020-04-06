@@ -37,7 +37,6 @@ import (
 	"github.com/giantswarm/operatorkit/controller/context/finalizerskeptcontext"
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
-	"github.com/giantswarm/operatorkit/controller/context/updateallowedcontext"
 	"github.com/giantswarm/operatorkit/resource"
 )
 
@@ -87,6 +86,9 @@ type Config struct {
 	// runtime objects the controller watches is performed. Defaults to
 	// DefaultResyncPeriod.
 	ResyncPeriod time.Duration
+	// (Optional) SentryDSN is the URL used to forward runtime errors to the sentry.io service.
+	// If this field is empty, logs will not be forwarded.
+	SentryDSN string
 }
 
 type Controller struct {
@@ -103,6 +105,7 @@ type Controller struct {
 	collector              *collector.Set
 	loop                   int64
 	removedFinalizersCache *stringCache
+	sentry                 *sentry.Service
 
 	name         string
 	resyncPeriod time.Duration
@@ -156,6 +159,12 @@ func New(config Config) (*Controller, error) {
 		}
 	}
 
+	sentryService, err := sentry.New(sentry.Config{Dsn: config.SentryDSN})
+	if err != nil {
+		// This is not a blocking error, we just want to log it.
+		config.Logger.LogCtx(context.Background(), "level", "error", "message", "Error initializing Sentry client", "stack", microerror.JSON(err))
+	}
+
 	c := &Controller{
 		initCtx:              config.InitCtx,
 		k8sClient:            config.K8sClient,
@@ -170,6 +179,7 @@ func New(config Config) (*Controller, error) {
 		collector:              collectorSet,
 		loop:                   -1,
 		removedFinalizersCache: newStringCache(config.ResyncPeriod * 3),
+		sentry:                 sentryService,
 
 		name:         config.Name,
 		resyncPeriod: config.ResyncPeriod,
@@ -258,6 +268,9 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 			select {
 			case <-c.errorCollector:
 				errorGauge.Inc()
+
+				sentry.CaptureException(err)
+
 			case <-time.After(resetWait):
 				errorGauge.Set(0)
 			}
