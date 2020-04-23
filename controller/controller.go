@@ -13,12 +13,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/giantswarm/backoff"
-	"github.com/giantswarm/k8sclient"
+	"github.com/giantswarm/k8sclient/v3/pkg/k8sclient"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/giantswarm/micrologger/loggermeta"
 	"github.com/giantswarm/to"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -51,7 +51,7 @@ const (
 )
 
 type Config struct {
-	CRD *apiextensionsv1beta1.CustomResourceDefinition
+	CRD *apiextensionsv1.CustomResourceDefinition
 	// K8sClient is the client collection used to setup and manage certain
 	// operatorkit primitives. The CRD Client it provides is used to ensure the
 	// CRD being created, in case the CRD option is configured. The Controller
@@ -96,7 +96,7 @@ type Config struct {
 
 type Controller struct {
 	backOffFactory       func() backoff.Interface
-	crd                  *apiextensionsv1beta1.CustomResourceDefinition
+	crd                  *apiextensionsv1.CustomResourceDefinition
 	k8sClient            k8sclient.Interface
 	logger               micrologger.Logger
 	newRuntimeObjectFunc func() pkgruntime.Object

@@ -5,7 +5,8 @@ import (
 
 	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/apiextensions/pkg/clientset/versioned"
-	"github.com/giantswarm/k8sclient"
+	"github.com/giantswarm/apiextensions/pkg/crd"
+	"github.com/giantswarm/k8sclient/v3/pkg/k8sclient"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	corev1 "k8s.io/api/core/v1"
@@ -84,8 +85,9 @@ func New(config Config) (*Wrapper, error) {
 
 	var newController *controller.Controller
 	{
+		v1beta1CRD := v1alpha1.NewDrainerConfigCRD()
 		c := controller.Config{
-			CRD:       v1alpha1.NewDrainerConfigCRD(),
+			CRD:       crd.LoadV1(v1beta1CRD.Spec.Group, v1beta1CRD.Spec.Names.Kind),
 			K8sClient: k8sClient,
 			Logger:    config.Logger,
 			ResourceSets: []*controller.ResourceSet{

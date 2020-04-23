@@ -3,10 +3,10 @@ module github.com/giantswarm/operatorkit
 go 1.13
 
 require (
-	github.com/giantswarm/apiextensions v0.2.0
+	github.com/giantswarm/apiextensions v0.3.2-0.20200423084159-2053fc5d9a50
 	github.com/giantswarm/backoff v0.2.0
 	github.com/giantswarm/exporterkit v0.2.0
-	github.com/giantswarm/k8sclient v0.2.0
+	github.com/giantswarm/k8sclient/v3 v3.0.1-0.20200423102554-54158ef70bfb
 	github.com/giantswarm/microerror v0.2.0
 	github.com/giantswarm/micrologger v0.3.1
 	github.com/giantswarm/to v0.2.0
