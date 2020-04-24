@@ -190,7 +190,7 @@ func (c *Controller) Boot(ctx context.Context) {
 
 		err := backoff.RetryNotify(operation, c.backOffFactory(), notifier)
 		if err != nil {
-			c.logger.LogCtx(ctx, "level", "error", "message", "stop controller boot retries due to too many errors", "stack", microerror.Stack(err))
+			c.logger.LogCtx(ctx, "level", "error", "message", "stop controller boot retries due to too many errors", "stack", microerror.JSON(err))
 			os.Exit(1)
 		}
 	})
@@ -216,7 +216,7 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 
 	res, err := c.reconcile(ctx, req)
 	if err != nil {
-		c.logger.LogCtx(ctx, "level", "error", "message", "failed to reconcile", "stack", microerror.Stack(err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "failed to reconcile", "stack", microerror.JSON(err))
 		return reconcile.Result{}, nil
 	}
 
@@ -272,7 +272,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 				}
 
 				c.errorCollector <- err
-				c.logger.LogCtx(ctx, "level", "error", "message", "caught third party runtime error", "stack", microerror.Stack(err))
+				c.logger.LogCtx(ctx, "level", "error", "message", "caught third party runtime error", "stack", microerror.JSON(err))
 			},
 		}
 	}
@@ -346,7 +346,7 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 			return
 
 		} else if err != nil {
-			c.logger.LogCtx(ctx, "level", "error", "message", "failed finding resource set", "stack", microerror.Stack(err))
+			c.logger.LogCtx(ctx, "level", "error", "message", "failed finding resource set", "stack", microerror.JSON(err))
 			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 			return
 		}
@@ -361,7 +361,7 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 		oldCtx := ctx
 		ctx, err = rs.InitCtx(ctx, obj)
 		if err != nil {
-			c.logger.LogCtx(oldCtx, "level", "error", "message", "failed initializing context", "stack", microerror.Stack(err))
+			c.logger.LogCtx(oldCtx, "level", "error", "message", "failed initializing context", "stack", microerror.JSON(err))
 			c.logger.LogCtx(oldCtx, "level", "debug", "message", "canceling reconciliation")
 			return
 		}
@@ -369,7 +369,7 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 
 	hasFinalizer, err := c.hasFinalizer(ctx, obj)
 	if err != nil {
-		c.logger.LogCtx(ctx, "level", "error", "message", "failed checking finalizer", "stack", microerror.Stack(err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "failed checking finalizer", "stack", microerror.JSON(err))
 		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 		return
 	}
@@ -377,7 +377,7 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 		err = ProcessDelete(ctx, obj, rs.Resources())
 		if err != nil {
 			c.errorCollector <- err
-			c.logger.LogCtx(ctx, "level", "error", "message", "failed processing event", "stack", microerror.Stack(err))
+			c.logger.LogCtx(ctx, "level", "error", "message", "failed processing event", "stack", microerror.JSON(err))
 			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 			return
 		}
@@ -389,7 +389,7 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 
 	err = c.removeFinalizer(ctx, obj)
 	if err != nil {
-		c.logger.LogCtx(ctx, "level", "error", "message", "failed removing finalizer", "stack", microerror.Stack(err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "failed removing finalizer", "stack", microerror.JSON(err))
 		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 		return
 	}
@@ -463,7 +463,7 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 			return
 
 		} else if err != nil {
-			c.logger.LogCtx(ctx, "level", "error", "message", "failed finding resource set", "stack", microerror.Stack(err))
+			c.logger.LogCtx(ctx, "level", "error", "message", "failed finding resource set", "stack", microerror.JSON(err))
 			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 			return
 		}
@@ -478,7 +478,7 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 		oldCtx := ctx
 		ctx, err = rs.InitCtx(ctx, obj)
 		if err != nil {
-			c.logger.LogCtx(oldCtx, "level", "error", "message", "failed initializing context", "stack", microerror.Stack(err))
+			c.logger.LogCtx(oldCtx, "level", "error", "message", "failed initializing context", "stack", microerror.JSON(err))
 			c.logger.LogCtx(oldCtx, "level", "debug", "message", "canceling reconciliation")
 			return
 		}
@@ -489,7 +489,7 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 
 		ok, err := c.addFinalizer(ctx, obj)
 		if err != nil {
-			c.logger.LogCtx(ctx, "level", "error", "message", "failed adding finalizer", "stack", microerror.Stack(err))
+			c.logger.LogCtx(ctx, "level", "error", "message", "failed adding finalizer", "stack", microerror.JSON(err))
 			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 			return
 		}
@@ -508,7 +508,7 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 	err = ProcessUpdate(ctx, obj, rs.Resources())
 	if err != nil {
 		c.errorCollector <- err
-		c.logger.LogCtx(ctx, "level", "error", "message", "failed processing event", "stack", microerror.Stack(err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "failed processing event", "stack", microerror.JSON(err))
 		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 		return
 	}
