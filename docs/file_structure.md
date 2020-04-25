@@ -1,7 +1,7 @@
 # File Structure
 
 - operatorkit resources should have a consistent structure to make code
-naviagation easier.
+navigation easier.
 - Each method of the resource should be saved to a separate file.
 e.g. `create.go` should contain the `EnsureCreated` method.
 - Additional files can be added as needed.
