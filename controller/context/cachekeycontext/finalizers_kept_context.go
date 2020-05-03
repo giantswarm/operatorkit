@@ -1,4 +1,5 @@
-// Package cachekeycontext stores and accesses the kept in context.Context.
+// Package cachekeycontext stores and accesses the local context key in
+// context.Context.
 package cachekeycontext
 
 import (

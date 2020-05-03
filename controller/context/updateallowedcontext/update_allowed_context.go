@@ -1,4 +1,4 @@
-// Package updateallowedcontext stores and accesses the update allowed in
+// Package cachekeycontext stores and accesses the local context key in
 // context.Context.
 package updateallowedcontext
 
@@ -15,7 +15,8 @@ type key string
 // of using this key directly.
 var ctxKey key = "updateallowed"
 
-// NewContext returns a new context.Context that carries value v.
+// NewContext returns a new context.Context that can be used to check if updates
+// are allowed.
 func NewContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, ctxKey, make(chan struct{}))
 }

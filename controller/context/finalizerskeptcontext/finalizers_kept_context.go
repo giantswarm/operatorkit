@@ -1,4 +1,4 @@
-// Package finalizerskeptcontext stores and accesses the kept in
+// Package cachekeycontext stores and accesses the local context key in
 // context.Context.
 package finalizerskeptcontext
 
@@ -15,7 +15,7 @@ type key string
 // instead of using this key directly.
 var ctxKey key = "kept"
 
-// NewContext returns a new context.Context that carries value v.
+// NewContext returns a new context.Context that can be used to keep finalizers.
 func NewContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, ctxKey, make(chan struct{}))
 }
