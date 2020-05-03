@@ -10,23 +10,19 @@ import (
 // collisions with keys defined in other packages.
 type key string
 
-// updateAllowedKey is the key for update allowed values in context.Context.
-// Clients use updateallowedcontext.NewContext and
-// updateallowedcontext.FromContext instead of using this key directly.
-var updateAllowedKey key = "updateallowed"
+// ctxKey is the key for update allowed values in context.Context. Clients use
+// updateallowedcontext.NewContext and updateallowedcontext.FromContext instead
+// of using this key directly.
+var ctxKey key = "updateallowed"
 
 // NewContext returns a new context.Context that carries value v.
-func NewContext(ctx context.Context, v chan struct{}) context.Context {
-	if v == nil {
-		return ctx
-	}
-
-	return context.WithValue(ctx, updateAllowedKey, v)
+func NewContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, ctxKey, make(chan struct{}))
 }
 
 // FromContext returns the update allowed channel, if any.
 func FromContext(ctx context.Context) (chan struct{}, bool) {
-	v, ok := ctx.Value(updateAllowedKey).(chan struct{})
+	v, ok := ctx.Value(ctxKey).(chan struct{})
 	return v, ok
 }
 

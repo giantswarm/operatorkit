@@ -15,24 +15,16 @@ func Test_Controller_ReconciliationCanceledContext(t *testing.T) {
 			ExpectedIsCanceled: false,
 		},
 		{
-			Ctx:                NewContext(context.Background(), nil),
+			Ctx:                NewContext(context.Background()),
 			ExpectedIsCanceled: false,
 		},
 		{
-			Ctx:                NewContext(context.Background(), make(chan struct{})),
-			ExpectedIsCanceled: false,
-		},
-		{
-			Ctx: func() context.Context {
-				ctx := NewContext(context.Background(), nil)
-				SetCanceled(ctx)
-				return ctx
-			}(),
+			Ctx:                NewContext(context.Background()),
 			ExpectedIsCanceled: false,
 		},
 		{
 			Ctx: func() context.Context {
-				ctx := NewContext(context.Background(), make(chan struct{}))
+				ctx := NewContext(context.Background())
 				SetCanceled(ctx)
 				return ctx
 			}(),
@@ -40,7 +32,7 @@ func Test_Controller_ReconciliationCanceledContext(t *testing.T) {
 		},
 		{
 			Ctx: func() context.Context {
-				ctx := NewContext(context.Background(), make(chan struct{}))
+				ctx := NewContext(context.Background())
 				SetCanceled(ctx)
 				SetCanceled(ctx)
 				SetCanceled(ctx)
@@ -53,7 +45,7 @@ func Test_Controller_ReconciliationCanceledContext(t *testing.T) {
 	for i, tc := range testCases {
 		isCanceled := IsCanceled(tc.Ctx)
 		if isCanceled != tc.ExpectedIsCanceled {
-			t.Fatal("test", i+1, "expected", tc.ExpectedIsCanceled, "got", isCanceled)
+			t.Fatal("test", i, "expected", tc.ExpectedIsCanceled, "got", isCanceled)
 		}
 	}
 }

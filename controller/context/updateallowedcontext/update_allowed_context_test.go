@@ -15,24 +15,16 @@ func Test_Controller_UpdateAllowedContext(t *testing.T) {
 			ExpectedIsUpdateAllowed: false,
 		},
 		{
-			Ctx:                     NewContext(context.Background(), nil),
+			Ctx:                     NewContext(context.Background()),
 			ExpectedIsUpdateAllowed: false,
 		},
 		{
-			Ctx:                     NewContext(context.Background(), make(chan struct{})),
-			ExpectedIsUpdateAllowed: false,
-		},
-		{
-			Ctx: func() context.Context {
-				ctx := NewContext(context.Background(), nil)
-				SetUpdateAllowed(ctx)
-				return ctx
-			}(),
+			Ctx:                     NewContext(context.Background()),
 			ExpectedIsUpdateAllowed: false,
 		},
 		{
 			Ctx: func() context.Context {
-				ctx := NewContext(context.Background(), make(chan struct{}))
+				ctx := NewContext(context.Background())
 				SetUpdateAllowed(ctx)
 				return ctx
 			}(),
@@ -40,7 +32,7 @@ func Test_Controller_UpdateAllowedContext(t *testing.T) {
 		},
 		{
 			Ctx: func() context.Context {
-				ctx := NewContext(context.Background(), make(chan struct{}))
+				ctx := NewContext(context.Background())
 				SetUpdateAllowed(ctx)
 				SetUpdateAllowed(ctx)
 				SetUpdateAllowed(ctx)

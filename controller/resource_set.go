@@ -6,8 +6,6 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 
-	"github.com/giantswarm/operatorkit/controller/context/finalizerskeptcontext"
-	"github.com/giantswarm/operatorkit/controller/context/updateallowedcontext"
 	"github.com/giantswarm/operatorkit/resource"
 )
 
@@ -68,9 +66,6 @@ func (r *ResourceSet) Handles(obj interface{}) bool {
 }
 
 func (r *ResourceSet) InitCtx(ctx context.Context, obj interface{}) (context.Context, error) {
-	ctx = finalizerskeptcontext.NewContext(ctx, make(chan struct{}))
-	ctx = updateallowedcontext.NewContext(ctx, make(chan struct{}))
-
 	ctx, err := r.initCtx(ctx, obj)
 	if err != nil {
 		return nil, microerror.Mask(err)

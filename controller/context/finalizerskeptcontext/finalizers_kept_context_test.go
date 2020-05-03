@@ -15,24 +15,16 @@ func Test_Controller_FinalizersKeptContext(t *testing.T) {
 			ExpectedIsKept: false,
 		},
 		{
-			Ctx:            NewContext(context.Background(), nil),
+			Ctx:            NewContext(context.Background()),
 			ExpectedIsKept: false,
 		},
 		{
-			Ctx:            NewContext(context.Background(), make(chan struct{})),
-			ExpectedIsKept: false,
-		},
-		{
-			Ctx: func() context.Context {
-				ctx := NewContext(context.Background(), nil)
-				SetKept(ctx)
-				return ctx
-			}(),
+			Ctx:            NewContext(context.Background()),
 			ExpectedIsKept: false,
 		},
 		{
 			Ctx: func() context.Context {
-				ctx := NewContext(context.Background(), make(chan struct{}))
+				ctx := NewContext(context.Background())
 				SetKept(ctx)
 				return ctx
 			}(),
@@ -40,7 +32,7 @@ func Test_Controller_FinalizersKeptContext(t *testing.T) {
 		},
 		{
 			Ctx: func() context.Context {
-				ctx := NewContext(context.Background(), make(chan struct{}))
+				ctx := NewContext(context.Background())
 				SetKept(ctx)
 				SetKept(ctx)
 				SetKept(ctx)
@@ -53,7 +45,7 @@ func Test_Controller_FinalizersKeptContext(t *testing.T) {
 	for i, tc := range testCases {
 		isKept := IsKept(tc.Ctx)
 		if isKept != tc.ExpectedIsKept {
-			t.Fatal("test", i+1, "expected", tc.ExpectedIsKept, "got", isKept)
+			t.Fatal("test", i, "expected", tc.ExpectedIsKept, "got", isKept)
 		}
 	}
 }

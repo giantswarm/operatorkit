@@ -10,23 +10,19 @@ import (
 // collisions with keys defined in other packages.
 type key string
 
-// canceledKey is the key for canceled values in context.Context.
-// Clients use resourcecanceledcontext.NewContext and
-// resourcecanceledcontext.FromContext instead of using this key directly.
-var canceledKey key = "canceled"
+// ctxKey is the key for canceled values in context.Context. Clients use
+// resourcecanceledcontext.NewContext and resourcecanceledcontext.FromContext
+// instead of using this key directly.
+var ctxKey key = "canceled"
 
 // NewContext returns a new context.Context that carries value v.
-func NewContext(ctx context.Context, v chan struct{}) context.Context {
-	if v == nil {
-		return ctx
-	}
-
-	return context.WithValue(ctx, canceledKey, v)
+func NewContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, ctxKey, make(chan struct{}))
 }
 
 // FromContext returns the canceled channel, if any.
 func FromContext(ctx context.Context) (chan struct{}, bool) {
-	v, ok := ctx.Value(canceledKey).(chan struct{})
+	v, ok := ctx.Value(ctxKey).(chan struct{})
 	return v, ok
 }
 

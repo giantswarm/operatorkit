@@ -33,8 +33,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/giantswarm/operatorkit/controller/collector"
+	"github.com/giantswarm/operatorkit/controller/context/cachekeycontext"
+	"github.com/giantswarm/operatorkit/controller/context/finalizerskeptcontext"
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
+	"github.com/giantswarm/operatorkit/controller/context/updateallowedcontext"
 	"github.com/giantswarm/operatorkit/resource"
 )
 
@@ -208,10 +211,14 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 
 	// Add common keys to the logger context.
 	{
-		loop := atomic.AddInt64(&c.loop, 1)
-
 		ctx = setLoggerCtxValue(ctx, loggerKeyController, c.name)
-		ctx = setLoggerCtxValue(ctx, loggerKeyLoop, strconv.FormatInt(loop, 10))
+		ctx = setLoggerCtxValue(ctx, loggerKeyLoop, strconv.FormatInt(atomic.AddInt64(&c.loop, 1), 10))
+	}
+
+	{
+		ctx = cachekeycontext.NewContext(ctx)
+		ctx = finalizerskeptcontext.NewContext(ctx)
+		ctx = updateallowedcontext.NewContext(ctx)
 	}
 
 	res, err := c.reconcile(ctx, req)
@@ -559,14 +566,14 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []resource.In
 		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}
 
-	ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
+	ctx = reconciliationcanceledcontext.NewContext(ctx)
 
 	defer func() {
 		ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
 	}()
 	for _, r := range resources {
 		ctx = setLoggerCtxValue(ctx, loggerKeyResource, r.Name())
-		ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
+		ctx = resourcecanceledcontext.NewContext(ctx)
 
 		err := r.EnsureDeleted(ctx, obj)
 		if err != nil {
@@ -603,14 +610,14 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []resource.In
 		return microerror.Maskf(executionFailedError, "resources must not be empty")
 	}
 
-	ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
+	ctx = reconciliationcanceledcontext.NewContext(ctx)
 
 	defer func() {
 		ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
 	}()
 	for _, r := range resources {
 		ctx = setLoggerCtxValue(ctx, loggerKeyResource, r.Name())
-		ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
+		ctx = resourcecanceledcontext.NewContext(ctx)
 
 		err := r.EnsureCreated(ctx, obj)
 		if err != nil {
