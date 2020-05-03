@@ -17,7 +17,8 @@ type key string
 // this key directly.
 var ctxKey key = "kept"
 
-// NewContext returns a new context.Context that carries value v.
+// NewContext returns a new context.Context that can be used to access the
+// current reconciliation loop's cache key.
 func NewContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, ctxKey, strconv.Itoa(int(time.Now().UnixNano())))
 }
