@@ -10,10 +10,10 @@ import (
 // collisions with keys defined in other packages.
 type key string
 
-// ctxKey is the key for kept values in context.Context. Clients use
+// ctxKey is the key for cache key values in context.Context. Clients use
 // cachekeycontext.NewContext and cachekeycontext.FromContext instead of using
 // this key directly.
-var ctxKey key = "kept"
+var ctxKey key = "cache-key"
 
 // NewContext returns a new context.Context that can be used to access the
 // current reconciliation loop's cache key.
