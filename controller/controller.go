@@ -33,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/giantswarm/operatorkit/controller/collector"
+	"github.com/giantswarm/operatorkit/controller/context/cachekeycontext"
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
 	"github.com/giantswarm/operatorkit/resource"
@@ -208,10 +209,11 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 
 	// Add common keys to the logger context.
 	{
-		loop := atomic.AddInt64(&c.loop, 1)
+		loop := strconv.FormatInt(atomic.AddInt64(&c.loop, 1), 10)
 
+		ctx = cachekeycontext.NewContext(ctx, loop)
+		ctx = setLoggerCtxValue(ctx, loggerKeyLoop, loop)
 		ctx = setLoggerCtxValue(ctx, loggerKeyController, c.name)
-		ctx = setLoggerCtxValue(ctx, loggerKeyLoop, strconv.FormatInt(loop, 10))
 	}
 
 	res, err := c.reconcile(ctx, req)
