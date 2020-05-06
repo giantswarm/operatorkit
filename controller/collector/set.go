@@ -2,7 +2,7 @@ package collector
 
 import (
 	"github.com/giantswarm/exporterkit/collector"
-	"github.com/giantswarm/k8sclient"
+	"github.com/giantswarm/k8sclient/v3/pkg/k8sclient"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"k8s.io/apimachinery/pkg/runtime"
