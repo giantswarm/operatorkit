@@ -1,11 +1,13 @@
-package handler
+package name
 
 import (
 	"fmt"
 	"strings"
+
+	"github.com/giantswarm/operatorkit/handler"
 )
 
-func Name(r Interface) string {
+func Name(r handler.Interface) string {
 	split := strings.Split(fmt.Sprintf("%#v", r), ".")
 
 	if len(split) < 2 {

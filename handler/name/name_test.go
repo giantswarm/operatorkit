@@ -1,9 +1,10 @@
-package handler
+package name
 
 import (
 	"strconv"
 	"testing"
 
+	"github.com/giantswarm/operatorkit/handler"
 	"github.com/giantswarm/operatorkit/handler/internal/test/handler/bar"
 	"github.com/giantswarm/operatorkit/handler/internal/test/handler/foo"
 	"github.com/giantswarm/operatorkit/handler/internal/test/handler/nopointer"
@@ -12,7 +13,7 @@ import (
 func Test_Handler_Name(t *testing.T) {
 	testCases := []struct {
 		name         string
-		handler      Interface
+		handler      handler.Interface
 		expectedName string
 	}{
 		{
