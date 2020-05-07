@@ -8,10 +8,10 @@ import (
 
 type Handler struct{}
 
-func (h *Handler) EnsureCreated(ctx context.Context, req handler.Request) (handler.Response, error) {
+func (h *Handler) EnsureCreated(ctx context.Context, req handler.Request) (*handler.Response, error) {
 	return nil, nil
 }
 
-func (h *Handler) EnsureDeleted(ctx context.Context, req handler.Request) (handler.Response, error) {
+func (h *Handler) EnsureDeleted(ctx context.Context, req handler.Request) (*handler.Response, error) {
 	return nil, nil
 }
