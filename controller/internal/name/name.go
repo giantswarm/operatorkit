@@ -8,11 +8,11 @@ import (
 )
 
 func Name(r handler.Interface) string {
-	split := strings.Split(fmt.Sprintf("%#v", r), ".")
+	split := strings.Split(fmt.Sprintf("%T", r), ".")
 
 	if len(split) < 2 {
 		panic("unable to parse handler name")
 	}
 
-	return strings.Replace(split[0], "&", "", 1)
+	return strings.Replace(split[0], "*", "", 1)
 }
