@@ -140,15 +140,20 @@ func New(config Config) (*Controller, error) {
 		config.ResyncPeriod = DefaultResyncPeriod
 	}
 
-	controllerConfig := collector.SetConfig{
-		Logger:               config.Logger,
-		K8sClient:            config.K8sClient,
-		NewRuntimeObjectFunc: config.NewRuntimeObjectFunc,
-	}
+	var err error
 
-	timestampCollector, err := collector.NewSet(controllerConfig)
-	if err != nil {
-		return nil, microerror.Mask(err)
+	var collectorSet *collector.Set
+	{
+		c := collector.SetConfig{
+			Logger:               config.Logger,
+			K8sClient:            config.K8sClient,
+			NewRuntimeObjectFunc: config.NewRuntimeObjectFunc,
+		}
+
+		collectorSet, err = collector.NewSet(c)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
 	}
 
 	c := &Controller{
@@ -162,7 +167,7 @@ func New(config Config) (*Controller, error) {
 
 		bootOnce:               sync.Once{},
 		booted:                 make(chan struct{}),
-		collector:              timestampCollector,
+		collector:              collectorSet,
 		errorCollector:         make(chan error, 1),
 		loop:                   -1,
 		removedFinalizersCache: newStringCache(config.ResyncPeriod * 3),
@@ -228,7 +233,7 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 func (c *Controller) bootWithError(ctx context.Context) error {
 	var err error
 
-	// Boot the collector
+	// Boot the collector.
 	err = c.collector.Boot(ctx)
 	if err != nil {
 		return microerror.Mask(err)
