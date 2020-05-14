@@ -34,8 +34,10 @@ import (
 
 	"github.com/giantswarm/operatorkit/controller/collector"
 	"github.com/giantswarm/operatorkit/controller/context/cachekeycontext"
+	"github.com/giantswarm/operatorkit/controller/context/finalizerskeptcontext"
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
+	"github.com/giantswarm/operatorkit/controller/context/updateallowedcontext"
 	"github.com/giantswarm/operatorkit/resource"
 )
 
@@ -53,6 +55,8 @@ const (
 
 type Config struct {
 	CRD *apiextensionsv1beta1.CustomResourceDefinition
+	// InitCtx is deprecated and should not be used anymore.
+	InitCtx func(ctx context.Context, obj interface{}) (context.Context, error)
 	// K8sClient is the client collection used to setup and manage certain
 	// operatorkit primitives. The CRD Client it provides is used to ensure the
 	// CRD being created, in case the CRD option is configured. The Controller
@@ -72,16 +76,9 @@ type Config struct {
 	//     }
 	//
 	NewRuntimeObjectFunc func() pkgruntime.Object
-	// ResourceSets is a list of resource sets. A resource set provides a specific
-	// function to initialize the request context and a list of resources to be
-	// executed for a reconciliation loop. That way each runtime object being
-	// reconciled is executed against a desired list of resources. Since runtime
-	// objects may differ in version and/or structure the resource router enables
-	// custom inspection before each reconciliation loop. That way the complete
-	// list of resources being executed for the received runtime object can be
-	// versioned and different resources can be executed depending on the runtime
-	// object being reconciled.
-	ResourceSets []*ResourceSet
+	// Resources is the list of controller resources being executed on runtime
+	// object reconciliation. Resources are executed in given order.
+	Resources []resource.Interface
 	// Selector is used to filter objects before passing them to the controller.
 	Selector labels.Selector
 
@@ -96,14 +93,15 @@ type Config struct {
 }
 
 type Controller struct {
-	backOffFactory       func() backoff.Interface
 	crd                  *apiextensionsv1beta1.CustomResourceDefinition
+	initCtx              func(ctx context.Context, obj interface{}) (context.Context, error)
 	k8sClient            k8sclient.Interface
 	logger               micrologger.Logger
 	newRuntimeObjectFunc func() pkgruntime.Object
-	resourceSets         []*ResourceSet
+	resources            []resource.Interface
 	selector             labels.Selector
 
+	backOffFactory         func() backoff.Interface
 	bootOnce               sync.Once
 	booted                 chan struct{}
 	collector              *collector.Set
@@ -117,6 +115,11 @@ type Controller struct {
 
 // New creates a new configured operator controller.
 func New(config Config) (*Controller, error) {
+	if config.InitCtx == nil {
+		config.InitCtx = func(ctx context.Context, obj interface{}) (context.Context, error) {
+			return ctx, nil
+		}
+	}
 	if config.K8sClient == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.K8sClient must not be empty", config)
 	}
@@ -126,8 +129,8 @@ func New(config Config) (*Controller, error) {
 	if config.NewRuntimeObjectFunc == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.NewRuntimeObjectFunc must not be empty", config)
 	}
-	if len(config.ResourceSets) == 0 {
-		return nil, microerror.Maskf(invalidConfigError, "%T.ResourceSets must not be empty", config)
+	if len(config.Resources) == 0 {
+		return nil, microerror.Maskf(invalidConfigError, "%T.Resources must not be empty", config)
 	}
 	if config.Selector == nil {
 		config.Selector = labels.Everything()
@@ -153,13 +156,14 @@ func New(config Config) (*Controller, error) {
 
 	c := &Controller{
 		crd:                  config.CRD,
-		backOffFactory:       func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) },
+		initCtx:              config.InitCtx,
 		k8sClient:            config.K8sClient,
 		logger:               config.Logger,
 		selector:             config.Selector,
 		newRuntimeObjectFunc: config.NewRuntimeObjectFunc,
-		resourceSets:         config.ResourceSets,
+		resources:            config.Resources,
 
+		backOffFactory:         func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) },
 		bootOnce:               sync.Once{},
 		booted:                 make(chan struct{}),
 		collector:              timestampCollector,
@@ -212,6 +216,9 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 		loop := strconv.FormatInt(atomic.AddInt64(&c.loop, 1), 10)
 
 		ctx = cachekeycontext.NewContext(ctx, loop)
+		ctx = finalizerskeptcontext.NewContext(ctx, make(chan struct{}))
+		ctx = updateallowedcontext.NewContext(ctx, make(chan struct{}))
+
 		ctx = setLoggerCtxValue(ctx, loggerKeyLoop, loop)
 		ctx = setLoggerCtxValue(ctx, loggerKeyController, c.name)
 	}
@@ -337,31 +344,13 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 	var err error
 
-	var rs *ResourceSet
 	{
-		c.logger.LogCtx(ctx, "level", "debug", "message", "finding resource set")
-
-		rs, err = c.resourceSet(obj)
-		if IsNoResourceSet(err) {
-			c.logger.LogCtx(ctx, "level", "debug", "message", "did not find resource set")
-			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
-			return
-
-		} else if err != nil {
-			c.logger.LogCtx(ctx, "level", "error", "message", "failed finding resource set", "stack", microerror.JSON(err))
-			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
-			return
-		}
-
-		c.logger.LogCtx(ctx, "level", "debug", "message", "found resource set")
-	}
-
-	{
-		// Memorize the old context. We need to use it for logging in
-		// case of InitCtx failure because the context returned by
-		// failing InitCtx can be nil.
+		// Memorize the old context. We need to use it for logging in case of
+		// InitCtx failure because the context returned by failing InitCtx can be
+		// nil.
 		oldCtx := ctx
-		ctx, err = rs.InitCtx(ctx, obj)
+
+		ctx, err = c.initCtx(ctx, obj)
 		if err != nil {
 			c.logger.LogCtx(oldCtx, "level", "error", "message", "failed initializing context", "stack", microerror.JSON(err))
 			c.logger.LogCtx(oldCtx, "level", "debug", "message", "canceling reconciliation")
@@ -375,8 +364,9 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 		return
 	}
+
 	if hasFinalizer {
-		err = ProcessDelete(ctx, obj, rs.Resources())
+		err = ProcessDelete(ctx, obj, c.resources)
 		if err != nil {
 			c.errorCollector <- err
 			c.logger.LogCtx(ctx, "level", "error", "message", "failed processing event", "stack", microerror.JSON(err))
@@ -454,31 +444,13 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reco
 func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 	var err error
 
-	var rs *ResourceSet
 	{
-		c.logger.LogCtx(ctx, "level", "debug", "message", "finding resource set")
-
-		rs, err = c.resourceSet(obj)
-		if IsNoResourceSet(err) {
-			c.logger.LogCtx(ctx, "level", "debug", "message", "did not find resource set")
-			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
-			return
-
-		} else if err != nil {
-			c.logger.LogCtx(ctx, "level", "error", "message", "failed finding resource set", "stack", microerror.JSON(err))
-			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
-			return
-		}
-
-		c.logger.LogCtx(ctx, "level", "debug", "message", "found resource set")
-	}
-
-	{
-		// Memorize the old context. We need to use it for logging in
-		// case of InitCtx failure because the context returned by
-		// failing InitCtx can be nil.
+		// Memorize the old context. We need to use it for logging in case of
+		// InitCtx failure because the context returned by failing InitCtx can be
+		// nil.
 		oldCtx := ctx
-		ctx, err = rs.InitCtx(ctx, obj)
+
+		ctx, err = c.initCtx(ctx, obj)
 		if err != nil {
 			c.logger.LogCtx(oldCtx, "level", "error", "message", "failed initializing context", "stack", microerror.JSON(err))
 			c.logger.LogCtx(oldCtx, "level", "debug", "message", "canceling reconciliation")
@@ -507,37 +479,13 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 		c.logger.LogCtx(ctx, "level", "debug", "message", "did not add finalizer")
 	}
 
-	err = ProcessUpdate(ctx, obj, rs.Resources())
+	err = ProcessUpdate(ctx, obj, c.resources)
 	if err != nil {
 		c.errorCollector <- err
 		c.logger.LogCtx(ctx, "level", "error", "message", "failed processing event", "stack", microerror.JSON(err))
 		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 		return
 	}
-}
-
-// resourceSet tries to lookup the appropriate resource set based on the
-// received runtime object. There might be not any resource set for an observed
-// runtime object if an operator uses multiple controllers for reconciliations.
-// There must not be multiple resource sets per observed runtime object though.
-// If this is the case, ResourceSet returns an error.
-func (c *Controller) resourceSet(obj interface{}) (*ResourceSet, error) {
-	var found []*ResourceSet
-
-	for _, r := range c.resourceSets {
-		if r.Handles(obj) {
-			found = append(found, r)
-		}
-	}
-
-	if len(found) == 0 {
-		return nil, microerror.Mask(noResourceSetError)
-	}
-	if len(found) > 1 {
-		return nil, microerror.Mask(tooManyResourceSetsError)
-	}
-
-	return found[0], nil
 }
 
 // ProcessDelete is a drop-in for an informer's DeleteFunc. It receives the

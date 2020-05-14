@@ -16,14 +16,12 @@ import (
 
 	"github.com/giantswarm/operatorkit/controller"
 	"github.com/giantswarm/operatorkit/integration/env"
-	"github.com/giantswarm/operatorkit/integration/testresourceset"
 	"github.com/giantswarm/operatorkit/resource"
 )
 
 type Config struct {
-	HandlesFunc func(obj interface{}) bool
-	Logger      micrologger.Logger
-	Resources   []resource.Interface
+	Logger    micrologger.Logger
+	Resources []resource.Interface
 
 	Name      string
 	Namespace string
@@ -65,32 +63,13 @@ func New(config Config) (*Wrapper, error) {
 		}
 	}
 
-	var resourceSet *controller.ResourceSet
-	{
-		c := testresourceset.Config{
-			HandlesFunc: config.HandlesFunc,
-			K8sClient:   k8sClient.K8sClient(),
-			Logger:      config.Logger,
-			Resources:   config.Resources,
-
-			ProjectName: config.Name,
-		}
-
-		resourceSet, err = testresourceset.New(c)
-		if err != nil {
-			return nil, microerror.Mask(err)
-		}
-	}
-
 	var newController *controller.Controller
 	{
 		c := controller.Config{
 			CRD:       v1alpha1.NewDrainerConfigCRD(),
 			K8sClient: k8sClient,
 			Logger:    config.Logger,
-			ResourceSets: []*controller.ResourceSet{
-				resourceSet,
-			},
+			Resources: config.Resources,
 			NewRuntimeObjectFunc: func() pkgruntime.Object {
 				return new(v1alpha1.DrainerConfig)
 			},
