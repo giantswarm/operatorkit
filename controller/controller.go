@@ -18,7 +18,6 @@ import (
 	"github.com/giantswarm/micrologger"
 	"github.com/giantswarm/micrologger/loggermeta"
 	"github.com/giantswarm/to"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -54,15 +53,12 @@ const (
 )
 
 type Config struct {
-	CRD *apiextensionsv1beta1.CustomResourceDefinition
 	// InitCtx is deprecated and should not be used anymore.
 	InitCtx func(ctx context.Context, obj interface{}) (context.Context, error)
 	// K8sClient is the client collection used to setup and manage certain
-	// operatorkit primitives. The CRD Client it provides is used to ensure the
-	// CRD being created, in case the CRD option is configured. The Controller
-	// Client is used to fetch runtime objects. It therefore must be properly
-	// configured using the AddToScheme option. The REST Client is used to patch
-	// finalizers on runtime objects.
+	// operatorkit primitives. The Controller Client is used to fetch runtime
+	// objects. It therefore must be properly configured using the AddToScheme
+	// option. The REST Client is used to patch finalizers on runtime objects.
 	K8sClient k8sclient.Interface
 	Logger    micrologger.Logger
 	// NewRuntimeObjectFunc returns a new initialized pointer of a type
@@ -93,7 +89,6 @@ type Config struct {
 }
 
 type Controller struct {
-	crd                  *apiextensionsv1beta1.CustomResourceDefinition
 	initCtx              func(ctx context.Context, obj interface{}) (context.Context, error)
 	k8sClient            k8sclient.Interface
 	logger               micrologger.Logger
@@ -160,7 +155,6 @@ func New(config Config) (*Controller, error) {
 	}
 
 	c := &Controller{
-		crd:                  config.CRD,
 		initCtx:              config.InitCtx,
 		k8sClient:            config.K8sClient,
 		logger:               config.Logger,
@@ -244,17 +238,6 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 	err = c.collector.Boot(ctx)
 	if err != nil {
 		return microerror.Mask(err)
-	}
-
-	if c.crd != nil {
-		c.logger.LogCtx(ctx, "level", "debug", "message", "ensuring custom resource definition exists")
-
-		err := c.k8sClient.CRDClient().EnsureCreated(ctx, c.crd, c.backOffFactory())
-		if err != nil {
-			return microerror.Mask(err)
-		}
-
-		c.logger.LogCtx(ctx, "level", "debug", "message", "ensured custom resource definition exists")
 	}
 
 	go func() {
