@@ -10,14 +10,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/k8sclient/v2/pkg/k8sclient"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/giantswarm/micrologger/loggermeta"
 	"github.com/giantswarm/to"
+	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -224,6 +223,7 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 
 	res, err := c.reconcile(ctx, req)
 	if err != nil {
+		c.errorCollector <- err
 		c.logger.LogCtx(ctx, "level", "error", "message", "failed to reconcile", "stack", microerror.JSON(err))
 		return reconcile.Result{}, nil
 	}
@@ -329,50 +329,28 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 	return nil
 }
 
-func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
+func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) error {
 	var err error
-
-	{
-		// Memorize the old context. We need to use it for logging in case of
-		// InitCtx failure because the context returned by failing InitCtx can be
-		// nil.
-		oldCtx := ctx
-
-		ctx, err = c.initCtx(ctx, obj)
-		if err != nil {
-			c.logger.LogCtx(oldCtx, "level", "error", "message", "failed initializing context", "stack", microerror.JSON(err))
-			c.logger.LogCtx(oldCtx, "level", "debug", "message", "canceling reconciliation")
-			return
-		}
-	}
 
 	hasFinalizer, err := c.hasFinalizer(ctx, obj)
 	if err != nil {
-		c.logger.LogCtx(ctx, "level", "error", "message", "failed checking finalizer", "stack", microerror.JSON(err))
-		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
-		return
+		return microerror.Mask(err)
+	}
+	if !hasFinalizer {
+		return nil
 	}
 
-	if hasFinalizer {
-		err = ProcessDelete(ctx, obj, c.resources)
-		if err != nil {
-			c.errorCollector <- err
-			c.logger.LogCtx(ctx, "level", "error", "message", "failed processing event", "stack", microerror.JSON(err))
-			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
-			return
-		}
-	} else {
-		c.logger.LogCtx(ctx, "level", "debug", "message", "did not find any finalizer")
-		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
-		return
+	err = ProcessDelete(ctx, obj, c.resources)
+	if err != nil {
+		return microerror.Mask(err)
 	}
 
 	err = c.removeFinalizer(ctx, obj)
 	if err != nil {
-		c.logger.LogCtx(ctx, "level", "error", "message", "failed removing finalizer", "stack", microerror.JSON(err))
-		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
-		return
+		return microerror.Mask(err)
 	}
+
+	return nil
 }
 
 func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
@@ -387,6 +365,11 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reco
 		// way.
 		return reconcile.Result{}, nil
 	} else if err != nil {
+		return reconcile.Result{}, microerror.Mask(err)
+	}
+
+	ctx, err = c.initCtx(ctx, obj)
+	if err != nil {
 		return reconcile.Result{}, microerror.Mask(err)
 	}
 
@@ -406,9 +389,10 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reco
 		ctx = setLoggerCtxValue(ctx, loggerKeyObject, m.GetSelfLink())
 		ctx = setLoggerCtxValue(ctx, loggerKeyVersion, m.GetResourceVersion())
 
-		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
-		c.deleteFunc(ctx, obj)
-		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled object")
+		err = c.deleteFunc(ctx, obj)
+		if err != nil {
+			return reconcile.Result{}, microerror.Mask(err)
+		}
 
 		t.ObserveDuration()
 	} else {
@@ -419,9 +403,10 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reco
 		ctx = setLoggerCtxValue(ctx, loggerKeyObject, m.GetSelfLink())
 		ctx = setLoggerCtxValue(ctx, loggerKeyVersion, m.GetResourceVersion())
 
-		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciling object")
-		c.updateFunc(ctx, obj)
-		c.logger.LogCtx(ctx, "level", "debug", "message", "reconciled object")
+		err = c.updateFunc(ctx, obj)
+		if err != nil {
+			return reconcile.Result{}, microerror.Mask(err)
+		}
 
 		t.ObserveDuration()
 	}
@@ -429,51 +414,25 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reco
 	return reconcile.Result{}, nil
 }
 
-func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
+func (c *Controller) updateFunc(ctx context.Context, obj interface{}) error {
 	var err error
 
-	{
-		// Memorize the old context. We need to use it for logging in case of
-		// InitCtx failure because the context returned by failing InitCtx can be
-		// nil.
-		oldCtx := ctx
-
-		ctx, err = c.initCtx(ctx, obj)
-		if err != nil {
-			c.logger.LogCtx(oldCtx, "level", "error", "message", "failed initializing context", "stack", microerror.JSON(err))
-			c.logger.LogCtx(oldCtx, "level", "debug", "message", "canceling reconciliation")
-			return
-		}
+	ok, err := c.addFinalizer(ctx, obj)
+	if err != nil {
+		return microerror.Mask(err)
 	}
-
-	{
-		c.logger.LogCtx(ctx, "level", "debug", "message", "adding finalizer")
-
-		ok, err := c.addFinalizer(ctx, obj)
-		if err != nil {
-			c.logger.LogCtx(ctx, "level", "error", "message", "failed adding finalizer", "stack", microerror.JSON(err))
-			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
-			return
-		}
-
-		if ok {
-			// A finalizer was added, this causes a new update event, so we stop
-			// reconciling here and will pick up the new event.
-			c.logger.LogCtx(ctx, "level", "debug", "message", "added finalizer")
-			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
-			return
-		}
-
-		c.logger.LogCtx(ctx, "level", "debug", "message", "did not add finalizer")
+	if ok {
+		// A finalizer was added, this causes a new update event, so we stop
+		// reconciling here and will pick up the new event.
+		return nil
 	}
 
 	err = ProcessUpdate(ctx, obj, c.resources)
 	if err != nil {
-		c.errorCollector <- err
-		c.logger.LogCtx(ctx, "level", "error", "message", "failed processing event", "stack", microerror.JSON(err))
-		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
-		return
+		return microerror.Mask(err)
 	}
+
+	return nil
 }
 
 // ProcessDelete is a drop-in for an informer's DeleteFunc. It receives the
