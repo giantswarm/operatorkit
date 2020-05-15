@@ -12,7 +12,7 @@ func (w Wrapper) CreateObject(namespace string, obj interface{}) (interface{}, e
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
-	createDrainerConfig, err := w.g8sClient.CoreV1alpha1().DrainerConfigs(namespace).Create(&drainerConfig)
+	createDrainerConfig, err := w.k8sClient.G8sClient().CoreV1alpha1().DrainerConfigs(namespace).Create(&drainerConfig)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
@@ -21,7 +21,7 @@ func (w Wrapper) CreateObject(namespace string, obj interface{}) (interface{}, e
 }
 
 func (w Wrapper) DeleteObject(name, namespace string) error {
-	err := w.g8sClient.CoreV1alpha1().DrainerConfigs(namespace).Delete(name, nil)
+	err := w.k8sClient.G8sClient().CoreV1alpha1().DrainerConfigs(namespace).Delete(name, nil)
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -30,7 +30,7 @@ func (w Wrapper) DeleteObject(name, namespace string) error {
 }
 
 func (w Wrapper) GetObject(name, namespace string) (interface{}, error) {
-	drainerConfig, err := w.g8sClient.CoreV1alpha1().DrainerConfigs(namespace).Get(name, metav1.GetOptions{})
+	drainerConfig, err := w.k8sClient.G8sClient().CoreV1alpha1().DrainerConfigs(namespace).Get(name, metav1.GetOptions{})
 	if errors.IsNotFound(err) {
 		return nil, microerror.Mask(notFoundError)
 	} else if err != nil {
@@ -46,13 +46,13 @@ func (w Wrapper) UpdateObject(namespace string, obj interface{}) (interface{}, e
 		return nil, microerror.Mask(err)
 	}
 
-	m, err := w.g8sClient.CoreV1alpha1().DrainerConfigs(namespace).Get(drainerConfig.GetName(), metav1.GetOptions{})
+	m, err := w.k8sClient.G8sClient().CoreV1alpha1().DrainerConfigs(namespace).Get(drainerConfig.GetName(), metav1.GetOptions{})
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
 	drainerConfig.SetResourceVersion(m.GetResourceVersion())
 
-	updateDrainerConfig, err := w.g8sClient.CoreV1alpha1().DrainerConfigs(namespace).Update(&drainerConfig)
+	updateDrainerConfig, err := w.k8sClient.G8sClient().CoreV1alpha1().DrainerConfigs(namespace).Update(&drainerConfig)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
