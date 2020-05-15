@@ -332,11 +332,6 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) error {
 	var err error
 
-	ctx, err = c.initCtx(ctx, obj)
-	if err != nil {
-		return microerror.Mask(err)
-	}
-
 	hasFinalizer, err := c.hasFinalizer(ctx, obj)
 	if err != nil {
 		return microerror.Mask(err)
@@ -370,6 +365,11 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reco
 		// way.
 		return reconcile.Result{}, nil
 	} else if err != nil {
+		return reconcile.Result{}, microerror.Mask(err)
+	}
+
+	ctx, err = c.initCtx(ctx, obj)
+	if err != nil {
 		return reconcile.Result{}, microerror.Mask(err)
 	}
 
@@ -416,11 +416,6 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reco
 
 func (c *Controller) updateFunc(ctx context.Context, obj interface{}) error {
 	var err error
-
-	ctx, err = c.initCtx(ctx, obj)
-	if err != nil {
-		return microerror.Mask(err)
-	}
 
 	ok, err := c.addFinalizer(ctx, obj)
 	if err != nil {
