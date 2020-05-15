@@ -12,8 +12,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/giantswarm/operatorkit/integration/wrapper"
+	"github.com/giantswarm/operatorkit/integration/testresource"
 	"github.com/giantswarm/operatorkit/integration/wrapper/configmap"
+	"github.com/giantswarm/operatorkit/resource"
 )
 
 const (
@@ -30,25 +31,42 @@ const (
 // !!! This test does not work with CRs, the controller is not booted !!!
 //
 func Test_Finalizer_Integration_Basic(t *testing.T) {
+	var err error
+
 	expectedFinalizers := []string{
 		testFinalizer,
 	}
 
-	c := configmap.Config{
-		Name:      operatorName,
-		Namespace: testNamespace,
+	var r *testresource.Resource
+	{
+		c := testresource.Config{
+			Name: "test-resource",
+		}
+
+		r, err = testresource.New(c)
+		if err != nil {
+			t.Fatalf("err == %v, want %v", err, nil)
+		}
 	}
-	configmapWrapper, err := configmap.New(c)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
+
+	var wrapper *configmap.Wrapper
+	{
+		c := configmap.Config{
+			Resources: []resource.Interface{r},
+			Name:      operatorName,
+			Namespace: testNamespace,
+		}
+
+		wrapper, err = configmap.New(c)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
+		}
 	}
 
-	testWrapper := wrapper.Interface(configmapWrapper)
+	wrapper.MustSetup(testNamespace)
+	defer wrapper.MustTeardown(testNamespace)
 
-	testWrapper.MustSetup(testNamespace)
-	defer testWrapper.MustTeardown(testNamespace)
-
-	operatorkitController := testWrapper.Controller()
+	controller := wrapper.Controller()
 
 	cm := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
@@ -62,7 +80,7 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 		Data: map[string]string{},
 	}
 	// We create an object which does not have any finalizers.
-	_, err = testWrapper.CreateObject(testNamespace, cm)
+	_, err = wrapper.CreateObject(testNamespace, cm)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -74,7 +92,7 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 			"testlabel": "testlabel",
 		},
 	)
-	_, err = testWrapper.UpdateObject(testNamespace, cm)
+	_, err = wrapper.UpdateObject(testNamespace, cm)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -82,7 +100,7 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	// We reconcile the ConfigMap using its name and namespace.
 	// This is expected to only add one finalizer, we want to make sure that we
 	// only use the latest ResourceVersion of an object.
-	_, err = operatorkitController.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{
+	_, err = controller.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{
 		Name:      cm.GetName(),
 		Namespace: cm.GetNamespace(),
 	}})
@@ -91,7 +109,7 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	}
 
 	// We run Reconcile multiple times to check for duplicates.
-	_, err = operatorkitController.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{
+	_, err = controller.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{
 		Name:      cm.GetName(),
 		Namespace: cm.GetNamespace(),
 	}})
@@ -100,7 +118,7 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	}
 
 	// We get the current configmap.
-	resultObj, err := testWrapper.GetObject(configMapName, testNamespace)
+	resultObj, err := wrapper.GetObject(configMapName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -116,11 +134,11 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	}
 
 	// We delete our object.
-	err = testWrapper.DeleteObject(configMapName, testNamespace)
+	err = wrapper.DeleteObject(configMapName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
-	resultObj, err = testWrapper.GetObject(configMapName, testNamespace)
+	resultObj, err = wrapper.GetObject(configMapName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -142,13 +160,13 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 
 	// We directly pass the object to DeleteFunc to remove the finalizer.
 	// We run Reconcile multiple times to check for duplicates.
-	_, _ = operatorkitController.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{
+	_, _ = controller.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{
 		Name:      cm.GetName(),
 		Namespace: cm.GetNamespace(),
 	}})
 
 	// We verify that our object is completely gone now.
-	_, err = testWrapper.GetObject(configMapName, testNamespace)
+	_, err = wrapper.GetObject(configMapName, testNamespace)
 	if !configmap.IsNotFound(err) {
 		t.Fatalf("error == %#v, want NotFound error", err)
 	}

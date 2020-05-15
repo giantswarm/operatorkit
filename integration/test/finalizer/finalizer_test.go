@@ -33,11 +33,7 @@ const (
 )
 
 // Test_Controller_Integration_Finalizer is an integration test to check that
-// multiple controllers do not interfere with finalizer management where they
-// should not act. This is to prevent situations in which multiple operators
-// reconcile the same runtime object in different versions. Then finalizer
-// management should only be done by controllers that express to handle the
-// reconciliation for an object.
+// finalizer management works as expected.
 func Test_Controller_Integration_Finalizer(t *testing.T) {
 	var err error
 
@@ -60,24 +56,9 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 		}
 	}
 
-	// We create three wrappers for controllers and resource sets respectively.
-	// They are run to reconcile the same object in order to verify the finalizer
-	// management. Only wrapperA expresses to handle the object via its handle
-	// func. So neither wrapperB nor wrapperC are allowed to remove the finalizer
-	// of the reconciled runtime object.
-	var wrapperA *drainerconfig.Wrapper
-	var wrapperB *drainerconfig.Wrapper
-	var wrapperC *drainerconfig.Wrapper
+	var wrapper *drainerconfig.Wrapper
 	{
-		wrapperA, err = newWrapper(r, newWrapperLogger("a"), newTrueHandlesFunc())
-		if err != nil {
-			t.Fatalf("err == %v, want %v", err, nil)
-		}
-		wrapperB, err = newWrapper(r, newWrapperLogger("b"), newFalseHandlesFunc())
-		if err != nil {
-			t.Fatalf("err == %v, want %v", err, nil)
-		}
-		wrapperC, err = newWrapper(r, newWrapperLogger("c"), newFalseHandlesFunc())
+		wrapper, err = newWrapper(r, newWrapperLogger("a"))
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -85,40 +66,24 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 
 	// Start controllers.
 	{
-		controllerA := wrapperA.Controller()
-		controllerB := wrapperB.Controller()
-		controllerC := wrapperC.Controller()
+		controllerA := wrapper.Controller()
 
 		go controllerA.Boot(ctx)
-		go controllerB.Boot(ctx)
-		go controllerC.Boot(ctx)
 		select {
 		case <-controllerA.Booted():
 		case <-time.After(30 * time.Second):
 			t.Fatalf("failed to wait for controllerA to boot")
 		}
-		select {
-		case <-controllerB.Booted():
-		case <-time.After(30 * time.Second):
-			t.Fatalf("failed to wait for controllerB to boot")
-		}
-		select {
-		case <-controllerC.Booted():
-		case <-time.After(30 * time.Second):
-			t.Fatalf("failed to wait for controllerC to boot")
-		}
 	}
 
-	// Setup the test namespace. We use the wrapperA. It makes no difference which
-	// wrapper we use to do this. It is only important to do the setup once for
-	// all.
+	// Setup the test namespace.
 	{
-		wrapperA.MustSetup(objNamespace)
-		defer wrapperA.MustTeardown(objNamespace)
+		wrapper.MustSetup(objNamespace)
+		defer wrapper.MustTeardown(objNamespace)
 	}
 
-	// Create an object. Creation is retried because the CRD might still
-	// not be ensured. Again, we just use wrapperA to do this.
+	// Create an object. Creation is retried because the CRD might still not be
+	// ensured.
 	{
 		o := func() error {
 			drainerConfig := &v1alpha1.DrainerConfig{
@@ -128,7 +93,7 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 				},
 			}
 
-			_, err := wrapperA.CreateObject(objNamespace, drainerConfig)
+			_, err := wrapper.CreateObject(objNamespace, drainerConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -142,9 +107,9 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 		}
 	}
 
-	// Verify controllers reconcile creation of that object. There should be 2
-	// ResyncPeriods in 30 seconds so verify there were at least 2 create events.
-	// They should be made by the controller of wrapperA.
+	// Verify the test controller reconciles the creation of the runtime object.
+	// There should be 2 ResyncPeriods in 30 seconds so verify there were at least
+	// 2 create events.
 	//
 	// 		EnsureCreated: >=2, EnsureDeleted: =0
 	//
@@ -168,9 +133,9 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 	}
 
 	// Once we ensured the reconciled runtime object got processed by the
-	// controllers, verify the deletion timestamp and finalizers.
+	// controller, verify the deletion timestamp and finalizers.
 	{
-		obj, err := wrapperA.GetObject(objName, objNamespace)
+		obj, err := wrapper.GetObject(objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -199,16 +164,13 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 
 	// Delete the object.
 	{
-		err := wrapperA.DeleteObject(objName, objNamespace)
+		err := wrapper.DeleteObject(objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
 	}
 
-	// Verify that the test resource received at least 1 deletion event. When the
-	// fix for the test is not applied, the test fails with DeleteCount() == 2.
-	// This is because controllers of wrapperB and wrapperC remove the finalizer
-	// early, which they should not.
+	// Verify that the test resource received at least 1 deletion event.
 	{
 		o := func() error {
 			if r.DeleteCount() < 3 {
@@ -227,7 +189,7 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 
 	// Verify deletion timestamp and finalizers.
 	{
-		obj, err := wrapperA.GetObject(objName, objNamespace)
+		obj, err := wrapper.GetObject(objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -254,9 +216,8 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 		}
 	}
 
-	// Set the resourceC error function to nil to not return any error
-	// anymore. The finalizer should be removed with the next
-	// reconciliation now.
+	// Set the resource error function to nil to not return any error anymore. The
+	// finalizer should be removed with the next reconciliation now.
 	{
 		r.SetReturnErrorFunc(nil)
 	}
@@ -264,7 +225,7 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 	// Verify that the object is completely gone now.
 	{
 		o := func() error {
-			_, err := wrapperA.GetObject(objName, objNamespace)
+			_, err := wrapper.GetObject(objName, objNamespace)
 			if drainerconfig.IsNotFound(err) {
 				return nil
 			} else if err != nil {
@@ -298,10 +259,9 @@ func newWrapperLogger(w string) micrologger.Logger {
 	return l.With("wrapper", w)
 }
 
-func newWrapper(r *testresource.Resource, l micrologger.Logger, h func(obj interface{}) bool) (*drainerconfig.Wrapper, error) {
+func newWrapper(r *testresource.Resource, l micrologger.Logger) (*drainerconfig.Wrapper, error) {
 	c := drainerconfig.Config{
-		HandlesFunc: h,
-		Logger:      l,
+		Logger: l,
 		Resources: []resource.Interface{
 			r,
 		},
@@ -316,16 +276,4 @@ func newWrapper(r *testresource.Resource, l micrologger.Logger, h func(obj inter
 	}
 
 	return w, nil
-}
-
-func newTrueHandlesFunc() func(obj interface{}) bool {
-	return func(obj interface{}) bool {
-		return true
-	}
-}
-
-func newFalseHandlesFunc() func(obj interface{}) bool {
-	return func(obj interface{}) bool {
-		return false
-	}
 }

@@ -14,7 +14,6 @@ import (
 
 	"github.com/giantswarm/operatorkit/controller"
 	"github.com/giantswarm/operatorkit/integration/env"
-	"github.com/giantswarm/operatorkit/integration/testresourceset"
 	"github.com/giantswarm/operatorkit/resource"
 )
 
@@ -58,30 +57,12 @@ func New(config Config) (*Wrapper, error) {
 		}
 	}
 
-	var resourceSet *controller.ResourceSet
-	{
-		c := testresourceset.Config{
-			K8sClient: k8sClient.K8sClient(),
-			Logger:    newLogger,
-			Resources: config.Resources,
-
-			ProjectName: config.Name,
-		}
-
-		resourceSet, err = testresourceset.New(c)
-		if err != nil {
-			return nil, microerror.Mask(err)
-		}
-	}
-
 	var newController *controller.Controller
 	{
 		c := controller.Config{
 			K8sClient: k8sClient,
 			Logger:    newLogger,
-			ResourceSets: []*controller.ResourceSet{
-				resourceSet,
-			},
+			Resources: config.Resources,
 			NewRuntimeObjectFunc: func() pkgruntime.Object {
 				return new(corev1.ConfigMap)
 			},
