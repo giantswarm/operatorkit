@@ -3,11 +3,12 @@
 # operatorkit
 
 Package `operatorkit` implements an opinionated framework for developing
-[Kubernetes operators][operators]. It emerged as we extracted common
-functionality from a number of the operators we developed at [Giant
-Swarm][giantswarm]. The goal of this library is to provide a common structure
-for operator projects and to encapsulate best practices we learned while running
-operators in production.
+[Kubernetes operators]. It emerged as we extracted common functionality from a
+number of the operators we developed at [Giant Swarm][giantswarm]. The goal of
+this library is to provide a common structure for operator projects and to
+encapsulate best practices we learned while running operators in production.
+
+
 
 ## Features
 
@@ -17,9 +18,6 @@ operators in production.
   is executed at least once for each create/delete/update event.
 - Guarantees to perform only one successful deletion event reconciliation to
   avoid unnecessary, possibly expensive interactions with third party systems.
-- A deterministic informer implementation that guarantees the expected behaviour
-  of configured resync periods and rate waits.
-- Convenient client library helpers for simpler client creation.
 - Resource wrapping to gain ability of composing resources like middlewares.
 - Control flow primitives that allow cancellation and repetition of resource
   implementations.
@@ -27,7 +25,8 @@ operators in production.
   without being bound to all primitives it provides.
 - Ability to change behaviour that is often specific to an organization like
   logging and error handling.
-- Minimal set of dependencies.
+
+
 
 ## Docs
 
@@ -38,31 +37,6 @@ operators in production.
 - [Metrics Provider](docs/metrics_provider.md)
 - [Troubleshooting](docs/troubleshooting.md)
 - [Using Finalizers](docs/using_finalizers.md)
-
-## Current Scope
-
-The project is split into independent packages providing complementary
-functionality, making it easier to create production grade [Kubernetes
-operators][operators].
-
-- `client`: provides a unified way of creating Kubernetes clients required by
-  other packages.
-- `informer`: provides well defined watching functionality for virtually any
-  Kubernetes resource. The informer is deterministic, meaning it does not
-  dispatch events twice after the resync period, which saves some cycles. It
-  also features rate limiting of the event dispatching. It also provides
-  functionality for decoding custom objects, reducing error prone boilerplate
-  code.
-- `controller`: provides a framework aiming to help writing reliable, robust
-  controllers performing reconciliation loops. The heart of the controller is a
-  Resource interface. The reconciliation primitive allows splitting the
-  reconciliation into smaller parts. Controller manages [finalizers][finalizers]
-  on reconciled objects, making sure all resources are executed at least once
-  during the deletion.
-
-## Projects using operatorkit
-
-[Giant Swarm operators][giantswarm-operators] using operatorkit.
 
 
 
@@ -96,27 +70,34 @@ kind delete cluster
 
 
 
+## Projects using operatorkit
+
+[Giant Swarm operators] using `operatorkit`.
+
+
+
 ## Example
 
-For the detailed implementation in the state of art, please see [giantswarm/aws-operator](https://github.com/giantswarm/aws-operator).
+For a detailed state of art implementation, please see
+[giantswarm/aws-operator](https://github.com/giantswarm/aws-operator).
 
-## Contact
 
-- Mailing list: [giantswarm](https://groups.google.com/forum/!forum/giantswarm)
-- IRC: #[giantswarm](irc://irc.freenode.org:6667/#giantswarm) on freenode.org
-- Bugs: [issues](https://github.com/giantswarm/cert-operator/issues)
 
 ## Contributing & Reporting Bugs
 
 See [CONTRIBUTING](CONTRIBUTING.md) for details on submitting patches, the
 contribution workflow as well as reporting bugs.
 
+
+
 ## License
 
 `operatorkit` is under the Apache 2.0 license. See the [LICENSE](LICENSE) file
 for details.
 
+
+
 [finalizers]: https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-custom-resource-definitions/#finalizers
 [giantswarm]: https://giantswarm.io
-[giantswarm-operators]: https://github.com/search?p=1&q=topic%3Aoperator+org%3Agiantswarm&type=Repositories
-[operators]: https://coreos.com/operators
+[Giant Swarm operators]: https://github.com/search?p=1&q=topic%3Aoperator+org%3Agiantswarm&type=Repositories
+[Kubernetes operators]: https://coreos.com/operators
