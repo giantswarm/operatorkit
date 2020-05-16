@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove resource set concept.
 - Remove CRD management. Due to versioning issues throughout the lifecycle of
   operators CRDs must be managed in a different way.
-- Use v2 `k8sclient`.
+- Use v3 `k8sclient`.
 
 
 

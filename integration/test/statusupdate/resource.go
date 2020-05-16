@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
-	"github.com/giantswarm/k8sclient/v2/pkg/k8sclient"
+	"github.com/giantswarm/k8sclient/v3/pkg/k8sclient"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -95,8 +95,10 @@ func (r *Resource) EnsureCreated(ctx context.Context, obj interface{}) error {
 
 	if r.executionCount == 0 {
 		newCondition := v1alpha1.DrainerConfigStatusCondition{
-			Status: conditionStatus,
-			Type:   conditionType,
+			LastHeartbeatTime:  metav1.Now(),
+			LastTransitionTime: metav1.Now(),
+			Status:             conditionStatus,
+			Type:               conditionType,
 		}
 		customResource.Status.Conditions = append(customResource.Status.Conditions, newCondition)
 

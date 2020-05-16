@@ -81,7 +81,7 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 					Name:      objName,
 					Namespace: testNamespace,
 				},
-				TypeMeta: v1alpha1.NewNodeTypeMeta(),
+				TypeMeta: v1alpha1.NewDrainerTypeMeta(),
 			}
 			_, err := drainerConfigWrapper.CreateObject(testNamespace, drainerConfig)
 			if err != nil {
