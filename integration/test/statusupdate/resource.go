@@ -95,8 +95,10 @@ func (r *Resource) EnsureCreated(ctx context.Context, obj interface{}) error {
 
 	if r.executionCount == 0 {
 		newCondition := v1alpha1.DrainerConfigStatusCondition{
-			Status: conditionStatus,
-			Type:   conditionType,
+			LastHeartbeatTime:  metav1.Now(),
+			LastTransitionTime: metav1.Now(),
+			Status:             conditionStatus,
+			Type:               conditionType,
 		}
 		customResource.Status.Conditions = append(customResource.Status.Conditions, newCondition)
 
