@@ -100,7 +100,6 @@ type Controller struct {
 	bootOnce               sync.Once
 	booted                 chan struct{}
 	collector              *collector.Set
-	errorCollector         chan error
 	loop                   int64
 	removedFinalizersCache *stringCache
 
@@ -166,7 +165,6 @@ func New(config Config) (*Controller, error) {
 		bootOnce:               sync.Once{},
 		booted:                 make(chan struct{}),
 		collector:              collectorSet,
-		errorCollector:         make(chan error, 1),
 		loop:                   -1,
 		removedFinalizersCache: newStringCache(config.ResyncPeriod * 3),
 
@@ -224,7 +222,7 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 
 	res, err := c.reconcile(ctx, req)
 	if err != nil {
-		c.errorCollector <- err
+		errorGauge.Inc()
 		c.logger.LogCtx(ctx, "level", "error", "message", "failed to reconcile", "stack", microerror.JSON(err))
 		return reconcile.Result{}, nil
 	}
@@ -242,15 +240,10 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 	}
 
 	go func() {
-		resetWait := c.resyncPeriod * 4
-
 		for {
-			select {
-			case <-c.errorCollector:
-				errorGauge.Inc()
-			case <-time.After(resetWait):
-				errorGauge.Set(0)
-			}
+			resetWait := c.resyncPeriod * 4
+			time.Sleep(resetWait)
+			errorGauge.Set(0)
 		}
 	}()
 
@@ -269,7 +262,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 					return
 				}
 
-				c.errorCollector <- err
+				errorGauge.Inc()
 				c.logger.LogCtx(ctx, "level", "error", "message", "caught third party runtime error", "stack", microerror.JSON(err))
 			},
 		}
