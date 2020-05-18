@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"strconv"
@@ -213,7 +214,7 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 	{
 		loop := strconv.FormatInt(atomic.AddInt64(&c.loop, 1), 10)
 
-		ctx = cachekeycontext.NewContext(ctx, loop)
+		ctx = cachekeycontext.NewContext(ctx, fmt.Sprintf("%s-%s", c.name, loop))
 		ctx = finalizerskeptcontext.NewContext(ctx, make(chan struct{}))
 		ctx = updateallowedcontext.NewContext(ctx, make(chan struct{}))
 
