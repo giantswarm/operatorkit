@@ -11,9 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [1.0.0] 2020-05-18
+
 ### Added
 
-- Add `handler.Interface`.
+- Add `handler.Interface` (not used yet).
 
 ### Changed
 
@@ -49,8 +51,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-[Unreleased]: https://github.com/giantswarm/operatorkit/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/giantswarm/operatorkit/compare/v1.0.0...HEAD
 
+[1.0.0]: https://github.com/giantswarm/operatorkit/compare/v0.2.1...1.0.0
 [0.2.1]: https://github.com/giantswarm/operatorkit/compare/v0.2.0...0.2.1
 [0.2.0]: https://github.com/giantswarm/operatorkit/compare/v0.1.0...0.2.0
 
