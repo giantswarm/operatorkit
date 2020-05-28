@@ -14,10 +14,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/giantswarm/operatorkit/handler"
 	"github.com/giantswarm/operatorkit/integration/testresource"
 	"github.com/giantswarm/operatorkit/integration/wrapper"
 	"github.com/giantswarm/operatorkit/integration/wrapper/drainerconfig"
-	"github.com/giantswarm/operatorkit/resource"
 )
 
 const (
@@ -246,7 +246,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 func newHarness(namespace string, controllerName string, r *testresource.Resource) (*drainerconfig.Wrapper, error) {
 	c := drainerconfig.Config{
-		Resources: []resource.Interface{
+		Handlers: []handler.Interface{
 			r,
 		},
 

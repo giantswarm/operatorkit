@@ -1,6 +1,6 @@
 # File Structure
 
-- operatorkit resources should have a consistent structure to make code
+- operatorkit handlers should have a consistent structure to make code
 navigation easier.
 - Each method of the resource should be saved to a separate file.
 e.g. `create.go` should contain the `EnsureCreated` method.

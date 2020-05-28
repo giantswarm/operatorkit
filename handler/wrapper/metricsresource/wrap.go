@@ -2,20 +2,19 @@ package metricsresource
 
 import (
 	"github.com/giantswarm/microerror"
-
-	"github.com/giantswarm/operatorkit/resource"
+	"github.com/giantswarm/operatorkit/handler"
 )
 
-// WrapConfig is the configuration used to wrap resources with metrics resources.
+// WrapConfig is the configuration used to wrap handlers with metrics handlers.
 type WrapConfig struct {
 }
 
 // Wrap wraps each given resource with a metrics resource and returns the list of
-// wrapped resources.
-func Wrap(resources []resource.Interface, config WrapConfig) ([]resource.Interface, error) {
-	var wrapped []resource.Interface
+// wrapped handlers.
+func Wrap(handlers []handler.Interface, config WrapConfig) ([]handler.Interface, error) {
+	var wrapped []handler.Interface
 
-	for _, r := range resources {
+	for _, r := range handlers {
 		c := Config{
 			Resource: r,
 		}

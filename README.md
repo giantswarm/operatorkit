@@ -12,13 +12,13 @@ encapsulate best practices we learned while running operators in production.
 
 ## Features
 
-- CRD primitives to reliably create, watch and delete custom resources, as well
+- CRD primitives to reliably create, watch and delete custom handlers, as well
   as any Kubernetes runtime object.
 - Managing [finalizers][finalizers] on reconciled objects, making sure the code
   is executed at least once for each create/delete/update event.
 - Guarantees to perform only one successful deletion event reconciliation to
   avoid unnecessary, possibly expensive interactions with third party systems.
-- Resource wrapping to gain ability of composing resources like middlewares.
+- Resource wrapping to gain ability of composing handlers like middlewares.
 - Control flow primitives that allow cancellation and repetition of resource
   implementations.
 - Independent packages. It is possible to use only certain parts of the library
@@ -33,7 +33,7 @@ encapsulate best practices we learned while running operators in production.
 - [Control Flow Primitives](docs/control_flow_primitives.md)
 - [File Structure](docs/file_structure.md)
 - [Keeping Reconciliation Loops Short](docs/keeping_reconciliation_loops_short.md)
-- [Managing CR Status Sub Resources](docs/managing_cr_status_sub_resources.md)
+- [Managing CR Status Sub Handlers](docs/managing_cr_status_sub_handlers.md)
 - [Metrics Provider](docs/metrics_provider.md)
 - [Troubleshooting](docs/troubleshooting.md)
 - [Using Finalizers](docs/using_finalizers.md)

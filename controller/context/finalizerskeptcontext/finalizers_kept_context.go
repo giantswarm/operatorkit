@@ -52,7 +52,7 @@ func IsKept(ctx context.Context) bool {
 }
 
 // SetKept is a safe way to signal keeping finalizers. When operators manage the
-// deletion of resources they use finalizers out of the box when using the
+// deletion of handlers they use finalizers out of the box when using the
 // operatorkit controller. On deletion operators might want to replay the
 // deletion process. This is achieved by not removing finalizers from the
 // observed runtime object. So instead of returning an error and abusing errors

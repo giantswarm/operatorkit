@@ -4,8 +4,8 @@ Resource implementations should not block more than necessary and execute as
 fast as possible. This is to not block reconciliation of other runtime objects,
 because their reconciliation is synchronous. For instance the reconciliation of
 a certain cloud provider resource taking half an hour prevents managing other
-resources during that time. So keeping reconciliation loops short makes the
-operator more efficient in managing multiple resources and the nature of
+handlers during that time. So keeping reconciliation loops short makes the
+operator more efficient in managing multiple handlers and the nature of
 operators by design allow to simply catch up with any state on the next resync
 period.
 

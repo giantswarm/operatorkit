@@ -17,9 +17,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/giantswarm/operatorkit/handler"
 	"github.com/giantswarm/operatorkit/integration/testresource"
 	"github.com/giantswarm/operatorkit/integration/wrapper/drainerconfig"
-	"github.com/giantswarm/operatorkit/resource"
 )
 
 const (
@@ -262,7 +262,7 @@ func newWrapperLogger(w string) micrologger.Logger {
 func newWrapper(r *testresource.Resource, l micrologger.Logger) (*drainerconfig.Wrapper, error) {
 	c := drainerconfig.Config{
 		Logger: l,
-		Resources: []resource.Interface{
+		Handlers: []handler.Interface{
 			r,
 		},
 

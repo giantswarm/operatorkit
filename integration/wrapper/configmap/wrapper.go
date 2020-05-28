@@ -13,12 +13,12 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/giantswarm/operatorkit/controller"
+	"github.com/giantswarm/operatorkit/handler"
 	"github.com/giantswarm/operatorkit/integration/env"
-	"github.com/giantswarm/operatorkit/resource"
 )
 
 type Config struct {
-	Resources []resource.Interface
+	Handlers []handler.Interface
 
 	Name      string
 	Namespace string
@@ -62,7 +62,7 @@ func New(config Config) (*Wrapper, error) {
 		c := controller.Config{
 			K8sClient: k8sClient,
 			Logger:    newLogger,
-			Resources: config.Resources,
+			Handlers:  config.Handlers,
 			NewRuntimeObjectFunc: func() pkgruntime.Object {
 				return new(corev1.ConfigMap)
 			},

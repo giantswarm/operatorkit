@@ -15,13 +15,13 @@ import (
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/giantswarm/operatorkit/controller"
+	"github.com/giantswarm/operatorkit/handler"
 	"github.com/giantswarm/operatorkit/integration/env"
-	"github.com/giantswarm/operatorkit/resource"
 )
 
 type Config struct {
-	Logger    micrologger.Logger
-	Resources []resource.Interface
+	Logger   micrologger.Logger
+	Handlers []handler.Interface
 
 	Name      string
 	Namespace string
@@ -67,7 +67,7 @@ func New(config Config) (*Wrapper, error) {
 		c := controller.Config{
 			K8sClient: k8sClient,
 			Logger:    config.Logger,
-			Resources: config.Resources,
+			Handlers:  config.Handlers,
 			NewRuntimeObjectFunc: func() pkgruntime.Object {
 				return new(v1alpha1.DrainerConfig)
 			},

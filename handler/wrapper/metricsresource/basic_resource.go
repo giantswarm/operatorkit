@@ -4,17 +4,16 @@ import (
 	"context"
 
 	"github.com/giantswarm/microerror"
+	"github.com/giantswarm/operatorkit/handler"
 	"github.com/prometheus/client_golang/prometheus"
-
-	"github.com/giantswarm/operatorkit/resource"
 )
 
 type basicResourceConfig struct {
-	Resource resource.Interface
+	Resource handler.Interface
 }
 
 type basicResource struct {
-	resource resource.Interface
+	resource handler.Interface
 }
 
 func newBasicResource(config basicResourceConfig) (*basicResource, error) {

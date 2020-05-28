@@ -12,9 +12,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	"github.com/giantswarm/operatorkit/handler"
 	"github.com/giantswarm/operatorkit/integration/testresource"
 	"github.com/giantswarm/operatorkit/integration/wrapper/configmap"
-	"github.com/giantswarm/operatorkit/resource"
 )
 
 const (
@@ -52,7 +52,7 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	var wrapper *configmap.Wrapper
 	{
 		c := configmap.Config{
-			Resources: []resource.Interface{r},
+			Handlers:  []handler.Interface{r},
 			Name:      operatorName,
 			Namespace: testNamespace,
 		}

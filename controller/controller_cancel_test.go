@@ -7,26 +7,26 @@ import (
 
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
-	"github.com/giantswarm/operatorkit/resource"
+	"github.com/giantswarm/operatorkit/handler"
 )
 
 func Test_ProcessDelete(t *testing.T) {
 	testCases := []struct {
-		Resources     []resource.Interface
+		Handlers      []handler.Interface
 		ExpectedOrder []string
 		ErrorMatcher  func(err error) bool
 	}{
-		// Test 0 ensures ProcessDelete returns an error in case no resources are
+		// Test 0 ensures ProcessDelete returns an error in case no handlers are
 		// provided.
 		{
-			Resources:     nil,
+			Handlers:      nil,
 			ExpectedOrder: nil,
 			ErrorMatcher:  IsExecutionFailed,
 		},
 
 		// Test 1 ensures ProcessDelete calls EnsureDeleted method of the resource.
 		{
-			Resources: []resource.Interface{
+			Handlers: []handler.Interface{
 				newTestResource("r0"),
 			},
 			ExpectedOrder: []string{
@@ -35,10 +35,10 @@ func Test_ProcessDelete(t *testing.T) {
 			ErrorMatcher: nil,
 		},
 
-		// Test 2 ensures ProcessDelete executes all the resources in
+		// Test 2 ensures ProcessDelete executes all the handlers in
 		// the expected order.
 		{
-			Resources: []resource.Interface{
+			Handlers: []handler.Interface{
 				newTestResource("r0"),
 				newTestResource("r1"),
 			},
@@ -49,10 +49,10 @@ func Test_ProcessDelete(t *testing.T) {
 			ErrorMatcher: nil,
 		},
 
-		// Test 3 ensures ProcessDelete executes resources in the
+		// Test 3 ensures ProcessDelete executes handlers in the
 		// expected order until the reconciliation gets canceled.
 		{
-			Resources: []resource.Interface{
+			Handlers: []handler.Interface{
 				newTestResource("r0"),
 				newTestResource("r1"),
 				newTestResource("r2").SetReconcilationCancelledAt("EnsureDeleted"),
@@ -69,7 +69,7 @@ func Test_ProcessDelete(t *testing.T) {
 		// Test 4 ensures ProcessDelete executes next resource after
 		// resourcecanceledcontext is cancelled.
 		{
-			Resources: []resource.Interface{
+			Handlers: []handler.Interface{
 				newTestResource("r0"),
 				newTestResource("r1"),
 				newTestResource("r2").CancelResourceAt("EnsureDeleted"),
@@ -88,7 +88,7 @@ func Test_ProcessDelete(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		err := ProcessDelete(context.Background(), nil, tc.Resources)
+		err := ProcessDelete(context.Background(), nil, tc.Handlers)
 		if err != nil {
 			if tc.ErrorMatcher == nil {
 				t.Fatal("test", i, "expected", nil, "got", err)
@@ -97,7 +97,7 @@ func Test_ProcessDelete(t *testing.T) {
 			}
 		} else {
 			var order []string
-			for _, r := range tc.Resources {
+			for _, r := range tc.Handlers {
 				order = append(order, r.(*testResource).Order...)
 			}
 
@@ -110,21 +110,21 @@ func Test_ProcessDelete(t *testing.T) {
 
 func Test_ProcessUpdate(t *testing.T) {
 	testCases := []struct {
-		Resources     []resource.Interface
+		Handlers      []handler.Interface
 		ExpectedOrder []string
 		ErrorMatcher  func(err error) bool
 	}{
-		// Test 0 ensures ProcessUpdate returns an error in case no resources are
+		// Test 0 ensures ProcessUpdate returns an error in case no handlers are
 		// provided.
 		{
-			Resources:     nil,
+			Handlers:      nil,
 			ExpectedOrder: nil,
 			ErrorMatcher:  IsExecutionFailed,
 		},
 
 		// Test 1 ensures ProcessUpdate calls EnsureCreated method of the resource.
 		{
-			Resources: []resource.Interface{
+			Handlers: []handler.Interface{
 				newTestResource("r0"),
 			},
 			ExpectedOrder: []string{
@@ -133,10 +133,10 @@ func Test_ProcessUpdate(t *testing.T) {
 			ErrorMatcher: nil,
 		},
 
-		// Test 2 ensures ProcessUpdate executes all resources in the
+		// Test 2 ensures ProcessUpdate executes all handlers in the
 		// expected order.
 		{
-			Resources: []resource.Interface{
+			Handlers: []handler.Interface{
 				newTestResource("r0"),
 				newTestResource("r1"),
 			},
@@ -147,10 +147,10 @@ func Test_ProcessUpdate(t *testing.T) {
 			ErrorMatcher: nil,
 		},
 
-		// Test 3 ensures ProcessUpdate executes resources in the
+		// Test 3 ensures ProcessUpdate executes handlers in the
 		// expected order until the reconciliation gets canceled.
 		{
-			Resources: []resource.Interface{
+			Handlers: []handler.Interface{
 				newTestResource("r0"),
 				newTestResource("r1"),
 				newTestResource("r2").SetReconcilationCancelledAt("EnsureCreated"),
@@ -167,7 +167,7 @@ func Test_ProcessUpdate(t *testing.T) {
 		// Test 4 ensures ProcessUpdate executes next resource after
 		// resourcecanceledcontext is cancelled.
 		{
-			Resources: []resource.Interface{
+			Handlers: []handler.Interface{
 				newTestResource("r0"),
 				newTestResource("r1"),
 				newTestResource("r2").CancelResourceAt("EnsureCreated"),
@@ -186,7 +186,7 @@ func Test_ProcessUpdate(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		err := ProcessUpdate(context.Background(), nil, tc.Resources)
+		err := ProcessUpdate(context.Background(), nil, tc.Handlers)
 		if err != nil {
 			if tc.ErrorMatcher == nil {
 				t.Fatal("test", i, "expected", nil, "got", err)
@@ -195,7 +195,7 @@ func Test_ProcessUpdate(t *testing.T) {
 			}
 		} else {
 			var order []string
-			for _, r := range tc.Resources {
+			for _, r := range tc.Handlers {
 				order = append(order, r.(*testResource).Order...)
 			}
 

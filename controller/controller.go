@@ -37,7 +37,7 @@ import (
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/updateallowedcontext"
-	"github.com/giantswarm/operatorkit/resource"
+	"github.com/giantswarm/operatorkit/handler"
 )
 
 const (
@@ -53,6 +53,9 @@ const (
 )
 
 type Config struct {
+	// Handlers is the list of controller handlers being executed on runtime
+	// object reconciliation. Handlers are executed in given order.
+	Handlers []handler.Interface
 	// InitCtx is deprecated and should not be used anymore.
 	InitCtx func(ctx context.Context, obj interface{}) (context.Context, error)
 	// K8sClient is the client collection used to setup and manage certain
@@ -72,13 +75,10 @@ type Config struct {
 	//     }
 	//
 	NewRuntimeObjectFunc func() pkgruntime.Object
-	// Resources is the list of controller resources being executed on runtime
-	// object reconciliation. Resources are executed in given order.
-	Resources []resource.Interface
 	// Selector is used to filter objects before passing them to the controller.
 	Selector labels.Selector
 
-	// Name is the name which the controller uses on finalizers for resources.
+	// Name is the name which the controller uses on finalizers for handlers.
 	// The name used should be unique in the kubernetes cluster, to ensure that
 	// two operators which handle the same resource add two distinct finalizers.
 	Name string
@@ -89,11 +89,11 @@ type Config struct {
 }
 
 type Controller struct {
+	handlers             []handler.Interface
 	initCtx              func(ctx context.Context, obj interface{}) (context.Context, error)
 	k8sClient            k8sclient.Interface
 	logger               micrologger.Logger
 	newRuntimeObjectFunc func() pkgruntime.Object
-	resources            []resource.Interface
 	selector             labels.Selector
 
 	backOffFactory         func() backoff.Interface
@@ -109,6 +109,9 @@ type Controller struct {
 
 // New creates a new configured operator controller.
 func New(config Config) (*Controller, error) {
+	if len(config.Handlers) == 0 {
+		return nil, microerror.Maskf(invalidConfigError, "%T.Handlers must not be empty", config)
+	}
 	if config.InitCtx == nil {
 		config.InitCtx = func(ctx context.Context, obj interface{}) (context.Context, error) {
 			return ctx, nil
@@ -122,9 +125,6 @@ func New(config Config) (*Controller, error) {
 	}
 	if config.NewRuntimeObjectFunc == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.NewRuntimeObjectFunc must not be empty", config)
-	}
-	if len(config.Resources) == 0 {
-		return nil, microerror.Maskf(invalidConfigError, "%T.Resources must not be empty", config)
 	}
 	if config.Selector == nil {
 		config.Selector = labels.Everything()
@@ -154,12 +154,12 @@ func New(config Config) (*Controller, error) {
 	}
 
 	c := &Controller{
+		handlers:             config.Handlers,
 		initCtx:              config.InitCtx,
 		k8sClient:            config.K8sClient,
 		logger:               config.Logger,
 		selector:             config.Selector,
 		newRuntimeObjectFunc: config.NewRuntimeObjectFunc,
-		resources:            config.Resources,
 
 		backOffFactory:         func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) },
 		bootOnce:               sync.Once{},
@@ -334,7 +334,7 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) error {
 		return nil
 	}
 
-	err = ProcessDelete(ctx, obj, c.resources)
+	err = ProcessDelete(ctx, obj, c.handlers)
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -421,7 +421,7 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) error {
 		return nil
 	}
 
-	err = ProcessUpdate(ctx, obj, c.resources)
+	err = ProcessUpdate(ctx, obj, c.handlers)
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -435,7 +435,7 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) error {
 // reconciliation logic for delete events.
 //
 //     func deleteFunc(obj interface{}) {
-//         err := c.ProcessDelete(obj, resources)
+//         err := c.ProcessDelete(obj, handlers)
 //         if err != nil {
 //             // error handling here
 //         }
@@ -445,9 +445,9 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) error {
 //         DeleteFunc:    deleteFunc,
 //     }
 //
-func ProcessDelete(ctx context.Context, obj interface{}, resources []resource.Interface) error {
-	if len(resources) == 0 {
-		return microerror.Maskf(executionFailedError, "resources must not be empty")
+func ProcessDelete(ctx context.Context, obj interface{}, handlers []handler.Interface) error {
+	if len(handlers) == 0 {
+		return microerror.Maskf(executionFailedError, "handlers must not be empty")
 	}
 
 	ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
@@ -455,7 +455,7 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []resource.In
 	defer func() {
 		ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
 	}()
-	for _, r := range resources {
+	for _, r := range handlers {
 		ctx = setLoggerCtxValue(ctx, loggerKeyResource, r.Name())
 		ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 
@@ -475,11 +475,11 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []resource.In
 // ProcessUpdate is a drop-in for an informer's UpdateFunc. It receives the new
 // custom object observed during custom resource watches and anything that
 // implements Resource. ProcessUpdate takes care about all necessary
-// reconciliation logic for update events. For complex resources this means
+// reconciliation logic for update events. For complex handlers this means
 // state has to be created, deleted and updated eventually, in this order.
 //
 //     func updateFunc(oldObj, newObj interface{}) {
-//         err := c.ProcessUpdate(newObj, resources)
+//         err := c.ProcessUpdate(newObj, handlers)
 //         if err != nil {
 //             // error handling here
 //         }
@@ -489,9 +489,9 @@ func ProcessDelete(ctx context.Context, obj interface{}, resources []resource.In
 //         UpdateFunc:    updateFunc,
 //     }
 //
-func ProcessUpdate(ctx context.Context, obj interface{}, resources []resource.Interface) error {
-	if len(resources) == 0 {
-		return microerror.Maskf(executionFailedError, "resources must not be empty")
+func ProcessUpdate(ctx context.Context, obj interface{}, handlers []handler.Interface) error {
+	if len(handlers) == 0 {
+		return microerror.Maskf(executionFailedError, "handlers must not be empty")
 	}
 
 	ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
@@ -499,7 +499,7 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []resource.In
 	defer func() {
 		ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
 	}()
-	for _, r := range resources {
+	for _, r := range handlers {
 		ctx = setLoggerCtxValue(ctx, loggerKeyResource, r.Name())
 		ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 

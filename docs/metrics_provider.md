@@ -2,9 +2,9 @@
 
 The idea about metrics provider is to have a metrics driven approach of
 verifying the operators functionality. An operator reconciles a system where
-several resources exist. As a means of measurement and as a safety net, it is a good
+several handlers exist. As a means of measurement and as a safety net, it is a good
 practise to implement metrics providers that emit metrics about the managed
-system and its resources.
+system and its handlers.
 
 ## Examples
 
@@ -24,17 +24,17 @@ alerting system.
 
 
 ## Prometheus collectors
-We make use of [Prometheus collector interface](https://godoc.org/github.com/prometheus/client_golang/prometheus#Collector) 
-(which is part of the prometheus client library) to collect metrics from our 
+We make use of [Prometheus collector interface](https://godoc.org/github.com/prometheus/client_golang/prometheus#Collector)
+(which is part of the prometheus client library) to collect metrics from our
 operators.
-This interface allows us to implement new collectors by implementing the 
+This interface allows us to implement new collectors by implementing the
 `Collect()` method, which is used to send prometheus metrics to a shared channel.
-All the collectors [need to be registered](https://godoc.org/github.com/prometheus/client_golang/prometheus#Registerer) 
+All the collectors [need to be registered](https://godoc.org/github.com/prometheus/client_golang/prometheus#Registerer)
 so that they are included in metrics collection.
 
-Each time that the metrics endpoint is scraped by Prometheus, all the 
-registered collectors will have their `Collect()` method called, and metrics 
-will be exposed on the response. We use the [exporterkit](https://github.com/giantswarm/exporterkit) 
-library to make exposing metrics easier. 
+Each time that the metrics endpoint is scraped by Prometheus, all the
+registered collectors will have their `Collect()` method called, and metrics
+will be exposed on the response. We use the [exporterkit](https://github.com/giantswarm/exporterkit)
+library to make exposing metrics easier.
 
 [Here you can find a commented example](https://godoc.org/github.com/prometheus/client_golang/prometheus#ex-Collector) on the prometheus client docs.

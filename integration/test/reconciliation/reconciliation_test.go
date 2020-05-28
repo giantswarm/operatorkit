@@ -14,9 +14,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/giantswarm/operatorkit/handler"
 	"github.com/giantswarm/operatorkit/integration/testresource"
 	"github.com/giantswarm/operatorkit/integration/wrapper/drainerconfig"
-	"github.com/giantswarm/operatorkit/resource"
 )
 
 const (
@@ -45,7 +45,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	}
 
 	c := drainerconfig.Config{
-		Resources: []resource.Interface{
+		Handlers: []handler.Interface{
 			r,
 		},
 

@@ -7,20 +7,19 @@ import (
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-
-	"github.com/giantswarm/operatorkit/resource"
+	"github.com/giantswarm/operatorkit/handler"
 )
 
 type basicResourceConfig struct {
 	BackOff  backoff.Interface
 	Logger   micrologger.Logger
-	Resource resource.Interface
+	Resource handler.Interface
 }
 
 type basicResource struct {
 	backOff  backoff.Interface
 	logger   micrologger.Logger
-	resource resource.Interface
+	resource handler.Interface
 }
 
 func newBasicResource(config basicResourceConfig) (*basicResource, error) {

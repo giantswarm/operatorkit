@@ -6,19 +6,18 @@ import (
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-
-	"github.com/giantswarm/operatorkit/resource"
+	"github.com/giantswarm/operatorkit/handler"
 )
 
-// WrapConfig is the configuration used to wrap resources with retry resources.
+// WrapConfig is the configuration used to wrap handlers with retry handlers.
 type WrapConfig struct {
 	BackOffFactory func() backoff.Interface
 	Logger         micrologger.Logger
 }
 
 // Wrap wraps each given resource with a retry resource and returns the list of
-// wrapped resources.
-func Wrap(resources []resource.Interface, config WrapConfig) ([]resource.Interface, error) {
+// wrapped handlers.
+func Wrap(handlers []handler.Interface, config WrapConfig) ([]handler.Interface, error) {
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Logger must not be empty", config)
 	}
@@ -27,9 +26,9 @@ func Wrap(resources []resource.Interface, config WrapConfig) ([]resource.Interfa
 		config.BackOffFactory = func() backoff.Interface { return backoff.NewMaxRetries(3, 1*time.Second) }
 	}
 
-	var wrapped []resource.Interface
+	var wrapped []handler.Interface
 
-	for _, r := range resources {
+	for _, r := range handlers {
 		c := Config{
 			BackOff:  config.BackOffFactory(),
 			Logger:   config.Logger,

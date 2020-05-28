@@ -12,8 +12,8 @@ import (
 	"github.com/giantswarm/microerror"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/giantswarm/operatorkit/handler"
 	"github.com/giantswarm/operatorkit/integration/wrapper/drainerconfig"
-	"github.com/giantswarm/operatorkit/resource"
 )
 
 const (
@@ -35,7 +35,7 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 
 	ctx := context.Background()
 
-	var r resource.Interface
+	var r handler.Interface
 	{
 		c := ResourceConfig{
 			T: t,
@@ -50,7 +50,7 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 	var drainerConfigWrapper *drainerconfig.Wrapper
 	{
 		c := drainerconfig.Config{
-			Resources: []resource.Interface{
+			Handlers: []handler.Interface{
 				r,
 			},
 

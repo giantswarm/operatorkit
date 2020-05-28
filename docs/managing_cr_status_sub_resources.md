@@ -1,6 +1,6 @@
-# Managing CR Status Sub Resources
+# Managing CR Status Sub Handlers
 
-Operators manage systems on behalf of custom resources (CRs). The managed state
+Operators manage systems on behalf of custom handlers (CRs). The managed state
 of the system should always be reflected in the CRs status sub resource to make
 these information available for consumption. The recommended pattern here is to
 have [one operatorkit resource implementation to manage the system](https://github.com/giantswarm/chart-operator/tree/109f2b1f10d3500e4e9468ac901b0f344f37dd7b/service/controller/v3/resource/chart)
@@ -14,7 +14,7 @@ All this is not black and white though. Best practises with the status
 management will also evolve further. One aspect which always has to be
 considered here is who reads and writes status and in which combination does
 this occur to be relevant or dramatically different than in other projects. As a
-guideline the approach of the separated resources should be considered the
+guideline the approach of the separated handlers should be considered the
 default for now because it keeps different responsibilities separated not mixed
 them up.
 
