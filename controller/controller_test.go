@@ -19,6 +19,16 @@ func Test_Controller_Collector_Register(t *testing.T) {
 	prometheus.MustRegister(mustNewTestController("c-2").collector)
 }
 
+func Test_Controller_Collector_Register_Error(t *testing.T) {
+	prometheus.MustRegister(mustNewTestController("same").collector)
+
+	err := prometheus.Register(mustNewTestController("same").collector)
+	_, ok := err.(prometheus.AlreadyRegisteredError)
+	if !ok {
+		panic("registering the same controller collector twice must not be possible")
+	}
+}
+
 func Test_setLoggerCtxValue_doesnt_leak(t *testing.T) {
 	ctx := context.Background()
 
