@@ -12,6 +12,8 @@ type SetConfig struct {
 	Logger               micrologger.Logger
 	K8sClient            k8sclient.Interface
 	NewRuntimeObjectFunc func() runtime.Object
+
+	Controller string
 }
 
 // Set is basically only a wrapper for the collector implementations.
