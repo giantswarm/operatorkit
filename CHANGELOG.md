@@ -11,9 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+### Added
+
+- Add local less rigid `Selector` interface type in `controller.Controller`.
+  The new `Selector` interface is backward compatible with previously used
+  `apiextensions` implementation. #407
+
+
+
 ### Fixed
 
-- Fix the issue where `operatorkit_controller_creation_timestamp` and `operatorkit_controller_deletion_timestamp` metrics were not emitted for all the controllers.
+- Fix the issue where `operatorkit_controller_creation_timestamp` and
+  `operatorkit_controller_deletion_timestamp` metrics were not emitted for all
+  the controllers.
 
 
 
