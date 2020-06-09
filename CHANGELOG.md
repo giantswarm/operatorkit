@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+### Fixed
+
+- Fix the issue where `operatorkit_controller_creation_timestamp` and `operatorkit_controller_deletion_timestamp` metrics were not emitted for all the controllers.
+
+
+
 ## [1.0.0] 2020-05-18
 
 ### Added

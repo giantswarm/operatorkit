@@ -145,6 +145,8 @@ func New(config Config) (*Controller, error) {
 			Logger:               config.Logger,
 			K8sClient:            config.K8sClient,
 			NewRuntimeObjectFunc: config.NewRuntimeObjectFunc,
+
+			Controller: config.Name,
 		}
 
 		collectorSet, err = collector.NewSet(c)
