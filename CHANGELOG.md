@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add local less rigid `Selector` interface type in `controller.Controller`.
   The new `Selector` interface is backward compatible with previously used
-  `apiextensions` implementation.
+  `apiextensions` implementation. #407
 
 
 
