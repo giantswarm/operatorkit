@@ -4,11 +4,25 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
+type Labels = labels.Labels
+
 type Selector interface {
 	Matches(labels Labels) bool
 }
 
-type Labels = labels.Labels
+func NewSelector(matchesFunc func(labels Labels) bool) Selector {
+	return &internalSelector{
+		matchesFunc: matchesFunc,
+	}
+}
+
+type internalSelector struct {
+	matchesFunc func(labels Labels) bool
+}
+
+func (s *internalSelector) Matches(labels Labels) bool {
+	return s.matchesFunc(labels)
+}
 
 type internalLabels map[string]string
 
