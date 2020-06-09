@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix collector registration by using constant labels for controller name.
+- Fix the issue where `operatorkit_controller_creation_timestamp` and `operatorkit_controller_deletion_timestamp` metrics were not emitted for all the controllers.
 
 
 
