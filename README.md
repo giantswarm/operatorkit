@@ -28,6 +28,11 @@ encapsulate best practices we learned while running operators in production.
 
 
 
+## Roadmap
+
+For future planned features and breaking changes see the [roadmap](ROADMAP.md).
+
+
 ## Docs
 
 - [Control Flow Primitives](docs/control_flow_primitives.md)

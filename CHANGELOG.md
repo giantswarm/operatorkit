@@ -11,6 +11,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [1.0.1] 2020-06-09
+
+### Added
+
+- Add local less rigid `Selector` interface type in `controller.Controller`.
+  The new `Selector` interface is backward compatible with previously used
+  `apiextensions` implementation. #407
+
+### Fixed
+
+- Fix the issue where `operatorkit_controller_creation_timestamp` and
+  `operatorkit_controller_deletion_timestamp` metrics were not emitted for all
+  the controllers.
+
+
+
 ## [1.0.0] 2020-05-18
 
 ### Added
@@ -51,10 +67,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-[Unreleased]: https://github.com/giantswarm/operatorkit/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/giantswarm/operatorkit/compare/v1.0.1...HEAD
 
-[1.0.0]: https://github.com/giantswarm/operatorkit/compare/v0.2.1...1.0.0
-[0.2.1]: https://github.com/giantswarm/operatorkit/compare/v0.2.0...0.2.1
-[0.2.0]: https://github.com/giantswarm/operatorkit/compare/v0.1.0...0.2.0
+[1.0.1]: https://github.com/giantswarm/operatorkit/compare/v1.0.0...v1.0.1
+[1.0.0]: https://github.com/giantswarm/operatorkit/compare/v0.2.1...v1.0.0
+[0.2.1]: https://github.com/giantswarm/operatorkit/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/giantswarm/operatorkit/compare/v0.1.0...v0.2.0
 
 [0.1.0]: https://github.com/giantswarm/operatorkit/releases/tag/v0.1.0
