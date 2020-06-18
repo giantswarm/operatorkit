@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [workflows--add] - 2020-06-18
+
 ### Fixed
 
 - Use local `Selector` introduced in 1.0.1 type in `controller` package.
@@ -71,8 +73,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-[Unreleased]: https://github.com/giantswarm/operatorkit/compare/v1.0.1...HEAD
-
+[Unreleased]: https://github.com/giantswarm/operatorkit/compare/vworkflows--add...HEAD
+[workflows--add]: https://github.com/giantswarm/operatorkit/compare/v1.0.1...vworkflows--add
 [1.0.1]: https://github.com/giantswarm/operatorkit/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/giantswarm/operatorkit/compare/v0.2.1...v1.0.0
 [0.2.1]: https://github.com/giantswarm/operatorkit/compare/v0.2.0...v0.2.1
