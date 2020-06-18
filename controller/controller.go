@@ -21,7 +21,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -76,7 +75,7 @@ type Config struct {
 	// object reconciliation. Resources are executed in given order.
 	Resources []resource.Interface
 	// Selector is used to filter objects before passing them to the controller.
-	Selector labels.Selector
+	Selector Selector
 
 	// Name is the name which the controller uses on finalizers for resources.
 	// The name used should be unique in the kubernetes cluster, to ensure that
@@ -94,7 +93,7 @@ type Controller struct {
 	logger               micrologger.Logger
 	newRuntimeObjectFunc func() pkgruntime.Object
 	resources            []resource.Interface
-	selector             labels.Selector
+	selector             Selector
 
 	backOffFactory         func() backoff.Interface
 	bootOnce               sync.Once
@@ -127,7 +126,7 @@ func New(config Config) (*Controller, error) {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Resources must not be empty", config)
 	}
 	if config.Selector == nil {
-		config.Selector = labels.Everything()
+		config.Selector = NewSelectorEverything()
 	}
 
 	if config.Name == "" {
