@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Use local `Selector` introduced in 1.0.1 type in `controller` package.
+
 
 
 ## [1.0.1] 2020-06-09
