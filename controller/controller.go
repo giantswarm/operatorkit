@@ -159,14 +159,17 @@ func New(config Config) (*Controller, error) {
 		}
 	}
 
-	sentryConfig := sentry.Config{
-		Dsn:    config.SentryDSN,
-		Logger: config.Logger,
-	}
-	sentryClient, err := sentry.New(sentryConfig)
-	if err != nil {
-		// This is not a blocking error, we just want to log it.
-		config.Logger.LogCtx(context.Background(), "level", "error", "message", "Error initializing Sentry client", "stack", microerror.JSON(err))
+	var sentryClient *sentry.Service
+	{
+		c := sentry.Config{
+			Dsn:    config.SentryDSN,
+			Logger: config.Logger,
+		}
+		sentryClient, err = sentry.New(c)
+		if err != nil {
+			// This is not a blocking error, we just want to log it.
+			config.Logger.LogCtx(context.Background(), "level", "error", "message", "Error initializing Sentry client", "stack", microerror.JSON(err))
+		}
 	}
 
 	c := &Controller{
