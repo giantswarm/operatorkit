@@ -162,13 +162,15 @@ func New(config Config) (*Controller, error) {
 	var sentryClient *sentry.Service
 	{
 		c := sentry.Config{
-			Dsn:    config.SentryDSN,
-			Logger: config.Logger,
+			Dsn: config.SentryDSN,
 		}
 		sentryClient, err = sentry.New(c)
 		if err != nil {
-			// This is not a blocking error, we just want to log it.
+			// Error during sentry initialization.
 			config.Logger.LogCtx(context.Background(), "level", "error", "message", "Error initializing Sentry client", "stack", microerror.JSON(err))
+			if err != nil {
+				return nil, microerror.Mask(err)
+			}
 		}
 	}
 
