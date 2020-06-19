@@ -24,7 +24,7 @@ func New(config Config) (*Service, error) {
 		Dsn: config.Dsn,
 	})
 	if err != nil {
-		return &disabled, microerror.Mask(err)
+		return nil, microerror.Mask(err)
 	}
 
 	s := &Service{
