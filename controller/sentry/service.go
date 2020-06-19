@@ -27,7 +27,7 @@ func New(config Config) (*Service, error) {
 		return &disabled, microerror.Mask(err)
 	}
 
-	svc := Service{
+	s := &Service{
 		enabled: true,
 	}
 
