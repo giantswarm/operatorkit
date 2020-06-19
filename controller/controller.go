@@ -86,7 +86,7 @@ type Config struct {
 	// runtime objects the controller watches is performed. Defaults to
 	// DefaultResyncPeriod.
 	ResyncPeriod time.Duration
-	// (Optional) SentryDSN is the URL used to forward runtime errors to the sentry.io service.
+	// SentryDSN is the optional URL used to forward runtime errors to the sentry.io service.
 	// If this field is empty, logs will not be forwarded.
 	SentryDSN string
 }
