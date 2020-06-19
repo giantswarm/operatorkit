@@ -11,12 +11,12 @@ type Config struct {
 	Dsn string
 }
 
-type Service struct {
+type Sentry struct {
 	enabled bool
 }
 
-func New(config Config) (*Service, error) {
-	disabled := Service{enabled: false}
+func New(config Config) (*Sentry, error) {
+	disabled := Sentry{enabled: false}
 	if config.Dsn == "" {
 		return &disabled, nil
 	}
@@ -27,14 +27,14 @@ func New(config Config) (*Service, error) {
 		return nil, microerror.Mask(err)
 	}
 
-	s := &Service{
+	s := &Sentry{
 		enabled: true,
 	}
 
 	return s, nil
 }
 
-func (s *Service) Capture(ctx context.Context, err error) {
+func (s *Sentry) Capture(ctx context.Context, err error) {
 	if s.enabled {
 		sentry.CaptureException(err)
 	}

@@ -105,7 +105,7 @@ type Controller struct {
 	collector              *collector.Set
 	loop                   int64
 	removedFinalizersCache *stringCache
-	sentry                 *sentry.Service
+	sentry                 *sentry.Sentry
 
 	name         string
 	resyncPeriod time.Duration
@@ -159,7 +159,7 @@ func New(config Config) (*Controller, error) {
 		}
 	}
 
-	var sentryClient *sentry.Service
+	var sentryClient *sentry.Sentry
 	{
 		c := sentry.Config{
 			Dsn: config.SentryDSN,
