@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
-
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/k8sclient/v3/pkg/k8sclient"
 	"github.com/giantswarm/microerror"
@@ -37,6 +36,8 @@ import (
 	"github.com/giantswarm/operatorkit/controller/context/finalizerskeptcontext"
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
+	"github.com/giantswarm/operatorkit/controller/context/updateallowedcontext"
+	sentryservice "github.com/giantswarm/operatorkit/controller/sentry"
 	"github.com/giantswarm/operatorkit/resource"
 )
 
@@ -105,7 +106,7 @@ type Controller struct {
 	collector              *collector.Set
 	loop                   int64
 	removedFinalizersCache *stringCache
-	sentry                 *sentry.Service
+	sentry                 *sentryservice.Service
 
 	name         string
 	resyncPeriod time.Duration
@@ -159,7 +160,7 @@ func New(config Config) (*Controller, error) {
 		}
 	}
 
-	sentryService, err := sentry.New(sentry.Config{Dsn: config.SentryDSN})
+	sentryService, err := sentryservice.New(sentryservice.Config{Dsn: config.SentryDSN})
 	if err != nil {
 		// This is not a blocking error, we just want to log it.
 		config.Logger.LogCtx(context.Background(), "level", "error", "message", "Error initializing Sentry client", "stack", microerror.JSON(err))
