@@ -168,7 +168,6 @@ func New(config Config) (*Controller, error) {
 		sentryClient, err = sentry.New(c)
 		if err != nil {
 			// Error during sentry initialization.
-			config.Logger.LogCtx(context.Background(), "level", "error", "message", "Error initializing Sentry client", "stack", microerror.JSON(err))
 			if err != nil {
 				return nil, microerror.Mask(err)
 			}
