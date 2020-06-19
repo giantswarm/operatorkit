@@ -212,6 +212,7 @@ func (c *Controller) Boot(ctx context.Context) {
 
 		err := backoff.RetryNotify(operation, c.backOffFactory(), notifier)
 		if err != nil {
+			c.sentry.Capture(ctx, err)
 			c.logger.LogCtx(ctx, "level", "error", "message", "stop controller boot retries due to too many errors", "stack", microerror.JSON(err))
 			os.Exit(1)
 		}
