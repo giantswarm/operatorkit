@@ -23,8 +23,8 @@ jobs:
     name: Gather facts
     runs-on: ubuntu-18.04
     outputs:
-      version: ${{ steps.get_version.outputs.version }}
       project_go_path: ${{ steps.get_project_go_path.outputs.path }}
+      version: ${{ steps.get_version.outputs.version }}
     steps:
       - name: Get version
         id: get_version
