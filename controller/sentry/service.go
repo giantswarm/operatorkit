@@ -31,5 +31,7 @@ func New(config Config) (*Service, error) {
 }
 
 func (s *Service) Capture(ctx context.Context, err error) {
-	sentry.CaptureException(err)
+	if s.enabled {
+		sentry.CaptureException(err)
+	}
 }

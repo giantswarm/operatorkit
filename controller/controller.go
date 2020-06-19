@@ -236,6 +236,7 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 	res, err := c.reconcile(ctx, req)
 	if err != nil {
 		errorGauge.Inc()
+		c.sentry.Capture(ctx, err)
 		c.logger.LogCtx(ctx, "level", "error", "message", "failed to reconcile", "stack", microerror.JSON(err))
 		return reconcile.Result{}, nil
 	}
@@ -265,15 +266,9 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 
 	go func() {
 		for {
-			select {
-			case <-c.errorCollector:
-				errorGauge.Inc()
-
-				sentry.CaptureException(err)
-
-			case <-time.After(resetWait):
-				errorGauge.Set(0)
-			}
+			resetWait := c.resyncPeriod * 4
+			time.Sleep(resetWait)
+			errorGauge.Set(0)
 		}
 	}()
 
