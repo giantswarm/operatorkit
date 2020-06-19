@@ -31,7 +31,7 @@ func New(config Config) (*Service, error) {
 		enabled: true,
 	}
 
-	return &svc, nil
+	return s, nil
 }
 
 func (s *Service) Capture(ctx context.Context, err error) {
