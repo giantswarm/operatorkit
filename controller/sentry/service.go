@@ -2,6 +2,7 @@ package sentry
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/giantswarm/microerror"
@@ -27,6 +28,7 @@ func New(config Config) (*Service, error) {
 		config.Logger.Log("level", "warning", "Sentry DSN is not set.")
 		return &disabled, nil
 	}
+	config.Logger.Log("level", "debug", fmt.Sprintf("Setting up Sentry with DSN %s", config.Dsn))
 	err := sentry.Init(sentry.ClientOptions{
 		Dsn: config.Dsn,
 	})
