@@ -164,6 +164,7 @@ func New(config Config) (*Controller, error) {
 		c := sentry.Config{
 			Dsn: config.SentryDSN,
 		}
+
 		sentryClient, err = sentry.New(c)
 		if err != nil {
 			// Error during sentry initialization.
