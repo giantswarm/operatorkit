@@ -168,9 +168,7 @@ func New(config Config) (*Controller, error) {
 		sentryClient, err = sentry.New(c)
 		if err != nil {
 			// Error during sentry initialization.
-			if err != nil {
-				return nil, microerror.Mask(err)
-			}
+			return nil, microerror.Mask(err)
 		}
 	}
 
