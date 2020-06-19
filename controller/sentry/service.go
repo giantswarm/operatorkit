@@ -45,9 +45,7 @@ func New(config Config) (*Service, error) {
 }
 
 func (s *Service) Capture(ctx context.Context, err error) {
-	s.logger.LogCtx(ctx, "level", "debug", "Got an error.")
 	if s.enabled {
-		s.logger.LogCtx(ctx, "level", "debug", "Sending the error to sentry.")
 		sentry.CaptureException(err)
 	}
 }
