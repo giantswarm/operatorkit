@@ -36,6 +36,7 @@ import (
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/updateallowedcontext"
+	"github.com/giantswarm/operatorkit/controller/internal/sentry"
 	"github.com/giantswarm/operatorkit/resource"
 )
 
@@ -85,6 +86,9 @@ type Config struct {
 	// runtime objects the controller watches is performed. Defaults to
 	// DefaultResyncPeriod.
 	ResyncPeriod time.Duration
+	// SentryDSN is the optional URL used to forward runtime errors to the sentry.io service.
+	// If this field is empty, logs will not be forwarded.
+	SentryDSN string
 }
 
 type Controller struct {
@@ -101,6 +105,7 @@ type Controller struct {
 	collector              *collector.Set
 	loop                   int64
 	removedFinalizersCache *stringCache
+	sentry                 sentry.Interface
 
 	name         string
 	resyncPeriod time.Duration
@@ -154,6 +159,19 @@ func New(config Config) (*Controller, error) {
 		}
 	}
 
+	var sentryClient sentry.Interface
+	{
+		c := sentry.Config{
+			DSN: config.SentryDSN,
+		}
+
+		sentryClient, err = sentry.New(c)
+		if err != nil {
+			// Error during sentry initialization.
+			return nil, microerror.Mask(err)
+		}
+	}
+
 	c := &Controller{
 		initCtx:              config.InitCtx,
 		k8sClient:            config.K8sClient,
@@ -168,6 +186,7 @@ func New(config Config) (*Controller, error) {
 		collector:              collectorSet,
 		loop:                   -1,
 		removedFinalizersCache: newStringCache(config.ResyncPeriod * 3),
+		sentry:                 sentryClient,
 
 		name:         config.Name,
 		resyncPeriod: config.ResyncPeriod,
@@ -193,6 +212,7 @@ func (c *Controller) Boot(ctx context.Context) {
 
 		err := backoff.RetryNotify(operation, c.backOffFactory(), notifier)
 		if err != nil {
+			c.sentry.Capture(ctx, err)
 			c.logger.LogCtx(ctx, "level", "error", "message", "stop controller boot retries due to too many errors", "stack", microerror.JSON(err))
 			os.Exit(1)
 		}
@@ -224,6 +244,7 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 	res, err := c.reconcile(ctx, req)
 	if err != nil {
 		errorGauge.Inc()
+		c.sentry.Capture(ctx, err)
 		c.logger.LogCtx(ctx, "level", "error", "message", "failed to reconcile", "stack", microerror.JSON(err))
 		return reconcile.Result{}, nil
 	}
