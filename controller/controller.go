@@ -36,7 +36,7 @@ import (
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/updateallowedcontext"
-	"github.com/giantswarm/operatorkit/controller/sentry"
+	"github.com/giantswarm/operatorkit/controller/internal/sentry"
 	"github.com/giantswarm/operatorkit/resource"
 )
 
@@ -105,7 +105,7 @@ type Controller struct {
 	collector              *collector.Set
 	loop                   int64
 	removedFinalizersCache *stringCache
-	sentry                 *sentry.Sentry
+	sentry                 sentry.Interface
 
 	name         string
 	resyncPeriod time.Duration
@@ -159,10 +159,10 @@ func New(config Config) (*Controller, error) {
 		}
 	}
 
-	var sentryClient *sentry.Sentry
+	var sentryClient sentry.Interface
 	{
 		c := sentry.Config{
-			Dsn: config.SentryDSN,
+			DSN: config.SentryDSN,
 		}
 
 		sentryClient, err = sentry.New(c)
