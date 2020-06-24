@@ -23,6 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -36,6 +37,7 @@ import (
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/updateallowedcontext"
+	"github.com/giantswarm/operatorkit/controller/internal/recorder"
 	"github.com/giantswarm/operatorkit/controller/internal/sentry"
 	"github.com/giantswarm/operatorkit/resource"
 )
@@ -82,6 +84,8 @@ type Config struct {
 	// The name used should be unique in the kubernetes cluster, to ensure that
 	// two operators which handle the same resource add two distinct finalizers.
 	Name string
+	// Recorder returns a new EventRecorder to write events on Kubernetes objects.
+	Recorder record.EventRecorder
 	// ResyncPeriod is the duration after which a complete sync with all known
 	// runtime objects the controller watches is performed. Defaults to
 	// DefaultResyncPeriod.
@@ -96,6 +100,7 @@ type Controller struct {
 	k8sClient            k8sclient.Interface
 	logger               micrologger.Logger
 	newRuntimeObjectFunc func() pkgruntime.Object
+	recorder             record.EventRecorder
 	resources            []resource.Interface
 	selector             Selector
 
@@ -159,6 +164,16 @@ func New(config Config) (*Controller, error) {
 		}
 	}
 
+	var eventRecorder record.EventRecorder
+	{
+		c := recorder.Config{
+			Component: config.Name,
+			K8sClient: config.K8sClient,
+		}
+
+		eventRecorder = recorder.New(c)
+	}
+
 	var sentryClient sentry.Interface
 	{
 		c := sentry.Config{
@@ -178,6 +193,7 @@ func New(config Config) (*Controller, error) {
 		logger:               config.Logger,
 		selector:             config.Selector,
 		newRuntimeObjectFunc: config.NewRuntimeObjectFunc,
+		recorder:             eventRecorder,
 		resources:            config.Resources,
 
 		backOffFactory:         func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) },
