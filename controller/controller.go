@@ -37,8 +37,8 @@ import (
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/updateallowedcontext"
-	"github.com/giantswarm/operatorkit/controller/internal/recorder"
 	"github.com/giantswarm/operatorkit/controller/internal/sentry"
+	"github.com/giantswarm/operatorkit/controller/recorder"
 	"github.com/giantswarm/operatorkit/resource"
 )
 
