@@ -592,11 +592,3 @@ func unsetLoggerCtxValue(ctx context.Context, key string) context.Context {
 
 	return ctx
 }
-
-func (c *Controller) Event(object pkgruntime.Object, eventtype string, reason string, message string) {
-	c.recorder.Event(object, eventtype, reason, message)
-}
-
-func (c *Controller) Eventf(object pkgruntime.Object, eventtype string, reason string, messageFmt string, args ...interface{}) {
-	c.recorder.Eventf(object, eventtype, reason, messageFmt, args)
-}
