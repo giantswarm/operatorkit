@@ -54,7 +54,6 @@ func (r *Resource) EnsureCreated(ctx context.Context, obj interface{}) error {
 	r.mutex.Lock()
 	errFunc := r.returnErrorFunc
 	r.mutex.Unlock()
-
 	if errFunc != nil {
 		err := errFunc(obj)
 		if err != nil {

@@ -18,6 +18,7 @@ import (
 	"github.com/giantswarm/micrologger/loggermeta"
 	"github.com/giantswarm/to"
 	"github.com/prometheus/client_golang/prometheus"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,8 +38,8 @@ import (
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/updateallowedcontext"
+	"github.com/giantswarm/operatorkit/controller/internal/recorder"
 	"github.com/giantswarm/operatorkit/controller/internal/sentry"
-	"github.com/giantswarm/operatorkit/controller/recorder"
 	"github.com/giantswarm/operatorkit/resource"
 )
 
@@ -84,8 +85,6 @@ type Config struct {
 	// The name used should be unique in the kubernetes cluster, to ensure that
 	// two operators which handle the same resource add two distinct finalizers.
 	Name string
-	// Recorder returns a new EventRecorder to write events on Kubernetes objects.
-	Recorder record.EventRecorder
 	// ResyncPeriod is the duration after which a complete sync with all known
 	// runtime objects the controller watches is performed. Defaults to
 	// DefaultResyncPeriod.
@@ -257,8 +256,28 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 		ctx = setLoggerCtxValue(ctx, loggerKeyController, c.name)
 	}
 
-	res, err := c.reconcile(ctx, req)
+	obj := c.newRuntimeObjectFunc()
+	err := c.k8sClient.CtrlClient().Get(ctx, req.NamespacedName, obj)
+	if errors.IsNotFound(err) {
+		// At this point the controller-runtime cache dispatches a runtime object
+		// which is already being deleted, which is why it cannot be found here
+		// anymore. We then likely perceive the last delete event of that runtime
+		// object and it got purged from the controller-runtime cache. We do not
+		// need to log these errors and just stop processing here in a more graceful
+		// way.
+		return reconcile.Result{}, nil
+	} else if err != nil {
+		return reconcile.Result{}, microerror.Mask(err)
+	}
+
+	res, err := c.reconcile(ctx, req, obj)
 	if err != nil {
+		// In case of microerror create an event on the object
+		if merr, ok := microerror.Cause(err).(*microerror.Error); ok {
+			if merr.Kind != "" && merr.Desc != "" {
+				c.recorder.Event(obj, corev1.EventTypeWarning, merr.Kind, merr.Desc)
+			}
+		}
 		errorGauge.Inc()
 		c.sentry.Capture(ctx, err)
 		c.logger.LogCtx(ctx, "level", "error", "message", "failed to reconcile", "stack", microerror.JSON(err))
@@ -385,22 +404,8 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) error {
 	return nil
 }
 
-func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	obj := c.newRuntimeObjectFunc()
-	err := c.k8sClient.CtrlClient().Get(ctx, req.NamespacedName, obj)
-	if errors.IsNotFound(err) {
-		// At this point the controller-runtime cache dispatches a runtime object
-		// which is already being deleted, which is why it cannot be found here
-		// anymore. We then likely perceive the last delete event of that runtime
-		// object and it got purged from the controller-runtime cache. We do not
-		// need to log these errors and just stop processing here in a more graceful
-		// way.
-		return reconcile.Result{}, nil
-	} else if err != nil {
-		return reconcile.Result{}, microerror.Mask(err)
-	}
-
-	ctx, err = c.initCtx(ctx, obj)
+func (c *Controller) reconcile(ctx context.Context, req reconcile.Request, obj interface{}) (reconcile.Result, error) {
+	ctx, err := c.initCtx(ctx, obj)
 	if err != nil {
 		return reconcile.Result{}, microerror.Mask(err)
 	}
