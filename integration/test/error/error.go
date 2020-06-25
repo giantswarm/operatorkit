@@ -8,7 +8,6 @@ import (
 
 var countMismatchError = &microerror.Error{
 	Kind: "countMismatchError",
-	Desc: "Error count mismatch",
 }
 
 // IsCountMismatch asserts countMismatchError.
@@ -18,7 +17,6 @@ func IsCountMismatch(err error) bool {
 
 var testError = &microerror.Error{
 	Kind: "testError",
-	Desc: "Error test",
 }
 
 // IsTestError asserts testError.
