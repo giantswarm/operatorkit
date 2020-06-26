@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/giantswarm/microerror"
+
 	"github.com/giantswarm/operatorkit/integration/testresource"
 	"github.com/giantswarm/operatorkit/integration/wrapper/configmap"
 	"github.com/giantswarm/operatorkit/resource"
