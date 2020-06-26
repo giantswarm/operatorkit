@@ -13,7 +13,7 @@ type Config struct {
 	K8sClient k8sclient.Interface
 }
 
-// New creates an event recorder to send custom events to Kubernetes to be recorded for targeted Kubernetes objects
+// New creates an event recorder to send custom events to Kubernetes to be recorded for targeted Kubernetes objects.
 func New(c Config) Interface {
 	eventBroadcaster := record.NewBroadcaster()
 	if _, isfake := c.K8sClient.(*k8sclienttest.Clients); !isfake {
