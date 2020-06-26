@@ -14,12 +14,14 @@ type Config struct {
 }
 
 // New creates an event recorder to send custom events to Kubernetes to be recorded for targeted Kubernetes objects
-func New(c Config) record.EventRecorder {
+func New(c Config) Interface {
 	eventBroadcaster := record.NewBroadcaster()
 	if _, isfake := c.K8sClient.(*k8sclienttest.Clients); !isfake {
 		eventBroadcaster.StartRecordingToSink(
 			&typedcorev1.EventSinkImpl{
 				Interface: c.K8sClient.K8sClient().CoreV1().Events("")})
 	}
-	return eventBroadcaster.NewRecorder(c.K8sClient.Scheme(), clientv1.EventSource{Component: c.Component})
+	return &Recorder{
+		eventBroadcaster.NewRecorder(c.K8sClient.Scheme(), clientv1.EventSource{Component: c.Component}),
+	}
 }

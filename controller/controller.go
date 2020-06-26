@@ -18,13 +18,11 @@ import (
 	"github.com/giantswarm/micrologger/loggermeta"
 	"github.com/giantswarm/to"
 	"github.com/prometheus/client_golang/prometheus"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -99,7 +97,7 @@ type Controller struct {
 	k8sClient            k8sclient.Interface
 	logger               micrologger.Logger
 	newRuntimeObjectFunc func() pkgruntime.Object
-	recorder             record.EventRecorder
+	event                recorder.Interface
 	resources            []resource.Interface
 	selector             Selector
 
@@ -163,7 +161,7 @@ func New(config Config) (*Controller, error) {
 		}
 	}
 
-	var eventRecorder record.EventRecorder
+	var eventRecorder recorder.Interface
 	{
 		c := recorder.Config{
 			Component: config.Name,
@@ -192,7 +190,7 @@ func New(config Config) (*Controller, error) {
 		logger:               config.Logger,
 		selector:             config.Selector,
 		newRuntimeObjectFunc: config.NewRuntimeObjectFunc,
-		recorder:             eventRecorder,
+		event:                eventRecorder,
 		resources:            config.Resources,
 
 		backOffFactory:         func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) },
@@ -272,12 +270,9 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 
 	res, err := c.reconcile(ctx, req, obj)
 	if err != nil {
-		// In case of microerror create an event on the object
-		if merr, ok := microerror.Cause(err).(*microerror.Error); ok {
-			if merr.Kind != "" && merr.Desc != "" {
-				c.recorder.Event(obj, corev1.EventTypeWarning, merr.Kind, merr.Desc)
-			}
-		}
+		// microerror creates an error event on the object
+		c.event.Emit(ctx, obj, err)
+
 		errorGauge.Inc()
 		c.sentry.Capture(ctx, err)
 		c.logger.LogCtx(ctx, "level", "error", "message", "failed to reconcile", "stack", microerror.JSON(err))

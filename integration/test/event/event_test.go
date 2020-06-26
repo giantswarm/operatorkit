@@ -23,13 +23,12 @@ const (
 	testNamespace = "event-test"
 )
 
-// Test_Finalizer_Integration_Basic is a integration test for basic finalizer
-// operations. The test verifies that finalizers are added and removed as
-// expected. It does not cover correct behavior with reconciliation.
+// Test_Kubernetes_Event is a integration test for Kubernetes events.
+// The test verifies that error events are created when reconciliation returns error.
 //
 // !!! This test does not work with CRs, the controller is not booted !!!
 //
-func Test_Finalizer_Integration_Basic(t *testing.T) {
+func Test_Kubernetes_Event(t *testing.T) {
 	var err error
 	var r *testresource.Resource
 	{
