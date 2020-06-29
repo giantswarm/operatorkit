@@ -164,8 +164,9 @@ func New(config Config) (*Controller, error) {
 	var eventRecorder recorder.Interface
 	{
 		c := recorder.Config{
-			Component: config.Name,
 			K8sClient: config.K8sClient,
+
+			Component: config.Name,
 		}
 
 		eventRecorder = recorder.New(c)
@@ -272,7 +273,6 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 	if err != nil {
 		// Microerror creates an error event on the object when kind and description is set.
 		c.event.Emit(ctx, obj, err)
-
 		errorGauge.Inc()
 		c.sentry.Capture(ctx, err)
 		c.logger.LogCtx(ctx, "level", "error", "message", "failed to reconcile", "stack", microerror.JSON(err))
