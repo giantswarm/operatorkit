@@ -32,6 +32,12 @@ workflows:
             - go-test
 
       - architect/integration-test:
+          name: integration-test-event
+          test-dir: "integration/test/event"
+          requires:
+            - go-test
+
+      - architect/integration-test:
           name: integration-test-finalizer
           test-dir: "integration/test/finalizer"
           requires:
