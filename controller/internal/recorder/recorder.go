@@ -2,6 +2,7 @@ package recorder
 
 import (
 	"context"
+	"errors"
 
 	"github.com/giantswarm/k8sclient/v3/pkg/k8sclient"
 	"github.com/giantswarm/k8sclient/v3/pkg/k8sclienttest"
@@ -39,7 +40,8 @@ func New(c Config) Interface {
 }
 
 func (r *Recorder) Emit(ctx context.Context, obj pkgruntime.Object, err error) {
-	if merr, ok := microerror.Cause(err).(*microerror.Error); ok {
+	var merr *microerror.Error
+	if errors.As(err, &merr) {
 		if merr.Kind != "" && merr.Desc != "" {
 			r.Event(obj, corev1.EventTypeWarning, merr.Kind, merr.Desc)
 		}

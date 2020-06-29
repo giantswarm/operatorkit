@@ -118,7 +118,7 @@ func Test_Kubernetes_Event(t *testing.T) {
 	if err != nil {
 		t.Fatal("failed to get events from configmap", nil, "got", err)
 	}
-	if len(events) == 0 {
+	if len(events) != 1 {
 		t.Fatal("failed to create event for configmap")
 	}
 }
