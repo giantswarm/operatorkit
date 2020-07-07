@@ -1,0 +1,19 @@
+# DO NOT EDIT. Generated with:
+#
+#    devctl gen dependabot
+#
+version: 2
+updates:
+- package-ecosystem: gomod
+  directory: "/"
+  schedule:
+    interval: weekly
+    time: "04:00"
+  open-pull-requests-limit: 10
+  reviewers: 
+  - xh3b4sd 
+  - kopiczko
+  ignore:
+  - dependency-name: k8s.io/*
+    versions:
+    - ">=0.17.0"
