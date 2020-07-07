@@ -12,7 +12,7 @@ require (
 	github.com/giantswarm/micrologger v0.3.1
 	github.com/giantswarm/to v0.2.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/prometheus/client_golang v1.3.0
+	github.com/prometheus/client_golang v1.7.1
 	k8s.io/api v0.16.6
 	k8s.io/apimachinery v0.16.6
 	k8s.io/client-go v0.16.6
