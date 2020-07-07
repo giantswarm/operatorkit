@@ -13,8 +13,8 @@ require (
 	github.com/giantswarm/to v0.2.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.3.0
-	k8s.io/api v0.16.6
-	k8s.io/apimachinery v0.16.6
-	k8s.io/client-go v0.16.6
-	sigs.k8s.io/controller-runtime v0.4.0
+	k8s.io/api v0.18.2
+	k8s.io/apimachinery v0.18.2
+	k8s.io/client-go v0.18.2
+	sigs.k8s.io/controller-runtime v0.6.0
 )
