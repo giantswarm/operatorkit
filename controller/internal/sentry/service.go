@@ -6,7 +6,8 @@ import (
 )
 
 type Config struct {
-	DSN string
+	DSN  string
+	Tags map[string]string
 }
 
 func New(config Config) (Interface, error) {
@@ -19,6 +20,12 @@ func New(config Config) (Interface, error) {
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
+
+	sentry.ConfigureScope(func(scope *sentry.Scope) {
+		for k, v := range config.Tags {
+			scope.SetTag(k, v)
+		}
+	})
 
 	return &Default{}, nil
 }
