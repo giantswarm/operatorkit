@@ -92,7 +92,7 @@ func Test_Kubernetes_Event(t *testing.T) {
 			"testlabel": "testlabel",
 		},
 	)
-	_, err = wrapper.UpdateObject(testNamespace, cm)
+	_, err = wrapper.UpdateObject(ctx, testNamespace, cm)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}

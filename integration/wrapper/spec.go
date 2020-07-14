@@ -1,13 +1,17 @@
 package wrapper
 
-import "github.com/giantswarm/operatorkit/controller"
+import (
+	"context"
+
+	"github.com/giantswarm/operatorkit/controller"
+)
 
 type Interface interface {
 	// CRUD functions for objects.
-	CreateObject(namespace string, obj interface{}) (interface{}, error)
-	DeleteObject(name, namespace string) error
-	GetObject(name, namespace string) (interface{}, error)
-	UpdateObject(namespace string, obj interface{}) (interface{}, error)
+	CreateObject(ctx context.Context, namespace string, obj interface{}) (interface{}, error)
+	DeleteObject(ctx context.Context, name, namespace string) error
+	GetObject(ctx context.Context, name, namespace string) (interface{}, error)
+	UpdateObject(ctx context.Context, namespace string, obj interface{}) (interface{}, error)
 
 	// Functions for test setup and teardown.
 	MustSetup(namespace string)

@@ -66,8 +66,8 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 		}
 	}
 
-	wrapper.MustSetup(testNamespace)
-	defer wrapper.MustTeardown(testNamespace)
+	wrapper.MustSetup(ctx, testNamespace)
+	defer wrapper.MustTeardown(ctx, testNamespace)
 
 	controller := wrapper.Controller()
 
@@ -141,7 +141,7 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
-	resultObj, err = wrapper.GetObject(configMapName, testNamespace)
+	resultObj, err = wrapper.GetObject(ctx, configMapName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -169,7 +169,7 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	}})
 
 	// We verify that our object is completely gone now.
-	_, err = wrapper.GetObject(configMapName, testNamespace)
+	_, err = wrapper.GetObject(ctx, configMapName, testNamespace)
 	if !configmap.IsNotFound(err) {
 		t.Fatalf("error == %#v, want NotFound error", err)
 	}
