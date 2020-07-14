@@ -19,7 +19,7 @@ func (r *Resource) ApplyDeleteChange(ctx context.Context, obj, deleteChange inte
 	for _, secret := range secretsToDelete {
 		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("deleting Secret %#q in namespace %#q", secret.Name, secret.Namespace))
 
-		err := r.k8sClient.CoreV1().Secrets(secret.Namespace).Delete(secret.Name, &metav1.DeleteOptions{})
+		err := r.k8sClient.CoreV1().Secrets(secret.Namespace).Delete(ctx, secret.Name, metav1.DeleteOptions{})
 		if apierrors.IsNotFound(err) {
 			r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("already deleted Secret %#q in namespace %#q", secret.Name, secret.Namespace))
 		} else if err != nil {

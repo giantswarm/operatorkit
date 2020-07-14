@@ -84,7 +84,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 					},
 				},
 			}
-			v, err := drainerConfigWrapper.CreateObject(testNamespace, drainerConfig)
+			v, err := drainerConfigWrapper.CreateObject(ctx, testNamespace, drainerConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -106,7 +106,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		o := func() error {
 			createdDrainerConfig.SetLabels(map[string]string{"testlabel": "testlabel"})
 
-			_, err = drainerConfigWrapper.UpdateObject(testNamespace, createdDrainerConfig)
+			_, err = drainerConfigWrapper.UpdateObject(ctx, testNamespace, createdDrainerConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -156,7 +156,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	}
 
 	// We get the object after the controller has been started.
-	resultObj, err := drainerConfigWrapper.GetObject(objName, testNamespace)
+	resultObj, err := drainerConfigWrapper.GetObject(ctx, objName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -183,7 +183,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	}
 
 	// We delete the object now.
-	err = drainerConfigWrapper.DeleteObject(objName, testNamespace)
+	err = drainerConfigWrapper.DeleteObject(ctx, objName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -212,7 +212,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	// Verify deletion timestamp and finalizer.
 	{
 		o := func() error {
-			obj, err := drainerConfigWrapper.GetObject(objName, testNamespace)
+			obj, err := drainerConfigWrapper.GetObject(ctx, objName, testNamespace)
 			if err != nil {
 				return microerror.Mask(err)
 			}

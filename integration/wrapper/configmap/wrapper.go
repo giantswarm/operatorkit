@@ -1,6 +1,7 @@
 package configmap
 
 import (
+	"context"
 	"time"
 
 	"github.com/giantswarm/k8sclient/v3/pkg/k8sclient"
@@ -89,8 +90,8 @@ func (w Wrapper) Controller() *controller.Controller {
 	return w.controller
 }
 
-func (w Wrapper) MustSetup(namespace string) {
-	w.MustTeardown(namespace)
+func (w Wrapper) MustSetup(ctx context.Context, namespace string) {
+	w.MustTeardown(ctx, namespace)
 
 	ns := &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
@@ -103,14 +104,14 @@ func (w Wrapper) MustSetup(namespace string) {
 		Spec: corev1.NamespaceSpec{},
 	}
 
-	_, err := w.k8sClient.CoreV1().Namespaces().Create(ns)
+	_, err := w.k8sClient.CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (w Wrapper) MustTeardown(namespace string) {
-	err := w.k8sClient.CoreV1().Namespaces().Delete(namespace, nil)
+func (w Wrapper) MustTeardown(ctx context.Context, namespace string) {
+	err := w.k8sClient.CoreV1().Namespaces().Delete(ctx, namespace, metav1.DeleteOptions{})
 	if errors.IsNotFound(err) {
 		// fall though
 	} else if err != nil {
@@ -118,8 +119,8 @@ func (w Wrapper) MustTeardown(namespace string) {
 	}
 }
 
-func (w Wrapper) Events(namespace string) ([]corev1.Event, error) {
-	events, err := w.k8sClient.CoreV1().Events(namespace).List(metav1.ListOptions{})
+func (w Wrapper) Events(ctx context.Context, namespace string) ([]corev1.Event, error) {
+	events, err := w.k8sClient.CoreV1().Events(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}

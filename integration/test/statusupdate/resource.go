@@ -85,7 +85,7 @@ func (r *Resource) EnsureCreated(ctx context.Context, obj interface{}) error {
 	{
 		curObj := obj.(*v1alpha1.DrainerConfig)
 
-		newObj, err := r.k8sClient.G8sClient().CoreV1alpha1().DrainerConfigs(curObj.GetNamespace()).Get(curObj.GetName(), metav1.GetOptions{})
+		newObj, err := r.k8sClient.G8sClient().CoreV1alpha1().DrainerConfigs(curObj.GetNamespace()).Get(ctx, curObj.GetName(), metav1.GetOptions{})
 		if err != nil {
 			r.t.Fatal("expected", nil, "got", err)
 		}
@@ -102,7 +102,7 @@ func (r *Resource) EnsureCreated(ctx context.Context, obj interface{}) error {
 		}
 		customResource.Status.Conditions = append(customResource.Status.Conditions, newCondition)
 
-		_, err := r.k8sClient.G8sClient().CoreV1alpha1().DrainerConfigs(customResource.GetNamespace()).UpdateStatus(&customResource)
+		_, err := r.k8sClient.G8sClient().CoreV1alpha1().DrainerConfigs(customResource.GetNamespace()).UpdateStatus(ctx, &customResource, metav1.UpdateOptions{})
 		if err != nil {
 			r.t.Fatal("expected", nil, "got", err)
 		}

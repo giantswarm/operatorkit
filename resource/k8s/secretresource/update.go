@@ -6,6 +6,7 @@ import (
 
 	"github.com/giantswarm/microerror"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (r *Resource) ApplyUpdateChange(ctx context.Context, obj, updateChange interface{}) error {
@@ -17,7 +18,7 @@ func (r *Resource) ApplyUpdateChange(ctx context.Context, obj, updateChange inte
 	for _, secret := range secrets {
 		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("updating Secret %#q in namespace %#q", secret.Name, secret.Namespace))
 
-		_, err = r.k8sClient.CoreV1().Secrets(secret.Namespace).Update(secret)
+		_, err = r.k8sClient.CoreV1().Secrets(secret.Namespace).Update(ctx, secret, metav1.UpdateOptions{})
 		if err != nil {
 			return microerror.Mask(err)
 		}

@@ -83,7 +83,7 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 				},
 				TypeMeta: v1alpha1.NewDrainerTypeMeta(),
 			}
-			_, err := drainerConfigWrapper.CreateObject(testNamespace, drainerConfig)
+			_, err := drainerConfigWrapper.CreateObject(ctx, testNamespace, drainerConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -101,7 +101,7 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	{
-		newObj, err := drainerConfigWrapper.GetObject(objName, testNamespace)
+		newObj, err := drainerConfigWrapper.GetObject(ctx, objName, testNamespace)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}

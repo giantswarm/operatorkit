@@ -101,7 +101,7 @@ func Test_Controller_Integration_Error(t *testing.T) {
 				},
 			}
 
-			_, err = wrapper.CreateObject(testNamespace, a)
+			_, err = wrapper.CreateObject(ctx, testNamespace, a)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -113,7 +113,7 @@ func Test_Controller_Integration_Error(t *testing.T) {
 				},
 			}
 
-			_, err = wrapper.CreateObject(testNamespace, b)
+			_, err = wrapper.CreateObject(ctx, testNamespace, b)
 			if err != nil {
 				return microerror.Mask(err)
 			}

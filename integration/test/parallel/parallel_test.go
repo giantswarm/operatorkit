@@ -174,7 +174,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 				},
 			}
 
-			_, err := harnessA.CreateObject(objNamespace, drainerConfig)
+			_, err := harnessA.CreateObject(ctx, objNamespace, drainerConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -227,7 +227,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 
 	// Verify deletion timestamp and finalizers.
 	{
-		obj, err := harnessA.GetObject(objName, objNamespace)
+		obj, err := harnessA.GetObject(ctx, objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -256,7 +256,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 
 	// Delete the object.
 	{
-		err := harnessA.DeleteObject(objName, objNamespace)
+		err := harnessA.DeleteObject(ctx, objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -266,7 +266,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	// from constantly failing resource.
 	{
 		o := func() error {
-			obj, err := harnessA.GetObject(objName, objNamespace)
+			obj, err := harnessA.GetObject(ctx, objName, objNamespace)
 			if err != nil {
 				t.Fatalf("err == %v, want %v", err, nil)
 			}
@@ -342,7 +342,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	// Verify that the object is completely gone now.
 	{
 		o := func() error {
-			_, err := harnessA.GetObject(objName, objNamespace)
+			_, err := harnessA.GetObject(ctx, objName, objNamespace)
 			if drainerconfig.IsNotFound(err) {
 				return nil
 			} else if err != nil {

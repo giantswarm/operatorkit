@@ -65,7 +65,7 @@ func (c *Controller) addFinalizer(ctx context.Context, obj interface{}) (bool, e
 			if err != nil {
 				return microerror.Mask(err)
 			}
-			err = c.k8sClient.RESTClient().Patch(types.JSONPatchType).AbsPath(accessor.GetSelfLink()).Body(p).Do().Error()
+			err = c.k8sClient.RESTClient().Patch(types.JSONPatchType).AbsPath(accessor.GetSelfLink()).Body(p).Do(ctx).Error()
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -176,7 +176,7 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 			if err != nil {
 				return microerror.Mask(err)
 			}
-			err = c.k8sClient.RESTClient().Patch(types.JSONPatchType).AbsPath(selfLink).Body(p).Do().Error()
+			err = c.k8sClient.RESTClient().Patch(types.JSONPatchType).AbsPath(selfLink).Body(p).Do(ctx).Error()
 			if err != nil {
 				return microerror.Mask(err)
 			}

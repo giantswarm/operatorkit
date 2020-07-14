@@ -110,7 +110,7 @@ func (w Wrapper) MustSetup(namespace string) {
 		Spec: corev1.NamespaceSpec{},
 	}
 
-	_, err := w.k8sClient.K8sClient().CoreV1().Namespaces().Create(ns)
+	_, err := w.k8sClient.K8sClient().CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
 	if err != nil {
 		panic(err)
 	}
@@ -131,7 +131,7 @@ func (w Wrapper) MustSetup(namespace string) {
 func (w Wrapper) MustTeardown(namespace string) {
 	ctx := context.Background()
 
-	err := w.k8sClient.K8sClient().CoreV1().Namespaces().Delete(namespace, nil)
+	err := w.k8sClient.K8sClient().CoreV1().Namespaces().Delete(ctx, namespace, metav1.DeleteOptions{})
 	if errors.IsNotFound(err) {
 		// fall though
 	} else if err != nil {

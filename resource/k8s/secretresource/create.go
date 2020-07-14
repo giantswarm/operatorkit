@@ -7,6 +7,7 @@ import (
 	"github.com/giantswarm/microerror"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ApplyCreateChange ensures the Secret is created in the k8s api.
@@ -19,7 +20,7 @@ func (r *Resource) ApplyCreateChange(ctx context.Context, obj, createChange inte
 	for _, secret := range secrets {
 		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("creating Secret %#q in namespace %#q", secret.Name, secret.Namespace))
 
-		_, err = r.k8sClient.CoreV1().Secrets(secret.Namespace).Create(secret)
+		_, err = r.k8sClient.CoreV1().Secrets(secret.Namespace).Create(ctx, secret, metav1.CreateOptions{})
 		if apierrors.IsAlreadyExists(err) {
 			r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("already created Secret %#q in namespace %#q", secret.Name, secret.Namespace))
 		} else if err != nil {

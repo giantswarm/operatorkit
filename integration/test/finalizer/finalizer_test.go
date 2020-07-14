@@ -93,7 +93,7 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 				},
 			}
 
-			_, err := wrapper.CreateObject(objNamespace, drainerConfig)
+			_, err := wrapper.CreateObject(ctx, objNamespace, drainerConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -135,7 +135,7 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 	// Once we ensured the reconciled runtime object got processed by the
 	// controller, verify the deletion timestamp and finalizers.
 	{
-		obj, err := wrapper.GetObject(objName, objNamespace)
+		obj, err := wrapper.GetObject(ctx, objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -164,7 +164,7 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 
 	// Delete the object.
 	{
-		err := wrapper.DeleteObject(objName, objNamespace)
+		err := wrapper.DeleteObject(ctx, objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -189,7 +189,7 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 
 	// Verify deletion timestamp and finalizers.
 	{
-		obj, err := wrapper.GetObject(objName, objNamespace)
+		obj, err := wrapper.GetObject(ctx, objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -225,7 +225,7 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 	// Verify that the object is completely gone now.
 	{
 		o := func() error {
-			_, err := wrapper.GetObject(objName, objNamespace)
+			_, err := wrapper.GetObject(ctx, objName, objNamespace)
 			if drainerconfig.IsNotFound(err) {
 				return nil
 			} else if err != nil {

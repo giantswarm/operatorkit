@@ -7,6 +7,7 @@ import (
 	"github.com/giantswarm/microerror"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ApplyCreateChange ensures the ConfigMap is created in the k8s api.
@@ -19,7 +20,7 @@ func (r *Resource) ApplyCreateChange(ctx context.Context, obj, createChange inte
 	for _, configMap := range configMaps {
 		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("creating ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace))
 
-		_, err = r.k8sClient.CoreV1().ConfigMaps(configMap.Namespace).Create(configMap)
+		_, err = r.k8sClient.CoreV1().ConfigMaps(configMap.Namespace).Create(ctx, configMap, metav1.CreateOptions{})
 		if apierrors.IsAlreadyExists(err) {
 			r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("already created ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace))
 		} else if err != nil {
