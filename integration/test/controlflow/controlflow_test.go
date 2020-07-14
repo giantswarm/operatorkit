@@ -85,7 +85,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 				},
 			}
 
-			_, err := harness.CreateObject(objNamespace, drainerConfig)
+			_, err := harness.CreateObject(ctx, objNamespace, drainerConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -127,7 +127,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 	// Verify deletion timestamp and finalizer.
 	{
-		obj, err := harness.GetObject(objName, objNamespace)
+		obj, err := harness.GetObject(ctx, objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -161,7 +161,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 	// Delete the object.
 	{
-		err := harness.DeleteObject(objName, objNamespace)
+		err := harness.DeleteObject(ctx, objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -194,7 +194,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 	// Verify deletion timestamp and finalizer.
 	{
-		obj, err := harness.GetObject(objName, objNamespace)
+		obj, err := harness.GetObject(ctx, objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -226,7 +226,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	// We verify that the object is completely gone now.
 	{
 		o := func() error {
-			_, err = harness.GetObject(objName, objNamespace)
+			_, err = harness.GetObject(ctx, objName, objNamespace)
 			if drainerconfig.IsNotFound(err) {
 				return nil
 			} else if err != nil {
