@@ -8,10 +8,9 @@ require (
 	github.com/giantswarm/backoff v0.2.0
 	github.com/giantswarm/exporterkit v0.2.0
 	github.com/giantswarm/k8sclient/v3 v3.1.1
-	github.com/giantswarm/microerror v0.2.0
+	github.com/giantswarm/microerror v0.2.1-0.20200711160845-154b3635ce0e
 	github.com/giantswarm/micrologger v0.3.1
 	github.com/giantswarm/to v0.3.0
-	github.com/go-errors/errors v1.1.1 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.7.1
 	k8s.io/api v0.16.6
