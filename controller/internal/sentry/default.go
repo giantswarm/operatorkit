@@ -44,7 +44,7 @@ func fromErr(err error) error {
 
 	stackTrace := sfe.stackTrace
 	for _, entry := range jsonErr.Stack {
-		fmt.Printf(entry.File)
+		fmt.Printf("%v %s:%d\n", entry.ProgramCounter, entry.File, entry.Line)
 		stackTrace = append(stackTrace, stackTraceEntry{entry.ProgramCounter})
 	}
 	sfe.stackTrace = stackTrace
