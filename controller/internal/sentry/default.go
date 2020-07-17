@@ -53,5 +53,5 @@ func fromErr(err error) error {
 }
 
 func (s *Default) Capture(ctx context.Context, err error) {
-	sentry.CaptureException(fromErr(err))
+	sentry.CaptureException(fromErr(microerror.Mask(err)))
 }
