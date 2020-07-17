@@ -49,7 +49,7 @@ func fromErr(err error) error {
 	}
 	sfe.stackTrace = stackTrace
 
-	return sfe
+	return microerror.Mask(sfe)
 }
 
 func (s *Default) Capture(ctx context.Context, err error) {
