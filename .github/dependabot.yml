@@ -7,7 +7,7 @@ updates:
 - package-ecosystem: gomod
   directory: "/"
   schedule:
-    interval: weekly
+    interval: daily
     time: "04:00"
   open-pull-requests-limit: 10
   reviewers: 
