@@ -15,8 +15,8 @@ than it is supposed to solve.
 
 In Azure we have the [`azure-operator`
 project](https://github.com/giantswarm/azure-operator) and its [separate
-associated collector](https://github.com/giantswarm/azure-collector) to metrics
-about e.g. ARM Deployments. These metrics are used for alerting on on
+associated collector](https://github.com/giantswarm/azure-collector) to emit
+metrics about e.g. ARM Deployments. These metrics are used for alerting on on
 deployments being in failed state or stuck in upgrading.
 
 In [`operatorkit` we implement a Prometheus
