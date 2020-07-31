@@ -4,10 +4,15 @@ The idea about metrics providers is to have a metrics driven approach of
 verifying the operators functionality. An operator constantly reconciles the
 current state of the system towards a more desired state eventually. As a means
 of measurement and as a safety net, it is a good practise to implement metrics
-providers that emit metrics about the managed system and its resources. The
-collector implementation should be separate from the operator project itself. As
-we learned over time, combining operators and collectors may cause more problems
-than it is supposed to solve.
+providers that emit metrics about the managed system and its resources.
+
+
+
+## Separation
+
+The collector implementation should be separate from the operator project
+itself. As we learned over time, combining operators and collectors may cause
+more problems than it is supposed to solve. See the examples below.
 
 
 
