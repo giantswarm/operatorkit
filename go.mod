@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/getsentry/sentry-go v0.7.0
-	github.com/giantswarm/apiextensions v0.4.19
+	github.com/giantswarm/apiextensions v0.4.20
 	github.com/giantswarm/backoff v0.2.0
 	github.com/giantswarm/exporterkit v0.2.0
 	github.com/giantswarm/k8sclient/v3 v3.1.2
