@@ -42,15 +42,26 @@ import (
 )
 
 const (
-	DefaultResyncPeriod   = 5 * time.Minute
-	DisableMetricsServing = "0"
+	DefaultResyncPeriod = 5 * time.Minute
+)
 
+const (
+	DisableMetricsServing = "0"
+)
+
+const (
 	loggerKeyController = "controller"
 	loggerKeyEvent      = "event"
 	loggerKeyLoop       = "loop"
 	loggerKeyObject     = "object"
 	loggerKeyResource   = "resource"
 	loggerKeyVersion    = "version"
+)
+
+var (
+	defaultPauseAnnotations = map[string]string{
+		"operatorkit.giantswarm.io/reconcile": "false",
+	}
 )
 
 type Config struct {
@@ -73,6 +84,11 @@ type Config struct {
 	//     }
 	//
 	NewRuntimeObjectFunc func() pkgruntime.Object
+	// Pause is a map of additional pausing annotations, defining their
+	// key-value pairs. This can be used to stop reconciliation in case the
+	// configured pausing annotations are present in the reconciled runtime
+	// object watched by operatorkit.
+	Pause map[string]string
 	// Resources is the list of controller resources being executed on runtime
 	// object reconciliation. Resources are executed in given order.
 	Resources []resource.Interface
@@ -93,11 +109,12 @@ type Config struct {
 }
 
 type Controller struct {
+	event                recorder.Interface
 	initCtx              func(ctx context.Context, obj interface{}) (context.Context, error)
 	k8sClient            k8sclient.Interface
 	logger               micrologger.Logger
 	newRuntimeObjectFunc func() pkgruntime.Object
-	event                recorder.Interface
+	pause                map[string]string
 	resources            []resource.Interface
 	selector             Selector
 
@@ -128,6 +145,14 @@ func New(config Config) (*Controller, error) {
 	}
 	if config.NewRuntimeObjectFunc == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.NewRuntimeObjectFunc must not be empty", config)
+	}
+	{
+		if config.Pause == nil {
+			config.Pause = map[string]string{}
+		}
+		for k, v := range defaultPauseAnnotations {
+			config.Pause[k] = v
+		}
 	}
 	if len(config.Resources) == 0 {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Resources must not be empty", config)
@@ -186,13 +211,14 @@ func New(config Config) (*Controller, error) {
 	}
 
 	c := &Controller{
+		event:                eventRecorder,
 		initCtx:              config.InitCtx,
 		k8sClient:            config.K8sClient,
 		logger:               config.Logger,
-		selector:             config.Selector,
 		newRuntimeObjectFunc: config.NewRuntimeObjectFunc,
-		event:                eventRecorder,
+		pause:                config.Pause,
 		resources:            config.Resources,
+		selector:             config.Selector,
 
 		backOffFactory:         func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) },
 		bootOnce:               sync.Once{},
@@ -399,6 +425,16 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) error {
 	return nil
 }
 
+func (c *Controller) hasPauseAnnotation(m map[string]string) bool {
+	for k, v := range m {
+		if hasAnnotation(c.pause, k, v) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (c *Controller) reconcile(ctx context.Context, req reconcile.Request, obj interface{}) (reconcile.Result, error) {
 	ctx, err := c.initCtx(ctx, obj)
 	if err != nil {
@@ -410,6 +446,14 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request, obj i
 		m, err = meta.Accessor(obj)
 		if err != nil {
 			return reconcile.Result{}, microerror.Mask(err)
+		}
+	}
+
+	{
+		if c.hasPauseAnnotation(m.GetAnnotations()) {
+			c.logger.LogCtx(ctx, "level", "debug", "message", "found pause annotation")
+			c.logger.LogCtx(ctx, "level", "debug", "message", "cancelling reconciliation")
+			return reconcile.Result{}, nil
 		}
 	}
 
@@ -552,6 +596,16 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []resource.In
 	}
 
 	return nil
+}
+
+func hasAnnotation(m map[string]string, k string, v string) bool {
+	for a, b := range m {
+		if a == k && b == v {
+			return true
+		}
+	}
+
+	return false
 }
 
 func setLoggerCtxValue(ctx context.Context, key, value string) context.Context {
