@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2020-06-29
+
+## Added
+
+- Support writing Kubernetes error events when returning microerror with kind and description.
+
+## [1.1.0] - 2020-06-22
+
+## Added
+
+- Optional support for sentry error collector.
+
+## [1.0.2] - 2020-06-18
+
+### Fixed
+
+- Use local `Selector` introduced in 1.0.1 type in `controller` package.
+
 
 
 ## [1.0.1] 2020-06-09
@@ -67,8 +85,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-[Unreleased]: https://github.com/giantswarm/operatorkit/compare/v1.0.1...HEAD
-
+[Unreleased]: https://github.com/giantswarm/operatorkit/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/giantswarm/operatorkit/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/giantswarm/operatorkit/compare/v1.0.2...v1.1.0
+[1.0.2]: https://github.com/giantswarm/operatorkit/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/giantswarm/operatorkit/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/giantswarm/operatorkit/compare/v0.2.1...v1.0.0
 [0.2.1]: https://github.com/giantswarm/operatorkit/compare/v0.2.0...v0.2.1

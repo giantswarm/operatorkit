@@ -1,35 +1,63 @@
 # Metrics provider
 
+<<<<<<< HEAD
 The idea about metrics provider is to have a metrics driven approach of
 verifying the operators functionality. An operator reconciles a system where
 several handlers exist. As a means of measurement and as a safety net, it is a good
 practise to implement metrics providers that emit metrics about the managed
 system and its handlers.
+=======
+The idea about metrics providers is to have a metrics driven approach of
+verifying the operators functionality. An operator constantly reconciles the
+current state of the system towards a more desired state eventually. As a means
+of measurement and as a safety net, it is a good practise to implement metrics
+providers that emit metrics about the managed system and its resources.
+>>>>>>> master
+
+
+
+## Separation
+
+The collector implementation should be separate from the operator project
+itself. As we learned over time, combining operators and collectors may cause
+more problems than it is supposed to solve. See the examples below.
+
+
 
 ## Examples
 
-In [`aws-operator` we implement a Prometheus collector](https://github.com/giantswarm/aws-operator/tree/master/service/collector)
-to emit metrics about e.g. VPCs. These metrics are used for verifying each
-tenant cluster has a VPC assigned and no VPC is orphaned without having any
-tenant cluster assigned.
+In Azure we have the [`azure-operator`
+project](https://github.com/giantswarm/azure-operator) and its [separate
+associated collector](https://github.com/giantswarm/azure-collector) to emit
+metrics about e.g. ARM Deployments. These metrics are used for alerting on on
+deployments being in failed state or stuck in upgrading.
 
-In [`azure-operator` we implement a Prometheus collector](https://github.com/giantswarm/azure-operator/tree/master/service/collector)
-to emit metrics about e.g. ARM Deployments. These metrics are used for alerting
-on deployments being in failed state or stuck in upgrading.
-
-In [`operatorkit` we implement a Prometheus collector](https://github.com/giantswarm/operatorkit/tree/master/informer/collector)
+In [`operatorkit` we implement a Prometheus
+collector](https://github.com/giantswarm/operatorkit/tree/master/informer/collector)
 to emit metrics about the creation and deletion timestamps of watched runtime
 objects. These metrics are used for various purposes within our monitoring and
-alerting system.
+alerting system. Note that in libraries we combine business logic and metrics
+provider as long as we can ensure high coherence within the resulting data.
+
 
 
 ## Prometheus collectors
+<<<<<<< HEAD
 We make use of [Prometheus collector interface](https://godoc.org/github.com/prometheus/client_golang/prometheus#Collector)
 (which is part of the prometheus client library) to collect metrics from our
 operators.
 This interface allows us to implement new collectors by implementing the
 `Collect()` method, which is used to send prometheus metrics to a shared channel.
 All the collectors [need to be registered](https://godoc.org/github.com/prometheus/client_golang/prometheus#Registerer)
+=======
+
+We make use of [Prometheus collector interface](https://godoc.org/github.com/prometheus/client_golang/prometheus#Collector)
+(which is part of the prometheus client library) to collect metrics from our
+operators. This interface allows us to implement new collectors by implementing
+the `Collect()` method, which is used to send prometheus metrics to a shared
+channel. All the collectors [need to be
+registered](https://godoc.org/github.com/prometheus/client_golang/prometheus#Registerer)
+>>>>>>> master
 so that they are included in metrics collection.
 
 Each time that the metrics endpoint is scraped by Prometheus, all the

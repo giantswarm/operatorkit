@@ -1,0 +1,195 @@
+# DO NOT EDIT. Generated with:
+#
+#    devctl gen workflows
+#
+name: Create Release PR
+on:
+  push:
+    branches:
+      - 'master#release#v*.*.*'
+      - 'legacy#release#v*.*.*'
+      - 'release-v*.x.x#release#v*.*.*'
+jobs:
+  debug_info:
+    name: Debug info
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Print github context JSON
+        run: |
+          cat <<EOF
+          ${{ toJson(github) }}
+          EOF
+  gather_facts:
+    name: Gather facts
+    runs-on: ubuntu-18.04
+    outputs:
+      unchanged: ${{ steps.get_unchanged.outputs.unchanged }}
+      base: ${{ steps.get_base.outputs.base }}
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - name: Get base
+        id: get_base
+        run: |
+          base="$(echo ${{ github.event.ref }} | cut -d '#' -f 1)"
+          echo "base=\"$base\""
+          echo "::set-output name=base::${base}"
+      - name: Get version
+        id: get_version
+        run: |
+          version="$(echo ${{ github.event.ref }} | cut -d '#' -f 3)"
+          version="${version#v}" # Strip "v" prefix.
+          echo "version=\"$version\""
+          echo "::set-output name=version::${version}"
+      - name: Checkout base code
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ steps.get_base.outputs.base }}
+      - name: Get unchanged
+        id: get_unchanged
+        env:
+          sha: ${{ github.sha }}
+        run: |
+          base_head=$(git rev-parse HEAD)
+          echo "base_head=\"$base_head\""
+          unchanged="false"
+          if [[ "$base_head" == "${{ env.sha }}" ]] ; then
+            unchanged="true"
+          fi
+          echo "unchanged=\"$unchanged\""
+          echo "::set-output name=unchanged::${unchanged}"
+  install_architect:
+    name: Install architect
+    runs-on: ubuntu-18.04
+    env:
+      BINARY: "architect"
+      DIR: "/opt/cache"
+      IMAGE: "quay.io/giantswarm/architect"
+      IMAGE_PATH: "/usr/bin/architect"
+      VERSION: "1.2.0"
+    outputs:
+      cache_key: "${{ steps.get_cache_key.outputs.cache_key }}"
+    steps:
+      - name: Get cache key
+        id: get_cache_key
+        run: |
+          cache_key="install-${{ env.BINARY }}-${{ env.VERSION }}"
+          echo "::set-output name=cache_key::${cache_key}"
+      - name: Cache
+        id: cache
+        uses: actions/cache@v1
+        with:
+          key: "${{ steps.get_cache_key.outputs.cache_key }}"
+          path: "${{ env.DIR }}"
+      - name: Download
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        run: |
+          mkdir -p ${{ env.DIR }}
+          docker container create --name tmp ${{ env.IMAGE }}:${{ env.VERSION }}
+          docker cp tmp:${{ env.IMAGE_PATH }} ${{ env.DIR }}/${{ env.BINARY }}
+          docker container rm tmp
+      - name: Smoke test
+        run: |
+          ${{ env.DIR }}/${{ env.BINARY }} version
+      - name: Upload artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: "${{ env.BINARY }}"
+          path: "${{ env.DIR }}/${{ env.BINARY }}"
+  install_hub:
+    name: Install hub
+    runs-on: ubuntu-18.04
+    env:
+      BINARY: "hub"
+      DIR: "/opt/cache"
+      VERSION: "2.14.2"
+      URL: "https://github.com/github/hub/releases/download/v2.14.2/hub-linux-amd64-2.14.2.tgz"
+    outputs:
+      cache_key: ${{ steps.get_cache_key.outputs.cache_key }}
+    steps:
+      - name: Get cache key
+        id: get_cache_key
+        run: |
+          cache_key="install-${{ env.BINARY }}-${{ env.VERSION }}"
+          echo "::set-output name=cache_key::${cache_key}"
+      - name: Cache
+        id: cache
+        uses: actions/cache@v1
+        with:
+          key: "${{ steps.get_cache_key.outputs.cache_key }}"
+          path: "${{ env.DIR }}"
+      - name: Download
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        run: |
+          mkdir ${{ env.DIR }}
+          curl -fsSLo - ${{ env.URL }} | tar xvz --strip-components=1 --wildcards '*/bin/${{ env.BINARY }}'
+          mv bin/${{ env.BINARY }} ${{ env.DIR }}
+          chmod +x ${{ env.DIR }}/${{ env.BINARY }}
+      - name: Smoke test
+        run: |
+          ${{ env.DIR }}/${{ env.BINARY }} version
+      - name: Upload artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: "${{ env.BINARY }}"
+          path: "${{ env.DIR }}/${{ env.BINARY }}"
+  create_release_pr:
+    name: Create release PR
+    runs-on: ubuntu-18.04
+    if: ${{ needs.gather_facts.outputs.unchanged == 'true' }}
+    needs:
+      - gather_facts
+      - install_architect
+      - install_hub
+    env:
+      architect_flags: "--organisation ${{ github.repository_owner }} --project ${{ github.event.repository.name }}"
+    steps:
+      - name: Cache
+        id: cache
+        uses: actions/cache@v1
+        with:
+          key: "${{ needs.install_architect.outputs.cache_key }}+++${{ needs.install_hub.outputs.cache_key }}"
+          path: /opt/bin
+      - name: Download architect artifact to /opt/bin
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        uses: actions/download-artifact@v2
+        with:
+          name: architect
+          path: /opt/bin
+      - name: Download hub artifact to /opt/bin
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        uses: actions/download-artifact@v2
+        with:
+          name: hub
+          path: /opt/bin
+      - name: Prepare /opt/bin
+        run: |
+          chmod +x /opt/bin/*
+          echo "::add-path::/opt/bin"
+      - name: Print architect version
+        run: |
+          architect version ${{ env.architect_flags }}
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Prepare release changes
+        run: |
+          architect prepare-release ${{ env.architect_flags }} --version "${{ needs.gather_facts.outputs.version }}"
+      - name: Create release commit
+        env:
+          version: "${{ needs.gather_facts.outputs.version }}"
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "github-actions"
+          git add -A
+          git commit -m "release v${{ env.version }}"
+      - name: Push changes
+        env:
+          remote_repo: "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+        run: |
+          git push "${remote_repo}" HEAD:${{ github.ref }}
+      - name: Create PR
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          base: "${{ needs.gather_facts.outputs.base }}"
+          version: "${{ needs.gather_facts.outputs.version }}"
+        run: |
+          hub pull-request -f  -m "release v${{ env.version }}" -a ${{ github.actor }} -b ${{ env.base }} -h ${{ github.event.ref }}

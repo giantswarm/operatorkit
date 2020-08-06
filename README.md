@@ -33,6 +33,7 @@ encapsulate best practices we learned while running operators in production.
 For future planned features and breaking changes see the [roadmap](ROADMAP.md).
 
 
+
 ## Docs
 
 - [Control Flow Primitives](docs/control_flow_primitives.md)
@@ -42,6 +43,7 @@ For future planned features and breaking changes see the [roadmap](ROADMAP.md).
 - [Metrics Provider](docs/metrics_provider.md)
 - [Troubleshooting](docs/troubleshooting.md)
 - [Using Finalizers](docs/using_finalizers.md)
+- [Using Kubernetes Events](docs/using_kubernetes_events.md)
 
 
 

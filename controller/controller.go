@@ -21,7 +21,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -37,6 +36,8 @@ import (
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/updateallowedcontext"
+	"github.com/giantswarm/operatorkit/controller/internal/recorder"
+	"github.com/giantswarm/operatorkit/controller/internal/sentry"
 	"github.com/giantswarm/operatorkit/handler"
 )
 
@@ -76,7 +77,7 @@ type Config struct {
 	//
 	NewRuntimeObjectFunc func() pkgruntime.Object
 	// Selector is used to filter objects before passing them to the controller.
-	Selector labels.Selector
+	Selector Selector
 
 	// Name is the name which the controller uses on finalizers for handlers.
 	// The name used should be unique in the kubernetes cluster, to ensure that
@@ -86,6 +87,9 @@ type Config struct {
 	// runtime objects the controller watches is performed. Defaults to
 	// DefaultResyncPeriod.
 	ResyncPeriod time.Duration
+	// SentryDSN is the optional URL used to forward runtime errors to the sentry.io service.
+	// If this field is empty, logs will not be forwarded.
+	SentryDSN string
 }
 
 type Controller struct {
@@ -94,14 +98,16 @@ type Controller struct {
 	k8sClient            k8sclient.Interface
 	logger               micrologger.Logger
 	newRuntimeObjectFunc func() pkgruntime.Object
-	selector             labels.Selector
+	selector             Selector
 
 	backOffFactory         func() backoff.Interface
 	bootOnce               sync.Once
 	booted                 chan struct{}
 	collector              *collector.Set
+	event                  recorder.Interface
 	loop                   int64
 	removedFinalizersCache *stringCache
+	sentry                 sentry.Interface
 
 	name         string
 	resyncPeriod time.Duration
@@ -127,7 +133,7 @@ func New(config Config) (*Controller, error) {
 		return nil, microerror.Maskf(invalidConfigError, "%T.NewRuntimeObjectFunc must not be empty", config)
 	}
 	if config.Selector == nil {
-		config.Selector = labels.Everything()
+		config.Selector = NewSelectorEverything()
 	}
 
 	if config.Name == "" {
@@ -155,20 +161,46 @@ func New(config Config) (*Controller, error) {
 		}
 	}
 
+	var eventRecorder recorder.Interface
+	{
+		c := recorder.Config{
+			K8sClient: config.K8sClient,
+
+			Component: config.Name,
+		}
+
+		eventRecorder = recorder.New(c)
+	}
+
+	var sentryClient sentry.Interface
+	{
+		c := sentry.Config{
+			DSN: config.SentryDSN,
+		}
+
+		sentryClient, err = sentry.New(c)
+		if err != nil {
+			// Error during sentry initialization.
+			return nil, microerror.Mask(err)
+		}
+	}
+
 	c := &Controller{
 		handlers:             config.Handlers,
 		initCtx:              config.InitCtx,
 		k8sClient:            config.K8sClient,
 		logger:               config.Logger,
-		selector:             config.Selector,
 		newRuntimeObjectFunc: config.NewRuntimeObjectFunc,
+		selector:             config.Selector,
 
 		backOffFactory:         func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) },
 		bootOnce:               sync.Once{},
 		booted:                 make(chan struct{}),
 		collector:              collectorSet,
+		event:                  eventRecorder,
 		loop:                   -1,
 		removedFinalizersCache: newStringCache(config.ResyncPeriod * 3),
+		sentry:                 sentryClient,
 
 		name:         config.Name,
 		resyncPeriod: config.ResyncPeriod,
@@ -194,6 +226,7 @@ func (c *Controller) Boot(ctx context.Context) {
 
 		err := backoff.RetryNotify(operation, c.backOffFactory(), notifier)
 		if err != nil {
+			c.sentry.Capture(ctx, err)
 			c.logger.LogCtx(ctx, "level", "error", "message", "stop controller boot retries due to too many errors", "stack", microerror.JSON(err))
 			os.Exit(1)
 		}
@@ -222,9 +255,26 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 		ctx = setLoggerCtxValue(ctx, loggerKeyController, c.name)
 	}
 
-	res, err := c.reconcile(ctx, req)
+	obj := c.newRuntimeObjectFunc()
+	err := c.k8sClient.CtrlClient().Get(ctx, req.NamespacedName, obj)
+	if errors.IsNotFound(err) {
+		// At this point the controller-runtime cache dispatches a runtime object
+		// which is already being deleted, which is why it cannot be found here
+		// anymore. We then likely perceive the last delete event of that runtime
+		// object and it got purged from the controller-runtime cache. We do not
+		// need to log these errors and just stop processing here in a more graceful
+		// way.
+		return reconcile.Result{}, nil
+	} else if err != nil {
+		return reconcile.Result{}, microerror.Mask(err)
+	}
+
+	res, err := c.reconcile(ctx, req, obj)
 	if err != nil {
+		// Microerror creates an error event on the object when kind and description is set.
+		c.event.Emit(ctx, obj, err)
 		errorGauge.Inc()
+		c.sentry.Capture(ctx, err)
 		c.logger.LogCtx(ctx, "level", "error", "message", "failed to reconcile", "stack", microerror.JSON(err))
 		return reconcile.Result{}, nil
 	}
@@ -349,22 +399,8 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) error {
 	return nil
 }
 
-func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	obj := c.newRuntimeObjectFunc()
-	err := c.k8sClient.CtrlClient().Get(ctx, req.NamespacedName, obj)
-	if errors.IsNotFound(err) {
-		// At this point the controller-runtime cache dispatches a runtime object
-		// which is already being deleted, which is why it cannot be found here
-		// anymore. We then likely perceive the last delete event of that runtime
-		// object and it got purged from the controller-runtime cache. We do not
-		// need to log these errors and just stop processing here in a more graceful
-		// way.
-		return reconcile.Result{}, nil
-	} else if err != nil {
-		return reconcile.Result{}, microerror.Mask(err)
-	}
-
-	ctx, err = c.initCtx(ctx, obj)
+func (c *Controller) reconcile(ctx context.Context, req reconcile.Request, obj interface{}) (reconcile.Result, error) {
+	ctx, err := c.initCtx(ctx, obj)
 	if err != nil {
 		return reconcile.Result{}, microerror.Mask(err)
 	}

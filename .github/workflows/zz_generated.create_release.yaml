@@ -1,0 +1,177 @@
+# DO NOT EDIT. Generated with:
+#
+#    devctl gen workflows
+#
+name: Create Release
+on:
+  push:
+    branches:
+      - 'legacy'
+      - 'master'
+      - 'release-v*.x.x'
+jobs:
+  debug_info:
+    name: Debug info
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Print github context JSON
+        run: |
+          cat <<EOF
+          ${{ toJson(github) }}
+          EOF
+  gather_facts:
+    name: Gather facts
+    runs-on: ubuntu-18.04
+    outputs:
+      project_go_path: ${{ steps.get_project_go_path.outputs.path }}
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - name: Get version
+        id: get_version
+        run: |
+          title="$(echo "${{ github.event.head_commit.message }}" | head -n 1 -)"
+          # Matches strings like:
+          #
+          #   - "release v1.2.3"
+          #   - "release v1.2.3-r4"
+          #   - "release v1.2.3 (#56)"
+          #   - "release v1.2.3-r4 (#56)"
+          #
+          # And outputs version part (1.2.3).
+          if echo $title | grep -qE '^release v[0-9]+\.[0-9]+\.[0-9]+([.-][^ .-][^ ]*)?( \(#[0-9]+\))?$' ; then
+            version=$(echo $title | cut -d ' ' -f 2)
+          fi
+          version="${version#v}" # Strip "v" prefix.
+          echo "version=\"$version\""
+          echo "::set-output name=version::${version}"
+      - name: Checkout code
+        if: ${{ steps.get_version.outputs.version != '' }}
+        uses: actions/checkout@v2
+      - name: Get project.go path
+        id: get_project_go_path
+        if: ${{ steps.get_version.outputs.version != '' }}
+        run: |
+          path='./pkg/project/project.go'
+          if [[ ! -f $path ]] ; then
+            path=''
+          fi
+          echo "path=\"$path\""
+          echo "::set-output name=path::${path}"
+  install_semver:
+    name: Install semver
+    runs-on: ubuntu-18.04
+    env:
+      BINARY: "semver"
+      URL: "https://raw.githubusercontent.com/fsaintjacques/semver-tool/3.0.0/src/semver"
+    steps:
+      - name: Key
+        id: key
+        run: |
+          cache_dir="/opt/cache"
+          cache_key="install-${BINARY}-${URL}"
+          echo "::set-output name=binary::${BINARY}"
+          echo "::set-output name=cache_dir::${cache_dir}"
+          echo "::set-output name=cache_key::${cache_key}"
+          echo "::set-output name=url::${URL}"
+      - name: Cache
+        id: cache
+        uses: actions/cache@v1
+        with:
+          key: "${{ steps.key.outputs.cache_key }}"
+          path: "${{ steps.key.outputs.cache_dir }}"
+      - name: Download
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        run: |
+          # TODO check hash
+          binary="${{ steps.key.outputs.binary }}"
+          cache_dir="${{ steps.key.outputs.cache_dir }}"
+          url="${{ steps.key.outputs.url }}"
+          mkdir $cache_dir
+          curl -fsSLo $cache_dir/$binary $url
+          chmod +x $cache_dir/$binary
+      - name: Smoke test
+        run: |
+          ${{ steps.key.outputs.cache_dir }}/${{ steps.key.outputs.binary }} --version
+      - name: Upload artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: "${{ steps.key.outputs.binary }}"
+          path: "${{ steps.key.outputs.cache_dir }}/${{ steps.key.outputs.binary }}"
+  update_project_go:
+    name: Update project.go
+    runs-on: ubuntu-18.04
+    if: ${{ needs.gather_facts.outputs.version != '' && needs.gather_facts.outputs.project_go_path != ''}}
+    needs:
+      - gather_facts
+      - install_semver
+    steps:
+      - name: Download semver artifact to /opt/bin
+        uses: actions/download-artifact@v2
+        with:
+          name: semver
+          path: /opt/bin
+      - name: Prepare /opt/bin
+        run: |
+          chmod +x /opt/bin/*
+          echo "::add-path::/opt/bin"
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Update project.go
+        id: update_project_go
+        run: |
+          file="${{ needs.gather_facts.outputs.project_go_path }}"
+          version="${{ needs.gather_facts.outputs.version }}"
+          new_version="$(semver bump patch $version)-dev"
+          echo "version=\"$version\" new_version=\"$new_version\""
+          echo "::set-output name=new_version::${new_version}"
+          sed -Ei "s/(version[[:space:]]*=[[:space:]]*)\"${version}\"/\1\"${new_version}\"/" $file
+          if git diff --exit-code $file ; then
+            echo "error: no changes in \"$file\"" >&2
+            exit 1
+          fi
+      - name: Commit changes
+        run: |
+          file="${{ needs.gather_facts.outputs.project_go_path }}"
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add $file
+          git commit -m "pkg/project: bump version to ${{ steps.update_project_go.outputs.new_version }}"
+      - name: Push changes
+        env:
+          REMOTE_REPO: "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+        run: |
+          git push "${REMOTE_REPO}" HEAD:${{ github.ref }}
+  create_release:
+    name: Create release
+    runs-on: ubuntu-18.04
+    needs:
+      - gather_facts
+    if: ${{ needs.gather_facts.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.sha }}
+      - name: Ensure correct version in project.go
+        if: ${{ needs.gather_facts.outputs.project_go_path != ''}}
+        run: |
+          file="${{ needs.gather_facts.outputs.project_go_path }}"
+          version="${{ needs.gather_facts.outputs.version }}"
+          grep -qE "version[[:space:]]*=[[:space:]]*\"$version\"" $file
+      - name: Create tag
+        run: |
+          version="${{ needs.gather_facts.outputs.version }}"
+          git config --local user.name "github-actions"
+          git tag "v$version" ${{ github.sha }}
+      - name: Push tag
+        env:
+          REMOTE_REPO: "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+        run: |
+          git push "${REMOTE_REPO}" --tags
+      - name: Create release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "v${{ needs.gather_facts.outputs.version }}"
+          release_name: "v${{ needs.gather_facts.outputs.version }}"

@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  architect: giantswarm/architect@0.8.4
+  architect: giantswarm/architect@0.9.0
 
 workflows:
   test:
@@ -28,6 +28,12 @@ workflows:
       - architect/integration-test:
           name: integration-test-error
           test-dir: "integration/test/error"
+          requires:
+            - go-test
+
+      - architect/integration-test:
+          name: integration-test-event
+          test-dir: "integration/test/event"
           requires:
             - go-test
 

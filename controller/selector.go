@@ -16,6 +16,12 @@ func NewSelector(matchesFunc func(labels Labels) bool) Selector {
 	}
 }
 
+func NewSelectorEverything() Selector {
+	return NewSelector(func(labels Labels) bool {
+		return true
+	})
+}
+
 type internalSelector struct {
 	matchesFunc func(labels Labels) bool
 }

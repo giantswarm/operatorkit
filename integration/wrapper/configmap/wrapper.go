@@ -117,3 +117,11 @@ func (w Wrapper) MustTeardown(namespace string) {
 		panic(err)
 	}
 }
+
+func (w Wrapper) Events(namespace string) ([]corev1.Event, error) {
+	events, err := w.k8sClient.CoreV1().Events(namespace).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return events.Items, nil
+}
