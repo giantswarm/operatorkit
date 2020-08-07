@@ -60,6 +60,7 @@ const (
 
 var (
 	defaultPauseAnnotations = map[string]string{
+		"cluster.x-k8s.io/paused":             "true",
 		"operatorkit.giantswarm.io/reconcile": "false",
 	}
 )
