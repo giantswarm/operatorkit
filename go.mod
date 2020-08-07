@@ -1,13 +1,13 @@
-module github.com/giantswarm/operatorkit
+module github.com/giantswarm/operatorkit/v2
 
 go 1.14
 
 require (
 	github.com/getsentry/sentry-go v0.7.0
-	github.com/giantswarm/apiextensions v0.4.17-0.20200723160042-89aed92d1080
+	github.com/giantswarm/apiextensions/v2 v2.0.0-20200806112323-1ac7a126dea9
 	github.com/giantswarm/backoff v0.2.0
 	github.com/giantswarm/exporterkit v0.2.0
-	github.com/giantswarm/k8sclient/v3 v3.1.3-0.20200724085258-345602646ea8
+	github.com/giantswarm/k8sclient/v4 v4.0.0-20200806115259-2d3b230ace59
 	github.com/giantswarm/microerror v0.2.1
 	github.com/giantswarm/micrologger v0.3.1
 	github.com/giantswarm/to v0.3.0
