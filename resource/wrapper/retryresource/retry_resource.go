@@ -5,9 +5,9 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 
-	"github.com/giantswarm/operatorkit/resource"
-	"github.com/giantswarm/operatorkit/resource/crud"
-	"github.com/giantswarm/operatorkit/resource/wrapper/internal"
+	"github.com/giantswarm/operatorkit/v2/resource"
+	"github.com/giantswarm/operatorkit/v2/resource/crud"
+	"github.com/giantswarm/operatorkit/v2/resource/wrapper/internal"
 )
 
 type Config struct {

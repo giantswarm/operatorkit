@@ -7,9 +7,9 @@ import (
 
 	"github.com/giantswarm/micrologger/microloggertest"
 
-	"github.com/giantswarm/operatorkit/controller"
-	"github.com/giantswarm/operatorkit/resource"
-	"github.com/giantswarm/operatorkit/resource/crud"
+	"github.com/giantswarm/operatorkit/v2/controller"
+	"github.com/giantswarm/operatorkit/v2/resource"
+	"github.com/giantswarm/operatorkit/v2/resource/crud"
 )
 
 // Test_Resource_Wrapper_RetryResource_ProcessDelete_ResourceOrder ensures the

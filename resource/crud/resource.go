@@ -7,8 +7,8 @@ import (
 	"github.com/giantswarm/micrologger"
 	"github.com/giantswarm/micrologger/loggermeta"
 
-	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
-	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
+	"github.com/giantswarm/operatorkit/v2/controller/context/reconciliationcanceledcontext"
+	"github.com/giantswarm/operatorkit/v2/controller/context/resourcecanceledcontext"
 )
 
 type ResourceConfig struct {

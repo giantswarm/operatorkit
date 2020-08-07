@@ -3,7 +3,7 @@ package metricsresource
 import (
 	"github.com/giantswarm/microerror"
 
-	"github.com/giantswarm/operatorkit/resource"
+	"github.com/giantswarm/operatorkit/v2/resource"
 )
 
 // WrapConfig is the configuration used to wrap resources with metrics resources.

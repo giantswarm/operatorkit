@@ -8,7 +8,7 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 
-	"github.com/giantswarm/operatorkit/resource"
+	"github.com/giantswarm/operatorkit/v2/resource"
 )
 
 type basicResourceConfig struct {

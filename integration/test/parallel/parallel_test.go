@@ -10,15 +10,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
+	"github.com/giantswarm/apiextensions/v2/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/giantswarm/operatorkit/integration/testresource"
-	"github.com/giantswarm/operatorkit/integration/wrapper/drainerconfig"
-	"github.com/giantswarm/operatorkit/resource"
+	"github.com/giantswarm/operatorkit/v2/integration/testresource"
+	"github.com/giantswarm/operatorkit/v2/integration/wrapper/drainerconfig"
+	"github.com/giantswarm/operatorkit/v2/resource"
 )
 
 const (

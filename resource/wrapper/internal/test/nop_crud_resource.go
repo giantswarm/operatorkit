@@ -5,8 +5,8 @@ import (
 
 	"github.com/giantswarm/micrologger/microloggertest"
 
-	"github.com/giantswarm/operatorkit/resource"
-	"github.com/giantswarm/operatorkit/resource/crud"
+	"github.com/giantswarm/operatorkit/v2/resource"
+	"github.com/giantswarm/operatorkit/v2/resource/crud"
 )
 
 func NewNopCRUDResource() resource.Interface {

@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
-	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
-	"github.com/giantswarm/operatorkit/resource"
+	"github.com/giantswarm/operatorkit/v2/controller/context/reconciliationcanceledcontext"
+	"github.com/giantswarm/operatorkit/v2/controller/context/resourcecanceledcontext"
+	"github.com/giantswarm/operatorkit/v2/resource"
 )
 
 func Test_ProcessDelete(t *testing.T) {

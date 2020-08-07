@@ -13,9 +13,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/giantswarm/operatorkit/integration/testresource"
-	"github.com/giantswarm/operatorkit/integration/wrapper/configmap"
-	"github.com/giantswarm/operatorkit/resource"
+	"github.com/giantswarm/operatorkit/v2/integration/testresource"
+	"github.com/giantswarm/operatorkit/v2/integration/wrapper/configmap"
+	"github.com/giantswarm/operatorkit/v2/resource"
 )
 
 const (

@@ -3,7 +3,7 @@ package nopointer
 import (
 	"context"
 
-	"github.com/giantswarm/operatorkit/handler"
+	"github.com/giantswarm/operatorkit/v2/handler"
 )
 
 type Handler struct{}

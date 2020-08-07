@@ -3,7 +3,7 @@ package test
 import (
 	"context"
 
-	"github.com/giantswarm/operatorkit/resource/crud"
+	"github.com/giantswarm/operatorkit/v2/resource/crud"
 )
 
 type NopCRUD struct {

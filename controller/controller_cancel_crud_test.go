@@ -9,10 +9,10 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger/microloggertest"
 
-	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
-	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
-	"github.com/giantswarm/operatorkit/resource"
-	"github.com/giantswarm/operatorkit/resource/crud"
+	"github.com/giantswarm/operatorkit/v2/controller/context/reconciliationcanceledcontext"
+	"github.com/giantswarm/operatorkit/v2/controller/context/resourcecanceledcontext"
+	"github.com/giantswarm/operatorkit/v2/resource"
+	"github.com/giantswarm/operatorkit/v2/resource/crud"
 )
 
 func Test_ProcessDelete_CRUD(t *testing.T) {

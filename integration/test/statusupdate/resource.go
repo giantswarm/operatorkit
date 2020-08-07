@@ -7,13 +7,13 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
-	"github.com/giantswarm/k8sclient/v3/pkg/k8sclient"
+	"github.com/giantswarm/apiextensions/v2/pkg/apis/core/v1alpha1"
+	"github.com/giantswarm/k8sclient/v4/pkg/k8sclient"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/giantswarm/operatorkit/integration/env"
+	"github.com/giantswarm/operatorkit/v2/integration/env"
 )
 
 type ResourceConfig struct {
