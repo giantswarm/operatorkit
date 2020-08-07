@@ -15,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/giantswarm/operatorkit/integration/testresource"
+	"github.com/giantswarm/operatorkit/integration/wrapper"
 	"github.com/giantswarm/operatorkit/integration/wrapper/drainerconfig"
 	"github.com/giantswarm/operatorkit/resource"
 )
@@ -44,24 +45,27 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		}
 	}
 
-	c := drainerconfig.Config{
-		Resources: []resource.Interface{
-			r,
-		},
+	var w wrapper.Interface
+	{
+		c := drainerconfig.Config{
+			Resources: []resource.Interface{
+				r,
+			},
 
-		Name:      operatorName,
-		Namespace: testNamespace,
+			Name:      operatorName,
+			Namespace: testNamespace,
+		}
+
+		w, err = drainerconfig.New(c)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
+		}
+
+		w.MustSetup(testNamespace)
+		defer w.MustTeardown(testNamespace)
 	}
 
-	drainerConfigWrapper, err := drainerconfig.New(c)
-	if err != nil {
-		t.Fatal("expected", nil, "got", err)
-	}
-
-	drainerConfigWrapper.MustSetup(testNamespace)
-	defer drainerConfigWrapper.MustTeardown(testNamespace)
-
-	controller := drainerConfigWrapper.Controller()
+	controller := w.Controller()
 
 	// We start the controller.
 	go controller.Boot(ctx)
@@ -71,7 +75,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	// cause the object to continue existing after the controller removes its own
 	// finalizer.
 	//
-	//Creation is retried because the existance of a CRD might have to be ensured.
+	// Creation is retried because the existance of a CRD might have to be ensured.
 	var createdDrainerConfig *v1alpha1.DrainerConfig
 	{
 		o := func() error {
@@ -84,7 +88,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 					},
 				},
 			}
-			v, err := drainerConfigWrapper.CreateObject(testNamespace, drainerConfig)
+			v, err := w.CreateObject(testNamespace, drainerConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -106,7 +110,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		o := func() error {
 			createdDrainerConfig.SetLabels(map[string]string{"testlabel": "testlabel"})
 
-			_, err = drainerConfigWrapper.UpdateObject(testNamespace, createdDrainerConfig)
+			_, err = w.UpdateObject(testNamespace, createdDrainerConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -156,7 +160,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	}
 
 	// We get the object after the controller has been started.
-	resultObj, err := drainerConfigWrapper.GetObject(objName, testNamespace)
+	resultObj, err := w.GetObject(objName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -183,7 +187,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	}
 
 	// We delete the object now.
-	err = drainerConfigWrapper.DeleteObject(objName, testNamespace)
+	err = w.DeleteObject(objName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -212,7 +216,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	// Verify deletion timestamp and finalizer.
 	{
 		o := func() error {
-			obj, err := drainerConfigWrapper.GetObject(objName, testNamespace)
+			obj, err := w.GetObject(objName, testNamespace)
 			if err != nil {
 				return microerror.Mask(err)
 			}

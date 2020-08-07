@@ -36,21 +36,30 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 	ctx := context.Background()
 
-	var resource *testresource.Resource
+	var r *testresource.Resource
 	{
 		c := testresource.Config{
 			Name: resourceName,
 		}
 
-		resource, err = testresource.New(c)
+		r, err = testresource.New(c)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
 	}
 
-	var harness wrapper.Interface
+	var w wrapper.Interface
 	{
-		harness, err = newHarness(objNamespace, controllerName, resource)
+		c := drainerconfig.Config{
+			Resources: []resource.Interface{
+				r,
+			},
+
+			Name:      controllerName,
+			Namespace: objNamespace,
+		}
+
+		w, err = drainerconfig.New(c)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -58,7 +67,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 	// Start controller.
 	{
-		controller := harness.Controller()
+		controller := w.Controller()
 
 		go controller.Boot(ctx)
 		select {
@@ -70,8 +79,8 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 	// Setup the test namespace.
 	{
-		harness.MustSetup(objNamespace)
-		defer harness.MustTeardown(objNamespace)
+		w.MustSetup(objNamespace)
+		defer w.MustTeardown(objNamespace)
 	}
 
 	// Create an object and wait for the controller to add a finalizer.
@@ -85,7 +94,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 				},
 			}
 
-			_, err := harness.CreateObject(objNamespace, drainerConfig)
+			_, err := w.CreateObject(objNamespace, drainerConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -108,11 +117,11 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	//
 	{
 		o := func() error {
-			if resource.CreateCount() <= 2 {
-				return microerror.Maskf(waitError, "resource.CreateCount() == %v, want more than %v", resource.CreateCount(), 2)
+			if r.CreateCount() <= 2 {
+				return microerror.Maskf(waitError, "resource.CreateCount() == %v, want more than %v", r.CreateCount(), 2)
 			}
-			if resource.DeleteCount() != 0 {
-				return microerror.Maskf(waitError, "resource.DeleteCount() == %v, want %v", resource.DeleteCount(), 0)
+			if r.DeleteCount() != 0 {
+				return microerror.Maskf(waitError, "resource.DeleteCount() == %v, want %v", r.DeleteCount(), 0)
 			}
 
 			return nil
@@ -127,7 +136,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 	// Verify deletion timestamp and finalizer.
 	{
-		obj, err := harness.GetObject(objName, objNamespace)
+		obj, err := w.GetObject(objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -154,14 +163,14 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	// always return an error and should therefore prevent the removal of
 	// the finalizer.
 	{
-		resource.SetReturnErrorFunc(func(obj interface{}) error {
+		r.SetReturnErrorFunc(func(obj interface{}) error {
 			return microerror.Mask(testError)
 		})
 	}
 
 	// Delete the object.
 	{
-		err := harness.DeleteObject(objName, objNamespace)
+		err := w.DeleteObject(objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -175,11 +184,11 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	//
 	{
 		o := func() error {
-			if resource.CreateCount() <= 2 {
-				return microerror.Maskf(waitError, "resource.CreateCount() == %v, want more than %v", resource.CreateCount(), 2)
+			if r.CreateCount() <= 2 {
+				return microerror.Maskf(waitError, "resource.CreateCount() == %v, want more than %v", r.CreateCount(), 2)
 			}
-			if resource.DeleteCount() <= 2 {
-				return microerror.Maskf(waitError, "resource.DeleteCount() == %v, want more than %v", resource.DeleteCount(), 2)
+			if r.DeleteCount() <= 2 {
+				return microerror.Maskf(waitError, "resource.DeleteCount() == %v, want more than %v", r.DeleteCount(), 2)
 			}
 
 			return nil
@@ -194,7 +203,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 	// Verify deletion timestamp and finalizer.
 	{
-		obj, err := harness.GetObject(objName, objNamespace)
+		obj, err := w.GetObject(objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -220,13 +229,13 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	// Set the error function to nil to not return any error anymore. The
 	// finalizer should be removed with the next reconciliation now.
 	{
-		resource.SetReturnErrorFunc(nil)
+		r.SetReturnErrorFunc(nil)
 	}
 
 	// We verify that the object is completely gone now.
 	{
 		o := func() error {
-			_, err = harness.GetObject(objName, objNamespace)
+			_, err = w.GetObject(objName, objNamespace)
 			if drainerconfig.IsNotFound(err) {
 				return nil
 			} else if err != nil {
@@ -242,22 +251,4 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 			t.Fatalf("failed to wait for object deletion: %#v", err)
 		}
 	}
-}
-
-func newHarness(namespace string, controllerName string, r *testresource.Resource) (*drainerconfig.Wrapper, error) {
-	c := drainerconfig.Config{
-		Resources: []resource.Interface{
-			r,
-		},
-
-		Name:      controllerName,
-		Namespace: namespace,
-	}
-
-	harness, err := drainerconfig.New(c)
-	if err != nil {
-		return nil, err
-	}
-
-	return harness, nil
 }
