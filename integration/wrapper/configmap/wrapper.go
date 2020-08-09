@@ -13,9 +13,9 @@ import (
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/giantswarm/operatorkit/v2/controller"
+	"github.com/giantswarm/operatorkit/v2/pkg/controller"
 	"github.com/giantswarm/operatorkit/v2/integration/env"
-	"github.com/giantswarm/operatorkit/v2/resource"
+	"github.com/giantswarm/operatorkit/v2/pkg/resource"
 )
 
 type Config struct {

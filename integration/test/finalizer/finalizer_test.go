@@ -19,7 +19,7 @@ import (
 
 	"github.com/giantswarm/operatorkit/v2/integration/testresource"
 	"github.com/giantswarm/operatorkit/v2/integration/wrapper/drainerconfig"
-	"github.com/giantswarm/operatorkit/v2/resource"
+	"github.com/giantswarm/operatorkit/v2/pkg/resource"
 )
 
 const (

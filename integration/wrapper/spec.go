@@ -3,7 +3,7 @@ package wrapper
 import (
 	"context"
 
-	"github.com/giantswarm/operatorkit/v2/controller"
+	"github.com/giantswarm/operatorkit/v2/pkg/controller"
 )
 
 type Interface interface {
