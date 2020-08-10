@@ -61,7 +61,7 @@ const (
 var (
 	defaultPauseAnnotations = map[string]string{
 		"cluster.x-k8s.io/paused":             "true",
-		"operatorkit.giantswarm.io/reconcile": "false",
+		"operatorkit.giantswarm.io/paused": "true",
 	}
 )
 
@@ -600,13 +600,11 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []resource.In
 }
 
 func hasAnnotation(m map[string]string, k string, v string) bool {
-	for a, b := range m {
-		if a == k && b == v {
-			return true
-		}
+	if m == nil {
+		return false
 	}
-
-	return false
+	
+	return m[k] == v
 }
 
 func setLoggerCtxValue(ctx context.Context, key, value string) context.Context {
