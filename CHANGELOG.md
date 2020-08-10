@@ -13,7 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add configurable pause annotation support.
 
+## Updated
 
+- Updated Kubernetes dependencies to v1.18.5.
 
 ## [1.2.0] - 2020-06-29
 
