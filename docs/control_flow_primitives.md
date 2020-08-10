@@ -9,7 +9,11 @@ control the execution and lifecycle of resource implementations depending on the
 system an operator is dealing with. Control flow primitives also help then
 [keeping reconciliation loops short](keeping_reconciliation_loops_short.md).
 
+
+
 ## Cancel Resources
+
+
 
 #### Default Resources
 
@@ -18,6 +22,8 @@ stop processing here it is good enough to simply `return` within the code. The
 resources being configured after the canceled resource are then executed and the
 canceled resource is executed again on the next reconciliation loop once the
 resync period kicks in again.
+
+
 
 #### CRUD Resources
 
@@ -29,6 +35,8 @@ resources within one of its steps you can call
 A convention for CRUD resource cancelation is to do it within `GetCurrentState`
 when possible.
 
+
+
 ## Cancel Reconciliation
 
 In order to cancel the whole reconciliation you can simply call
@@ -39,6 +47,8 @@ again based on how they were configured. Note that cancelling resources on
 delete events will cause the finalizer to be removed. This means the delete
 event will not be replayed. When this behaviour is not desired check on how to
 [repeat delete events](#repeat-delete-events).
+
+
 
 ## Repeat Delete Events
 
