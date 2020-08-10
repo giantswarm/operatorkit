@@ -60,7 +60,7 @@ const (
 
 var (
 	defaultPauseAnnotations = map[string]string{
-		"cluster.x-k8s.io/paused":             "true",
+		"cluster.x-k8s.io/paused":          "true",
 		"operatorkit.giantswarm.io/paused": "true",
 	}
 )
@@ -603,7 +603,7 @@ func hasAnnotation(m map[string]string, k string, v string) bool {
 	if m == nil {
 		return false
 	}
-	
+
 	return m[k] == v
 }
 
