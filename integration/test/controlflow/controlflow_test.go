@@ -48,9 +48,9 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 		}
 	}
 
-	var harness wrapper.Interface
+	var w wrapper.Interface
 	{
-		harness, err = newHarness(objNamespace, controllerName, resource)
+		w, err = newHarness(objNamespace, controllerName, resource)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -58,7 +58,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 	// Start controller.
 	{
-		controller := harness.Controller()
+		controller := w.Controller()
 
 		go controller.Boot(ctx)
 		select {
@@ -70,8 +70,8 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 	// Setup the test namespace.
 	{
-		harness.MustSetup(objNamespace)
-		defer harness.MustTeardown(objNamespace)
+		w.MustSetup(objNamespace)
+		defer w.MustTeardown(objNamespace)
 	}
 
 	// Create an object and wait for the controller to add a finalizer.
@@ -85,7 +85,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 				},
 			}
 
-			_, err := harness.CreateObject(ctx, objNamespace, drainerConfig)
+			_, err := w.CreateObject(ctx, objNamespace, drainerConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -127,7 +127,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 	// Verify deletion timestamp and finalizer.
 	{
-		obj, err := harness.GetObject(ctx, objName, objNamespace)
+		obj, err := w.GetObject(ctx, objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -161,7 +161,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 	// Delete the object.
 	{
-		err := harness.DeleteObject(ctx, objName, objNamespace)
+		err := w.DeleteObject(ctx, objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -194,7 +194,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 	// Verify deletion timestamp and finalizer.
 	{
-		obj, err := harness.GetObject(ctx, objName, objNamespace)
+		obj, err := w.GetObject(ctx, objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -226,7 +226,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	// We verify that the object is completely gone now.
 	{
 		o := func() error {
-			_, err = harness.GetObject(ctx, objName, objNamespace)
+			_, err = w.GetObject(ctx, objName, objNamespace)
 			if drainerconfig.IsNotFound(err) {
 				return nil
 			} else if err != nil {
