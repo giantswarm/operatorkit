@@ -16,15 +16,18 @@ encapsulate best practices we learned while running operators in production.
   as any Kubernetes runtime object.
 - Managing [finalizers][finalizers] on reconciled objects, making sure the code
   is executed at least once for each create/delete/update event.
-- Guarantees to perform only one successful deletion event reconciliation to
-  avoid unnecessary, possibly expensive interactions with third party systems.
+- Guarantees to perform at least one successful deletion event reconciliation
+  to avoid unnecessary, possibly expensive interactions with third party
+  systems.
 - Resource wrapping to gain ability of composing resources like middlewares.
-- Control flow primitives that allow cancellation and repetition of resource
-  implementations.
+- [Control Flow Primitives](docs/control_flow_primitives.md) that allow
+  cancellation and repetition of resource implementations.
 - Independent packages. It is possible to use only certain parts of the library
   without being bound to all primitives it provides.
 - Ability to change behaviour that is often specific to an organization like
   logging and error handling.
+- [Pause Reconciliation](docs/pause_reconciliation.md) using pausing annotations
+  on runtime objects to stop and resume reconciliation on demand.
 
 
 
@@ -41,6 +44,7 @@ For future planned features and breaking changes see the [roadmap](ROADMAP.md).
 - [Keeping Reconciliation Loops Short](docs/keeping_reconciliation_loops_short.md)
 - [Managing CR Status Sub Resources](docs/managing_cr_status_sub_resources.md)
 - [Metrics Provider](docs/metrics_provider.md)
+- [Pause Reconciliation](docs/pause_reconciliation.md)
 - [Troubleshooting](docs/troubleshooting.md)
 - [Using Finalizers](docs/using_finalizers.md)
 - [Using Kubernetes Events](docs/using_kubernetes_events.md)
