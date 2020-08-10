@@ -50,6 +50,12 @@ workflows:
             - go-test
 
       - architect/integration-test:
+          name: integration-test-pause
+          test-dir: "integration/test/pause"
+          requires:
+            - go-test
+
+      - architect/integration-test:
           name: integration-test-reconciliation
           test-dir: "integration/test/reconciliation"
           requires:
