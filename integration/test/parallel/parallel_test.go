@@ -114,17 +114,17 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 		}
 	}
 
-	var harnessA, harnessB, harnessC *drainerconfig.Wrapper
+	var wrapperA, wrapperB, wrapperC *drainerconfig.Wrapper
 	{
-		harnessA, err = newHarness(objNamespace, controllerNameA, resourceA)
+		wrapperA, err = newHarness(objNamespace, controllerNameA, resourceA)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
-		harnessB, err = newHarness(objNamespace, controllerNameB, resourceB)
+		wrapperB, err = newHarness(objNamespace, controllerNameB, resourceB)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
-		harnessC, err = newHarness(objNamespace, controllerNameC, resourceC)
+		wrapperC, err = newHarness(objNamespace, controllerNameC, resourceC)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -132,9 +132,9 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 
 	// Start controllers.
 	{
-		controllerA := harnessA.Controller()
-		controllerB := harnessB.Controller()
-		controllerC := harnessC.Controller()
+		controllerA := wrapperA.Controller()
+		controllerB := wrapperB.Controller()
+		controllerC := wrapperC.Controller()
 
 		go controllerA.Boot(ctx)
 		go controllerB.Boot(ctx)
@@ -159,8 +159,8 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	// Setup the test namespace. We use the harness A. It makes no
 	// difference if we use the harness A or B.
 	{
-		harnessA.MustSetup(objNamespace)
-		defer harnessA.MustTeardown(objNamespace)
+		wrapperA.MustSetup(objNamespace)
+		defer wrapperA.MustTeardown(objNamespace)
 	}
 
 	// Create an object. Creation is retried because the CRD might still
@@ -174,7 +174,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 				},
 			}
 
-			_, err := harnessA.CreateObject(ctx, objNamespace, drainerConfig)
+			_, err := wrapperA.CreateObject(ctx, objNamespace, drainerConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -227,7 +227,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 
 	// Verify deletion timestamp and finalizers.
 	{
-		obj, err := harnessA.GetObject(ctx, objName, objNamespace)
+		obj, err := wrapperA.GetObject(ctx, objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -256,7 +256,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 
 	// Delete the object.
 	{
-		err := harnessA.DeleteObject(ctx, objName, objNamespace)
+		err := wrapperA.DeleteObject(ctx, objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -266,7 +266,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	// from constantly failing resource.
 	{
 		o := func() error {
-			obj, err := harnessA.GetObject(ctx, objName, objNamespace)
+			obj, err := wrapperA.GetObject(ctx, objName, objNamespace)
 			if err != nil {
 				t.Fatalf("err == %v, want %v", err, nil)
 			}
@@ -342,7 +342,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	// Verify that the object is completely gone now.
 	{
 		o := func() error {
-			_, err := harnessA.GetObject(ctx, objName, objNamespace)
+			_, err := wrapperA.GetObject(ctx, objName, objNamespace)
 			if drainerconfig.IsNotFound(err) {
 				return nil
 			} else if err != nil {
