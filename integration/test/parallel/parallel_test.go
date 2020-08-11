@@ -116,15 +116,15 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 
 	var wrapperA, wrapperB, wrapperC *drainerconfig.Wrapper
 	{
-		wrapperA, err = newHarness(objNamespace, controllerNameA, resourceA)
+		wrapperA, err = newWrapper(objNamespace, controllerNameA, resourceA)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
-		wrapperB, err = newHarness(objNamespace, controllerNameB, resourceB)
+		wrapperB, err = newWrapper(objNamespace, controllerNameB, resourceB)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
-		wrapperC, err = newHarness(objNamespace, controllerNameC, resourceC)
+		wrapperC, err = newWrapper(objNamespace, controllerNameC, resourceC)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -156,8 +156,8 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 		}
 	}
 
-	// Setup the test namespace. We use the harness A. It makes no
-	// difference if we use the harness A or B.
+	// Setup the test namespace. We use the wrapper A. It makes no
+	// difference if we use the wrapper A or B.
 	{
 		wrapperA.MustSetup(objNamespace)
 		defer wrapperA.MustTeardown(objNamespace)
@@ -381,7 +381,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	}
 }
 
-func newHarness(namespace string, controllerName string, r *testresource.Resource) (*drainerconfig.Wrapper, error) {
+func newWrapper(namespace string, controllerName string, r *testresource.Resource) (*drainerconfig.Wrapper, error) {
 	c := drainerconfig.Config{
 		Resources: []resource.Interface{
 			r,
