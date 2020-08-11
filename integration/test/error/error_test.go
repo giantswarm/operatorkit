@@ -7,15 +7,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
+	"github.com/giantswarm/apiextensions/v2/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/giantswarm/operatorkit/integration/testresource"
-	"github.com/giantswarm/operatorkit/integration/wrapper/drainerconfig"
-	"github.com/giantswarm/operatorkit/resource"
+	"github.com/giantswarm/operatorkit/v2/integration/testresource"
+	"github.com/giantswarm/operatorkit/v2/integration/wrapper/drainerconfig"
+	"github.com/giantswarm/operatorkit/v2/pkg/resource"
 )
 
 const (
@@ -101,7 +101,7 @@ func Test_Controller_Integration_Error(t *testing.T) {
 				},
 			}
 
-			_, err = wrapper.CreateObject(testNamespace, a)
+			_, err = wrapper.CreateObject(ctx, testNamespace, a)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -113,7 +113,7 @@ func Test_Controller_Integration_Error(t *testing.T) {
 				},
 			}
 
-			_, err = wrapper.CreateObject(testNamespace, b)
+			_, err = wrapper.CreateObject(ctx, testNamespace, b)
 			if err != nil {
 				return microerror.Mask(err)
 			}

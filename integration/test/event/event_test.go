@@ -3,6 +3,7 @@
 package event
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -13,9 +14,9 @@ import (
 
 	"github.com/giantswarm/microerror"
 
-	"github.com/giantswarm/operatorkit/integration/testresource"
-	"github.com/giantswarm/operatorkit/integration/wrapper/configmap"
-	"github.com/giantswarm/operatorkit/resource"
+	"github.com/giantswarm/operatorkit/v2/integration/testresource"
+	"github.com/giantswarm/operatorkit/v2/integration/wrapper/configmap"
+	"github.com/giantswarm/operatorkit/v2/pkg/resource"
 )
 
 const (
@@ -30,6 +31,8 @@ const (
 // !!! This test does not work with CRs, the controller is not booted !!!
 //
 func Test_Kubernetes_Event(t *testing.T) {
+	ctx := context.Background()
+
 	var err error
 	var r *testresource.Resource
 	{
@@ -60,8 +63,8 @@ func Test_Kubernetes_Event(t *testing.T) {
 		}
 	}
 
-	wrapper.MustSetup(testNamespace)
-	defer wrapper.MustTeardown(testNamespace)
+	wrapper.MustSetup(ctx, testNamespace)
+	defer wrapper.MustTeardown(ctx, testNamespace)
 
 	controller := wrapper.Controller()
 
@@ -77,7 +80,7 @@ func Test_Kubernetes_Event(t *testing.T) {
 		Data: map[string]string{},
 	}
 
-	_, err = wrapper.CreateObject(testNamespace, cm)
+	_, err = wrapper.CreateObject(ctx, testNamespace, cm)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -89,7 +92,7 @@ func Test_Kubernetes_Event(t *testing.T) {
 			"testlabel": "testlabel",
 		},
 	)
-	_, err = wrapper.UpdateObject(testNamespace, cm)
+	_, err = wrapper.UpdateObject(ctx, testNamespace, cm)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -114,7 +117,7 @@ func Test_Kubernetes_Event(t *testing.T) {
 	// wait a bit to let events appear on the cm
 	time.Sleep(5 * time.Second)
 
-	events, err := wrapper.Events(cm.GetNamespace())
+	events, err := wrapper.Events(ctx, cm.GetNamespace())
 	if err != nil {
 		t.Fatal("failed to get events from configmap", nil, "got", err)
 	}

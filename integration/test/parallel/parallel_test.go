@@ -10,15 +10,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
+	"github.com/giantswarm/apiextensions/v2/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/giantswarm/operatorkit/integration/testresource"
-	"github.com/giantswarm/operatorkit/integration/wrapper/drainerconfig"
-	"github.com/giantswarm/operatorkit/resource"
+	"github.com/giantswarm/operatorkit/v2/integration/testresource"
+	"github.com/giantswarm/operatorkit/v2/integration/wrapper/drainerconfig"
+	"github.com/giantswarm/operatorkit/v2/pkg/resource"
 )
 
 const (
@@ -174,7 +174,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 				},
 			}
 
-			_, err := wrapperA.CreateObject(objNamespace, drainerConfig)
+			_, err := wrapperA.CreateObject(ctx, objNamespace, drainerConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -227,7 +227,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 
 	// Verify deletion timestamp and finalizers.
 	{
-		obj, err := wrapperA.GetObject(objName, objNamespace)
+		obj, err := wrapperA.GetObject(ctx, objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -256,7 +256,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 
 	// Delete the object.
 	{
-		err := wrapperA.DeleteObject(objName, objNamespace)
+		err := wrapperA.DeleteObject(ctx, objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -266,7 +266,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	// from constantly failing resource.
 	{
 		o := func() error {
-			obj, err := wrapperA.GetObject(objName, objNamespace)
+			obj, err := wrapperA.GetObject(ctx, objName, objNamespace)
 			if err != nil {
 				t.Fatalf("err == %v, want %v", err, nil)
 			}
@@ -342,7 +342,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	// Verify that the object is completely gone now.
 	{
 		o := func() error {
-			_, err := wrapperA.GetObject(objName, objNamespace)
+			_, err := wrapperA.GetObject(ctx, objName, objNamespace)
 			if drainerconfig.IsNotFound(err) {
 				return nil
 			} else if err != nil {

@@ -3,6 +3,7 @@
 package basic
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -12,9 +13,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/giantswarm/operatorkit/integration/testresource"
-	"github.com/giantswarm/operatorkit/integration/wrapper/configmap"
-	"github.com/giantswarm/operatorkit/resource"
+	"github.com/giantswarm/operatorkit/v2/integration/testresource"
+	"github.com/giantswarm/operatorkit/v2/integration/wrapper/configmap"
+	"github.com/giantswarm/operatorkit/v2/pkg/resource"
 )
 
 const (
@@ -32,6 +33,8 @@ const (
 //
 func Test_Finalizer_Integration_Basic(t *testing.T) {
 	var err error
+
+	ctx := context.Background()
 
 	expectedFinalizers := []string{
 		testFinalizer,
@@ -63,8 +66,8 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 		}
 	}
 
-	wrapper.MustSetup(testNamespace)
-	defer wrapper.MustTeardown(testNamespace)
+	wrapper.MustSetup(ctx, testNamespace)
+	defer wrapper.MustTeardown(ctx, testNamespace)
 
 	controller := wrapper.Controller()
 
@@ -80,7 +83,7 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 		Data: map[string]string{},
 	}
 	// We create an object which does not have any finalizers.
-	_, err = wrapper.CreateObject(testNamespace, cm)
+	_, err = wrapper.CreateObject(ctx, testNamespace, cm)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -92,7 +95,7 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 			"testlabel": "testlabel",
 		},
 	)
-	_, err = wrapper.UpdateObject(testNamespace, cm)
+	_, err = wrapper.UpdateObject(ctx, testNamespace, cm)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -118,7 +121,7 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	}
 
 	// We get the current configmap.
-	resultObj, err := wrapper.GetObject(configMapName, testNamespace)
+	resultObj, err := wrapper.GetObject(ctx, configMapName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -134,11 +137,11 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	}
 
 	// We delete our object.
-	err = wrapper.DeleteObject(configMapName, testNamespace)
+	err = wrapper.DeleteObject(ctx, configMapName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
-	resultObj, err = wrapper.GetObject(configMapName, testNamespace)
+	resultObj, err = wrapper.GetObject(ctx, configMapName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -166,7 +169,7 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	}})
 
 	// We verify that our object is completely gone now.
-	_, err = wrapper.GetObject(configMapName, testNamespace)
+	_, err = wrapper.GetObject(ctx, configMapName, testNamespace)
 	if !configmap.IsNotFound(err) {
 		t.Fatalf("error == %#v, want NotFound error", err)
 	}

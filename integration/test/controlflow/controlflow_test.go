@@ -8,16 +8,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
+	"github.com/giantswarm/apiextensions/v2/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/giantswarm/operatorkit/integration/testresource"
-	"github.com/giantswarm/operatorkit/integration/wrapper"
-	"github.com/giantswarm/operatorkit/integration/wrapper/drainerconfig"
-	"github.com/giantswarm/operatorkit/resource"
+	"github.com/giantswarm/operatorkit/v2/integration/testresource"
+	"github.com/giantswarm/operatorkit/v2/integration/wrapper"
+	"github.com/giantswarm/operatorkit/v2/integration/wrapper/drainerconfig"
+	"github.com/giantswarm/operatorkit/v2/pkg/resource"
 )
 
 const (
@@ -94,7 +94,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 				},
 			}
 
-			_, err := w.CreateObject(objNamespace, drainerConfig)
+			_, err := w.CreateObject(ctx, objNamespace, drainerConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -136,7 +136,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 	// Verify deletion timestamp and finalizer.
 	{
-		obj, err := w.GetObject(objName, objNamespace)
+		obj, err := w.GetObject(ctx, objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -170,7 +170,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 	// Delete the object.
 	{
-		err := w.DeleteObject(objName, objNamespace)
+		err := w.DeleteObject(ctx, objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -203,7 +203,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 	// Verify deletion timestamp and finalizer.
 	{
-		obj, err := w.GetObject(objName, objNamespace)
+		obj, err := w.GetObject(ctx, objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -235,7 +235,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	// We verify that the object is completely gone now.
 	{
 		o := func() error {
-			_, err = w.GetObject(objName, objNamespace)
+			_, err = w.GetObject(ctx, objName, objNamespace)
 			if drainerconfig.IsNotFound(err) {
 				return nil
 			} else if err != nil {

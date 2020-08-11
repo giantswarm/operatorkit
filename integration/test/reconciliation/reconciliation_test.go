@@ -8,16 +8,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
+	"github.com/giantswarm/apiextensions/v2/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/giantswarm/operatorkit/integration/testresource"
-	"github.com/giantswarm/operatorkit/integration/wrapper"
-	"github.com/giantswarm/operatorkit/integration/wrapper/drainerconfig"
-	"github.com/giantswarm/operatorkit/resource"
+	"github.com/giantswarm/operatorkit/v2/integration/testresource"
+	"github.com/giantswarm/operatorkit/v2/integration/wrapper"
+	"github.com/giantswarm/operatorkit/v2/integration/wrapper/drainerconfig"
+	"github.com/giantswarm/operatorkit/v2/pkg/resource"
 )
 
 const (
@@ -88,7 +88,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 					},
 				},
 			}
-			v, err := w.CreateObject(testNamespace, drainerConfig)
+			v, err := w.CreateObject(ctx, testNamespace, drainerConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -110,7 +110,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 		o := func() error {
 			createdDrainerConfig.SetLabels(map[string]string{"testlabel": "testlabel"})
 
-			_, err = w.UpdateObject(testNamespace, createdDrainerConfig)
+			_, err = w.UpdateObject(ctx, testNamespace, createdDrainerConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -160,7 +160,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	}
 
 	// We get the object after the controller has been started.
-	resultObj, err := w.GetObject(objName, testNamespace)
+	resultObj, err := w.GetObject(ctx, objName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -187,7 +187,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	}
 
 	// We delete the object now.
-	err = w.DeleteObject(objName, testNamespace)
+	err = w.DeleteObject(ctx, objName, testNamespace)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -216,7 +216,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	// Verify deletion timestamp and finalizer.
 	{
 		o := func() error {
-			obj, err := w.GetObject(objName, testNamespace)
+			obj, err := w.GetObject(ctx, objName, testNamespace)
 			if err != nil {
 				return microerror.Mask(err)
 			}

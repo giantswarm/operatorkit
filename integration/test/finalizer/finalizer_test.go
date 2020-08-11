@@ -10,16 +10,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
+	"github.com/giantswarm/apiextensions/v2/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/giantswarm/operatorkit/integration/testresource"
-	"github.com/giantswarm/operatorkit/integration/wrapper/drainerconfig"
-	"github.com/giantswarm/operatorkit/resource"
+	"github.com/giantswarm/operatorkit/v2/integration/testresource"
+	"github.com/giantswarm/operatorkit/v2/integration/wrapper/drainerconfig"
+	"github.com/giantswarm/operatorkit/v2/pkg/resource"
 )
 
 const (
@@ -93,7 +93,7 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 				},
 			}
 
-			_, err := wrapper.CreateObject(objNamespace, drainerConfig)
+			_, err := wrapper.CreateObject(ctx, objNamespace, drainerConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -135,7 +135,7 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 	// Once we ensured the reconciled runtime object got processed by the
 	// controller, verify the deletion timestamp and finalizers.
 	{
-		obj, err := wrapper.GetObject(objName, objNamespace)
+		obj, err := wrapper.GetObject(ctx, objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -164,7 +164,7 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 
 	// Delete the object.
 	{
-		err := wrapper.DeleteObject(objName, objNamespace)
+		err := wrapper.DeleteObject(ctx, objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -189,7 +189,7 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 
 	// Verify deletion timestamp and finalizers.
 	{
-		obj, err := wrapper.GetObject(objName, objNamespace)
+		obj, err := wrapper.GetObject(ctx, objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -225,7 +225,7 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 	// Verify that the object is completely gone now.
 	{
 		o := func() error {
-			_, err := wrapper.GetObject(objName, objNamespace)
+			_, err := wrapper.GetObject(ctx, objName, objNamespace)
 			if drainerconfig.IsNotFound(err) {
 				return nil
 			} else if err != nil {

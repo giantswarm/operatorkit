@@ -7,16 +7,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
+	"github.com/giantswarm/apiextensions/v2/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/giantswarm/operatorkit/integration/testresource"
-	"github.com/giantswarm/operatorkit/integration/wrapper"
-	"github.com/giantswarm/operatorkit/integration/wrapper/drainerconfig"
-	"github.com/giantswarm/operatorkit/resource"
+	"github.com/giantswarm/operatorkit/v2/integration/testresource"
+	"github.com/giantswarm/operatorkit/v2/integration/wrapper"
+	"github.com/giantswarm/operatorkit/v2/integration/wrapper/drainerconfig"
+	"github.com/giantswarm/operatorkit/v2/pkg/resource"
 )
 
 const (
@@ -91,7 +91,7 @@ func Test_Integration_Pause(t *testing.T) {
 				},
 			}
 
-			_, err := w.CreateObject(objNamespace, drainerConfig)
+			_, err := w.CreateObject(ctx, objNamespace, drainerConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -134,7 +134,7 @@ func Test_Integration_Pause(t *testing.T) {
 	// Add the pausing annotation to the reconciled runtime object. This should
 	// cause the reconciliation to be paused.
 	{
-		obj, err := w.GetObject(objName, objNamespace)
+		obj, err := w.GetObject(ctx, objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -149,7 +149,7 @@ func Test_Integration_Pause(t *testing.T) {
 				"operatorkit.giantswarm.io/paused": "true",
 			},
 		)
-		_, err = w.UpdateObject(objNamespace, accessor)
+		_, err = w.UpdateObject(ctx, objNamespace, accessor)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}
@@ -189,7 +189,7 @@ func Test_Integration_Pause(t *testing.T) {
 	// We remove the pausing annotation in order to see the runtime object to be
 	// reconciled again.
 	{
-		obj, err := w.GetObject(objName, objNamespace)
+		obj, err := w.GetObject(ctx, objName, objNamespace)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -202,7 +202,7 @@ func Test_Integration_Pause(t *testing.T) {
 		accessor.SetAnnotations(
 			map[string]string{},
 		)
-		_, err = w.UpdateObject(objNamespace, accessor)
+		_, err = w.UpdateObject(ctx, objNamespace, accessor)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}

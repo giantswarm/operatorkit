@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
+	"github.com/giantswarm/apiextensions/v2/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/backoff"
-	"github.com/giantswarm/k8sclient/v3/pkg/k8sclient"
+	"github.com/giantswarm/k8sclient/v4/pkg/k8sclient"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	corev1 "k8s.io/api/core/v1"
@@ -14,9 +14,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/giantswarm/operatorkit/controller"
-	"github.com/giantswarm/operatorkit/integration/env"
-	"github.com/giantswarm/operatorkit/resource"
+	"github.com/giantswarm/operatorkit/v2/integration/env"
+	"github.com/giantswarm/operatorkit/v2/pkg/controller"
+	"github.com/giantswarm/operatorkit/v2/pkg/resource"
 )
 
 type Config struct {
@@ -110,7 +110,7 @@ func (w Wrapper) MustSetup(namespace string) {
 		Spec: corev1.NamespaceSpec{},
 	}
 
-	_, err := w.k8sClient.K8sClient().CoreV1().Namespaces().Create(ns)
+	_, err := w.k8sClient.K8sClient().CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
 	if err != nil {
 		panic(err)
 	}
@@ -131,7 +131,7 @@ func (w Wrapper) MustSetup(namespace string) {
 func (w Wrapper) MustTeardown(namespace string) {
 	ctx := context.Background()
 
-	err := w.k8sClient.K8sClient().CoreV1().Namespaces().Delete(namespace, nil)
+	err := w.k8sClient.K8sClient().CoreV1().Namespaces().Delete(ctx, namespace, metav1.DeleteOptions{})
 	if errors.IsNotFound(err) {
 		// fall though
 	} else if err != nil {

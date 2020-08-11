@@ -7,13 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/giantswarm/apiextensions/pkg/apis/core/v1alpha1"
+	"github.com/giantswarm/apiextensions/v2/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/giantswarm/operatorkit/integration/wrapper/drainerconfig"
-	"github.com/giantswarm/operatorkit/resource"
+	"github.com/giantswarm/operatorkit/v2/integration/wrapper/drainerconfig"
+	"github.com/giantswarm/operatorkit/v2/pkg/resource"
 )
 
 const (
@@ -83,7 +83,7 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 				},
 				TypeMeta: v1alpha1.NewDrainerTypeMeta(),
 			}
-			_, err := w.CreateObject(testNamespace, drainerConfig)
+			_, err := w.CreateObject(ctx, testNamespace, drainerConfig)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -101,7 +101,7 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	{
-		newObj, err := w.GetObject(objName, testNamespace)
+		newObj, err := w.GetObject(ctx, objName, testNamespace)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}
