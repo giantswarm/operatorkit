@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## Fixed
+
+- Fixed pause annotation being triggered by empty values on non-target keys.
+
 ## [2.0.0] - 2020-08-11
 
 ## Added
