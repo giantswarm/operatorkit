@@ -599,12 +599,17 @@ func ProcessUpdate(ctx context.Context, obj interface{}, resources []resource.In
 	return nil
 }
 
-func hasAnnotation(m map[string]string, k string, v string) bool {
-	if m == nil {
+func hasAnnotation(annotations map[string]string, targetKey string, targetValue string) bool {
+	if annotations == nil {
 		return false
 	}
 
-	return m[k] == v
+	actualValue, ok := annotations[targetKey]
+	if !ok {
+		return false
+	}
+
+	return actualValue == targetValue
 }
 
 func setLoggerCtxValue(ctx context.Context, key, value string) context.Context {
