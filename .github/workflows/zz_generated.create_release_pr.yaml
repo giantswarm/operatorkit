@@ -76,7 +76,7 @@ jobs:
           echo "::set-output name=cache_key::${cache_key}"
       - name: Cache
         id: cache
-        uses: actions/cache@v1
+        uses: actions/cache@v2.1.1
         with:
           key: "${{ steps.get_cache_key.outputs.cache_key }}"
           path: "${{ env.DIR }}"
@@ -106,7 +106,7 @@ jobs:
     steps:
       - name: Cache
         id: cache
-        uses: actions/cache@v1
+        uses: actions/cache@v2.1.1
         with:
           key: "${{ needs.install_architect.outputs.cache_key }}"
           path: /opt/bin
