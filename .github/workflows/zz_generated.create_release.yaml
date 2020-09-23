@@ -111,7 +111,7 @@ jobs:
         run: |
           ${{ steps.key.outputs.cache_dir }}/${{ steps.key.outputs.binary }} --version
       - name: Upload artifact
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2.1.4
         with:
           name: "${{ steps.key.outputs.binary }}"
           path: "${{ steps.key.outputs.cache_dir }}/${{ steps.key.outputs.binary }}"
