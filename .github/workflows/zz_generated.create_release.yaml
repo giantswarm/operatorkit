@@ -8,7 +8,9 @@ on:
     branches:
       - 'legacy'
       - 'master'
-      - 'release-v*.x.x'
+      - 'release-v*.*.x'
+      # "!" negates previous positive patterns so it has to be at the end.
+      - '!release-v*.x.x'
 jobs:
   debug_info:
     name: Debug info
@@ -24,6 +26,7 @@ jobs:
     runs-on: ubuntu-18.04
     outputs:
       project_go_path: ${{ steps.get_project_go_path.outputs.path }}
+      ref_version: ${{ steps.ref_version.outputs.refversion }}
       version: ${{ steps.get_version.outputs.version }}
     steps:
       - name: Get version
@@ -57,6 +60,21 @@ jobs:
           fi
           echo "path=\"$path\""
           echo "::set-output name=path::${path}"
+      - name: Check if reference version
+        id: ref_version
+        run: |
+          title="$(echo "${{ github.event.head_commit.message }}" | head -n 1 -)"
+          if echo $title | grep -qE '^release v[0-9]+\.[0-9]+\.[0-9]+([.-][^ .-][^ ]*)?( \(#[0-9]+\))?$' ; then
+            version=$(echo $title | cut -d ' ' -f 2)
+          fi
+          version=$(echo $title | cut -d ' ' -f 2)
+          version="${version#v}" # Strip "v" prefix.
+          refversion=false
+          if [[ "${version}" =~ ^[0-9]+.[0-9]+.[0-9]+-[0-9]+$ ]]; then
+            refversion=true
+          fi
+          echo "refversion =\"$refversion\""
+          echo "::set-output name=refversion::$refversion"
   install_semver:
     name: Install semver
     runs-on: ubuntu-18.04
@@ -100,7 +118,7 @@ jobs:
   update_project_go:
     name: Update project.go
     runs-on: ubuntu-18.04
-    if: ${{ needs.gather_facts.outputs.version != '' && needs.gather_facts.outputs.project_go_path != ''}}
+    if: ${{ needs.gather_facts.outputs.version != '' && needs.gather_facts.outputs.project_go_path != '' && needs.gather_facts.outputs.ref_version != 'true' }}
     needs:
       - gather_facts
       - install_semver
@@ -118,7 +136,10 @@ jobs:
         uses: actions/checkout@v2
       - name: Update project.go
         id: update_project_go
+        env:
+          branch: "${{ github.ref }}-version-bump"
         run: |
+          git checkout -b ${{ env.branch }}
           file="${{ needs.gather_facts.outputs.project_go_path }}"
           version="${{ needs.gather_facts.outputs.version }}"
           new_version="$(semver bump patch $version)-dev"
@@ -135,25 +156,37 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add $file
-          git commit -m "pkg/project: bump version to ${{ steps.update_project_go.outputs.new_version }}"
+          git commit -m "Bump version to ${{ steps.update_project_go.outputs.new_version }}"
       - name: Push changes
         env:
           REMOTE_REPO: "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          branch: "${{ github.ref }}-version-bump"
         run: |
-          git push "${REMOTE_REPO}" HEAD:${{ github.ref }}
+          git push "${REMOTE_REPO}" HEAD:${{ env.branch }}
+      - name: Create PR
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          base: "${{ github.ref }}"
+          branch: "${{ github.ref }}-version-bump"
+          version: "${{ needs.gather_facts.outputs.version }}"
+          title: "Bump version to ${{ steps.update_project_go.outputs.new_version }}"
+        run: |
+          hub pull-request -f  -m "${{ env.title }}" -b ${{ env.base }} -h ${{ env.branch }} -r ${{ github.actor }}
   create_release:
     name: Create release
     runs-on: ubuntu-18.04
     needs:
       - gather_facts
     if: ${{ needs.gather_facts.outputs.version }}
+    outputs:
+      upload_url: ${{ steps.create_gh_release.outputs.upload_url }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
           ref: ${{ github.sha }}
       - name: Ensure correct version in project.go
-        if: ${{ needs.gather_facts.outputs.project_go_path != ''}}
+        if: ${{ needs.gather_facts.outputs.project_go_path != '' && needs.gather_facts.outputs.ref_version != 'true' }}
         run: |
           file="${{ needs.gather_facts.outputs.project_go_path }}"
           version="${{ needs.gather_facts.outputs.version }}"
@@ -169,9 +202,65 @@ jobs:
         run: |
           git push "${REMOTE_REPO}" --tags
       - name: Create release
+        id: create_gh_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: "v${{ needs.gather_facts.outputs.version }}"
           release_name: "v${{ needs.gather_facts.outputs.version }}"
+  create-release-branch:
+    name: Create release branch
+    runs-on: ubuntu-18.04
+    needs:
+      - gather_facts
+      - install_semver
+    if: ${{ needs.gather_facts.outputs.version }}
+    steps:
+      - name: Download semver artifact to /opt/bin
+        uses: actions/download-artifact@v2
+        with:
+          name: semver
+          path: /opt/bin
+      - name: Prepare /opt/bin
+        run: |
+          chmod +x /opt/bin/*
+          echo "::add-path::/opt/bin"
+      - uses: actions/checkout@v2
+        name: Check out the repository
+        with:
+          fetch-depth: 0  # Clone the whole history, not just the most recent commit.
+      - name: Fetch all tags and branches
+        run: "git fetch --all"
+      - name: Create long-lived release branch
+        run: |
+          current_version="${{ needs.gather_facts.outputs.version }}"
+          parent_version="$(git describe --tags --abbrev=0 HEAD^)"
+          parent_version="${parent_version#v}" # Strip "v" prefix.
+          echo "current_version=$current_version parent_version=$parent_version"
+
+          current_major=$(semver get major $current_version)
+          current_minor=$(semver get minor $current_version)
+          parent_major=$(semver get major $parent_version)
+          parent_minor=$(semver get minor $parent_version)
+          echo "current_major=$current_major current_minor=$current_minor parent_major=$parent_major parent_minor=$parent_minor"
+
+          if [[ $current_major -gt $parent_major ]] ; then
+            echo "Current tag is a new major version"
+          elif [[ $current_major -eq $parent_major ]] && [[ $current_minor -gt $parent_minor ]] ; then
+            echo "Current tag is a new minor version"
+          else
+            echo "Current tag is not a new major or minor version. Nothing to do here."
+            exit 0
+          fi
+
+          release_branch="release-v${parent_major}.${parent_minor}.x"
+          echo "release_branch=$release_branch"
+
+          if git rev-parse --verify $release_branch ; then
+            echo "Release branch $release_branch already exists. Nothing to do here."
+            exit 0
+          fi
+
+          git branch $release_branch HEAD^
+          git push origin $release_branch
