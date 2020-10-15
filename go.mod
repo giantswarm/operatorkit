@@ -1,4 +1,4 @@
-module github.com/giantswarm/operatorkit/v2/v2
+module github.com/giantswarm/operatorkit/v2
 
 go 1.14
 
