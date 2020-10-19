@@ -402,7 +402,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 	return nil
 }
 
-func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) error {
+func (c *Controller) deleteFunc(ctx context.Context, obj interface{}, resources []resource.Interface) error {
 	var err error
 
 	hasFinalizer, err := c.hasFinalizer(ctx, obj)
@@ -413,9 +413,26 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) error {
 		return nil
 	}
 
-	err = ProcessDelete(ctx, obj, c.resources)
-	if err != nil {
-		return microerror.Mask(err)
+	{
+		ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
+
+		defer func() {
+			ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
+		}()
+
+		for _, r := range resources {
+			ctx = setLoggerCtxValue(ctx, loggerKeyResource, r.Name())
+			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
+
+			err := r.EnsureDeleted(ctx, obj)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+
+			if reconciliationcanceledcontext.IsCanceled(ctx) {
+				return nil
+			}
+		}
 	}
 
 	err = c.removeFinalizer(ctx, obj)
@@ -466,7 +483,7 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request, obj i
 		ctx = setLoggerCtxValue(ctx, loggerKeyObject, m.GetSelfLink())
 		ctx = setLoggerCtxValue(ctx, loggerKeyVersion, m.GetResourceVersion())
 
-		err = c.deleteFunc(ctx, obj)
+		err = c.deleteFunc(ctx, obj, c.resources)
 		if err != nil {
 			return reconcile.Result{}, microerror.Mask(err)
 		}
@@ -480,7 +497,7 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request, obj i
 		ctx = setLoggerCtxValue(ctx, loggerKeyObject, m.GetSelfLink())
 		ctx = setLoggerCtxValue(ctx, loggerKeyVersion, m.GetResourceVersion())
 
-		err = c.updateFunc(ctx, obj)
+		err = c.updateFunc(ctx, obj, c.resources)
 		if err != nil {
 			return reconcile.Result{}, microerror.Mask(err)
 		}
@@ -491,7 +508,7 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request, obj i
 	return reconcile.Result{}, nil
 }
 
-func (c *Controller) updateFunc(ctx context.Context, obj interface{}) error {
+func (c *Controller) updateFunc(ctx context.Context, obj interface{}, resources []resource.Interface) error {
 	var err error
 
 	ok, err := c.addFinalizer(ctx, obj)
@@ -504,95 +521,25 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) error {
 		return nil
 	}
 
-	err = ProcessUpdate(ctx, obj, c.resources)
-	if err != nil {
-		return microerror.Mask(err)
-	}
+	{
+		ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
 
-	return nil
-}
+		defer func() {
+			ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
+		}()
 
-// ProcessDelete is a drop-in for an informer's DeleteFunc. It receives the
-// custom object observed during custom resource watches and anything that
-// implements Resource. ProcessDelete takes care about all necessary
-// reconciliation logic for delete events.
-//
-//     func deleteFunc(obj interface{}) {
-//         err := c.ProcessDelete(obj, resources)
-//         if err != nil {
-//             // error handling here
-//         }
-//     }
-//
-//     newResourceEventHandler := &cache.ResourceEventHandlerFuncs{
-//         DeleteFunc:    deleteFunc,
-//     }
-//
-func ProcessDelete(ctx context.Context, obj interface{}, resources []resource.Interface) error {
-	if len(resources) == 0 {
-		return microerror.Maskf(executionFailedError, "resources must not be empty")
-	}
+		for _, r := range resources {
+			ctx = setLoggerCtxValue(ctx, loggerKeyResource, r.Name())
+			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 
-	ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
+			err := r.EnsureCreated(ctx, obj)
+			if err != nil {
+				return microerror.Mask(err)
+			}
 
-	defer func() {
-		ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
-	}()
-	for _, r := range resources {
-		ctx = setLoggerCtxValue(ctx, loggerKeyResource, r.Name())
-		ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
-
-		err := r.EnsureDeleted(ctx, obj)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-
-		if reconciliationcanceledcontext.IsCanceled(ctx) {
-			return nil
-		}
-	}
-
-	return nil
-}
-
-// ProcessUpdate is a drop-in for an informer's UpdateFunc. It receives the new
-// custom object observed during custom resource watches and anything that
-// implements Resource. ProcessUpdate takes care about all necessary
-// reconciliation logic for update events. For complex resources this means
-// state has to be created, deleted and updated eventually, in this order.
-//
-//     func updateFunc(oldObj, newObj interface{}) {
-//         err := c.ProcessUpdate(newObj, resources)
-//         if err != nil {
-//             // error handling here
-//         }
-//     }
-//
-//     newResourceEventHandler := &cache.ResourceEventHandlerFuncs{
-//         UpdateFunc:    updateFunc,
-//     }
-//
-func ProcessUpdate(ctx context.Context, obj interface{}, resources []resource.Interface) error {
-	if len(resources) == 0 {
-		return microerror.Maskf(executionFailedError, "resources must not be empty")
-	}
-
-	ctx = reconciliationcanceledcontext.NewContext(ctx, make(chan struct{}))
-
-	defer func() {
-		ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
-	}()
-	for _, r := range resources {
-		ctx = setLoggerCtxValue(ctx, loggerKeyResource, r.Name())
-		ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
-
-		err := r.EnsureCreated(ctx, obj)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-
-		if reconciliationcanceledcontext.IsCanceled(ctx) {
-			return nil
+			if reconciliationcanceledcontext.IsCanceled(ctx) {
+				return nil
+			}
 		}
 	}
 

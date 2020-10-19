@@ -174,3 +174,18 @@ func mustNewTestController(n string) *Controller {
 
 	return controller
 }
+
+type testResource struct {
+}
+
+func (r *testResource) Name() string {
+	return ""
+}
+
+func (r *testResource) EnsureCreated(ctx context.Context, obj interface{}) error {
+	return nil
+}
+
+func (r *testResource) EnsureDeleted(ctx context.Context, obj interface{}) error {
+	return nil
+}
