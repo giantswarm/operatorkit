@@ -402,7 +402,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 	return nil
 }
 
-func (c *Controller) deleteFunc(ctx context.Context, obj interface{}, resources []resource.Interface) error {
+func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) error {
 	var err error
 
 	hasFinalizer, err := c.hasFinalizer(ctx, obj)
@@ -420,7 +420,7 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}, resources 
 			ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
 		}()
 
-		for _, r := range resources {
+		for _, r := range c.resources {
 			ctx = setLoggerCtxValue(ctx, loggerKeyResource, r.Name())
 			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 
@@ -483,7 +483,7 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request, obj i
 		ctx = setLoggerCtxValue(ctx, loggerKeyObject, m.GetSelfLink())
 		ctx = setLoggerCtxValue(ctx, loggerKeyVersion, m.GetResourceVersion())
 
-		err = c.deleteFunc(ctx, obj, c.resources)
+		err = c.deleteFunc(ctx, obj)
 		if err != nil {
 			return reconcile.Result{}, microerror.Mask(err)
 		}
@@ -497,7 +497,7 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request, obj i
 		ctx = setLoggerCtxValue(ctx, loggerKeyObject, m.GetSelfLink())
 		ctx = setLoggerCtxValue(ctx, loggerKeyVersion, m.GetResourceVersion())
 
-		err = c.updateFunc(ctx, obj, c.resources)
+		err = c.updateFunc(ctx, obj)
 		if err != nil {
 			return reconcile.Result{}, microerror.Mask(err)
 		}
@@ -508,7 +508,7 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request, obj i
 	return reconcile.Result{}, nil
 }
 
-func (c *Controller) updateFunc(ctx context.Context, obj interface{}, resources []resource.Interface) error {
+func (c *Controller) updateFunc(ctx context.Context, obj interface{}) error {
 	var err error
 
 	ok, err := c.addFinalizer(ctx, obj)
@@ -528,7 +528,7 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}, resources 
 			ctx = unsetLoggerCtxValue(ctx, loggerKeyResource)
 		}()
 
-		for _, r := range resources {
+		for _, r := range c.resources {
 			ctx = setLoggerCtxValue(ctx, loggerKeyResource, r.Name())
 			ctx = resourcecanceledcontext.NewContext(ctx, make(chan struct{}))
 
