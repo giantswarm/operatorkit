@@ -14,7 +14,7 @@ on:
 jobs:
   debug_info:
     name: Debug info
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - name: Print github context JSON
         run: |
@@ -23,7 +23,7 @@ jobs:
           EOF
   gather_facts:
     name: Gather facts
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     outputs:
       project_go_path: ${{ steps.get_project_go_path.outputs.path }}
       ref_version: ${{ steps.ref_version.outputs.refversion }}
@@ -35,13 +35,13 @@ jobs:
           title="$(echo "${{ github.event.head_commit.message }}" | head -n 1 -)"
           # Matches strings like:
           #
-          #   - "release v1.2.3"
-          #   - "release v1.2.3-r4"
-          #   - "release v1.2.3 (#56)"
-          #   - "release v1.2.3-r4 (#56)"
+          #   - "Release v1.2.3"
+          #   - "Release v1.2.3-r4"
+          #   - "Release v1.2.3 (#56)"
+          #   - "Release v1.2.3-r4 (#56)"
           #
           # And outputs version part (1.2.3).
-          if echo $title | grep -qE '^release v[0-9]+\.[0-9]+\.[0-9]+([.-][^ .-][^ ]*)?( \(#[0-9]+\))?$' ; then
+          if echo $title | grep -iqE '^Release v[0-9]+\.[0-9]+\.[0-9]+([.-][^ .-][^ ]*)?( \(#[0-9]+\))?$' ; then
             version=$(echo $title | cut -d ' ' -f 2)
           fi
           version="${version#v}" # Strip "v" prefix.
@@ -75,63 +75,26 @@ jobs:
           fi
           echo "refversion =\"$refversion\""
           echo "::set-output name=refversion::$refversion"
-  install_semver:
-    name: Install semver
-    runs-on: ubuntu-18.04
-    env:
-      BINARY: "semver"
-      URL: "https://raw.githubusercontent.com/fsaintjacques/semver-tool/3.0.0/src/semver"
-    steps:
-      - name: Key
-        id: key
-        run: |
-          cache_dir="/opt/cache"
-          cache_key="install-${BINARY}-${URL}"
-          echo "::set-output name=binary::${BINARY}"
-          echo "::set-output name=cache_dir::${cache_dir}"
-          echo "::set-output name=cache_key::${cache_key}"
-          echo "::set-output name=url::${URL}"
-      - name: Cache
-        id: cache
-        uses: actions/cache@v2.1.2
-        with:
-          key: "${{ steps.key.outputs.cache_key }}"
-          path: "${{ steps.key.outputs.cache_dir }}"
-      - name: Download
-        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
-        run: |
-          # TODO check hash
-          binary="${{ steps.key.outputs.binary }}"
-          cache_dir="${{ steps.key.outputs.cache_dir }}"
-          url="${{ steps.key.outputs.url }}"
-          mkdir $cache_dir
-          curl -fsSLo $cache_dir/$binary $url
-          chmod +x $cache_dir/$binary
-      - name: Smoke test
-        run: |
-          ${{ steps.key.outputs.cache_dir }}/${{ steps.key.outputs.binary }} --version
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2.2.0
-        with:
-          name: "${{ steps.key.outputs.binary }}"
-          path: "${{ steps.key.outputs.cache_dir }}/${{ steps.key.outputs.binary }}"
   update_project_go:
     name: Update project.go
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     if: ${{ needs.gather_facts.outputs.version != '' && needs.gather_facts.outputs.project_go_path != '' && needs.gather_facts.outputs.ref_version != 'true' }}
     needs:
       - gather_facts
-      - install_semver
     steps:
-      - name: Download semver artifact to /opt/bin
-        uses: actions/download-artifact@v2
+      - name: Install architect
+        uses: giantswarm/install-binary-action@v1.0.0
         with:
-          name: semver
-          path: /opt/bin
-      - name: Prepare /opt/bin
-        run: |
-          chmod +x /opt/bin/*
-          echo "::add-path::/opt/bin"
+          binary: "architect"
+          version: "3.0.5"
+      - name: Install semver
+        uses: giantswarm/install-binary-action@v1.0.0
+        with:
+          binary: "semver"
+          version: "3.0.0"
+          download_url: "https://github.com/fsaintjacques/${binary}-tool/archive/${version}.tar.gz"
+          tarball_binary_path: "*/src/${binary}"
+          smoke_test: "${binary} --version"
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Update project.go
@@ -174,7 +137,7 @@ jobs:
           hub pull-request -f  -m "${{ env.title }}" -b ${{ env.base }} -h ${{ env.branch }} -r ${{ github.actor }}
   create_release:
     name: Create release
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs:
       - gather_facts
     if: ${{ needs.gather_facts.outputs.version }}
@@ -211,23 +174,21 @@ jobs:
           release_name: "v${{ needs.gather_facts.outputs.version }}"
   create-release-branch:
     name: Create release branch
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs:
       - gather_facts
-      - install_semver
     if: ${{ needs.gather_facts.outputs.version }}
     steps:
-      - name: Download semver artifact to /opt/bin
-        uses: actions/download-artifact@v2
+      - name: Install semver
+        uses: giantswarm/install-binary-action@v1.0.0
         with:
-          name: semver
-          path: /opt/bin
-      - name: Prepare /opt/bin
-        run: |
-          chmod +x /opt/bin/*
-          echo "::add-path::/opt/bin"
-      - uses: actions/checkout@v2
-        name: Check out the repository
+          binary: "semver"
+          version: "3.0.0"
+          download_url: "https://github.com/fsaintjacques/${binary}-tool/archive/${version}.tar.gz"
+          tarball_binary_path: "*/src/${binary}"
+          smoke_test: "${binary} --version"
+      - name: Check out the repository
+        uses: actions/checkout@v2
         with:
           fetch-depth: 0  # Clone the whole history, not just the most recent commit.
       - name: Fetch all tags and branches
