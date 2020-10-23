@@ -14,7 +14,7 @@ on:
 jobs:
   debug_info:
     name: Debug info
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - name: Print github context JSON
         run: |
@@ -23,15 +23,15 @@ jobs:
           EOF
   gather_facts:
     name: Gather facts
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     outputs:
       base: ${{ steps.gather_facts.outputs.base }}
+      skip: ${{ steps.pr_exists.outputs.skip }}
       version: ${{ steps.gather_facts.outputs.version }}
     steps:
       - name: Gather facts
         id: gather_facts
         run: |
-          echo "::group::Get facts"
           head="${{ github.event.ref }}"
           head="${head#refs/heads/}" # Strip "refs/heads/" prefix.
           base="$(echo $head | cut -d '#' -f 1)"
@@ -42,87 +42,31 @@ jobs:
           echo "::set-output name=base::${base}"
           echo "::set-output name=head::${head}"
           echo "::set-output name=version::${version}"
-          echo "::endgroup::"
-          echo "::group::Validate"
-          git init -q
-          git remote add origin ${{ github.event.repository.clone_url }}
-          git fetch -q --depth=1 origin $base
-          git fetch -q --depth=1 origin $head
-          out=$(git rev-list --left-right --count origin/$base...origin/$head)
-          ahead=$(echo $out | awk '{print $2}')
-          behind=$(echo $out | awk '{print $1}')
-          echo "ahead=\"$ahead\" behind=\"$behind\""
-          if [[ $ahead -ne 0 ]] || [[ $behind -ne 0 ]] ; then
-            echo "::error:: Branch $head is $ahead commits ahead and $behind commits behind $base branch. Please recreate the $head branch."
-            exit 1
+      - name: Check if PR exists
+        id: pr_exists
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        run: |
+          if gh pr view --repo ${{ github.repository }} ${{ github.event.ref }} ; then
+            echo "::warning::Release PR already exists"
+            echo "::set-output name=skip::true"
+          else
+            echo "::set-output name=skip::false"
           fi
-          echo "::endgroup::"
-  install_architect:
-    name: Install architect
-    runs-on: ubuntu-18.04
-    env:
-      BINARY: "architect"
-      DIR: "/opt/cache"
-      IMAGE: "quay.io/giantswarm/architect"
-      IMAGE_PATH: "/usr/bin/architect"
-      VERSION: "2.1.4"
-    outputs:
-      cache_key: "${{ steps.get_cache_key.outputs.cache_key }}"
-    steps:
-      - name: Get cache key
-        id: get_cache_key
-        run: |
-          cache_key="install-${{ env.BINARY }}-${{ env.VERSION }}"
-          echo "::set-output name=cache_key::${cache_key}"
-      - name: Cache
-        id: cache
-        uses: actions/cache@v2.1.2
-        with:
-          key: "${{ steps.get_cache_key.outputs.cache_key }}"
-          path: "${{ env.DIR }}"
-      - name: Download
-        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
-        run: |
-          mkdir -p ${{ env.DIR }}
-          docker container create --name tmp ${{ env.IMAGE }}:${{ env.VERSION }}
-          docker cp tmp:${{ env.IMAGE_PATH }} ${{ env.DIR }}/${{ env.BINARY }}
-          docker container rm tmp
-      - name: Smoke test
-        run: |
-          ${{ env.DIR }}/${{ env.BINARY }} version
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2.2.0
-        with:
-          name: "${{ env.BINARY }}"
-          path: "${{ env.DIR }}/${{ env.BINARY }}"
   create_release_pr:
     name: Create release PR
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs:
       - gather_facts
-      - install_architect
+    if: ${{ needs.gather_facts.outputs.skip != 'true' }}
     env:
       architect_flags: "--organisation ${{ github.repository_owner }} --project ${{ github.event.repository.name }}"
     steps:
-      - name: Cache
-        id: cache
-        uses: actions/cache@v2.1.2
+      - name: Install architect
+        uses: giantswarm/install-binary-action@v1.0.0
         with:
-          key: "${{ needs.install_architect.outputs.cache_key }}"
-          path: /opt/bin
-      - name: Download architect artifact to /opt/bin
-        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
-        uses: actions/download-artifact@v2
-        with:
-          name: architect
-          path: /opt/bin
-      - name: Prepare /opt/bin
-        run: |
-          chmod +x /opt/bin/*
-          echo "::add-path::/opt/bin"
-      - name: Print architect version
-        run: |
-          architect version ${{ env.architect_flags }}
+          binary: "architect"
+          version: "3.0.5"
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Prepare release changes
@@ -135,7 +79,7 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "github-actions"
           git add -A
-          git commit -m "release v${{ env.version }}"
+          git commit -m "Release v${{ env.version }}"
       - name: Push changes
         env:
           remote_repo: "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
@@ -147,4 +91,4 @@ jobs:
           base: "${{ needs.gather_facts.outputs.base }}"
           version: "${{ needs.gather_facts.outputs.version }}"
         run: |
-          hub pull-request -f  -m "release v${{ env.version }}" -a ${{ github.actor }} -b ${{ env.base }} -h ${{ github.event.ref }}
+          hub pull-request -f  -m "Release v${{ env.version }}" -a ${{ github.actor }} -b ${{ env.base }} -h ${{ github.event.ref }}
