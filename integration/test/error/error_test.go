@@ -13,9 +13,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/giantswarm/operatorkit/v2/integration/testresource"
-	"github.com/giantswarm/operatorkit/v2/integration/wrapper/drainerconfig"
-	"github.com/giantswarm/operatorkit/v2/pkg/resource"
+	"github.com/giantswarm/operatorkit/v4/integration/testresource"
+	"github.com/giantswarm/operatorkit/v4/integration/wrapper/drainerconfig"
+	"github.com/giantswarm/operatorkit/v4/pkg/resource"
 )
 
 const (
