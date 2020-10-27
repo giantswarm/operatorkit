@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.0] - 2020-10-27
+
 ## Updated
 
 - Update apiextensions to v3 and replace CAPI with Giant Swarm fork.
@@ -118,7 +120,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-[Unreleased]: https://github.com/giantswarm/operatorkit/compare/v3.0.0...HEAD
+[Unreleased]: https://github.com/giantswarm/operatorkit/compare/v4.0.0...HEAD
+[4.0.0]: https://github.com/giantswarm/operatorkit/compare/v3.0.0...v4.0.0
 [3.0.0]: https://github.com/giantswarm/operatorkit/compare/v2.0.2...v3.0.0
 [2.0.2]: https://github.com/giantswarm/operatorkit/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/giantswarm/operatorkit/compare/v2.0.0...v2.0.1
