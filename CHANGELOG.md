@@ -9,13 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## Updated
+
+- Update apiextensions to v3 and replace CAPI with Giant Swarm fork.
+- Prepare module v5.
+
 ## [3.0.0] - 2020-10-23
 
 ### Removed
 
 - Drop `controller.ProcessDelete` and `controller.ProcessUpdate`.
-
-
 
 ## [2.0.2] - 2020-10-15
 
