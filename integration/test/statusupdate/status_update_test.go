@@ -7,13 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/giantswarm/apiextensions/v2/pkg/apis/core/v1alpha1"
+	"github.com/giantswarm/apiextensions/v3/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/giantswarm/operatorkit/v2/integration/wrapper/drainerconfig"
-	"github.com/giantswarm/operatorkit/v2/pkg/resource"
+	"github.com/giantswarm/operatorkit/v4/integration/wrapper/drainerconfig"
+	"github.com/giantswarm/operatorkit/v4/pkg/resource"
 )
 
 const (

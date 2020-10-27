@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/giantswarm/backoff"
-	"github.com/giantswarm/k8sclient/v4/pkg/k8sclient"
+	"github.com/giantswarm/k8sclient/v5/pkg/k8sclient"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/giantswarm/micrologger/loggermeta"
@@ -30,15 +30,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/giantswarm/operatorkit/v2/pkg/controller/collector"
-	"github.com/giantswarm/operatorkit/v2/pkg/controller/context/cachekeycontext"
-	"github.com/giantswarm/operatorkit/v2/pkg/controller/context/finalizerskeptcontext"
-	"github.com/giantswarm/operatorkit/v2/pkg/controller/context/reconciliationcanceledcontext"
-	"github.com/giantswarm/operatorkit/v2/pkg/controller/context/resourcecanceledcontext"
-	"github.com/giantswarm/operatorkit/v2/pkg/controller/context/updateallowedcontext"
-	"github.com/giantswarm/operatorkit/v2/pkg/controller/internal/recorder"
-	"github.com/giantswarm/operatorkit/v2/pkg/controller/internal/sentry"
-	"github.com/giantswarm/operatorkit/v2/pkg/resource"
+	"github.com/giantswarm/operatorkit/v4/pkg/controller/collector"
+	"github.com/giantswarm/operatorkit/v4/pkg/controller/context/cachekeycontext"
+	"github.com/giantswarm/operatorkit/v4/pkg/controller/context/finalizerskeptcontext"
+	"github.com/giantswarm/operatorkit/v4/pkg/controller/context/reconciliationcanceledcontext"
+	"github.com/giantswarm/operatorkit/v4/pkg/controller/context/resourcecanceledcontext"
+	"github.com/giantswarm/operatorkit/v4/pkg/controller/context/updateallowedcontext"
+	"github.com/giantswarm/operatorkit/v4/pkg/controller/internal/recorder"
+	"github.com/giantswarm/operatorkit/v4/pkg/controller/internal/sentry"
+	"github.com/giantswarm/operatorkit/v4/pkg/resource"
 )
 
 const (

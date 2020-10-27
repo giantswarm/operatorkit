@@ -7,7 +7,7 @@ import (
 
 	"github.com/giantswarm/micrologger/microloggertest"
 
-	"github.com/giantswarm/operatorkit/v2/pkg/resource"
+	"github.com/giantswarm/operatorkit/v4/pkg/resource"
 )
 
 func Test_Resource_CRUD_Interface(t *testing.T) {
