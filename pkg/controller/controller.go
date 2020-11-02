@@ -16,17 +16,16 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/giantswarm/micrologger/loggermeta"
-	"github.com/giantswarm/to"
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
+	controllerruntime "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -43,10 +42,6 @@ import (
 
 const (
 	DefaultResyncPeriod = 5 * time.Minute
-)
-
-const (
-	DisableMetricsServing = "0"
 )
 
 const (
@@ -110,6 +105,7 @@ type Config struct {
 }
 
 type Controller struct {
+	client.Client
 	event                recorder.Interface
 	initCtx              func(ctx context.Context, obj interface{}) (context.Context, error)
 	k8sClient            k8sclient.Interface
@@ -264,6 +260,19 @@ func (c *Controller) Booted() chan struct{} {
 	return c.booted
 }
 
+func (c *Controller) SetupWithManager(mgr controllerruntime.Manager, options controller.Options) error {
+	return controllerruntime.NewControllerManagedBy(mgr).
+		WithOptions(options).
+		For(c.newRuntimeObjectFunc()).
+		WithEventFilter(predicate.Funcs{
+			CreateFunc:  func(e event.CreateEvent) bool { return c.selector.Matches(internalLabels(e.Meta.GetLabels())) },
+			DeleteFunc:  func(e event.DeleteEvent) bool { return c.selector.Matches(internalLabels(e.Meta.GetLabels())) },
+			UpdateFunc:  func(e event.UpdateEvent) bool { return c.selector.Matches(internalLabels(e.MetaNew.GetLabels())) },
+			GenericFunc: func(e event.GenericEvent) bool { return c.selector.Matches(internalLabels(e.Meta.GetLabels())) },
+		}).
+		Complete(c)
+}
+
 // Reconcile implements the reconciler given to the controller-runtime
 // controller. Reconcile never returns any error as we deal with them in
 // operatorkit internally.
@@ -283,7 +292,7 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 	}
 
 	obj := c.newRuntimeObjectFunc()
-	err := c.k8sClient.CtrlClient().Get(ctx, req.NamespacedName, obj)
+	err := c.Get(ctx, req.NamespacedName, obj)
 	if errors.IsNotFound(err) {
 		// At this point the controller-runtime cache dispatches a runtime object
 		// which is already being deleted, which is why it cannot be found here
@@ -347,55 +356,13 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 		}
 	}
 
-	var mgr manager.Manager
 	{
-		o := manager.Options{
-			// MetricsBindAddress is set to 0 in order to disable it. We do this
-			// ourselves.
-			MetricsBindAddress: DisableMetricsServing,
-			SyncPeriod:         to.DurationP(c.resyncPeriod),
-		}
-
-		mgr, err = manager.New(c.k8sClient.RESTConfig(), o)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-	}
-
-	{
-		// We build our controller and set up its reconciliation.
-		// We use the Complete() method instead of Build() because we don't
-		// need the controller instance.
-		err = builder.
-			ControllerManagedBy(mgr).
-			For(c.newRuntimeObjectFunc()).
-			WithOptions(controller.Options{
-				MaxConcurrentReconciles: 1,
-				Reconciler:              c,
-			}).
-			WithEventFilter(predicate.Funcs{
-				CreateFunc:  func(e event.CreateEvent) bool { return c.selector.Matches(internalLabels(e.Meta.GetLabels())) },
-				DeleteFunc:  func(e event.DeleteEvent) bool { return c.selector.Matches(internalLabels(e.Meta.GetLabels())) },
-				UpdateFunc:  func(e event.UpdateEvent) bool { return c.selector.Matches(internalLabels(e.MetaNew.GetLabels())) },
-				GenericFunc: func(e event.GenericEvent) bool { return c.selector.Matches(internalLabels(e.Meta.GetLabels())) },
-			}).
-			Complete(c)
-		if err != nil {
-			return microerror.Mask(err)
-		}
-
 		// We put the controller into a booted state by closing its booted
 		// channel once so users know when to go ahead.
 		select {
 		case <-c.booted:
 		default:
 			close(c.booted)
-		}
-
-		// mgr.Start() blocks the boot process until it ends gracefully or fails.
-		err = mgr.Start(setupSignalHandler())
-		if err != nil {
-			return microerror.Mask(err)
 		}
 	}
 
