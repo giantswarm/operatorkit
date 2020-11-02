@@ -7,21 +7,15 @@ updates:
 - package-ecosystem: github-actions
   directory: "/"
   schedule:
-    interval: daily
+    interval: weekly
     time: "04:00"
   target-branch: master
-  reviewers:
-  - xh3b4sd
-  - kopiczko
 - package-ecosystem: gomod
   directory: "/"
   schedule:
-    interval: daily
+    interval: weekly
     time: "04:00"
   open-pull-requests-limit: 10
-  reviewers:
-  - xh3b4sd
-  - kopiczko
   ignore:
   - dependency-name: k8s.io/*
     versions:
