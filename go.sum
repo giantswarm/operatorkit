@@ -165,6 +165,8 @@ github.com/giantswarm/microkit v0.2.0/go.mod h1:1vDHFUN+ZsUahZJ2hgZxcU7nG35Rj484
 github.com/giantswarm/micrologger v0.3.1/go.mod h1:PjAgtcJ922ZMX/Aa05IPi0bdYvOj2P7pZ7+6dBShMQs=
 github.com/giantswarm/micrologger v0.3.3 h1:RGUOHlpFVvT9vK/BhZGqfzb9AjFxLLBns20oCdlTt8A=
 github.com/giantswarm/micrologger v0.3.3/go.mod h1:fkzQdDBC6HjJq4nllBDt6XB4t4yeVyhdHKblFX6QoMQ=
+github.com/giantswarm/micrologger v0.3.4 h1:NKD6pz1++Hkq/ulOT9iu7hwTnG3ZfjnPUtuK/tbeCc8=
+github.com/giantswarm/micrologger v0.3.4/go.mod h1:fkzQdDBC6HjJq4nllBDt6XB4t4yeVyhdHKblFX6QoMQ=
 github.com/giantswarm/to v0.3.0 h1:cEzMYkWLGI3cI8x3a0L3nPCQYJTb/cAaqcIPvxnDmpQ=
 github.com/giantswarm/to v0.3.0/go.mod h1:RTRtw+Dyk6YqoiNBOGLO981BqhibtVwogdaFIMO1y/A=
 github.com/giantswarm/versionbundle v0.2.0/go.mod h1:n7GOlSXpX9TpP3EsYhErCjskN++c7uYHEEfV81NCH7s=
