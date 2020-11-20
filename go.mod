@@ -1,6 +1,6 @@
 module github.com/giantswarm/operatorkit/v4
 
-go 1.14
+go 1.15
 
 require (
 	github.com/getsentry/sentry-go v0.7.0
@@ -19,4 +19,8 @@ require (
 	sigs.k8s.io/controller-runtime v0.6.3
 )
 
-replace sigs.k8s.io/cluster-api => github.com/giantswarm/cluster-api v0.3.10-gs
+replace (
+	github.com/coreos/etcd => github.com/coreos/etcd v3.3.24+incompatible
+	github.com/gorilla/websocket => github.com/gorilla/websocket v1.4.2
+	sigs.k8s.io/cluster-api => github.com/giantswarm/cluster-api v0.3.10-gs
+)
