@@ -1,42 +1,30 @@
 package controller
 
-import (
-	"k8s.io/apimachinery/pkg/labels"
-)
-
-type Labels = labels.Labels
-
-type Selector interface {
-	Matches(labels Labels) bool
+type Object interface {
+	GetAnnotations() map[string]string
+	GetLabels() map[string]string
 }
 
-func NewSelector(matchesFunc func(labels Labels) bool) Selector {
+type Selector interface {
+	Matches(obj Object) bool
+}
+
+func NewSelector(matchesFunc func(obj Object) bool) Selector {
 	return &internalSelector{
 		matchesFunc: matchesFunc,
 	}
 }
 
 func NewSelectorEverything() Selector {
-	return NewSelector(func(labels Labels) bool {
+	return NewSelector(func(obj Object) bool {
 		return true
 	})
 }
 
 type internalSelector struct {
-	matchesFunc func(labels Labels) bool
+	matchesFunc func(obj Object) bool
 }
 
-func (s *internalSelector) Matches(labels Labels) bool {
-	return s.matchesFunc(labels)
-}
-
-type internalLabels map[string]string
-
-func (l internalLabels) Has(label string) bool {
-	_, ok := l[label]
-	return ok
-}
-
-func (l internalLabels) Get(label string) string {
-	return l[label]
+func (s *internalSelector) Matches(obj Object) bool {
+	return s.matchesFunc(obj)
 }

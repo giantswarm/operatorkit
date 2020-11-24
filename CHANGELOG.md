@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## Added
+
+- Allow selecting reconciled objects by annotation.
+
+## Changed
+
+- Change `controller.Selector.Matches` argument from `controller.Object` to
+  `controller.Labels`.
+- `controller.Selector` is no longer compatible with
+  `k8s.io/apimachinery/pkg/labels.Selector`.
+
 ## [4.0.0] - 2020-10-27
 
 ## Updated

@@ -374,10 +374,10 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 				Reconciler:              c,
 			}).
 			WithEventFilter(predicate.Funcs{
-				CreateFunc:  func(e event.CreateEvent) bool { return c.selector.Matches(internalLabels(e.Meta.GetLabels())) },
-				DeleteFunc:  func(e event.DeleteEvent) bool { return c.selector.Matches(internalLabels(e.Meta.GetLabels())) },
-				UpdateFunc:  func(e event.UpdateEvent) bool { return c.selector.Matches(internalLabels(e.MetaNew.GetLabels())) },
-				GenericFunc: func(e event.GenericEvent) bool { return c.selector.Matches(internalLabels(e.Meta.GetLabels())) },
+				CreateFunc:  func(e event.CreateEvent) bool { return c.selector.Matches(e.Meta) },
+				DeleteFunc:  func(e event.DeleteEvent) bool { return c.selector.Matches(e.Meta) },
+				UpdateFunc:  func(e event.UpdateEvent) bool { return c.selector.Matches(e.MetaNew) },
+				GenericFunc: func(e event.GenericEvent) bool { return c.selector.Matches(e.Meta) },
 			}).
 			Complete(c)
 		if err != nil {
