@@ -100,6 +100,9 @@ type Config struct {
 	// The name used should be unique in the kubernetes cluster, to ensure that
 	// two operators which handle the same resource add two distinct finalizers.
 	Name string
+	// Namespace is where the controller would reconcile the runtime objects.
+	// Empty string means all namespaces.
+	Namespace string
 	// ResyncPeriod is the duration after which a complete sync with all known
 	// runtime objects the controller watches is performed. Defaults to
 	// DefaultResyncPeriod.
@@ -128,6 +131,7 @@ type Controller struct {
 	sentry                 sentry.Interface
 
 	name         string
+	namespace    string
 	resyncPeriod time.Duration
 }
 
@@ -230,6 +234,7 @@ func New(config Config) (*Controller, error) {
 		sentry:                 sentryClient,
 
 		name:         config.Name,
+		namespace:    config.Namespace,
 		resyncPeriod: config.ResyncPeriod,
 	}
 
@@ -353,6 +358,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 			// MetricsBindAddress is set to 0 in order to disable it. We do this
 			// ourselves.
 			MetricsBindAddress: DisableMetricsServing,
+			Namespace:          c.namespace,
 			SyncPeriod:         to.DurationP(c.resyncPeriod),
 		}
 
