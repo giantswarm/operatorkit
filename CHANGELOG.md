@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## Updated
+
+- Add `namespace` into controller setting. 
+
 ## [4.0.0] - 2020-10-27
 
 ## Updated
