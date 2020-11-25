@@ -101,6 +101,7 @@ type Config struct {
 	// two operators which handle the same resource add two distinct finalizers.
 	Name string
 	// Namespace is where the controller would reconcile the runtime objects.
+	// Empty string means all namespaces.	
 	Namespace string
 	// ResyncPeriod is the duration after which a complete sync with all known
 	// runtime objects the controller watches is performed. Defaults to
