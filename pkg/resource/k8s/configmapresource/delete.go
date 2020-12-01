@@ -2,7 +2,6 @@ package configmapresource
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/giantswarm/microerror"
 	corev1 "k8s.io/api/core/v1"
@@ -17,15 +16,15 @@ func (r *Resource) ApplyDeleteChange(ctx context.Context, obj, deleteChange inte
 	}
 
 	for _, configMap := range configMapsToDelete {
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("deleting ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace))
+		r.logger.Debugf(ctx, "deleting ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace)
 
 		err := r.k8sClient.CoreV1().ConfigMaps(configMap.Namespace).Delete(ctx, configMap.Name, metav1.DeleteOptions{})
 		if apierrors.IsNotFound(err) {
-			r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("already deleted ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace))
+			r.logger.Debugf(ctx, "already deleted ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace)
 		} else if err != nil {
 			return microerror.Mask(err)
 		} else {
-			r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("deleted ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace))
+			r.logger.Debugf(ctx, "deleted ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace)
 		}
 	}
 
@@ -53,7 +52,7 @@ func (r *Resource) newDeleteChangeForUpdatePatch(ctx context.Context, obj, curre
 
 	var configMapsToDelete []*corev1.ConfigMap
 	{
-		r.logger.LogCtx(ctx, "level", "debug", "message", "computing ConfigMaps to delete")
+		r.logger.Debugf(ctx, "computing ConfigMaps to delete")
 
 		for _, c := range currentConfigMaps {
 			if !containsConfigMap(desiredConfigMaps, c) {
@@ -61,7 +60,7 @@ func (r *Resource) newDeleteChangeForUpdatePatch(ctx context.Context, obj, curre
 			}
 		}
 
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("computed %d ConfigMaps to delete", len(configMapsToDelete)))
+		r.logger.Debugf(ctx, "computed %d ConfigMaps to delete", len(configMapsToDelete))
 	}
 
 	return configMapsToDelete, nil
