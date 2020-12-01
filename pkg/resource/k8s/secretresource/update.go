@@ -2,7 +2,6 @@ package secretresource
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/giantswarm/microerror"
 	corev1 "k8s.io/api/core/v1"
@@ -16,14 +15,14 @@ func (r *Resource) ApplyUpdateChange(ctx context.Context, obj, updateChange inte
 	}
 
 	for _, secret := range secrets {
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("updating Secret %#q in namespace %#q", secret.Name, secret.Namespace))
+		r.logger.Debugf(ctx, "updating Secret %#q in namespace %#q", secret.Name, secret.Namespace)
 
 		_, err = r.k8sClient.CoreV1().Secrets(secret.Namespace).Update(ctx, secret, metav1.UpdateOptions{})
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("updated Secret %#q in namespace %#q", secret.Name, secret.Namespace))
+		r.logger.Debugf(ctx, "updated Secret %#q in namespace %#q", secret.Name, secret.Namespace)
 	}
 
 	return nil
@@ -41,7 +40,7 @@ func (r *Resource) newUpdateChange(ctx context.Context, obj, currentState, desir
 
 	var secretsToUpdate []*corev1.Secret
 	{
-		r.logger.LogCtx(ctx, "level", "debug", "message", "computing Secrets to update")
+		r.logger.Debugf(ctx, "computing Secrets to update")
 
 		for _, c := range currentSecrets {
 			for _, d := range desiredSecrets {
@@ -52,7 +51,7 @@ func (r *Resource) newUpdateChange(ctx context.Context, obj, currentState, desir
 			}
 		}
 
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("computed %d Secrets to update", len(secretsToUpdate)))
+		r.logger.Debugf(ctx, "computed %d Secrets to update", len(secretsToUpdate))
 	}
 
 	return secretsToUpdate, nil

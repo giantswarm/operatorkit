@@ -259,7 +259,7 @@ func (c *Controller) Boot(ctx context.Context) {
 		err := backoff.RetryNotify(operation, c.backOffFactory(), notifier)
 		if err != nil {
 			c.sentry.Capture(ctx, err)
-			c.logger.LogCtx(ctx, "level", "error", "message", "stop controller boot retries due to too many errors", "stack", microerror.JSON(err))
+			c.logger.Errorf(ctx, err, "stop controller boot retries due to too many errors")
 			os.Exit(1)
 		}
 	})
@@ -307,7 +307,7 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 		c.event.Emit(ctx, obj, err)
 		errorGauge.Inc()
 		c.sentry.Capture(ctx, err)
-		c.logger.LogCtx(ctx, "level", "error", "message", "failed to reconcile", "stack", microerror.JSON(err))
+		c.logger.Errorf(ctx, err, "failed to reconcile")
 		return reconcile.Result{}, nil
 	}
 
@@ -347,7 +347,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 				}
 
 				errorGauge.Inc()
-				c.logger.LogCtx(ctx, "level", "error", "message", "caught third party runtime error", "stack", microerror.JSON(err))
+				c.logger.Errorf(ctx, err, "caught third party runtime error")
 			},
 		}
 	}
@@ -475,8 +475,8 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request, obj i
 
 	{
 		if c.hasPauseAnnotation(m.GetAnnotations()) {
-			c.logger.LogCtx(ctx, "level", "debug", "message", "found pause annotation")
-			c.logger.LogCtx(ctx, "level", "debug", "message", "cancelling reconciliation")
+			c.logger.Debugf(ctx, "found pause annotation")
+			c.logger.Debugf(ctx, "cancelling reconciliation")
 			return reconcile.Result{}, nil
 		}
 	}

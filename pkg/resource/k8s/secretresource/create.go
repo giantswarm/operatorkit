@@ -2,7 +2,6 @@ package secretresource
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/giantswarm/microerror"
 	corev1 "k8s.io/api/core/v1"
@@ -18,15 +17,15 @@ func (r *Resource) ApplyCreateChange(ctx context.Context, obj, createChange inte
 	}
 
 	for _, secret := range secrets {
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("creating Secret %#q in namespace %#q", secret.Name, secret.Namespace))
+		r.logger.Debugf(ctx, "creating Secret %#q in namespace %#q", secret.Name, secret.Namespace)
 
 		_, err = r.k8sClient.CoreV1().Secrets(secret.Namespace).Create(ctx, secret, metav1.CreateOptions{})
 		if apierrors.IsAlreadyExists(err) {
-			r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("already created Secret %#q in namespace %#q", secret.Name, secret.Namespace))
+			r.logger.Debugf(ctx, "already created Secret %#q in namespace %#q", secret.Name, secret.Namespace)
 		} else if err != nil {
 			return microerror.Mask(err)
 		} else {
-			r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("created Secret %#q in namespace %#q", secret.Name, secret.Namespace))
+			r.logger.Debugf(ctx, "created Secret %#q in namespace %#q", secret.Name, secret.Namespace)
 		}
 	}
 
@@ -45,7 +44,7 @@ func (r *Resource) newCreateChange(ctx context.Context, obj, currentState, desir
 
 	var secretsToCreate []*corev1.Secret
 	{
-		r.logger.LogCtx(ctx, "level", "debug", "message", "computing Secrets to create ")
+		r.logger.Debugf(ctx, "computing Secrets to create ")
 
 		for _, d := range desiredSecrets {
 			if !containsSecret(d, currentSecrets) {
@@ -53,7 +52,7 @@ func (r *Resource) newCreateChange(ctx context.Context, obj, currentState, desir
 			}
 		}
 
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("computed %d Secrets to create", len(secretsToCreate)))
+		r.logger.Debugf(ctx, "computed %d Secrets to create", len(secretsToCreate))
 	}
 
 	return secretsToCreate, nil

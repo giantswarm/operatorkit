@@ -2,7 +2,6 @@ package configmapresource
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/giantswarm/microerror"
 	corev1 "k8s.io/api/core/v1"
@@ -18,15 +17,15 @@ func (r *Resource) ApplyCreateChange(ctx context.Context, obj, createChange inte
 	}
 
 	for _, configMap := range configMaps {
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("creating ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace))
+		r.logger.Debugf(ctx, "creating ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace)
 
 		_, err = r.k8sClient.CoreV1().ConfigMaps(configMap.Namespace).Create(ctx, configMap, metav1.CreateOptions{})
 		if apierrors.IsAlreadyExists(err) {
-			r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("already created ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace))
+			r.logger.Debugf(ctx, "already created ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace)
 		} else if err != nil {
 			return microerror.Mask(err)
 		} else {
-			r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("created ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace))
+			r.logger.Debugf(ctx, "created ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace)
 		}
 	}
 
@@ -45,7 +44,7 @@ func (r *Resource) newCreateChange(ctx context.Context, obj, currentState, desir
 
 	var configMapsToCreate []*corev1.ConfigMap
 	{
-		r.logger.LogCtx(ctx, "level", "debug", "message", "computing ConfigMaps to create")
+		r.logger.Debugf(ctx, "computing ConfigMaps to create")
 
 		for _, d := range desiredConfigMaps {
 			if !containsConfigMap(currentConfigMaps, d) {
@@ -53,7 +52,7 @@ func (r *Resource) newCreateChange(ctx context.Context, obj, currentState, desir
 			}
 		}
 
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("computed %d ConfigMaps to create", len(configMapsToCreate)))
+		r.logger.Debugf(ctx, "computed %d ConfigMaps to create", len(configMapsToCreate))
 	}
 
 	return configMapsToCreate, nil
