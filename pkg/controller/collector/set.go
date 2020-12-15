@@ -1,6 +1,8 @@
 package collector
 
 import (
+	"github.com/giantswarm/operatorkit/v4/pkg/controller/internal/selector"
+
 	"github.com/giantswarm/exporterkit/collector"
 	"github.com/giantswarm/k8sclient/v5/pkg/k8sclient"
 	"github.com/giantswarm/microerror"
@@ -12,6 +14,7 @@ type SetConfig struct {
 	Logger               micrologger.Logger
 	K8sClient            k8sclient.Interface
 	NewRuntimeObjectFunc func() runtime.Object
+	Selector             selector.Selector
 
 	Controller string
 }

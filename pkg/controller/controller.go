@@ -37,6 +37,7 @@ import (
 	"github.com/giantswarm/operatorkit/v4/pkg/controller/context/resourcecanceledcontext"
 	"github.com/giantswarm/operatorkit/v4/pkg/controller/context/updateallowedcontext"
 	"github.com/giantswarm/operatorkit/v4/pkg/controller/internal/recorder"
+	"github.com/giantswarm/operatorkit/v4/pkg/controller/internal/selector"
 	"github.com/giantswarm/operatorkit/v4/pkg/controller/internal/sentry"
 	"github.com/giantswarm/operatorkit/v4/pkg/resource"
 )
@@ -94,7 +95,7 @@ type Config struct {
 	// object reconciliation. Resources are executed in given order.
 	Resources []resource.Interface
 	// Selector is used to filter objects before passing them to the controller.
-	Selector Selector
+	Selector selector.Selector
 
 	// Name is the name which the controller uses on finalizers for resources.
 	// The name used should be unique in the kubernetes cluster, to ensure that
@@ -117,7 +118,7 @@ type Controller struct {
 	newRuntimeObjectFunc func() pkgruntime.Object
 	pause                map[string]string
 	resources            []resource.Interface
-	selector             Selector
+	selector             selector.Selector
 
 	backOffFactory         func() backoff.Interface
 	bootOnce               sync.Once
@@ -159,7 +160,7 @@ func New(config Config) (*Controller, error) {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Resources must not be empty", config)
 	}
 	if config.Selector == nil {
-		config.Selector = NewSelectorEverything()
+		config.Selector = selector.NewSelectorEverything()
 	}
 
 	if config.Name == "" {
@@ -177,6 +178,7 @@ func New(config Config) (*Controller, error) {
 			Logger:               config.Logger,
 			K8sClient:            config.K8sClient,
 			NewRuntimeObjectFunc: config.NewRuntimeObjectFunc,
+			Selector:             config.Selector,
 
 			Controller: config.Name,
 		}
@@ -374,10 +376,10 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 				Reconciler:              c,
 			}).
 			WithEventFilter(predicate.Funcs{
-				CreateFunc:  func(e event.CreateEvent) bool { return c.selector.Matches(internalLabels(e.Meta.GetLabels())) },
-				DeleteFunc:  func(e event.DeleteEvent) bool { return c.selector.Matches(internalLabels(e.Meta.GetLabels())) },
-				UpdateFunc:  func(e event.UpdateEvent) bool { return c.selector.Matches(internalLabels(e.MetaNew.GetLabels())) },
-				GenericFunc: func(e event.GenericEvent) bool { return c.selector.Matches(internalLabels(e.Meta.GetLabels())) },
+				CreateFunc:  func(e event.CreateEvent) bool { return c.selector.Matches(selector.NewLabels(e.Meta.GetLabels())) },
+				DeleteFunc:  func(e event.DeleteEvent) bool { return c.selector.Matches(selector.NewLabels(e.Meta.GetLabels())) },
+				UpdateFunc:  func(e event.UpdateEvent) bool { return c.selector.Matches(selector.NewLabels(e.MetaNew.GetLabels())) },
+				GenericFunc: func(e event.GenericEvent) bool { return c.selector.Matches(selector.NewLabels(e.Meta.GetLabels())) },
 			}).
 			Complete(c)
 		if err != nil {
