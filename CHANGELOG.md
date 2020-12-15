@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Added
 
-- Add `namespace` into controller setting. 
+- Add `namespace` into controller setting.
+- Propagate label selectors to timestamp collector
 
 ## [4.0.0] - 2020-10-27
 
