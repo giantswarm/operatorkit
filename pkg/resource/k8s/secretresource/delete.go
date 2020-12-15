@@ -2,7 +2,6 @@ package secretresource
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/giantswarm/microerror"
 	corev1 "k8s.io/api/core/v1"
@@ -17,15 +16,15 @@ func (r *Resource) ApplyDeleteChange(ctx context.Context, obj, deleteChange inte
 	}
 
 	for _, secret := range secretsToDelete {
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("deleting Secret %#q in namespace %#q", secret.Name, secret.Namespace))
+		r.logger.Debugf(ctx, "deleting Secret %#q in namespace %#q", secret.Name, secret.Namespace)
 
 		err := r.k8sClient.CoreV1().Secrets(secret.Namespace).Delete(ctx, secret.Name, metav1.DeleteOptions{})
 		if apierrors.IsNotFound(err) {
-			r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("already deleted Secret %#q in namespace %#q", secret.Name, secret.Namespace))
+			r.logger.Debugf(ctx, "already deleted Secret %#q in namespace %#q", secret.Name, secret.Namespace)
 		} else if err != nil {
 			return microerror.Mask(err)
 		} else {
-			r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("deleted Secret %#q in namespace %#q", secret.Name, secret.Namespace))
+			r.logger.Debugf(ctx, "deleted Secret %#q in namespace %#q", secret.Name, secret.Namespace)
 		}
 	}
 
@@ -53,7 +52,7 @@ func (r *Resource) newDeleteChangeForUpdatePatch(ctx context.Context, obj, curre
 
 	var secretsToDelete []*corev1.Secret
 	{
-		r.logger.LogCtx(ctx, "level", "debug", "message", "computing Secrets to delete")
+		r.logger.Debugf(ctx, "computing Secrets to delete")
 
 		for _, c := range currentSecrets {
 			if !containsSecret(c, desiredSecrets) {
@@ -61,7 +60,7 @@ func (r *Resource) newDeleteChangeForUpdatePatch(ctx context.Context, obj, curre
 			}
 		}
 
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("computed %d Secrets to delete", len(secretsToDelete)))
+		r.logger.Debugf(ctx, "computed %d Secrets to delete", len(secretsToDelete))
 	}
 
 	return secretsToDelete, nil

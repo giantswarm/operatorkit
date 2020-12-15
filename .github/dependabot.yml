@@ -1,28 +1,22 @@
 # DO NOT EDIT. Generated with:
 #
-#    devctl gen dependabot
+#    devctl@4.0.0
 #
 version: 2
 updates:
-- package-ecosystem: github-actions
-  directory: "/"
-  schedule:
-    interval: daily
-    time: "04:00"
-  target-branch: master
-  reviewers:
-  - xh3b4sd
-  - kopiczko
-- package-ecosystem: gomod
-  directory: "/"
-  schedule:
-    interval: daily
-    time: "04:00"
-  open-pull-requests-limit: 10
-  reviewers:
-  - xh3b4sd
-  - kopiczko
-  ignore:
-  - dependency-name: k8s.io/*
-    versions:
-    - ">=0.19.0"
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      time: "04:00"
+    open-pull-requests-limit: 10
+  - package-ecosystem: gomod
+    directory: "/"
+    schedule:
+      interval: weekly
+      time: "04:00"
+    open-pull-requests-limit: 10
+    ignore:
+      - dependency-name: k8s.io/*
+        versions:
+          - ">=0.19.0"

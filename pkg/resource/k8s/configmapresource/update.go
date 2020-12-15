@@ -2,7 +2,6 @@ package configmapresource
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/giantswarm/microerror"
 	corev1 "k8s.io/api/core/v1"
@@ -16,14 +15,14 @@ func (r *Resource) ApplyUpdateChange(ctx context.Context, obj, updateChange inte
 	}
 
 	for _, configMap := range configMaps {
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("updating ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace))
+		r.logger.Debugf(ctx, "updating ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace)
 
 		_, err = r.k8sClient.CoreV1().ConfigMaps(configMap.Namespace).Update(ctx, configMap, metav1.UpdateOptions{})
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("updated ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace))
+		r.logger.Debugf(ctx, "updated ConfigMap %#q in namespace %#q", configMap.Name, configMap.Namespace)
 	}
 
 	return nil
@@ -41,7 +40,7 @@ func (r *Resource) newUpdateChange(ctx context.Context, obj, currentState, desir
 
 	var configMapsToUpdate []*corev1.ConfigMap
 	{
-		r.logger.LogCtx(ctx, "level", "debug", "message", "computing ConfigMaps to update")
+		r.logger.Debugf(ctx, "computing ConfigMaps to update")
 
 		for _, c := range currentConfigMaps {
 			for _, d := range desiredConfigMaps {
@@ -52,7 +51,7 @@ func (r *Resource) newUpdateChange(ctx context.Context, obj, currentState, desir
 			}
 		}
 
-		r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("computed %d ConfigMaps to update", len(configMapsToUpdate)))
+		r.logger.Debugf(ctx, "computed %d ConfigMaps to update", len(configMapsToUpdate))
 	}
 
 	return configMapsToUpdate, nil

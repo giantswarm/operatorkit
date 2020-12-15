@@ -101,6 +101,9 @@ type Config struct {
 	// The name used should be unique in the kubernetes cluster, to ensure that
 	// two operators which handle the same resource add two distinct finalizers.
 	Name string
+	// Namespace is where the controller would reconcile the runtime objects.
+	// Empty string means all namespaces.
+	Namespace string
 	// ResyncPeriod is the duration after which a complete sync with all known
 	// runtime objects the controller watches is performed. Defaults to
 	// DefaultResyncPeriod.
@@ -129,6 +132,7 @@ type Controller struct {
 	sentry                 sentry.Interface
 
 	name         string
+	namespace    string
 	resyncPeriod time.Duration
 }
 
@@ -232,6 +236,7 @@ func New(config Config) (*Controller, error) {
 		sentry:                 sentryClient,
 
 		name:         config.Name,
+		namespace:    config.Namespace,
 		resyncPeriod: config.ResyncPeriod,
 	}
 
@@ -256,7 +261,7 @@ func (c *Controller) Boot(ctx context.Context) {
 		err := backoff.RetryNotify(operation, c.backOffFactory(), notifier)
 		if err != nil {
 			c.sentry.Capture(ctx, err)
-			c.logger.LogCtx(ctx, "level", "error", "message", "stop controller boot retries due to too many errors", "stack", microerror.JSON(err))
+			c.logger.Errorf(ctx, err, "stop controller boot retries due to too many errors")
 			os.Exit(1)
 		}
 	})
@@ -304,7 +309,7 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 		c.event.Emit(ctx, obj, err)
 		errorGauge.Inc()
 		c.sentry.Capture(ctx, err)
-		c.logger.LogCtx(ctx, "level", "error", "message", "failed to reconcile", "stack", microerror.JSON(err))
+		c.logger.Errorf(ctx, err, "failed to reconcile")
 		return reconcile.Result{}, nil
 	}
 
@@ -344,7 +349,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 				}
 
 				errorGauge.Inc()
-				c.logger.LogCtx(ctx, "level", "error", "message", "caught third party runtime error", "stack", microerror.JSON(err))
+				c.logger.Errorf(ctx, err, "caught third party runtime error")
 			},
 		}
 	}
@@ -355,6 +360,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 			// MetricsBindAddress is set to 0 in order to disable it. We do this
 			// ourselves.
 			MetricsBindAddress: DisableMetricsServing,
+			Namespace:          c.namespace,
 			SyncPeriod:         to.DurationP(c.resyncPeriod),
 		}
 
@@ -471,8 +477,8 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request, obj i
 
 	{
 		if c.hasPauseAnnotation(m.GetAnnotations()) {
-			c.logger.LogCtx(ctx, "level", "debug", "message", "found pause annotation")
-			c.logger.LogCtx(ctx, "level", "debug", "message", "cancelling reconciliation")
+			c.logger.Debugf(ctx, "found pause annotation")
+			c.logger.Debugf(ctx, "cancelling reconciliation")
 			return reconcile.Result{}, nil
 		}
 	}
