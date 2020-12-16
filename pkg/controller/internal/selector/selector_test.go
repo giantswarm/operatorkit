@@ -1,4 +1,4 @@
-package controller
+package selector
 
 import (
 	"testing"
