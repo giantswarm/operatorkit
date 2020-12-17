@@ -1,4 +1,4 @@
-package controller
+package selector
 
 import (
 	"k8s.io/apimachinery/pkg/labels"
@@ -31,6 +31,10 @@ func (s *internalSelector) Matches(labels Labels) bool {
 }
 
 type internalLabels map[string]string
+
+func NewLabels(labels map[string]string) internalLabels {
+	return internalLabels(labels)
+}
 
 func (l internalLabels) Has(label string) bool {
 	_, ok := l[label]
