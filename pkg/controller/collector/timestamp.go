@@ -3,6 +3,8 @@ package collector
 import (
 	"context"
 
+	"github.com/giantswarm/operatorkit/v4/pkg/controller/internal/selector"
+
 	"github.com/giantswarm/k8sclient/v5/pkg/k8sclient"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
@@ -16,6 +18,7 @@ type TimestampConfig struct {
 	Logger               micrologger.Logger
 	K8sClient            k8sclient.Interface
 	NewRuntimeObjectFunc func() runtime.Object
+	Selector             selector.Selector
 
 	Controller string
 }
@@ -24,6 +27,7 @@ type Timestamp struct {
 	logger               micrologger.Logger
 	k8sClient            k8sclient.Interface
 	newRuntimeObjectFunc func() runtime.Object
+	selector             selector.Selector
 
 	controller string
 }
@@ -44,6 +48,7 @@ func NewTimestamp(config TimestampConfig) (*Timestamp, error) {
 		logger:               config.Logger,
 		k8sClient:            config.K8sClient,
 		newRuntimeObjectFunc: config.NewRuntimeObjectFunc,
+		selector:             config.Selector,
 
 		controller: config.Controller,
 	}
@@ -67,6 +72,11 @@ func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
 	}
 
 	for _, object := range list.Items {
+		if !t.selector.Matches(selector.NewLabels(object.GetLabels())) {
+			// Skip objects that do not match the selector labels
+			continue
+		}
+
 		ch <- prometheus.MustNewConstMetric(
 			t.creationTimestampDesc(),
 			prometheus.GaugeValue,
