@@ -1,6 +1,6 @@
 # DO NOT EDIT. Generated with:
 #
-#    devctl@4.0.0
+#    devctl@4.0.1
 #
 name: gitleaks
 
@@ -14,4 +14,4 @@ jobs:
       with:
         fetch-depth: '0'
     - name: gitleaks-action
-      uses: zricethezav/gitleaks-action@v1.1.4
+      uses: zricethezav/gitleaks-action@v1.2.0
