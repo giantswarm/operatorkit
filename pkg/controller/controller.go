@@ -307,7 +307,7 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 	if err != nil {
 		// Microerror creates an error event on the object when kind and description is set.
 		c.event.Emit(ctx, obj, err)
-		errorGauge.Inc()
+		errorCounterVec.With(errorMetricLabels(obj)).Inc()
 		c.sentry.Capture(ctx, err)
 		c.logger.Errorf(ctx, err, "failed to reconcile")
 		return reconcile.Result{}, nil
@@ -329,7 +329,6 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 		for {
 			resetWait := c.resyncPeriod * 4
 			time.Sleep(resetWait)
-			errorGauge.Set(0)
 		}
 	}()
 
@@ -348,7 +347,6 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 					return
 				}
 
-				errorGauge.Inc()
 				c.logger.Errorf(ctx, err, "caught third party runtime error")
 			},
 		}

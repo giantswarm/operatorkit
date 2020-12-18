@@ -9,13 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Change `operatorkit_controller_error_total` from gauge to counter and provide
+  labels for CR name and when available, cluster ID and release version. Third
+  party errors caught by controller-runtime error handler are not counted anymore.
+
 ### Added
 
 - Add `namespace` into controller setting.
 
 ### Fixed
 
-- Propagate label selectors to timestamp collector
+- Propagate label selectors to timestamp collector.
 
 ## [4.0.0] - 2020-10-27
 
