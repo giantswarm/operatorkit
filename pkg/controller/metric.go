@@ -19,7 +19,7 @@ var (
 			Name:      "error_total",
 			Help:      "Number of reconciliation errors.",
 		},
-		[]string{"cr_name", "cluster_id", "release_version"},
+		[]string{"cr_name", "cr_kind", "cluster_id", "release_version"},
 	)
 	eventHistogram = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
