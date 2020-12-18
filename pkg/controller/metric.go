@@ -40,11 +40,17 @@ func init() {
 func errorMetricLabels(obj runtime.Object) prometheus.Labels {
 	labels := make(map[string]string)
 
+	t, err := meta.TypeAccessor(obj)
+	if err != nil {
+		return labels
+	}
+
 	m, err := meta.Accessor(obj)
 	if err != nil {
 		return labels
 	}
 
+	labels["cr_kind"] = t.GetKind()
 	labels["cr_name"] = m.GetName()
 
 	if v, exists := m.GetLabels()["cluster.x-k8s.io/cluster-name"]; exists {
