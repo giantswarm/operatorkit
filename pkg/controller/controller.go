@@ -110,7 +110,10 @@ type Config struct {
 	ResyncPeriod time.Duration
 	// SentryDSN is the optional URL used to forward runtime errors to the sentry.io service.
 	// If this field is empty, logs will not be forwarded.
-	SentryConfig *sentry.Config
+	SentryDSN string
+	// SentryTag is an optional map that allows to specify key-value pairs to be be sent alongside
+	// errors to the sentry.io service.
+	SentryTags map[string]string
 }
 
 type Controller struct {
@@ -206,7 +209,12 @@ func New(config Config) (*Controller, error) {
 
 	var sentryClient sentry.Interface
 	{
-		sentryClient, err = sentry.New(config.SentryConfig)
+		c := sentry.Config{
+			DSN:  config.SentryDSN,
+			Tags: config.SentryTags,
+		}
+
+		sentryClient, err = sentry.New(c)
 		if err != nil {
 			// Error during sentry initialization.
 			return nil, microerror.Mask(err)

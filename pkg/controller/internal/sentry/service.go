@@ -10,8 +10,8 @@ type Config struct {
 	Tags map[string]string
 }
 
-func New(config *Config) (Interface, error) {
-	if config == nil || config.DSN == "" {
+func New(config Config) (Interface, error) {
+	if config.DSN == "" {
 		return &Disabled{}, nil
 	}
 	err := sentry.Init(sentry.ClientOptions{
