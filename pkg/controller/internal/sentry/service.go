@@ -6,11 +6,12 @@ import (
 )
 
 type Config struct {
-	DSN string
+	DSN  string
+	Tags map[string]string
 }
 
-func New(config Config) (Interface, error) {
-	if config.DSN == "" {
+func New(config *Config) (Interface, error) {
+	if config == nil || config.DSN == "" {
 		return &Disabled{}, nil
 	}
 	err := sentry.Init(sentry.ClientOptions{
@@ -18,6 +19,14 @@ func New(config Config) (Interface, error) {
 	})
 	if err != nil {
 		return nil, microerror.Mask(err)
+	}
+
+	if len(config.Tags) > 0 {
+		sentry.ConfigureScope(func(scope *sentry.Scope) {
+			for k, v := range config.Tags {
+				scope.SetTag(k, v)
+			}
+		})
 	}
 
 	return &Default{}, nil
