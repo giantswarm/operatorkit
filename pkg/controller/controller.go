@@ -312,6 +312,7 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 		c.logger.Errorf(ctx, err, "failed to reconcile")
 		return reconcile.Result{}, nil
 	}
+	reportLastReconciled(obj)
 
 	return res, nil
 }
@@ -604,4 +605,33 @@ func unsetLoggerCtxValue(ctx context.Context, key string) context.Context {
 	delete(m.KeyVals, key)
 
 	return ctx
+}
+
+func reportLastReconciled(o interface{}) {
+	var kind string
+	{
+		obj, err := meta.TypeAccessor(o)
+		if err != nil {
+			return
+		}
+
+		kind = obj.GetKind()
+	}
+
+	var name, namespace string
+	{
+		obj, err := meta.Accessor(o)
+		if err != nil {
+			return
+		}
+
+		name = obj.GetName()
+		namespace = obj.GetNamespace()
+	}
+
+	lastReconciledGauge.WithLabelValues(
+		kind,
+		name,
+		namespace,
+	).SetToCurrentTime()
 }
