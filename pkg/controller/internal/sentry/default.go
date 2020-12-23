@@ -16,8 +16,7 @@ func (s *Default) Capture(ctx context.Context, err error) {
 	method := extractReflectedStacktraceMethod(err)
 	pcs := extractPcs(method)
 	fmt.Println(pcs)
-	frames := extractFrames(pcs)
-	fmt.Println(frames)
+	_ = extractFrames(pcs)
 
 	sentry.CaptureException(err)
 }
@@ -28,6 +27,8 @@ func extractFrames(pcs []uintptr) []sentry.Frame {
 
 	for {
 		callerFrame, more := callersFrames.Next()
+
+		fmt.Printf("pc = %d, file = %s, line = %d\n", callerFrame.PC, callerFrame.File, callerFrame.Line)
 
 		frames = append([]sentry.Frame{
 			sentry.NewFrame(callerFrame),
