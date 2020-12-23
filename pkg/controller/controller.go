@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/signal"
@@ -310,11 +309,6 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 
 	res, err := c.reconcile(ctx, req, obj)
 	if err != nil {
-		fmt.Println("=========================")
-		j, _ := json.Marshal(err)
-		fmt.Println(string(j))
-		fmt.Println("=========================")
-
 		// Microerror creates an error event on the object when kind and description is set.
 		c.event.Emit(ctx, obj, err)
 		errorGauge.Inc()
