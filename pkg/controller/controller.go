@@ -309,10 +309,10 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 
 	res, err := c.reconcile(ctx, req, obj)
 	if err != nil {
+		c.sentry.Capture(ctx, err)
 		// Microerror creates an error event on the object when kind and description is set.
 		c.event.Emit(ctx, obj, err)
 		errorGauge.Inc()
-		c.sentry.Capture(ctx, err)
 		c.logger.Errorf(ctx, err, "failed to reconcile")
 		return reconcile.Result{}, nil
 	}
