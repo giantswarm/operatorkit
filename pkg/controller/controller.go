@@ -616,6 +616,12 @@ func reportLastReconciled(o interface{}) {
 		}
 
 		kind = obj.GetKind()
+
+		if kind == "" {
+			if obj, ok := o.(pkgruntime.Object); ok {
+				kind = obj.GetObjectKind().GroupVersionKind().Kind
+			}
+		}
 	}
 
 	var name, namespace string
