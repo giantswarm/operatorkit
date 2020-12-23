@@ -41,4 +41,5 @@ var (
 func init() {
 	prometheus.MustRegister(errorGauge)
 	prometheus.MustRegister(eventHistogram)
+	prometheus.MustRegister(lastReconciledGauge)
 }
