@@ -111,7 +111,7 @@ type Config struct {
 	// SentryDSN is the optional URL used to forward runtime errors to the sentry.io service.
 	// If this field is empty, logs will not be forwarded.
 	SentryDSN string
-	// SentryTag is an optional map that allows to specify key-value pairs to be be sent alongside
+	// SentryTags is an optional map that allows to specify key-value pairs to be be sent alongside
 	// errors to the sentry.io service.
 	SentryTags map[string]string
 }
