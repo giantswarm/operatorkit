@@ -13,8 +13,38 @@ type Default struct {
 
 func (s *Default) Capture(ctx context.Context, err error) {
 	method := extractReflectedStacktraceMethod(err)
-	fmt.Printf("valid: %t, name: %s\n", method.IsValid(), method.String())
+	pcs := extractPcs(method)
+	fmt.Println(pcs)
 	sentry.CaptureException(err)
+}
+
+func extractPcs(method reflect.Value) []uintptr {
+	var pcs []uintptr
+
+	stacktrace := method.Call(make([]reflect.Value, 0))[0]
+
+	if stacktrace.Kind() != reflect.Slice {
+		return nil
+	}
+
+	for i := 0; i < stacktrace.Len(); i++ {
+		pc := stacktrace.Index(i)
+
+		if pc.Kind() == reflect.Uintptr {
+			pcs = append(pcs, uintptr(pc.Uint()))
+			continue
+		}
+
+		if pc.Kind() == reflect.Struct {
+			field := pc.FieldByName("ProgramCounter")
+			if field.IsValid() && field.Kind() == reflect.Uintptr {
+				pcs = append(pcs, uintptr(field.Uint()))
+				continue
+			}
+		}
+	}
+
+	return pcs
 }
 
 func extractReflectedStacktraceMethod(err error) reflect.Value {
