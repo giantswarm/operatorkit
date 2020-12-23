@@ -2,8 +2,8 @@ package sentry
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"reflect"
 
 	"github.com/getsentry/sentry-go"
 )
@@ -12,9 +12,6 @@ type Default struct {
 }
 
 func (s *Default) Capture(ctx context.Context, err error) {
-	fmt.Println("-------------------------")
-	j, _ := json.Marshal(err)
-	fmt.Println(string(j))
-	fmt.Println("-------------------------")
+	fmt.Printf("type: %s\n", reflect.TypeOf(err).String())
 	sentry.CaptureException(err)
 }
