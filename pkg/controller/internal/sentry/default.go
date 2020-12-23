@@ -28,6 +28,7 @@ func extractReflectedStacktraceMethod(err error) reflect.Value {
 	methodStackFrames := reflect.ValueOf(err).MethodByName("StackFrames")
 
 	if methodGetStackTracer.IsValid() {
+		fmt.Println("methodGetStackTracer")
 		stacktracer := methodGetStackTracer.Call(make([]reflect.Value, 0))[0]
 		stacktracerStackTrace := reflect.ValueOf(stacktracer).MethodByName("StackTrace")
 
@@ -37,10 +38,12 @@ func extractReflectedStacktraceMethod(err error) reflect.Value {
 	}
 
 	if methodStackTrace.IsValid() {
+		fmt.Println("methodStackTrace")
 		method = methodStackTrace
 	}
 
 	if methodStackFrames.IsValid() {
+		fmt.Println("methodStackFrames")
 		method = methodStackFrames
 	}
 
