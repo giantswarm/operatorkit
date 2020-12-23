@@ -12,9 +12,9 @@ type Default struct {
 }
 
 func (s *Default) Capture(ctx context.Context, err error) {
-	fmt.Println("=========================")
+	fmt.Println("-------------------------")
 	j, _ := json.Marshal(err)
 	fmt.Println(string(j))
-	fmt.Println("=========================")
+	fmt.Println("-------------------------")
 	sentry.CaptureException(err)
 }
