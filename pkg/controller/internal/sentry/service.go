@@ -15,8 +15,7 @@ func New(config Config) (Interface, error) {
 		return &Disabled{}, nil
 	}
 	err := sentry.Init(sentry.ClientOptions{
-		Dsn:   config.DSN,
-		Debug: true,
+		Dsn: config.DSN,
 	})
 	if err != nil {
 		return nil, microerror.Mask(err)
