@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"runtime"
 
 	"github.com/getsentry/sentry-go"
 )
@@ -15,7 +16,29 @@ func (s *Default) Capture(ctx context.Context, err error) {
 	method := extractReflectedStacktraceMethod(err)
 	pcs := extractPcs(method)
 	fmt.Println(pcs)
+	frames := extractFrames(pcs)
+	fmt.Println(frames)
+
 	sentry.CaptureException(err)
+}
+
+func extractFrames(pcs []uintptr) []sentry.Frame {
+	var frames []sentry.Frame
+	callersFrames := runtime.CallersFrames(pcs)
+
+	for {
+		callerFrame, more := callersFrames.Next()
+
+		frames = append([]sentry.Frame{
+			sentry.NewFrame(callerFrame),
+		}, frames...)
+
+		if !more {
+			break
+		}
+	}
+
+	return frames
 }
 
 func extractPcs(method reflect.Value) []uintptr {
