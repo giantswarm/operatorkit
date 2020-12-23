@@ -37,6 +37,7 @@ func (r *crudResource) GetCurrentState(ctx context.Context, obj interface{}) (in
 	rl := r.crud.Name()
 	ol := "GetCurrentState"
 
+	reportLastReconciled(obj)
 	operationCounter.WithLabelValues(rl, ol).Inc()
 
 	t := prometheus.NewTimer(operationHistogram.WithLabelValues(rl, ol))

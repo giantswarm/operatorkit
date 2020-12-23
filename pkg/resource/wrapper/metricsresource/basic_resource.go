@@ -5,6 +5,8 @@ import (
 
 	"github.com/giantswarm/microerror"
 	"github.com/prometheus/client_golang/prometheus"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/giantswarm/operatorkit/v4/pkg/resource"
 )
@@ -33,6 +35,7 @@ func (r *basicResource) EnsureCreated(ctx context.Context, obj interface{}) erro
 	rl := r.resource.Name()
 	ol := "EnsureCreated"
 
+	reportLastReconciled(obj)
 	operationCounter.WithLabelValues(rl, ol).Inc()
 
 	t := prometheus.NewTimer(operationHistogram.WithLabelValues(rl, ol))
@@ -65,4 +68,33 @@ func (r *basicResource) EnsureDeleted(ctx context.Context, obj interface{}) erro
 
 func (r *basicResource) Name() string {
 	return r.resource.Name()
+}
+
+func reportLastReconciled(obj interface{}) {
+	var kind string
+	{
+		obj, ok := obj.(runtime.Object)
+		if !ok {
+			return
+		}
+
+		kind = obj.GetObjectKind().GroupVersionKind().Kind
+	}
+
+	var name, namespace string
+	{
+		obj, ok := obj.(metav1.Object)
+		if !ok {
+			return
+		}
+
+		name = obj.GetName()
+		namespace = obj.GetNamespace()
+	}
+
+	lastReconciledGauge.WithLabelValues(
+		kind,
+		name,
+		namespace,
+	).SetToCurrentTime()
 }

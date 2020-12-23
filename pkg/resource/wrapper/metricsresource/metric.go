@@ -8,6 +8,16 @@ const (
 )
 
 var (
+	lastReconciledGauge = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: PrometheusNamespace,
+			Subsystem: PrometheusSubsystem,
+			Name:      "last_reconciled",
+			Help:      "",
+		},
+		[]string{"kind", "name", "namespace"},
+	)
+
 	operationCounter = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace: PrometheusNamespace,
