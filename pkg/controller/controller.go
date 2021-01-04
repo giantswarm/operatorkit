@@ -314,6 +314,7 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 		c.logger.Errorf(ctx, err, "failed to reconcile")
 		return reconcile.Result{}, nil
 	}
+
 	reportLastReconciled(obj)
 
 	return res, nil
