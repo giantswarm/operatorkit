@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/giantswarm/apiextensions/v3/pkg/clientset/versioned/scheme"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/k8sclient/v5/pkg/k8sclient"
 	"github.com/giantswarm/microerror"
@@ -610,21 +611,21 @@ func unsetLoggerCtxValue(ctx context.Context, key string) context.Context {
 func reportLastReconciled(o interface{}) {
 	var kind string
 	{
-		obj, err := meta.TypeAccessor(o)
+		obj, ok := o.(pkgruntime.Object)
+		if !ok {
+			return
+		}
+
+		gvks, _, err := scheme.Scheme.ObjectKinds(obj)
 		if err != nil {
 			return
 		}
 
-		kind = obj.GetKind()
-
-		if kind == "" {
-			obj, ok := o.(pkgruntime.Object)
-			if !ok {
-				return
-			}
-
-			kind = obj.GetObjectKind().GroupVersionKind().Kind
+		if len(gvks) == 0 {
+			return
 		}
+
+		kind = gvks[0].Kind
 	}
 
 	var name, namespace string
