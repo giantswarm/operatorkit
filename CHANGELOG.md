@@ -9,12 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Make removed finalizer cache TTL configurable.
+
 ## [4.1.0] - 2020-12-18
 
 ### Added
 
 - Add `namespace` into controller setting.
-- Make removed finalizer cache TTL configurable.
 
 ### Fixed
 
