@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/giantswarm/apiextensions/v3/pkg/clientset/versioned/scheme"
+	apiextensionsscheme "github.com/giantswarm/apiextensions/v3/pkg/clientset/versioned/scheme"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/k8sclient/v5/pkg/k8sclient"
 	"github.com/giantswarm/microerror"
@@ -24,6 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -617,7 +618,12 @@ func reportLastReconciled(o interface{}) {
 		}
 
 		gvks, _, err := scheme.Scheme.ObjectKinds(obj)
-		if err != nil {
+		if pkgruntime.IsNotRegisteredError(err) {
+			gvks, _, err = apiextensionsscheme.Scheme.ObjectKinds(obj)
+			if err != nil {
+				return
+			}
+		} else if err != nil {
 			return
 		}
 
