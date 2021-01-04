@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add `operatorkit_controller_last_reconciled` metrics.
+
 ## [4.1.0] - 2020-12-18
 
 ### Added
