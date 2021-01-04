@@ -104,6 +104,9 @@ type Config struct {
 	// Namespace is where the controller would reconcile the runtime objects.
 	// Empty string means all namespaces.
 	Namespace string
+	// RemovedFinalizersCacheTTL is how long removed finalizer keys should
+	// remain in the cache before expiring.
+	RemovedFinalizersCacheTTL time.Duration
 	// ResyncPeriod is the duration after which a complete sync with all known
 	// runtime objects the controller watches is performed. Defaults to
 	// DefaultResyncPeriod.
@@ -170,6 +173,9 @@ func New(config Config) (*Controller, error) {
 	if config.Name == "" {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Name must not be empty", config)
 	}
+	if config.RemovedFinalizersCacheTTL == 0 {
+		config.RemovedFinalizersCacheTTL = config.ResyncPeriod * 3
+	}
 	if config.ResyncPeriod == 0 {
 		config.ResyncPeriod = DefaultResyncPeriod
 	}
@@ -232,7 +238,7 @@ func New(config Config) (*Controller, error) {
 		booted:                 make(chan struct{}),
 		collector:              collectorSet,
 		loop:                   -1,
-		removedFinalizersCache: newStringCache(config.ResyncPeriod * 3),
+		removedFinalizersCache: newStringCache(config.RemovedFinalizersCacheTTL),
 		sentry:                 sentryClient,
 
 		name:         config.Name,
