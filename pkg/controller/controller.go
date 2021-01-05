@@ -451,14 +451,14 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) error {
 	return nil
 }
 
-func (c *Controller) hasPauseAnnotation(m map[string]string) bool {
+func (c *Controller) hasPauseAnnotation(m map[string]string) (bool, string, string) {
 	for k, v := range m {
 		if hasAnnotation(c.pause, k, v) {
-			return true
+			return true, k, v
 		}
 	}
 
-	return false
+	return false, "", ""
 }
 
 func (c *Controller) reconcile(ctx context.Context, req reconcile.Request, obj interface{}) (reconcile.Result, error) {
@@ -475,12 +475,12 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request, obj i
 		}
 	}
 
-	{
-		if c.hasPauseAnnotation(m.GetAnnotations()) {
-			c.logger.Debugf(ctx, "found pause annotation")
-			c.logger.Debugf(ctx, "cancelling reconciliation")
-			return reconcile.Result{}, nil
-		}
+	ctx = setLoggerCtxValue(ctx, loggerKeyObject, m.GetSelfLink())
+	ctx = setLoggerCtxValue(ctx, loggerKeyVersion, m.GetResourceVersion())
+
+	if ok, k, v := c.hasPauseAnnotation(m.GetAnnotations()); ok {
+		c.logger.Debugf(ctx, "cancelling reconciliation due to pause annotation %#q set to %#q", k, v)
+		return reconcile.Result{}, nil
 	}
 
 	if m.GetDeletionTimestamp() != nil {
@@ -488,8 +488,6 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request, obj i
 
 		t := prometheus.NewTimer(eventHistogram.WithLabelValues(event))
 		ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
-		ctx = setLoggerCtxValue(ctx, loggerKeyObject, m.GetSelfLink())
-		ctx = setLoggerCtxValue(ctx, loggerKeyVersion, m.GetResourceVersion())
 
 		err = c.deleteFunc(ctx, obj)
 		if err != nil {
@@ -502,8 +500,6 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request, obj i
 
 		t := prometheus.NewTimer(eventHistogram.WithLabelValues(event))
 		ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
-		ctx = setLoggerCtxValue(ctx, loggerKeyObject, m.GetSelfLink())
-		ctx = setLoggerCtxValue(ctx, loggerKeyVersion, m.GetResourceVersion())
 
 		err = c.updateFunc(ctx, obj)
 		if err != nil {
