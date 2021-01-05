@@ -315,6 +315,8 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 		return reconcile.Result{}, nil
 	}
 
+	reportLastReconciled(obj)
+
 	return res, nil
 }
 
@@ -499,7 +501,6 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request, obj i
 		}
 
 		t.ObserveDuration()
-		unsetLastReconciled(obj)
 	} else {
 		event := "update"
 
@@ -514,7 +515,6 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request, obj i
 		}
 
 		t.ObserveDuration()
-		reportLastReconciled(obj)
 	}
 
 	return reconcile.Result{}, nil
@@ -610,44 +610,26 @@ func unsetLoggerCtxValue(ctx context.Context, key string) context.Context {
 	return ctx
 }
 
-func unsetLastReconciled(o interface{}) {
-	labels := getLabels(o)
-	if labels == nil {
-		return
-	}
-
-	lastReconciledGauge.DeleteLabelValues(labels...)
-}
-
 func reportLastReconciled(o interface{}) {
-	labels := getLabels(o)
-	if labels == nil {
-		return
-	}
-
-	lastReconciledGauge.WithLabelValues(labels...).SetToCurrentTime()
-}
-
-func getLabels(o interface{}) []string {
 	var kind string
 	{
 		obj, ok := o.(pkgruntime.Object)
 		if !ok {
-			return nil
+			return
 		}
 
 		gvks, _, err := scheme.Scheme.ObjectKinds(obj)
 		if pkgruntime.IsNotRegisteredError(err) {
 			gvks, _, err = apiextensionsscheme.Scheme.ObjectKinds(obj)
 			if err != nil {
-				return nil
+				return
 			}
 		} else if err != nil {
-			return nil
+			return
 		}
 
 		if len(gvks) == 0 {
-			return nil
+			return
 		}
 
 		kind = gvks[0].Kind
@@ -657,12 +639,16 @@ func getLabels(o interface{}) []string {
 	{
 		obj, err := meta.Accessor(o)
 		if err != nil {
-			return nil
+			return
 		}
 
 		name = obj.GetName()
 		namespace = obj.GetNamespace()
 	}
 
-	return []string{kind, name, namespace}
+	lastReconciledGauge.WithLabelValues(
+		kind,
+		name,
+		namespace,
+	).SetToCurrentTime()
 }
