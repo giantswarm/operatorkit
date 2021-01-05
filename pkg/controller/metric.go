@@ -32,7 +32,7 @@ var (
 			Namespace: PrometheusNamespace,
 			Subsystem: PrometheusSubsystem,
 			Name:      "last_reconciled",
-			Help:      "",
+			Help:      "Last reconciled Timestamp of watched runtime objects.",
 		},
 		[]string{"kind", "name", "namespace"},
 	)
