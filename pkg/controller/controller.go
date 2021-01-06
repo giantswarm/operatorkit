@@ -315,7 +315,7 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 		return reconcile.Result{}, nil
 	}
 
-	reportLastReconciled(obj)
+	reportLastReconciled(obj, c.name)
 
 	return res, nil
 }
@@ -606,7 +606,7 @@ func unsetLoggerCtxValue(ctx context.Context, key string) context.Context {
 	return ctx
 }
 
-func reportLastReconciled(o interface{}) {
+func reportLastReconciled(o interface{}, controllerName string) {
 	var kind string
 	{
 		obj, ok := o.(pkgruntime.Object)
@@ -633,5 +633,6 @@ func reportLastReconciled(o interface{}) {
 
 	lastReconciledGauge.WithLabelValues(
 		kind,
+		controllerName,
 	).SetToCurrentTime()
 }
