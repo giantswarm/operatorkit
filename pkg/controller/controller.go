@@ -635,20 +635,7 @@ func reportLastReconciled(o interface{}) {
 		kind = gvks[0].Kind
 	}
 
-	var name, namespace string
-	{
-		obj, err := meta.Accessor(o)
-		if err != nil {
-			return
-		}
-
-		name = obj.GetName()
-		namespace = obj.GetNamespace()
-	}
-
 	lastReconciledGauge.WithLabelValues(
 		kind,
-		name,
-		namespace,
 	).SetToCurrentTime()
 }
