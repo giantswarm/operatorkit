@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add `operatorkit_controller_last_reconciled` metrics.
 
+### Fixed
+
+- Add object context to pause annotation related logs.
+
 ## [4.1.0] - 2020-12-18
 
 ### Added
