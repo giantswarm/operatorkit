@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add `namespace` into controller setting.
+- Add `SentryTags` Config field to allow setting custom tags to be sent alongside errors to `sentry.io`.
 
 ### Fixed
 
