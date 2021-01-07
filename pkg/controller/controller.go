@@ -111,6 +111,9 @@ type Config struct {
 	// SentryDSN is the optional URL used to forward runtime errors to the sentry.io service.
 	// If this field is empty, logs will not be forwarded.
 	SentryDSN string
+	// SentryTags is an optional map that allows to specify key-value pairs to be be sent alongside
+	// errors to the sentry.io service.
+	SentryTags map[string]string
 }
 
 type Controller struct {
@@ -207,7 +210,8 @@ func New(config Config) (*Controller, error) {
 	var sentryClient sentry.Interface
 	{
 		c := sentry.Config{
-			DSN: config.SentryDSN,
+			DSN:  config.SentryDSN,
+			Tags: config.SentryTags,
 		}
 
 		sentryClient, err = sentry.New(c)
