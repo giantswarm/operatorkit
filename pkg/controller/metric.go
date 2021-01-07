@@ -34,7 +34,7 @@ var (
 			Name:      "last_reconciled",
 			Help:      "Last reconciled Timestamp of watched runtime objects.",
 		},
-		[]string{"kind", "controller"},
+		[]string{"controller"},
 	)
 )
 

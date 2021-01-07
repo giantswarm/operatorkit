@@ -11,7 +11,6 @@ import (
 	"syscall"
 	"time"
 
-	apiextensionsscheme "github.com/giantswarm/apiextensions/v3/pkg/clientset/versioned/scheme"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/k8sclient/v5/pkg/k8sclient"
 	"github.com/giantswarm/microerror"
@@ -24,7 +23,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -315,7 +313,9 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 		return reconcile.Result{}, nil
 	}
 
-	reportLastReconciled(obj, c.name)
+	lastReconciledGauge.WithLabelValues(
+		c.name,
+	).SetToCurrentTime()
 
 	return res, nil
 }
@@ -604,35 +604,4 @@ func unsetLoggerCtxValue(ctx context.Context, key string) context.Context {
 	delete(m.KeyVals, key)
 
 	return ctx
-}
-
-func reportLastReconciled(o interface{}, controllerName string) {
-	var kind string
-	{
-		obj, ok := o.(pkgruntime.Object)
-		if !ok {
-			return
-		}
-
-		gvks, _, err := scheme.Scheme.ObjectKinds(obj)
-		if pkgruntime.IsNotRegisteredError(err) {
-			gvks, _, err = apiextensionsscheme.Scheme.ObjectKinds(obj)
-			if err != nil {
-				return
-			}
-		} else if err != nil {
-			return
-		}
-
-		if len(gvks) == 0 {
-			return
-		}
-
-		kind = gvks[0].Kind
-	}
-
-	lastReconciledGauge.WithLabelValues(
-		kind,
-		controllerName,
-	).SetToCurrentTime()
 }
