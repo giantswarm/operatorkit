@@ -27,9 +27,19 @@ var (
 		},
 		[]string{"event"},
 	)
+	lastReconciledGauge = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: PrometheusNamespace,
+			Subsystem: PrometheusSubsystem,
+			Name:      "last_reconciled",
+			Help:      "Last reconciled Timestamp of watched runtime objects.",
+		},
+		[]string{"controller"},
+	)
 )
 
 func init() {
 	prometheus.MustRegister(errorGauge)
 	prometheus.MustRegister(eventHistogram)
+	prometheus.MustRegister(lastReconciledGauge)
 }

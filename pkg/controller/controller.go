@@ -317,6 +317,10 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 		return reconcile.Result{}, nil
 	}
 
+	lastReconciledGauge.WithLabelValues(
+		c.name,
+	).SetToCurrentTime()
+
 	return res, nil
 }
 
