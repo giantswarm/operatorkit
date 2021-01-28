@@ -164,9 +164,7 @@ func New(config Config) (*Controller, error) {
 	if config.NewRuntimeObjectFunc == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.NewRuntimeObjectFunc must not be empty", config)
 	}
-	if config.NewRuntimeObjectFunc == nil {
-		return nil, microerror.Maskf(invalidConfigError, "%T.NewRuntimeObjectFunc must not be empty", config)
-	}
+
 	{
 		if config.Pause == nil {
 			config.Pause = map[string]string{}
@@ -191,10 +189,10 @@ func New(config Config) (*Controller, error) {
 	var collectorSet *collector.Set
 	{
 		c := collector.SetConfig{
-			Logger:               config.Logger,
-			K8sClient:            config.K8sClient,
-			NewRuntimeObjectFunc: config.NewRuntimeObjectFunc,
-			Selector:             config.Selector,
+			Logger:                   config.Logger,
+			K8sClient:                config.K8sClient,
+			NewRuntimeObjectListFunc: config.NewRuntimeObjectListFunc,
+			Selector:                 config.Selector,
 
 			Controller: config.Name,
 		}

@@ -10,13 +10,12 @@ import (
 )
 
 type SetConfig struct {
-	Logger                   micrologger.Logger
-	K8sClient                k8sclient.Interface
-	NewRuntimeObjectFunc     func() runtime.Object
+	Logger     micrologger.Logger
+	K8sClient  k8sclient.Interface
+	Controller string
+
 	NewRuntimeObjectListFunc func() runtime.Object
 	Selector                 labels.Selector
-
-	Controller string
 }
 
 // Set is basically only a wrapper for the collector implementations.
