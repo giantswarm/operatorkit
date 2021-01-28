@@ -3,31 +3,33 @@ package collector
 import (
 	"context"
 
-	"github.com/giantswarm/operatorkit/v4/pkg/controller/internal/selector"
-
 	"github.com/giantswarm/k8sclient/v5/pkg/k8sclient"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/prometheus/client_golang/prometheus"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 type TimestampConfig struct {
-	Logger               micrologger.Logger
-	K8sClient            k8sclient.Interface
-	NewRuntimeObjectFunc func() runtime.Object
-	Selector             selector.Selector
+	Logger                   micrologger.Logger
+	K8sClient                k8sclient.Interface
+	NewRuntimeObjectListFunc func() runtime.Object
+	Selector                 labels.Selector
 
 	Controller string
 }
 
 type Timestamp struct {
-	logger               micrologger.Logger
-	k8sClient            k8sclient.Interface
-	newRuntimeObjectFunc func() runtime.Object
-	selector             selector.Selector
+	logger                   micrologger.Logger
+	ctrlClient               client.Client
+	newRuntimeObjectListFunc func() runtime.Object
+	selector                 labels.Selector
+	scheme                   *runtime.Scheme
 
 	controller string
 }
@@ -39,16 +41,22 @@ func NewTimestamp(config TimestampConfig) (*Timestamp, error) {
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Logger must not be empty", config)
 	}
-
 	if config.Controller == "" {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Controller must not be empty", config)
 	}
+	if config.NewRuntimeObjectListFunc == nil {
+		return nil, microerror.Maskf(invalidConfigError, "%T.NewRuntimeObjectListFunc must not be empty", config)
+	}
+	if config.Selector == nil {
+		return nil, microerror.Maskf(invalidConfigError, "%T.Selector must not be empty", config)
+	}
 
 	t := &Timestamp{
-		logger:               config.Logger,
-		k8sClient:            config.K8sClient,
-		newRuntimeObjectFunc: config.NewRuntimeObjectFunc,
-		selector:             config.Selector,
+		logger:                   config.Logger,
+		ctrlClient:               config.K8sClient.CtrlClient(),
+		scheme:                   config.K8sClient.Scheme(),
+		newRuntimeObjectListFunc: config.NewRuntimeObjectListFunc,
+		selector:                 config.Selector,
 
 		controller: config.Controller,
 	}
@@ -57,33 +65,31 @@ func NewTimestamp(config TimestampConfig) (*Timestamp, error) {
 }
 
 func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
-	ctx := context.Background()
-	gvk, err := apiutil.GVKForObject(t.newRuntimeObjectFunc(), t.k8sClient.Scheme())
-	if err != nil {
-		return microerror.Mask(err)
+	list := &metav1.PartialObjectMetadataList{}
+	{
+		gvk, err := apiutil.GVKForObject(t.newRuntimeObjectListFunc(), t.scheme)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+		list.SetGroupVersionKind(gvk)
 	}
-	gvk.Kind += "List"
-	list := &unstructured.UnstructuredList{}
-	list.SetGroupVersionKind(gvk)
 
-	err = t.k8sClient.CtrlClient().List(ctx, list)
+	ctx := context.Background()
+	err := t.ctrlClient.List(ctx, list, &client.ListOptions{
+		LabelSelector: t.selector,
+	})
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
 	for _, object := range list.Items {
-		if !t.selector.Matches(selector.NewLabels(object.GetLabels())) {
-			// Skip objects that do not match the selector labels
-			continue
-		}
-
 		ch <- prometheus.MustNewConstMetric(
 			t.creationTimestampDesc(),
 			prometheus.GaugeValue,
 			float64(object.GetCreationTimestamp().Unix()),
-			object.GetKind(),
-			object.GetName(),
-			object.GetNamespace(),
+			object.Kind,
+			object.Name,
+			object.Namespace,
 		)
 
 		if object.GetDeletionTimestamp() != nil {
@@ -91,9 +97,9 @@ func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
 				t.deletionTimestampDesc(),
 				prometheus.GaugeValue,
 				float64(object.GetDeletionTimestamp().Unix()),
-				object.GetKind(),
-				object.GetName(),
-				object.GetNamespace(),
+				object.Kind,
+				object.Name,
+				object.Namespace,
 			)
 		}
 	}

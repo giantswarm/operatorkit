@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -37,7 +38,6 @@ import (
 	"github.com/giantswarm/operatorkit/v4/pkg/controller/context/resourcecanceledcontext"
 	"github.com/giantswarm/operatorkit/v4/pkg/controller/context/updateallowedcontext"
 	"github.com/giantswarm/operatorkit/v4/pkg/controller/internal/recorder"
-	"github.com/giantswarm/operatorkit/v4/pkg/controller/internal/selector"
 	"github.com/giantswarm/operatorkit/v4/pkg/controller/internal/sentry"
 	"github.com/giantswarm/operatorkit/v4/pkg/resource"
 )
@@ -86,6 +86,15 @@ type Config struct {
 	//     }
 	//
 	NewRuntimeObjectFunc func() pkgruntime.Object
+	// NewRuntimeObjectListFunc returns a new initialized pointer of a type
+	// implementing the runtime object interface. The object returned is used with
+	// the timestamp collector to fetch the list of watched object. See the example below.
+	//
+	//     func() pkgruntime.Object {
+	//        return new(corev1.ConfigMapList)
+	//     }
+	//
+	NewRuntimeObjectListFunc func() pkgruntime.Object
 	// Pause is a map of additional pausing annotations, defining their
 	// key-value pairs. This can be used to stop reconciliation in case the
 	// configured pausing annotations are present in the reconciled runtime
@@ -95,7 +104,7 @@ type Config struct {
 	// object reconciliation. Resources are executed in given order.
 	Resources []resource.Interface
 	// Selector is used to filter objects before passing them to the controller.
-	Selector selector.Selector
+	Selector labels.Selector
 
 	// Name is the name which the controller uses on finalizers for resources.
 	// The name used should be unique in the kubernetes cluster, to ensure that
@@ -124,7 +133,7 @@ type Controller struct {
 	newRuntimeObjectFunc func() pkgruntime.Object
 	pause                map[string]string
 	resources            []resource.Interface
-	selector             selector.Selector
+	selector             labels.Selector
 
 	backOffFactory         func() backoff.Interface
 	bootOnce               sync.Once
@@ -155,6 +164,9 @@ func New(config Config) (*Controller, error) {
 	if config.NewRuntimeObjectFunc == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.NewRuntimeObjectFunc must not be empty", config)
 	}
+	if config.NewRuntimeObjectFunc == nil {
+		return nil, microerror.Maskf(invalidConfigError, "%T.NewRuntimeObjectFunc must not be empty", config)
+	}
 	{
 		if config.Pause == nil {
 			config.Pause = map[string]string{}
@@ -165,9 +177,6 @@ func New(config Config) (*Controller, error) {
 	}
 	if len(config.Resources) == 0 {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Resources must not be empty", config)
-	}
-	if config.Selector == nil {
-		config.Selector = selector.NewSelectorEverything()
 	}
 
 	if config.Name == "" {
@@ -390,10 +399,10 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 				Reconciler:              c,
 			}).
 			WithEventFilter(predicate.Funcs{
-				CreateFunc:  func(e event.CreateEvent) bool { return c.selector.Matches(selector.NewLabels(e.Meta.GetLabels())) },
-				DeleteFunc:  func(e event.DeleteEvent) bool { return c.selector.Matches(selector.NewLabels(e.Meta.GetLabels())) },
-				UpdateFunc:  func(e event.UpdateEvent) bool { return c.selector.Matches(selector.NewLabels(e.MetaNew.GetLabels())) },
-				GenericFunc: func(e event.GenericEvent) bool { return c.selector.Matches(selector.NewLabels(e.Meta.GetLabels())) },
+				CreateFunc:  func(e event.CreateEvent) bool { return c.selector.Matches(labels.Set(e.Meta.GetLabels())) },
+				DeleteFunc:  func(e event.DeleteEvent) bool { return c.selector.Matches(labels.Set(e.Meta.GetLabels())) },
+				UpdateFunc:  func(e event.UpdateEvent) bool { return c.selector.Matches(labels.Set(e.MetaNew.GetLabels())) },
+				GenericFunc: func(e event.GenericEvent) bool { return c.selector.Matches(labels.Set(e.Meta.GetLabels())) },
 			}).
 			Complete(c)
 		if err != nil {
