@@ -1,6 +1,6 @@
 # DO NOT EDIT. Generated with:
 #
-#    devctl@4.1.0
+#    devctl@4.2.1
 #
 name: Create Release PR
 on:
