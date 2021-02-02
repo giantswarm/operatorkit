@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -273,6 +274,10 @@ func (c *Controller) Boot(ctx context.Context) {
 
 func (c *Controller) Booted() chan struct{} {
 	return c.booted
+}
+
+func NewSelector(matchesFunc func(labels labels.Labels) bool) selector.Selector {
+	return selector.NewSelector(matchesFunc)
 }
 
 // Reconcile implements the reconciler given to the controller-runtime
