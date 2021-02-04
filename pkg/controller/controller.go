@@ -282,7 +282,8 @@ func NewSelector(matchesFunc func(labels labels.Labels) bool) selector.Selector 
 	return selector.NewSelector(matchesFunc)
 }
 
-func (c *Controller) Shutdown() {
+func (c *Controller) Stop(ctx context.Context) {
+	c.collector.Stop(ctx)
 	close(c.stopped)
 }
 
