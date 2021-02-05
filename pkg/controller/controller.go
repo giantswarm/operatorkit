@@ -282,6 +282,10 @@ func (c *Controller) Booted() chan struct{} {
 	return c.booted
 }
 
+func NewSelector(matchesFunc func(labels labels.Labels) bool) selector.Selector {
+	return selector.NewSelector(matchesFunc)
+}
+
 // Reconcile implements the reconciler given to the controller-runtime
 // controller. Reconcile never returns any error as we deal with them in
 // operatorkit internally.

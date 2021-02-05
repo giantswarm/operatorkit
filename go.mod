@@ -4,12 +4,12 @@ go 1.15
 
 require (
 	github.com/getsentry/sentry-go v0.9.0
-	github.com/giantswarm/apiextensions/v3 v3.13.0
+	github.com/giantswarm/apiextensions/v3 v3.16.1
 	github.com/giantswarm/backoff v0.2.0
 	github.com/giantswarm/exporterkit v0.2.0
 	github.com/giantswarm/k8sclient/v5 v5.0.0
 	github.com/giantswarm/microerror v0.3.0
-	github.com/giantswarm/micrologger v0.4.0
+	github.com/giantswarm/micrologger v0.5.0
 	github.com/giantswarm/to v0.3.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.9.0
