@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add stop method to stop controller reconciliation and metrics collection.
+- Add `Controller.Stop` method to stop controller reconciliation and metrics collection.
 
 ### Fixed
 
