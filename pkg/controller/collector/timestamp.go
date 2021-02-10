@@ -2,6 +2,7 @@ package collector
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/giantswarm/k8sclient/v5/pkg/k8sclient"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -16,20 +17,20 @@ import (
 )
 
 type TimestampConfig struct {
-	Logger                   micrologger.Logger
-	K8sClient                k8sclient.Interface
-	NewRuntimeObjectListFunc func() runtime.Object
-	Selector                 labels.Selector
+	Logger               micrologger.Logger
+	K8sClient            k8sclient.Interface
+	NewRuntimeObjectFunc func() runtime.Object
+	Selector             labels.Selector
 
 	Controller string
 }
 
 type Timestamp struct {
-	logger                   micrologger.Logger
-	ctrlClient               client.Client
-	newRuntimeObjectListFunc func() runtime.Object
-	selector                 labels.Selector
-	scheme                   *runtime.Scheme
+	logger               micrologger.Logger
+	ctrlClient           client.Client
+	newRuntimeObjectFunc func() runtime.Object
+	selector             labels.Selector
+	scheme               *runtime.Scheme
 
 	controller string
 }
@@ -44,19 +45,19 @@ func NewTimestamp(config TimestampConfig) (*Timestamp, error) {
 	if config.Controller == "" {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Controller must not be empty", config)
 	}
-	if config.NewRuntimeObjectListFunc == nil {
-		return nil, microerror.Maskf(invalidConfigError, "%T.NewRuntimeObjectListFunc must not be empty", config)
+	if config.NewRuntimeObjectFunc == nil {
+		return nil, microerror.Maskf(invalidConfigError, "%T.NewRuntimeObjectFunc must not be empty", config)
 	}
 	if config.Selector == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Selector must not be empty", config)
 	}
 
 	t := &Timestamp{
-		logger:                   config.Logger,
-		ctrlClient:               config.K8sClient.CtrlClient(),
-		scheme:                   config.K8sClient.Scheme(),
-		newRuntimeObjectListFunc: config.NewRuntimeObjectListFunc,
-		selector:                 config.Selector,
+		logger:               config.Logger,
+		ctrlClient:           config.K8sClient.CtrlClient(),
+		scheme:               config.K8sClient.Scheme(),
+		newRuntimeObjectFunc: config.NewRuntimeObjectFunc,
+		selector:             config.Selector,
 
 		controller: config.Controller,
 	}
@@ -67,10 +68,11 @@ func NewTimestamp(config TimestampConfig) (*Timestamp, error) {
 func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
 	list := &metav1.PartialObjectMetadataList{}
 	{
-		gvk, err := apiutil.GVKForObject(t.newRuntimeObjectListFunc(), t.scheme)
+		gvk, err := apiutil.GVKForObject(t.newRuntimeObjectFunc(), t.scheme)
 		if err != nil {
 			return microerror.Mask(err)
 		}
+		gvk.Kind = fmt.Sprintf("%sList", gvk.Kind)
 		list.SetGroupVersionKind(gvk)
 	}
 

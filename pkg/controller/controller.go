@@ -86,20 +86,7 @@ type Config struct {
 	//     }
 	//
 	NewRuntimeObjectFunc func() pkgruntime.Object
-	// NewRuntimeObjectListFunc returns a new initialized pointer of a type
-	// implementing the runtime object interface. The object returned is used with
-	// the timestamp collector to fetch the list of watched object. See the example below.
-	//
-	//     func() pkgruntime.Object {
-	//        return new(corev1.ConfigMapList)
-	//     }
-	//
-	NewRuntimeObjectListFunc func() pkgruntime.Object
-	// Pause is a map of additional pausing annotations, defining their
-	// key-value pairs. This can be used to stop reconciliation in case the
-	// configured pausing annotations are present in the reconciled runtime
-	// object watched by operatorkit.
-	Pause map[string]string
+	Pause                map[string]string
 	// Resources is the list of controller resources being executed on runtime
 	// object reconciliation. Resources are executed in given order.
 	Resources []resource.Interface
@@ -189,10 +176,10 @@ func New(config Config) (*Controller, error) {
 	var collectorSet *collector.Set
 	{
 		c := collector.SetConfig{
-			Logger:                   config.Logger,
-			K8sClient:                config.K8sClient,
-			NewRuntimeObjectListFunc: config.NewRuntimeObjectListFunc,
-			Selector:                 config.Selector,
+			Logger:               config.Logger,
+			K8sClient:            config.K8sClient,
+			NewRuntimeObjectFunc: config.NewRuntimeObjectFunc,
+			Selector:             config.Selector,
 
 			Controller: config.Name,
 		}

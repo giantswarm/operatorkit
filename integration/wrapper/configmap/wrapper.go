@@ -68,9 +68,6 @@ func New(config Config) (*Wrapper, error) {
 			NewRuntimeObjectFunc: func() pkgruntime.Object {
 				return new(corev1.ConfigMap)
 			},
-			NewRuntimeObjectListFunc: func() pkgruntime.Object {
-				return new(corev1.ConfigMapList)
-			},
 			Selector: labels.Everything(),
 
 			Name:         config.Name,

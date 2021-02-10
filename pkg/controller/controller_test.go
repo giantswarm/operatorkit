@@ -160,9 +160,6 @@ func mustNewTestController(n string) *Controller {
 			NewRuntimeObjectFunc: func() runtime.Object {
 				return new(corev1.Service)
 			},
-			NewRuntimeObjectListFunc: func() runtime.Object {
-				return new(corev1.ServiceList)
-			},
 			Resources: []resource.Interface{
 				&testResource{},
 			},

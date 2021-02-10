@@ -88,8 +88,8 @@ func Test_Timestamp(t *testing.T) {
 			config := TimestampConfig{
 				Logger:    microloggertest.New(),
 				K8sClient: clients,
-				NewRuntimeObjectListFunc: func() pkgruntime.Object {
-					return new(corev1.PodList)
+				NewRuntimeObjectFunc: func() pkgruntime.Object {
+					return new(corev1.Pod)
 				},
 				Selector:   tc.selector,
 				Controller: "test",

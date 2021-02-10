@@ -14,8 +14,8 @@ type SetConfig struct {
 	K8sClient  k8sclient.Interface
 	Controller string
 
-	NewRuntimeObjectListFunc func() runtime.Object
-	Selector                 labels.Selector
+	NewRuntimeObjectFunc func() runtime.Object
+	Selector             labels.Selector
 }
 
 // Set is basically only a wrapper for the collector implementations.
@@ -35,8 +35,8 @@ func NewSet(config SetConfig) (*Set, error) {
 			K8sClient:  config.K8sClient,
 			Controller: config.Controller,
 
-			NewRuntimeObjectListFunc: config.NewRuntimeObjectListFunc,
-			Selector:                 config.Selector,
+			NewRuntimeObjectFunc: config.NewRuntimeObjectFunc,
+			Selector:             config.Selector,
 		}
 
 		timestampCollector, err = NewTimestamp(c)

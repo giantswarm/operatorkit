@@ -72,9 +72,6 @@ func New(config Config) (*Wrapper, error) {
 			NewRuntimeObjectFunc: func() pkgruntime.Object {
 				return new(v1alpha1.DrainerConfig)
 			},
-			NewRuntimeObjectListFunc: func() pkgruntime.Object {
-				return new(v1alpha1.DrainerConfigList)
-			},
 			Selector: labels.Everything(),
 
 			Name:         config.Name,
