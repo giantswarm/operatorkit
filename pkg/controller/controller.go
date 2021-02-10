@@ -125,6 +125,7 @@ type Controller struct {
 	backOffFactory         func() backoff.Interface
 	bootOnce               sync.Once
 	booted                 chan struct{}
+	stopped                chan struct{}
 	collector              *collector.Set
 	loop                   int64
 	removedFinalizersCache *stringCache
@@ -228,6 +229,7 @@ func New(config Config) (*Controller, error) {
 		backOffFactory:         func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) },
 		bootOnce:               sync.Once{},
 		booted:                 make(chan struct{}),
+		stopped:                make(chan struct{}),
 		collector:              collectorSet,
 		loop:                   -1,
 		removedFinalizersCache: newStringCache(config.ResyncPeriod * 3),
@@ -267,6 +269,11 @@ func (c *Controller) Boot(ctx context.Context) {
 
 func (c *Controller) Booted() chan struct{} {
 	return c.booted
+}
+
+func (c *Controller) Stop(ctx context.Context) {
+	c.collector.Stop(ctx)
+	close(c.stopped)
 }
 
 // Reconcile implements the reconciler given to the controller-runtime
@@ -403,7 +410,8 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 		}
 
 		// mgr.Start() blocks the boot process until it ends gracefully or fails.
-		err = mgr.Start(setupSignalHandler())
+		setupSignalHandler(c.stopped)
+		err = mgr.Start(c.stopped)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -486,10 +494,10 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request, obj i
 	}
 
 	if m.GetDeletionTimestamp() != nil {
-		event := "delete"
+		eventName := "delete"
 
-		t := prometheus.NewTimer(eventHistogram.WithLabelValues(event))
-		ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
+		t := prometheus.NewTimer(eventHistogram.WithLabelValues(eventName))
+		ctx = setLoggerCtxValue(ctx, loggerKeyEvent, eventName)
 
 		err = c.deleteFunc(ctx, obj)
 		if err != nil {
@@ -498,10 +506,10 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request, obj i
 
 		t.ObserveDuration()
 	} else {
-		event := "update"
+		eventName := "update"
 
-		t := prometheus.NewTimer(eventHistogram.WithLabelValues(event))
-		ctx = setLoggerCtxValue(ctx, loggerKeyEvent, event)
+		t := prometheus.NewTimer(eventHistogram.WithLabelValues(eventName))
+		ctx = setLoggerCtxValue(ctx, loggerKeyEvent, eventName)
 
 		err = c.updateFunc(ctx, obj)
 		if err != nil {
@@ -577,8 +585,7 @@ func setLoggerCtxValue(ctx context.Context, key, value string) context.Context {
 	return ctx
 }
 
-func setupSignalHandler() (stopCh <-chan struct{}) {
-	stop := make(chan struct{})
+func setupSignalHandler(stop chan struct{}) {
 	c := make(chan os.Signal, 2)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
@@ -587,8 +594,6 @@ func setupSignalHandler() (stopCh <-chan struct{}) {
 		<-c
 		os.Exit(1) // second signal. Exit directly.
 	}()
-
-	return stop
 }
 
 func unsetLoggerCtxValue(ctx context.Context, key string) context.Context {
