@@ -125,6 +125,7 @@ type Controller struct {
 	backOffFactory         func() backoff.Interface
 	bootOnce               sync.Once
 	booted                 chan struct{}
+	stopOnce               sync.Once
 	stopped                chan struct{}
 	collector              *collector.Set
 	loop                   int64
@@ -272,8 +273,10 @@ func (c *Controller) Booted() chan struct{} {
 }
 
 func (c *Controller) Stop(ctx context.Context) {
-	c.collector.Stop(ctx)
-	close(c.stopped)
+	c.stopOnce.Do(func() {
+		c.collector.Stop(ctx)
+		close(c.stopped)
+	})
 }
 
 // Reconcile implements the reconciler given to the controller-runtime
@@ -409,8 +412,10 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 			close(c.booted)
 		}
 
+		// handle ctrl+c
+		setupSignalHandler(func() { c.Stop(ctx) })
+
 		// mgr.Start() blocks the boot process until it ends gracefully or fails.
-		setupSignalHandler(c.stopped)
 		err = mgr.Start(c.stopped)
 		if err != nil {
 			return microerror.Mask(err)
@@ -585,12 +590,12 @@ func setLoggerCtxValue(ctx context.Context, key, value string) context.Context {
 	return ctx
 }
 
-func setupSignalHandler(stop chan struct{}) {
+func setupSignalHandler(handle func()) {
 	c := make(chan os.Signal, 2)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		close(stop)
+		handle()
 		<-c
 		os.Exit(1) // second signal. Exit directly.
 	}()
