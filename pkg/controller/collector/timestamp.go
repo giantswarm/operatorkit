@@ -2,7 +2,6 @@ package collector
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/giantswarm/k8sclient/v5/pkg/k8sclient"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -66,25 +65,23 @@ func NewTimestamp(config TimestampConfig) (*Timestamp, error) {
 }
 
 func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
-	list := &metav1.PartialObjectMetadataList{}
+	var metadata metav1.PartialObjectMetadataList
 	{
 		gvk, err := apiutil.GVKForObject(t.newRuntimeObjectFunc(), t.scheme)
 		if err != nil {
 			return microerror.Mask(err)
 		}
-		gvk.Kind = fmt.Sprintf("%sList", gvk.Kind)
-		list.SetGroupVersionKind(gvk)
+		metadata.SetGroupVersionKind(gvk)
 	}
 
-	ctx := context.Background()
-	err := t.ctrlClient.List(ctx, list, &client.ListOptions{
+	err := t.ctrlClient.List(context.Background(), &metadata, &client.ListOptions{
 		LabelSelector: t.selector,
 	})
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
-	for _, object := range list.Items {
+	for _, object := range metadata.Items {
 		ch <- prometheus.MustNewConstMetric(
 			t.creationTimestampDesc(),
 			prometheus.GaugeValue,
