@@ -2,6 +2,7 @@ package collector
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/giantswarm/k8sclient/v5/pkg/k8sclient"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -71,6 +72,7 @@ func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
 		if err != nil {
 			return microerror.Mask(err)
 		}
+		gvk.Kind = fmt.Sprintf("%sList", gvk.Kind)
 		metadata.SetGroupVersionKind(gvk)
 	}
 

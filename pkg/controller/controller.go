@@ -165,6 +165,9 @@ func New(config Config) (*Controller, error) {
 	if len(config.Resources) == 0 {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Resources must not be empty", config)
 	}
+	if config.Selector == nil {
+		config.Selector = labels.Everything()
+	}
 
 	if config.Name == "" {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Name must not be empty", config)
