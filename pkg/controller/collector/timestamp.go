@@ -2,6 +2,7 @@ package collector
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/giantswarm/k8sclient/v5/pkg/k8sclient"
@@ -84,6 +85,10 @@ func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
 	}
 
 	for _, object := range metadata.Items {
+		if object.Kind == "" {
+			return microerror.Mask(errors.New("kind is empty"))
+		}
+
 		ch <- prometheus.MustNewConstMetric(
 			t.creationTimestampDesc(),
 			prometheus.GaugeValue,
