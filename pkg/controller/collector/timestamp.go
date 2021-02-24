@@ -2,7 +2,6 @@ package collector
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/giantswarm/k8sclient/v5/pkg/k8sclient"
@@ -11,7 +10,7 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/prometheus/client_golang/prometheus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -67,35 +66,31 @@ func NewTimestamp(config TimestampConfig) (*Timestamp, error) {
 }
 
 func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
-	var metadata metav1.PartialObjectMetadataList
+	var list unstructured.UnstructuredList
 	{
 		gvk, err := apiutil.GVKForObject(t.newRuntimeObjectFunc(), t.scheme)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 		gvk.Kind = fmt.Sprintf("%sList", gvk.Kind)
-		metadata.SetGroupVersionKind(gvk)
+		list.SetGroupVersionKind(gvk)
 	}
 
-	err := t.ctrlClient.List(context.Background(), &metadata, &client.ListOptions{
+	err := t.ctrlClient.List(context.Background(), &list, &client.ListOptions{
 		LabelSelector: t.selector,
 	})
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
-	for _, object := range metadata.Items {
-		if object.Kind == "" {
-			return microerror.Mask(errors.New("kind is empty"))
-		}
-
+	for _, object := range list.Items {
 		ch <- prometheus.MustNewConstMetric(
 			t.creationTimestampDesc(),
 			prometheus.GaugeValue,
 			float64(object.GetCreationTimestamp().Unix()),
-			object.Kind,
-			object.Name,
-			object.Namespace,
+			object.GetKind(),
+			object.GetName(),
+			object.GetNamespace(),
 		)
 
 		if object.GetDeletionTimestamp() != nil {
@@ -103,9 +98,9 @@ func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
 				t.deletionTimestampDesc(),
 				prometheus.GaugeValue,
 				float64(object.GetDeletionTimestamp().Unix()),
-				object.Kind,
-				object.Name,
-				object.Namespace,
+				object.GetKind(),
+				object.GetName(),
+				object.GetNamespace(),
 			)
 		}
 	}
