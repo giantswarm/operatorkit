@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Re-expose `controller.NewSelector()`.
 - Only close manager channel once.
+- Add `AllowedLabels` to configmap resource to prevent unnecessary updates.
 
 ## [4.2.0] - 2021-01-07
 
