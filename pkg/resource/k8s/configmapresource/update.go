@@ -44,7 +44,7 @@ func (r *Resource) newUpdateChange(ctx context.Context, obj, currentState, desir
 
 		for _, c := range currentConfigMaps {
 			for _, d := range desiredConfigMaps {
-				m := newConfigMapToUpdate(c, d)
+				m := newConfigMapToUpdate(c, d, r.allowedLabels)
 				if m != nil {
 					configMapsToUpdate = append(configMapsToUpdate, m)
 				}

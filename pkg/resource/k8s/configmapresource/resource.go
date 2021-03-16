@@ -12,7 +12,8 @@ type Config struct {
 	Logger      micrologger.Logger
 	StateGetter StateGetter
 
-	Name string
+	AllowedLabels []string
+	Name          string
 }
 
 type Resource struct {
@@ -20,7 +21,8 @@ type Resource struct {
 	logger      micrologger.Logger
 	stateGetter StateGetter
 
-	name string
+	allowedLabels map[string]bool
+	name          string
 }
 
 func New(config Config) (*Resource, error) {
@@ -44,6 +46,17 @@ func New(config Config) (*Resource, error) {
 		stateGetter: config.StateGetter,
 
 		name: config.Name,
+	}
+
+	if config.AllowedLabels != nil {
+		allowedLabels := map[string]bool{}
+		{
+			for _, label := range config.AllowedLabels {
+				allowedLabels[label] = true
+			}
+		}
+
+		r.allowedLabels = allowedLabels
 	}
 
 	return r, nil
