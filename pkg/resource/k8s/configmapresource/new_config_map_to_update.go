@@ -30,7 +30,7 @@ func newConfigMapToUpdate(current, desired *corev1.ConfigMap, allowedLabels map[
 				continue
 			}
 
-			if _, ok := allowedLabels[k]; ok {
+			if allowedLabels[k] {
 				merged.Labels[k] = v
 			}
 		}
