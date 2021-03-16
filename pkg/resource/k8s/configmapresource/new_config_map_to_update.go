@@ -1,8 +1,10 @@
 package configmapresource
 
 import (
+	"fmt"
 	"reflect"
 
+	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -25,6 +27,9 @@ func newConfigMapToUpdate(current, desired *corev1.ConfigMap) *corev1.ConfigMap 
 
 	merged.BinaryData = desired.BinaryData
 	merged.Data = desired.Data
+
+	diff := cmp.Diff(current, merged)
+	fmt.Printf("CONFIGMAP DIFF\n%s\n", diff)
 
 	if reflect.DeepEqual(current, merged) {
 		return nil
