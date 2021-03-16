@@ -27,7 +27,7 @@ func newConfigMapToUpdate(current, desired *corev1.ConfigMap, allowedLabels map[
 	if allowedLabels != nil {
 		for k, v := range current.Labels {
 			if _, exist := desired.Labels[k]; exist {
-				// if annotation is already in desired spec, skip it.
+				// If label is already in desired spec, skip it.
 				continue
 			}
 
