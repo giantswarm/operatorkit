@@ -23,6 +23,7 @@ func newConfigMapToUpdate(current, desired *corev1.ConfigMap, allowedLabels map[
 	merged := current.DeepCopy()
 
 	merged.Annotations = desired.Annotations
+	merged.Labels = desired.Labels
 
 	if allowedLabels != nil {
 		for k, v := range current.Labels {
@@ -36,8 +37,6 @@ func newConfigMapToUpdate(current, desired *corev1.ConfigMap, allowedLabels map[
 			}
 		}
 	}
-
-	merged.Labels = desired.Labels
 
 	merged.BinaryData = desired.BinaryData
 	merged.Data = desired.Data
