@@ -1,6 +1,6 @@
 # DO NOT EDIT. Generated with:
 #
-#    devctl@4.3.0
+#    devctl@4.4.0
 #
 
 APPLICATION    := $(shell go list -m | cut -d '/' -f 3)
@@ -19,15 +19,21 @@ LDFLAGS        ?= -w -linkmode 'auto' -extldflags '$(EXTLDFLAGS)' \
 
 .DEFAULT_GOAL := build
 
-.PHONY: build build-darwin build-linux
+.PHONY: build build-darwin build-darwin-64 build-linux build-linux-arm64
 ## build: builds a local binary
 build: $(APPLICATION)
 	@echo "====> $@"
 ## build-darwin: builds a local binary for darwin/amd64
 build-darwin: $(APPLICATION)-darwin
 	@echo "====> $@"
+## build-darwin-arm64: builds a local binary for darwin/arm64
+build-darwin-arm64: $(APPLICATION)-darwin-arm64
+	@echo "====> $@"
 ## build-linux: builds a local binary for linux/amd64
 build-linux: $(APPLICATION)-linux
+	@echo "====> $@"
+## build-linux-arm64: builds a local binary for linux/arm64
+build-linux-arm64: $(APPLICATION)-linux-arm64
 	@echo "====> $@"
 
 $(APPLICATION): $(APPLICATION)-v$(VERSION)-$(OS)-amd64
@@ -38,13 +44,25 @@ $(APPLICATION)-darwin: $(APPLICATION)-v$(VERSION)-darwin-amd64
 	@echo "====> $@"
 	cp -a $< $@
 
+$(APPLICATION)-darwin-arm64: $(APPLICATION)-v$(VERSION)-darwin-arm64
+	@echo "====> $@"
+	cp -a $< $@
+
 $(APPLICATION)-linux: $(APPLICATION)-v$(VERSION)-linux-amd64
+	@echo "====> $@"
+	cp -a $< $@
+
+$(APPLICATION)-linux-arm64: $(APPLICATION)-v$(VERSION)-linux-arm64
 	@echo "====> $@"
 	cp -a $< $@
 
 $(APPLICATION)-v$(VERSION)-%-amd64: $(SOURCES)
 	@echo "====> $@"
 	CGO_ENABLED=0 GOOS=$* GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $@ .
+
+$(APPLICATION)-v$(VERSION)-%-arm64: $(SOURCES)
+	@echo "====> $@"
+	CGO_ENABLED=0 GOOS=$* GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o $@ .
 
 .PHONY: install
 ## install: install the application
