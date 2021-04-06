@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Remove usage of self link for Kubernetes 1.20 support.
+
 ## [4.3.0] - 2021-03-16
 
 ### Added

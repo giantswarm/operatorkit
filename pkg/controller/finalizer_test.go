@@ -24,7 +24,6 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 					Name:            "TestPod",
 					Namespace:       "TestNamespace",
 					ResourceVersion: "123",
-					SelfLink:        "/some/path",
 				},
 			},
 			operatorName:                 "test-operator",
@@ -54,7 +53,6 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "TestPod",
 					Namespace: "TestNamespace",
-					SelfLink:  "/some/path",
 					Finalizers: []string{
 						"operatorkit.giantswarm.io/test-operator",
 					},
@@ -72,7 +70,6 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 					DeletionTimestamp: getTime(),
 					Name:              "TestPod",
 					Namespace:         "TestNamespace",
-					SelfLink:          "/some/path",
 				},
 			},
 			operatorName:                 "test-operator",
@@ -87,7 +84,6 @@ func Test_createAddFinalizerPatch(t *testing.T) {
 					Name:            "TestPod",
 					Namespace:       "TestNamespace",
 					ResourceVersion: "123",
-					SelfLink:        "/some/path",
 					Finalizers: []string{
 						"operatorkit.giantswarm.io/other-operator",
 						"operatorkit.giantswarm.io/123-operator",

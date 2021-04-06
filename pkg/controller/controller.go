@@ -501,7 +501,7 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request, obj i
 		}
 	}
 
-	ctx = setLoggerCtxValue(ctx, loggerKeyObject, m.GetSelfLink())
+	ctx = setLoggerCtxValue(ctx, loggerKeyObject, fmt.Sprintf("%s/%s", m.GetNamespace(), m.GetName()))
 	ctx = setLoggerCtxValue(ctx, loggerKeyVersion, m.GetResourceVersion())
 
 	if ok, k, v := c.hasPauseAnnotation(m.GetAnnotations()); ok {
