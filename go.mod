@@ -21,6 +21,7 @@ require (
 
 replace (
 	github.com/coreos/etcd => github.com/coreos/etcd v3.3.24+incompatible
+	github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 	github.com/gorilla/websocket => github.com/gorilla/websocket v1.4.2
 	sigs.k8s.io/cluster-api => github.com/giantswarm/cluster-api v0.3.10-gs
 )
