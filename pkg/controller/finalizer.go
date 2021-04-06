@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/giantswarm/operatorkit/v4/pkg/controller/context/finalizerskeptcontext"
 )
@@ -65,7 +66,7 @@ func (c *Controller) addFinalizer(ctx context.Context, obj interface{}) (bool, e
 			if err != nil {
 				return microerror.Mask(err)
 			}
-			err = c.k8sClient.RESTClient().Patch(types.JSONPatchType).AbsPath(accessor.GetSelfLink()).Body(p).Do(ctx).Error()
+			err = c.k8sClient.CtrlClient().Patch(ctx, newObj, client.RawPatch(types.JSONPatchType, p))
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -91,12 +92,12 @@ func (c *Controller) hasFinalizer(ctx context.Context, obj interface{}) (bool, e
 		return false, microerror.Mask(err)
 	}
 	finalizerName := getFinalizerName(c.name)
-	selfLink := accessor.GetSelfLink()
+	uid := string(accessor.GetUID())
 
 	// Checking if the finalizer exists is not sufficient as there may be
 	// other events caused by other controllers or user interactions queued
 	// during the deletion.
-	if c.removedFinalizersCache.Contains(selfLink) {
+	if c.removedFinalizersCache.Contains(uid) {
 		return false, nil
 	}
 
@@ -112,7 +113,7 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 		return microerror.Mask(err)
 	}
 	finalizerName := getFinalizerName(c.name)
-	selfLink := accessor.GetSelfLink()
+	uid := string(accessor.GetUID())
 
 	// The control flow primitives operatorkit provides supports the mechanism of
 	// keeping finalizers. This is especially useful when delete events should be
@@ -176,7 +177,7 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 			if err != nil {
 				return microerror.Mask(err)
 			}
-			err = c.k8sClient.RESTClient().Patch(types.JSONPatchType).AbsPath(selfLink).Body(p).Do(ctx).Error()
+			err = c.k8sClient.CtrlClient().Patch(ctx, newObj, client.RawPatch(types.JSONPatchType, p))
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -191,7 +192,7 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 		}
 
 		c.logger.Debugf(ctx, "removed finalizer %#q", finalizerName)
-		c.removedFinalizersCache.Set(selfLink)
+		c.removedFinalizersCache.Set(uid)
 	}
 
 	return nil
