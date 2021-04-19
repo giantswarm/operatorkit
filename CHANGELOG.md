@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.3.1] - 2021-04-06
+
+### Fixed
+
+- Remove usage of self link for Kubernetes 1.20 support.
+
+## [4.3.0] - 2021-03-16
+
 ### Added
 
 - Add `Controller.Stop` method to stop controller reconciliation and metrics collection.
@@ -17,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Re-expose `controller.NewSelector()`.
 - Only close manager channel once.
+- Add `AllowedLabels` to configmap resource to prevent unnecessary updates.
 
 ## [4.2.0] - 2021-01-07
 
@@ -150,7 +159,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-[Unreleased]: https://github.com/giantswarm/operatorkit/compare/v4.2.0...HEAD
+[Unreleased]: https://github.com/giantswarm/operatorkit/compare/v4.3.1...HEAD
+[4.3.1]: https://github.com/giantswarm/operatorkit/compare/v4.3.0...v4.3.1
+[4.3.0]: https://github.com/giantswarm/operatorkit/compare/v4.2.0...v4.3.0
 [4.2.0]: https://github.com/giantswarm/operatorkit/compare/v4.1.0...v4.2.0
 [4.1.0]: https://github.com/giantswarm/operatorkit/compare/v4.0.0...v4.1.0
 [4.0.0]: https://github.com/giantswarm/operatorkit/compare/v3.0.0...v4.0.0
