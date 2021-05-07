@@ -1,6 +1,6 @@
 # DO NOT EDIT. Generated with:
 #
-#    devctl@4.4.0
+#    devctl@4.5.1
 #
 name: Create Release
 on:
@@ -173,6 +173,7 @@ jobs:
         with:
           tag_name: "v${{ needs.gather_facts.outputs.version }}"
           release_name: "v${{ needs.gather_facts.outputs.version }}"
+
   create-release-branch:
     name: Create release branch
     runs-on: ubuntu-20.04
