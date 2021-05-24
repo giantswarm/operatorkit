@@ -1,22 +1,21 @@
 package collector
 
 import (
-	"github.com/giantswarm/operatorkit/v4/pkg/controller/internal/selector"
-
 	"github.com/giantswarm/exporterkit/collector"
 	"github.com/giantswarm/k8sclient/v5/pkg/k8sclient"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
 type SetConfig struct {
-	Logger               micrologger.Logger
-	K8sClient            k8sclient.Interface
-	NewRuntimeObjectFunc func() runtime.Object
-	Selector             selector.Selector
-
+	Logger     micrologger.Logger
+	K8sClient  k8sclient.Interface
 	Controller string
+
+	NewRuntimeObjectFunc func() runtime.Object
+	Selector             labels.Selector
 }
 
 // Set is basically only a wrapper for the collector implementations.
@@ -31,7 +30,14 @@ func NewSet(config SetConfig) (*Set, error) {
 
 	var timestampCollector *Timestamp
 	{
-		c := TimestampConfig(config)
+		c := TimestampConfig{
+			Logger:     config.Logger,
+			K8sClient:  config.K8sClient,
+			Controller: config.Controller,
+
+			NewRuntimeObjectFunc: config.NewRuntimeObjectFunc,
+			Selector:             config.Selector,
+		}
 
 		timestampCollector, err = NewTimestamp(c)
 		if err != nil {

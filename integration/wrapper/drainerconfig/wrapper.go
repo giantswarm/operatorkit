@@ -12,6 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/giantswarm/operatorkit/v4/integration/env"
@@ -71,6 +72,7 @@ func New(config Config) (*Wrapper, error) {
 			NewRuntimeObjectFunc: func() pkgruntime.Object {
 				return new(v1alpha1.DrainerConfig)
 			},
+			Selector: labels.Everything(),
 
 			Name:         config.Name,
 			ResyncPeriod: 2 * time.Second,

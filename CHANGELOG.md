@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Reduced memory usage of the timestamp collector using server-side filtering for watched resources.
+
+### Changed
+
+- Replaced `github.com/giantswarm/operatorkit/v4/pkg/controller/internal/selector.Selector` with
+  `k8s.io/apimachinery/pkg/labels.Selector` in `controller.Config` to streamline the usage of server-side filtering.
+
 ## [4.3.1] - 2021-04-06
 
 ### Fixed

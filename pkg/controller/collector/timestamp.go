@@ -2,14 +2,16 @@ package collector
 
 import (
 	"context"
-
-	"github.com/giantswarm/operatorkit/v4/pkg/controller/internal/selector"
+	"fmt"
 
 	"github.com/giantswarm/k8sclient/v5/pkg/k8sclient"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
@@ -18,16 +20,17 @@ type TimestampConfig struct {
 	Logger               micrologger.Logger
 	K8sClient            k8sclient.Interface
 	NewRuntimeObjectFunc func() runtime.Object
-	Selector             selector.Selector
+	Selector             labels.Selector
 
 	Controller string
 }
 
 type Timestamp struct {
 	logger               micrologger.Logger
-	k8sClient            k8sclient.Interface
+	ctrlClient           client.Client
 	newRuntimeObjectFunc func() runtime.Object
-	selector             selector.Selector
+	selector             labels.Selector
+	scheme               *runtime.Scheme
 
 	controller string
 }
@@ -39,14 +42,20 @@ func NewTimestamp(config TimestampConfig) (*Timestamp, error) {
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Logger must not be empty", config)
 	}
-
 	if config.Controller == "" {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Controller must not be empty", config)
+	}
+	if config.NewRuntimeObjectFunc == nil {
+		return nil, microerror.Maskf(invalidConfigError, "%T.NewRuntimeObjectFunc must not be empty", config)
+	}
+	if config.Selector == nil {
+		return nil, microerror.Maskf(invalidConfigError, "%T.Selector must not be empty", config)
 	}
 
 	t := &Timestamp{
 		logger:               config.Logger,
-		k8sClient:            config.K8sClient,
+		ctrlClient:           config.K8sClient.CtrlClient(),
+		scheme:               config.K8sClient.Scheme(),
 		newRuntimeObjectFunc: config.NewRuntimeObjectFunc,
 		selector:             config.Selector,
 
@@ -57,26 +66,24 @@ func NewTimestamp(config TimestampConfig) (*Timestamp, error) {
 }
 
 func (t *Timestamp) Collect(ch chan<- prometheus.Metric) error {
-	ctx := context.Background()
-	gvk, err := apiutil.GVKForObject(t.newRuntimeObjectFunc(), t.k8sClient.Scheme())
-	if err != nil {
-		return microerror.Mask(err)
+	var list unstructured.UnstructuredList
+	{
+		gvk, err := apiutil.GVKForObject(t.newRuntimeObjectFunc(), t.scheme)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+		gvk.Kind = fmt.Sprintf("%sList", gvk.Kind)
+		list.SetGroupVersionKind(gvk)
 	}
-	gvk.Kind += "List"
-	list := &unstructured.UnstructuredList{}
-	list.SetGroupVersionKind(gvk)
 
-	err = t.k8sClient.CtrlClient().List(ctx, list)
+	err := t.ctrlClient.List(context.Background(), &list, &client.ListOptions{
+		LabelSelector: t.selector,
+	})
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
 	for _, object := range list.Items {
-		if !t.selector.Matches(selector.NewLabels(object.GetLabels())) {
-			// Skip objects that do not match the selector labels
-			continue
-		}
-
 		ch <- prometheus.MustNewConstMetric(
 			t.creationTimestampDesc(),
 			prometheus.GaugeValue,

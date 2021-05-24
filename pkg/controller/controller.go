@@ -38,7 +38,6 @@ import (
 	"github.com/giantswarm/operatorkit/v4/pkg/controller/context/resourcecanceledcontext"
 	"github.com/giantswarm/operatorkit/v4/pkg/controller/context/updateallowedcontext"
 	"github.com/giantswarm/operatorkit/v4/pkg/controller/internal/recorder"
-	"github.com/giantswarm/operatorkit/v4/pkg/controller/internal/selector"
 	"github.com/giantswarm/operatorkit/v4/pkg/controller/internal/sentry"
 	"github.com/giantswarm/operatorkit/v4/pkg/resource"
 )
@@ -87,16 +86,12 @@ type Config struct {
 	//     }
 	//
 	NewRuntimeObjectFunc func() pkgruntime.Object
-	// Pause is a map of additional pausing annotations, defining their
-	// key-value pairs. This can be used to stop reconciliation in case the
-	// configured pausing annotations are present in the reconciled runtime
-	// object watched by operatorkit.
-	Pause map[string]string
+	Pause                map[string]string
 	// Resources is the list of controller resources being executed on runtime
 	// object reconciliation. Resources are executed in given order.
 	Resources []resource.Interface
 	// Selector is used to filter objects before passing them to the controller.
-	Selector selector.Selector
+	Selector labels.Selector
 
 	// Name is the name which the controller uses on finalizers for resources.
 	// The name used should be unique in the kubernetes cluster, to ensure that
@@ -125,7 +120,7 @@ type Controller struct {
 	newRuntimeObjectFunc func() pkgruntime.Object
 	pause                map[string]string
 	resources            []resource.Interface
-	selector             selector.Selector
+	selector             labels.Selector
 
 	backOffFactory         func() backoff.Interface
 	bootOnce               sync.Once
@@ -158,6 +153,7 @@ func New(config Config) (*Controller, error) {
 	if config.NewRuntimeObjectFunc == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.NewRuntimeObjectFunc must not be empty", config)
 	}
+
 	{
 		if config.Pause == nil {
 			config.Pause = map[string]string{}
@@ -170,7 +166,7 @@ func New(config Config) (*Controller, error) {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Resources must not be empty", config)
 	}
 	if config.Selector == nil {
-		config.Selector = selector.NewSelectorEverything()
+		config.Selector = labels.Everything()
 	}
 
 	if config.Name == "" {
@@ -277,10 +273,6 @@ func (c *Controller) Boot(ctx context.Context) {
 
 func (c *Controller) Booted() chan struct{} {
 	return c.booted
-}
-
-func NewSelector(matchesFunc func(labels labels.Labels) bool) selector.Selector {
-	return selector.NewSelector(matchesFunc)
 }
 
 func (c *Controller) Stop(ctx context.Context) {
@@ -405,10 +397,10 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 				Reconciler:              c,
 			}).
 			WithEventFilter(predicate.Funcs{
-				CreateFunc:  func(e event.CreateEvent) bool { return c.selector.Matches(selector.NewLabels(e.Meta.GetLabels())) },
-				DeleteFunc:  func(e event.DeleteEvent) bool { return c.selector.Matches(selector.NewLabels(e.Meta.GetLabels())) },
-				UpdateFunc:  func(e event.UpdateEvent) bool { return c.selector.Matches(selector.NewLabels(e.MetaNew.GetLabels())) },
-				GenericFunc: func(e event.GenericEvent) bool { return c.selector.Matches(selector.NewLabels(e.Meta.GetLabels())) },
+				CreateFunc:  func(e event.CreateEvent) bool { return c.selector.Matches(labels.Set(e.Meta.GetLabels())) },
+				DeleteFunc:  func(e event.DeleteEvent) bool { return c.selector.Matches(labels.Set(e.Meta.GetLabels())) },
+				UpdateFunc:  func(e event.UpdateEvent) bool { return c.selector.Matches(labels.Set(e.MetaNew.GetLabels())) },
+				GenericFunc: func(e event.GenericEvent) bool { return c.selector.Matches(labels.Set(e.Meta.GetLabels())) },
 			}).
 			Complete(c)
 		if err != nil {
