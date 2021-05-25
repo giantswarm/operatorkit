@@ -13,7 +13,7 @@ import (
 	"github.com/giantswarm/micrologger"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/giantswarm/operatorkit/v4/integration/env"
+	"github.com/giantswarm/operatorkit/v5/integration/env"
 )
 
 type ResourceConfig struct {

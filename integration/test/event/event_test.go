@@ -14,9 +14,9 @@ import (
 
 	"github.com/giantswarm/microerror"
 
-	"github.com/giantswarm/operatorkit/v4/integration/testresource"
-	"github.com/giantswarm/operatorkit/v4/integration/wrapper/configmap"
-	"github.com/giantswarm/operatorkit/v4/pkg/resource"
+	"github.com/giantswarm/operatorkit/v5/integration/testresource"
+	"github.com/giantswarm/operatorkit/v5/integration/wrapper/configmap"
+	"github.com/giantswarm/operatorkit/v5/pkg/resource"
 )
 
 const (

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/giantswarm/operatorkit/v4/pkg/handler"
+	"github.com/giantswarm/operatorkit/v5/pkg/handler"
 )
 
 func Name(r handler.Interface) string {

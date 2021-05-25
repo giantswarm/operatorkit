@@ -15,9 +15,9 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/giantswarm/operatorkit/v4/integration/env"
-	"github.com/giantswarm/operatorkit/v4/pkg/controller"
-	"github.com/giantswarm/operatorkit/v4/pkg/resource"
+	"github.com/giantswarm/operatorkit/v5/integration/env"
+	"github.com/giantswarm/operatorkit/v5/pkg/controller"
+	"github.com/giantswarm/operatorkit/v5/pkg/resource"
 )
 
 type Config struct {
