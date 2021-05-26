@@ -16,7 +16,7 @@ require (
 	github.com/prometheus/client_model v0.2.0
 	github.com/stretchr/testify v1.4.0
 	k8s.io/api v0.18.9
-	k8s.io/apimachinery v0.18.18
+	k8s.io/apimachinery v0.18.19
 	k8s.io/client-go v0.18.9
 	sigs.k8s.io/controller-runtime v0.6.4
 )
