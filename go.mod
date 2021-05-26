@@ -3,7 +3,7 @@ module github.com/giantswarm/operatorkit/v5
 go 1.15
 
 require (
-	github.com/getsentry/sentry-go v0.10.0
+	github.com/getsentry/sentry-go v0.11.0
 	github.com/giantswarm/apiextensions/v3 v3.22.0
 	github.com/giantswarm/backoff v0.2.0
 	github.com/giantswarm/exporterkit v0.2.1
