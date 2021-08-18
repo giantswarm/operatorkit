@@ -1,6 +1,3 @@
 # Affects all versions of archiver which is required by vault.
 # Taken from: https://github.com/giantswarm/opsctl/pull/1072/files#diff-bbe4a7fb12c43622bce7c6840c770e9995be614626a219942ca138403629cb69R1
 CVE-2019-10743 until=2021-10-17
-
-# [CVE-2020-26160] jwt-go before 4.0.0-preview1 allows attackers to bypass intended access restrict...
-CVE-2020-26160 until=2021-07-01

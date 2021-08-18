@@ -1,0 +1,39 @@
+{
+  "extends": [
+    "config:base",
+    ":reviewer(team:giantswarm/sig-operator)"
+  ],
+  "packageRules": [
+    {
+      "matchPackagePatterns": [".*giantswarm.*"],
+      "groupName": "giantswarm modules"
+    },
+    {
+      "matchPackagePatterns": ["^k8s.io", "^sigs.k8s.io"],
+      "groupName": "k8s modules"
+    },
+    {
+      "excludePackagePatterns": [".*giantswarm.*" ,"^k8s.io", "^sigs.k8s.io"],
+      "groupName": "etc modules"
+    },
+    {
+      "matchPackagePatterns": ["^k8s.io"],
+      "allowedVersions": "< 0.21.0"
+    },
+    {
+      "matchPackageNames": ["sigs.k8s.io/controller-runtime"],
+      "allowedVersions": "< 0.7.0"
+    }
+  ],
+  "postUpdateOptions": ["gomodTidy", "gomodUpdateImportPaths"],
+  "dependencyDashboard": true,
+  "ignorePaths": [
+    ".github/workflows/zz_generated.*",
+    ".github/workflows/codeql-analysis.yml"
+  ],
+  "ignoreDeps": [
+    "architect",
+    "zricethezav/gitleaks-action"
+  ],
+  "schedule": [ "after 9am on thursday" ]
+}
