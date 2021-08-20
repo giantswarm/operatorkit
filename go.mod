@@ -24,7 +24,11 @@ require (
 replace (
 	github.com/coreos/etcd => github.com/coreos/etcd v3.3.24+incompatible
 	github.com/dgrijalva/jwt-go => github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
+	// Use go-logr/logr v0.1.0 due to breaking changes in v0.2.0 that can't be applied.
+	github.com/go-logr/logr v0.2.0 => github.com/go-logr/logr v0.1.0
 	github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 	github.com/gorilla/websocket => github.com/gorilla/websocket v1.4.2
+	// Same as go-logr/logr, klog/v2 is using logr v0.2.0
+	k8s.io/klog/v2 v2.4.0 => k8s.io/klog/v2 v2.0.0
 	sigs.k8s.io/cluster-api => github.com/giantswarm/cluster-api v0.3.10-gs
 )
