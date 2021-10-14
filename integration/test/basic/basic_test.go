@@ -1,3 +1,4 @@
+//go:build k8srequired
 // +build k8srequired
 
 package basic
