@@ -4,10 +4,10 @@ go 1.15
 
 require (
 	github.com/getsentry/sentry-go v0.11.0
-	github.com/giantswarm/apiextensions/v3 v3.22.0
+	github.com/giantswarm/apiextensions/v3 v3.35.0
 	github.com/giantswarm/backoff v0.2.0
 	github.com/giantswarm/exporterkit v0.2.1
-	github.com/giantswarm/k8sclient/v5 v5.11.0
+	github.com/giantswarm/k8sclient/v5 v5.12.0
 	github.com/giantswarm/microerror v0.3.0
 	github.com/giantswarm/micrologger v0.5.0
 	github.com/giantswarm/to v0.3.0
@@ -15,9 +15,9 @@ require (
 	github.com/prometheus/client_golang v1.11.0
 	github.com/prometheus/client_model v0.2.0
 	github.com/stretchr/testify v1.7.0
-	k8s.io/api v0.18.9
-	k8s.io/apimachinery v0.18.18
-	k8s.io/client-go v0.18.9
+	k8s.io/api v0.18.19
+	k8s.io/apimachinery v0.18.19
+	k8s.io/client-go v0.18.19
 	sigs.k8s.io/controller-runtime v0.6.4
 )
 
