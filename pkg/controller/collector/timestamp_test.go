@@ -83,7 +83,10 @@ func Test_Timestamp(t *testing.T) {
 			t.Log(tc.name)
 
 			clients := k8sclienttest.NewClients(k8sclienttest.ClientsConfig{
-				CtrlClient: fake.NewFakeClientWithScheme(scheme.Scheme, pods...),
+				CtrlClient: fake.NewClientBuilder().
+					WithScheme(scheme.Scheme).
+					WithRuntimeObjects(pods...).
+					Build(),
 			})
 
 			config := TimestampConfig{
