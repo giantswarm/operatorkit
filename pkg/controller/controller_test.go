@@ -11,7 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/giantswarm/operatorkit/v5/pkg/resource"
 )
@@ -157,7 +157,7 @@ func mustNewTestController(n string) *Controller {
 		c := Config{
 			K8sClient: k8sclienttest.NewEmpty(),
 			Logger:    microloggertest.New(),
-			NewRuntimeObjectFunc: func() runtime.Object {
+			NewRuntimeObjectFunc: func() client.Object {
 				return new(corev1.Service)
 			},
 			Resources: []resource.Interface{

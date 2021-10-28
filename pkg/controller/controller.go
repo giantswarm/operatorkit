@@ -22,9 +22,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -85,7 +85,7 @@ type Config struct {
 	//        return new(corev1.ConfigMap)
 	//     }
 	//
-	NewRuntimeObjectFunc func() pkgruntime.Object
+	NewRuntimeObjectFunc func() client.Object
 	Pause                map[string]string
 	// Resources is the list of controller resources being executed on runtime
 	// object reconciliation. Resources are executed in given order.
@@ -117,7 +117,7 @@ type Controller struct {
 	initCtx              func(ctx context.Context, obj interface{}) (context.Context, error)
 	k8sClient            k8sclient.Interface
 	logger               micrologger.Logger
-	newRuntimeObjectFunc func() pkgruntime.Object
+	newRuntimeObjectFunc func() client.Object
 	pause                map[string]string
 	resources            []resource.Interface
 	selector             labels.Selector
@@ -126,7 +126,6 @@ type Controller struct {
 	bootOnce               sync.Once
 	booted                 chan struct{}
 	stopOnce               sync.Once
-	stopped                chan struct{}
 	collector              *collector.Set
 	loop                   int64
 	removedFinalizersCache *stringCache
@@ -233,7 +232,6 @@ func New(config Config) (*Controller, error) {
 		backOffFactory:         func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) },
 		bootOnce:               sync.Once{},
 		booted:                 make(chan struct{}),
-		stopped:                make(chan struct{}),
 		collector:              collectorSet,
 		loop:                   -1,
 		removedFinalizersCache: newStringCache(config.ResyncPeriod * 3),
@@ -278,16 +276,14 @@ func (c *Controller) Booted() chan struct{} {
 func (c *Controller) Stop(ctx context.Context) {
 	c.stopOnce.Do(func() {
 		c.collector.Stop(ctx)
-		close(c.stopped)
+		ctx.Done()
 	})
 }
 
 // Reconcile implements the reconciler given to the controller-runtime
 // controller. Reconcile never returns any error as we deal with them in
 // operatorkit internally.
-func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) {
-	ctx := context.Background()
-
+func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	// Add common keys to the logger context.
 	{
 		loop := strconv.FormatInt(atomic.AddInt64(&c.loop, 1), 10)
@@ -397,10 +393,10 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 				Reconciler:              c,
 			}).
 			WithEventFilter(predicate.Funcs{
-				CreateFunc:  func(e event.CreateEvent) bool { return c.selector.Matches(labels.Set(e.Meta.GetLabels())) },
-				DeleteFunc:  func(e event.DeleteEvent) bool { return c.selector.Matches(labels.Set(e.Meta.GetLabels())) },
-				UpdateFunc:  func(e event.UpdateEvent) bool { return c.selector.Matches(labels.Set(e.MetaNew.GetLabels())) },
-				GenericFunc: func(e event.GenericEvent) bool { return c.selector.Matches(labels.Set(e.Meta.GetLabels())) },
+				CreateFunc:  func(e event.CreateEvent) bool { return c.selector.Matches(labels.Set(e.Object.GetLabels())) },
+				DeleteFunc:  func(e event.DeleteEvent) bool { return c.selector.Matches(labels.Set(e.Object.GetLabels())) },
+				UpdateFunc:  func(e event.UpdateEvent) bool { return c.selector.Matches(labels.Set(e.ObjectNew.GetLabels())) },
+				GenericFunc: func(e event.GenericEvent) bool { return c.selector.Matches(labels.Set(e.Object.GetLabels())) },
 			}).
 			Complete(c)
 		if err != nil {
@@ -415,11 +411,16 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 			close(c.booted)
 		}
 
+		ctx, cancel := context.WithCancel(ctx)
+
 		// handle ctrl+c
-		setupSignalHandler(func() { c.Stop(ctx) })
+		setupSignalHandler(func() {
+			c.Stop(ctx)
+			cancel()
+		})
 
 		// mgr.Start() blocks the boot process until it ends gracefully or fails.
-		err = mgr.Start(c.stopped)
+		err = mgr.Start(ctx)
 		if err != nil {
 			return microerror.Mask(err)
 		}
