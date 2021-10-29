@@ -46,7 +46,7 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 				r,
 			},
 
-			Name:      operatorName,
+			Name: operatorName,
 		}
 
 		w, err = customresourcedefinition.New(c)
@@ -69,7 +69,7 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 		o := func() error {
 			drainerConfig := &apiextensionsv1.CustomResourceDefinition{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      objName,
+					Name: objName,
 				},
 				Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 					Group: "example.com",

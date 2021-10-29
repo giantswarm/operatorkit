@@ -23,7 +23,7 @@ import (
 type Config struct {
 	Resources []resource.Interface
 
-	Name      string
+	Name string
 }
 
 type Wrapper struct {
