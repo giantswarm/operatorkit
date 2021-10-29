@@ -6,7 +6,7 @@ require (
 	github.com/getsentry/sentry-go v0.11.0
 	github.com/giantswarm/backoff v0.2.0
 	github.com/giantswarm/exporterkit v0.2.1
-	github.com/giantswarm/k8sclient/v5 v5.12.1-0.20211028174008-087db0da8270
+	github.com/giantswarm/k8sclient/v6 v6.0.0
 	github.com/giantswarm/microerror v0.3.0
 	github.com/giantswarm/micrologger v0.5.0
 	github.com/giantswarm/to v0.3.0
@@ -15,6 +15,7 @@ require (
 	github.com/prometheus/client_model v0.2.0
 	github.com/stretchr/testify v1.7.0
 	k8s.io/api v0.20.12
+	k8s.io/apiextensions-apiserver v0.20.12
 	k8s.io/apimachinery v0.20.12
 	k8s.io/client-go v0.20.12
 	sigs.k8s.io/controller-runtime v0.8.3
@@ -63,7 +64,6 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
-	k8s.io/apiextensions-apiserver v0.20.12 // indirect
 	k8s.io/component-base v0.20.12 // indirect
 	k8s.io/klog/v2 v2.9.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20210421082810-95288971da7e // indirect

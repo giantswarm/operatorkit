@@ -12,3 +12,57 @@ workflows:
             # Trigger job also on git tag.
             tags:
               only: /^v.*/
+
+      - architect/integration-test:
+          name: integration-test-basic
+          test-dir: "integration/test/basic"
+          requires:
+            - go-test
+
+      - architect/integration-test:
+          name: integration-test-controlflow
+          test-dir: "integration/test/controlflow"
+          requires:
+            - go-test
+
+      - architect/integration-test:
+          name: integration-test-error
+          test-dir: "integration/test/error"
+          requires:
+            - go-test
+
+      - architect/integration-test:
+          name: integration-test-event
+          test-dir: "integration/test/event"
+          requires:
+            - go-test
+
+      - architect/integration-test:
+          name: integration-test-finalizer
+          test-dir: "integration/test/finalizer"
+          requires:
+            - go-test
+
+      - architect/integration-test:
+          name: integration-test-parallel
+          test-dir: "integration/test/parallel"
+          requires:
+            - go-test
+
+      - architect/integration-test:
+          name: integration-test-pause
+          test-dir: "integration/test/pause"
+          requires:
+            - go-test
+
+      - architect/integration-test:
+          name: integration-test-reconciliation
+          test-dir: "integration/test/reconciliation"
+          requires:
+            - go-test
+
+      - architect/integration-test:
+          name: integration-test-statusupdate
+          test-dir: "integration/test/statusupdate"
+          requires:
+            - go-test

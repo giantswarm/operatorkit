@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/giantswarm/k8sclient/v5/pkg/k8sclienttest"
+	"github.com/giantswarm/k8sclient/v6/pkg/k8sclienttest"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger/microloggertest"
 	"github.com/prometheus/client_golang/prometheus"
