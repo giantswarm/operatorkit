@@ -88,14 +88,14 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	// Creation is retried because the CRD might still not be ensured.
 	{
 		o := func() error {
-			drainerConfig := &v1.ConfigMap{
+			configMap := &v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      objName,
 					Namespace: objNamespace,
 				},
 			}
 
-			_, err := w.CreateObject(ctx, objNamespace, drainerConfig)
+			_, err := w.CreateObject(ctx, objNamespace, configMap)
 			if err != nil {
 				return microerror.Mask(err)
 			}

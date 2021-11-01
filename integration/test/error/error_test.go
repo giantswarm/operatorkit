@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	testNamespace = "error-test"
+	testNamespace = "integration-error-test"
 	testObjectA   = "test-object-a"
 	testObjectB   = "test-object-b"
 )

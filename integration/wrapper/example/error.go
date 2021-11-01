@@ -1,4 +1,4 @@
-package customresourcedefinition
+package example
 
 import "github.com/giantswarm/microerror"
 

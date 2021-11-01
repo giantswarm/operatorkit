@@ -126,6 +126,7 @@ type Controller struct {
 	bootOnce               sync.Once
 	booted                 chan struct{}
 	stopOnce               sync.Once
+	stop                   func()
 	collector              *collector.Set
 	loop                   int64
 	removedFinalizersCache *stringCache
@@ -276,7 +277,9 @@ func (c *Controller) Booted() chan struct{} {
 func (c *Controller) Stop(ctx context.Context) {
 	c.stopOnce.Do(func() {
 		c.collector.Stop(ctx)
-		ctx.Done()
+		if c.stop != nil {
+			c.stop()
+		}
 	})
 }
 
@@ -412,11 +415,11 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 		}
 
 		ctx, cancel := context.WithCancel(ctx)
+		c.stop = cancel
 
 		// handle ctrl+c
 		setupSignalHandler(func() {
 			c.Stop(ctx)
-			cancel()
 		})
 
 		// mgr.Start() blocks the boot process until it ends gracefully or fails.

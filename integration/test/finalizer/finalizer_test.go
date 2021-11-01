@@ -87,14 +87,14 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 	// ensured.
 	{
 		o := func() error {
-			drainerConfig := &v1.ConfigMap{
+			configMap := &v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      objName,
 					Namespace: objNamespace,
 				},
 			}
 
-			_, err := wrapper.CreateObject(ctx, objNamespace, drainerConfig)
+			_, err := wrapper.CreateObject(ctx, objNamespace, configMap)
 			if err != nil {
 				return microerror.Mask(err)
 			}

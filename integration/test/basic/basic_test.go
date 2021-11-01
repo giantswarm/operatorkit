@@ -23,7 +23,7 @@ const (
 	configMapName = "test-cm"
 	operatorName  = "test-operator"
 	testFinalizer = "operatorkit.giantswarm.io/test-operator"
-	testNamespace = "finalizer-integration-basic-test"
+	testNamespace = "integration-basic-test"
 )
 
 // Test_Finalizer_Integration_Basic is a integration test for basic finalizer

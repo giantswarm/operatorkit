@@ -25,7 +25,7 @@ const (
 	objName            = "test-obj"
 	operatorName       = "test-operator"
 	testFinalizer      = "operatorkit.giantswarm.io/test-operator"
-	testNamespace      = "finalizer-integration-reconciliation-test"
+	testNamespace      = "integration-reconciliation-test"
 	testOtherFinalizer = "operatorkit.giantswarm.io/other-operator"
 )
 
@@ -77,10 +77,10 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	// finalizer.
 	//
 	// Creation is retried because the existance of a CRD might have to be ensured.
-	var createdDrainerConfig *v1.ConfigMap
+	var createdConfigMap *v1.ConfigMap
 	{
 		o := func() error {
-			drainerConfig := &v1.ConfigMap{
+			configMap := &v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      objName,
 					Namespace: testNamespace,
@@ -89,11 +89,11 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 					},
 				},
 			}
-			v, err := w.CreateObject(ctx, testNamespace, drainerConfig)
+			v, err := w.CreateObject(ctx, testNamespace, configMap)
 			if err != nil {
 				return microerror.Mask(err)
 			}
-			createdDrainerConfig = v.(*v1.ConfigMap)
+			createdConfigMap = v.(*v1.ConfigMap)
 
 			return nil
 		}
@@ -109,9 +109,9 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	// ResourceVersion of the object.
 	{
 		o := func() error {
-			createdDrainerConfig.SetLabels(map[string]string{"testlabel": "testlabel"})
+			createdConfigMap.SetLabels(map[string]string{"testlabel": "testlabel"})
 
-			_, err = w.UpdateObject(ctx, testNamespace, createdDrainerConfig)
+			_, err = w.UpdateObject(ctx, testNamespace, createdConfigMap)
 			if err != nil {
 				return microerror.Mask(err)
 			}

@@ -10,16 +10,17 @@ import (
 
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/giantswarm/operatorkit/v5/integration/wrapper/customresourcedefinition"
+	v1 "github.com/giantswarm/operatorkit/v5/api/v1"
+	"github.com/giantswarm/operatorkit/v5/integration/wrapper/example"
 	"github.com/giantswarm/operatorkit/v5/pkg/resource"
 )
 
 const (
-	objName      = "tests.example.com"
+	objName      = "test"
 	operatorName = "test-operator"
+	testNamespace = "integration-status-update-test"
 )
 
 func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
@@ -39,23 +40,27 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 		}
 	}
 
-	var w *customresourcedefinition.Wrapper
+	var w *example.Wrapper
 	{
-		c := customresourcedefinition.Config{
+		c := example.Config{
 			Resources: []resource.Interface{
 				r,
 			},
 
 			Name: operatorName,
+			Namespace: testNamespace,
 		}
 
-		w, err = customresourcedefinition.New(c)
+		w, err = example.New(c)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}
 
-		w.MustSetup(ctx, "")
-		defer w.MustTeardown(ctx, "")
+		w.MustSetup(ctx, testNamespace)
+		defer func(w *example.Wrapper) {
+			w.Controller().Stop(ctx)
+			w.MustTeardown(ctx, testNamespace)
+		}(w)
 	}
 
 	{
@@ -67,34 +72,16 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 
 	{
 		o := func() error {
-			drainerConfig := &apiextensionsv1.CustomResourceDefinition{
+			obj := &v1.Example{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: objName,
+					Namespace: testNamespace,
 				},
-				Spec: apiextensionsv1.CustomResourceDefinitionSpec{
-					Group: "example.com",
-					Names: apiextensionsv1.CustomResourceDefinitionNames{
-						Plural:   "tests",
-						Singular: "test",
-						Kind:     "Test",
-						ListKind: "TestList",
-					},
-					Scope: "Cluster",
-					Versions: []apiextensionsv1.CustomResourceDefinitionVersion{
-						{
-							Name:    "v1alpha1",
-							Served:  true,
-							Storage: true,
-							Schema: &apiextensionsv1.CustomResourceValidation{
-								OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
-									Type: "object",
-								},
-							},
-						},
-					},
+				Spec: v1.ExampleSpec{
+					Field1: "a",
 				},
 			}
-			_, err := w.CreateObject(ctx, "", drainerConfig)
+			_, err := w.CreateObject(ctx, testNamespace, obj)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -112,21 +99,21 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	{
-		newObj, err := w.GetObject(ctx, objName, "")
+		newObj, err := w.GetObject(ctx, objName, testNamespace)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}
 
-		customResource := newObj.(*apiextensionsv1.CustomResourceDefinition)
+		newObjTyped := newObj.(*v1.Example)
 
-		if len(customResource.Status.Conditions) != 3 {
-			t.Fatal("expected three status conditions")
+		if len(newObjTyped.Status.Conditions) != 1 {
+			t.Error("expected one status condition")
 		}
-		if customResource.Status.Conditions[2].Status != conditionStatus {
-			t.Fatalf("expected status condition status %#q", conditionStatus)
+		if newObjTyped.Status.Conditions[0].Status != conditionStatus {
+			t.Errorf("expected status condition status %#q", conditionStatus)
 		}
-		if customResource.Status.Conditions[2].Type != conditionType {
-			t.Fatalf("expected status condition type %#q", conditionType)
+		if newObjTyped.Status.Conditions[0].Type != conditionType {
+			t.Errorf("expected status condition type %#q", conditionType)
 		}
 	}
 }

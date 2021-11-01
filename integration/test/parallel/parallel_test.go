@@ -168,14 +168,14 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	// not be ensured.
 	{
 		o := func() error {
-			drainerConfig := &v1.ConfigMap{
+			configMap := &v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      objName,
 					Namespace: objNamespace,
 				},
 			}
 
-			_, err := wrapperA.CreateObject(ctx, objNamespace, drainerConfig)
+			_, err := wrapperA.CreateObject(ctx, objNamespace, configMap)
 			if err != nil {
 				return microerror.Mask(err)
 			}

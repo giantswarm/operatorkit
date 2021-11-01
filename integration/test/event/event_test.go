@@ -23,7 +23,7 @@ import (
 const (
 	configMapName = "test-cm"
 	operatorName  = "test-operator"
-	testNamespace = "event-test"
+	testNamespace = "integration-event-test"
 )
 
 // Test_Kubernetes_Event is a integration test for Kubernetes events.

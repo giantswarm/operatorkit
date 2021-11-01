@@ -85,14 +85,14 @@ func Test_Integration_Pause(t *testing.T) {
 	// Create a runtime object we can reconcile for our integration test.
 	{
 		o := func() error {
-			drainerConfig := &v1.ConfigMap{
+			configMap := &v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      objName,
 					Namespace: objNamespace,
 				},
 			}
 
-			_, err := w.CreateObject(ctx, objNamespace, drainerConfig)
+			_, err := w.CreateObject(ctx, objNamespace, configMap)
 			if err != nil {
 				return microerror.Mask(err)
 			}
