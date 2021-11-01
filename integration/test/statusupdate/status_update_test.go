@@ -18,8 +18,8 @@ import (
 )
 
 const (
-	objName      = "test"
-	operatorName = "test-operator"
+	objName       = "test"
+	operatorName  = "test-operator"
 	testNamespace = "integration-status-update-test"
 )
 
@@ -47,7 +47,7 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 				r,
 			},
 
-			Name: operatorName,
+			Name:      operatorName,
 			Namespace: testNamespace,
 		}
 
@@ -74,7 +74,7 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 		o := func() error {
 			obj := &v1.Example{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: objName,
+					Name:      objName,
 					Namespace: testNamespace,
 				},
 				Spec: v1.ExampleSpec{
