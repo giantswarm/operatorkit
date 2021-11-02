@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Update `k8sclient` to v6.0.0.
+- Update `k8sclient` to v6.0.0, `controller-runtime` to v0.8.3, and Kubernetes dependencies to v0.20.12.
 - Adjust signature of `NewRuntimeObjectFunc` to return `client.Object` instead of `runtime.Object`.
 
 ## [5.0.0] - 2021-05-25
