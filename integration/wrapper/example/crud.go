@@ -9,7 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	v1 "github.com/giantswarm/operatorkit/v5/api/v1"
+	v1 "github.com/giantswarm/operatorkit/v6/api/v1"
 )
 
 func (w Wrapper) CreateObject(ctx context.Context, namespace string, obj interface{}) (interface{}, error) {

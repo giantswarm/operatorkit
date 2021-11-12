@@ -4,10 +4,10 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/giantswarm/operatorkit/v5/pkg/controller/internal/test/handler/bar"
-	"github.com/giantswarm/operatorkit/v5/pkg/controller/internal/test/handler/foo"
-	"github.com/giantswarm/operatorkit/v5/pkg/controller/internal/test/handler/nopointer"
-	"github.com/giantswarm/operatorkit/v5/pkg/handler"
+	"github.com/giantswarm/operatorkit/v6/pkg/controller/internal/test/handler/bar"
+	"github.com/giantswarm/operatorkit/v6/pkg/controller/internal/test/handler/foo"
+	"github.com/giantswarm/operatorkit/v6/pkg/controller/internal/test/handler/nopointer"
+	"github.com/giantswarm/operatorkit/v6/pkg/handler"
 )
 
 func Test_Handler_Name(t *testing.T) {

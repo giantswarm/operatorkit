@@ -6,7 +6,7 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/giantswarm/operatorkit/v5/pkg/resource"
+	"github.com/giantswarm/operatorkit/v6/pkg/resource"
 )
 
 type basicResourceConfig struct {

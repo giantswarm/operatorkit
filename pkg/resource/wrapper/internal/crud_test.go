@@ -3,7 +3,7 @@ package internal
 import (
 	"testing"
 
-	"github.com/giantswarm/operatorkit/v5/pkg/resource/wrapper/internal/test"
+	"github.com/giantswarm/operatorkit/v6/pkg/resource/wrapper/internal/test"
 )
 
 func Test_CRUD_success(t *testing.T) {
