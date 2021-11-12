@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/giantswarm/k8sclient/v5/pkg/k8sclient"
+	"github.com/giantswarm/k8sclient/v6/pkg/k8sclient"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/giantswarm/microerror"
@@ -19,7 +19,7 @@ import (
 type TimestampConfig struct {
 	Logger               micrologger.Logger
 	K8sClient            k8sclient.Interface
-	NewRuntimeObjectFunc func() runtime.Object
+	NewRuntimeObjectFunc func() client.Object
 	Selector             labels.Selector
 
 	Controller string
@@ -28,7 +28,7 @@ type TimestampConfig struct {
 type Timestamp struct {
 	logger               micrologger.Logger
 	ctrlClient           client.Client
-	newRuntimeObjectFunc func() runtime.Object
+	newRuntimeObjectFunc func() client.Object
 	selector             labels.Selector
 	scheme               *runtime.Scheme
 

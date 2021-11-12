@@ -1,7 +1,8 @@
-package configmap
+package example
 
 import (
 	"context"
+	"os"
 	"strings"
 	"time"
 
@@ -9,12 +10,14 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 
+	v1 "github.com/giantswarm/operatorkit/v5/api/v1"
 	"github.com/giantswarm/operatorkit/v5/integration/env"
 	"github.com/giantswarm/operatorkit/v5/pkg/controller"
 	"github.com/giantswarm/operatorkit/v5/pkg/resource"
@@ -30,7 +33,7 @@ type Config struct {
 type Wrapper struct {
 	controller *controller.Controller
 
-	k8sClient kubernetes.Interface
+	ctrlClient client.Client
 }
 
 func New(config Config) (*Wrapper, error) {
@@ -68,7 +71,7 @@ func New(config Config) (*Wrapper, error) {
 			Resources: config.Resources,
 			Namespace: config.Namespace,
 			NewRuntimeObjectFunc: func() client.Object {
-				return new(corev1.ConfigMap)
+				return new(v1.Example)
 			},
 			Selector: labels.Everything(),
 
@@ -84,7 +87,7 @@ func New(config Config) (*Wrapper, error) {
 
 	wrapper := &Wrapper{
 		controller: newController,
-		k8sClient:  k8sClient.K8sClient(),
+		ctrlClient: k8sClient.CtrlClient(),
 	}
 
 	return wrapper, nil
@@ -97,68 +100,88 @@ func (w Wrapper) Controller() *controller.Controller {
 func (w Wrapper) MustSetup(ctx context.Context, namespace string) {
 	w.MustTeardown(ctx, namespace)
 
-	ns := &corev1.Namespace{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Namespace",
-		},
+	ns := corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: namespace,
 		},
-		Spec: corev1.NamespaceSpec{},
+	}
+	err := w.ctrlClient.Create(ctx, &ns)
+	if errors.IsAlreadyExists(err) {
+		// fall though
+	} else if err != nil {
+		panic(err)
 	}
 
-	_, err := w.k8sClient.CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
+	crdYAML, err := os.ReadFile("../../../config/crd/testing.giantswarm.io_examples.yaml")
 	if err != nil {
+		panic(microerror.JSON(err))
+	}
+
+	var crd apiextensionsv1.CustomResourceDefinition
+	err = yaml.Unmarshal(crdYAML, &crd)
+	if err != nil {
+		panic(microerror.JSON(err))
+	}
+
+	err = w.ctrlClient.Create(ctx, &crd)
+	if errors.IsAlreadyExists(err) {
+		// fall though
+	} else if err != nil {
 		panic(err)
 	}
 }
 
 func (w Wrapper) MustTeardown(ctx context.Context, namespace string) {
-	_, err := w.k8sClient.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
+	var crd apiextensionsv1.CustomResourceDefinition
+	err := w.ctrlClient.Get(ctx, client.ObjectKey{
+		Name: "examples.testing.giantswarm.io",
+	}, &crd)
 	if errors.IsNotFound(err) {
-		return
+		// fall though
 	} else if err != nil {
 		panic(err)
+	} else {
+		var existing v1.ExampleList
+		err = w.ctrlClient.List(ctx, &existing)
+		if err != nil {
+			panic(err)
+		}
+
+		for _, item := range existing.Items {
+			var filteredFinalizers []string
+			for _, finalizer := range item.Finalizers {
+				if !strings.HasPrefix(finalizer, "operatorkit.giantswarm.io") {
+					filteredFinalizers = append(filteredFinalizers, finalizer)
+				}
+			}
+			if len(filteredFinalizers) != len(item.Finalizers) {
+				item.Finalizers = filteredFinalizers
+				err = w.ctrlClient.Update(ctx, &item) //nolint:gosec
+				if errors.IsNotFound(err) {
+					// fall though
+				} else if err != nil {
+					panic(err)
+				}
+			}
+		}
+
+		err = w.ctrlClient.Delete(ctx, &crd)
+		if errors.IsNotFound(err) {
+			// fall though
+		} else if err != nil {
+			panic(err)
+		}
 	}
 
-	configMaps, err := w.k8sClient.CoreV1().ConfigMaps(namespace).List(ctx, metav1.ListOptions{})
+	ns := corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: namespace,
+		},
+	}
+	err = w.ctrlClient.Delete(ctx, &ns)
 	if errors.IsNotFound(err) {
 		// fall though
 	} else if err != nil {
 		panic(err)
 	}
-
-	for _, configMap := range configMaps.Items {
-		var filteredFinalizers []string
-		for _, finalizer := range configMap.Finalizers {
-			if !strings.HasPrefix(finalizer, "operatorkit.giantswarm.io") {
-				filteredFinalizers = append(filteredFinalizers, finalizer)
-			}
-		}
-		if len(filteredFinalizers) != len(configMap.Finalizers) {
-			configMap.Finalizers = filteredFinalizers
-			_, err = w.k8sClient.CoreV1().ConfigMaps(namespace).Update(ctx, &configMap, metav1.UpdateOptions{}) //nolint:gosec
-			if errors.IsNotFound(err) {
-				// fall though
-			} else if err != nil {
-				panic(err)
-			}
-		}
-	}
-
-	err = w.k8sClient.CoreV1().Namespaces().Delete(ctx, namespace, metav1.DeleteOptions{})
-	if errors.IsNotFound(err) {
-		// fall though
-	} else if err != nil {
-		panic(err)
-	}
-}
-
-func (w Wrapper) Events(ctx context.Context, namespace string) ([]corev1.Event, error) {
-	events, err := w.k8sClient.CoreV1().Events(namespace).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	return events.Items, nil
 }

@@ -8,13 +8,21 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/giantswarm/apiextensions/v3/pkg/apis/core/v1alpha1"
-	"github.com/giantswarm/k8sclient/v5/pkg/k8sclient"
+	"github.com/giantswarm/backoff"
+	"github.com/giantswarm/k8sclient/v6/pkg/k8sclient"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	v1 "github.com/giantswarm/operatorkit/v5/api/v1"
 	"github.com/giantswarm/operatorkit/v5/integration/env"
+)
+
+const (
+	conditionStatus = "testStatus"
+	conditionType   = "testType"
 )
 
 type ResourceConfig struct {
@@ -24,7 +32,7 @@ type ResourceConfig struct {
 type Resource struct {
 	t *testing.T
 
-	k8sClient k8sclient.Interface
+	ctrlClient client.Client
 
 	executionCount int
 	mutex          sync.Mutex
@@ -51,7 +59,8 @@ func NewResource(config ResourceConfig) (*Resource, error) {
 	{
 		c := k8sclient.ClientsConfig{
 			SchemeBuilder: k8sclient.SchemeBuilder{
-				v1alpha1.AddToScheme,
+				apiextensionsv1.AddToScheme,
+				v1.AddToScheme,
 			},
 			Logger: newLogger,
 
@@ -67,7 +76,7 @@ func NewResource(config ResourceConfig) (*Resource, error) {
 	r := &Resource{
 		t: config.T,
 
-		k8sClient: k8sClient,
+		ctrlClient: k8sClient.CtrlClient(),
 
 		executionCount: 0,
 		mutex:          sync.Mutex{},
@@ -82,40 +91,48 @@ func (r *Resource) EnsureCreated(ctx context.Context, obj interface{}) error {
 
 	defer func() { r.executionCount++ }()
 
-	var customResource v1alpha1.DrainerConfig
-	{
-		curObj := obj.(*v1alpha1.DrainerConfig)
-
-		newObj, err := r.k8sClient.G8sClient().CoreV1alpha1().DrainerConfigs(curObj.GetNamespace()).Get(ctx, curObj.GetName(), metav1.GetOptions{})
-		if err != nil {
-			r.t.Fatal("expected", nil, "got", err)
-		}
-
-		customResource = *newObj
-	}
+	objTyped := obj.(*v1.Example)
 
 	if r.executionCount == 0 {
-		newCondition := v1alpha1.DrainerConfigStatusCondition{
-			LastHeartbeatTime:  metav1.Now(),
-			LastTransitionTime: metav1.Now(),
-			Status:             conditionStatus,
-			Type:               conditionType,
-		}
-		customResource.Status.Conditions = append(customResource.Status.Conditions, newCondition)
+		o := func() error {
+			var currentObject v1.Example
+			err := r.ctrlClient.Get(ctx, client.ObjectKey{
+				Namespace: objTyped.Namespace,
+				Name:      objTyped.Name,
+			}, &currentObject)
+			if err != nil {
+				return microerror.Mask(err)
+			}
 
-		_, err := r.k8sClient.G8sClient().CoreV1alpha1().DrainerConfigs(customResource.GetNamespace()).UpdateStatus(ctx, &customResource, metav1.UpdateOptions{})
+			newCondition := v1.ExampleCondition{
+				LastTransitionTime: metav1.Now(),
+				Status:             conditionStatus,
+				Type:               conditionType,
+			}
+			currentObject.Status.Conditions = append(currentObject.Status.Conditions, newCondition)
+
+			err = r.ctrlClient.Status().Update(ctx, &currentObject)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+
+			return nil
+		}
+		b := backoff.NewExponential(backoff.ShortMaxWait, backoff.ShortMaxInterval)
+
+		err := backoff.Retry(o, b)
 		if err != nil {
 			r.t.Fatal("expected", nil, "got", err)
 		}
 	} else {
-		if len(customResource.Status.Conditions) != 1 {
-			r.t.Fatalf("expected one status condition but got %d", len(customResource.Status.Conditions))
+		if len(objTyped.Status.Conditions) != 1 {
+			r.t.Fatalf("expected one status condition but got %d", len(objTyped.Status.Conditions))
 		}
-		if customResource.Status.Conditions[0].Status != conditionStatus {
-			r.t.Fatalf("expected status condition status %#q but got %#q", conditionStatus, customResource.Status.Conditions[0].Status)
+		if objTyped.Status.Conditions[0].Status != conditionStatus {
+			r.t.Fatalf("expected status condition status %#q but got %#q", conditionStatus, objTyped.Status.Conditions[0].Status)
 		}
-		if customResource.Status.Conditions[0].Type != conditionType {
-			r.t.Fatalf("expected status condition type %#q but got %#q", conditionType, customResource.Status.Conditions[0].Type)
+		if objTyped.Status.Conditions[0].Type != conditionType {
+			r.t.Fatalf("expected status condition type %#q but got %#q", conditionType, objTyped.Status.Conditions[0].Type)
 		}
 	}
 

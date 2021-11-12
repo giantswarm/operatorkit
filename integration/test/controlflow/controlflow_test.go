@@ -9,15 +9,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/giantswarm/apiextensions/v3/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/giantswarm/operatorkit/v5/integration/testresource"
 	"github.com/giantswarm/operatorkit/v5/integration/wrapper"
-	"github.com/giantswarm/operatorkit/v5/integration/wrapper/drainerconfig"
+	"github.com/giantswarm/operatorkit/v5/integration/wrapper/configmap"
 	"github.com/giantswarm/operatorkit/v5/pkg/resource"
 )
 
@@ -51,7 +51,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 	var w wrapper.Interface
 	{
-		c := drainerconfig.Config{
+		c := configmap.Config{
 			Resources: []resource.Interface{
 				r,
 			},
@@ -60,7 +60,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 			Namespace: objNamespace,
 		}
 
-		w, err = drainerconfig.New(c)
+		w, err = configmap.New(c)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -80,22 +80,22 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 
 	// Setup the test namespace.
 	{
-		w.MustSetup(objNamespace)
-		defer w.MustTeardown(objNamespace)
+		w.MustSetup(ctx, objNamespace)
+		defer w.MustTeardown(ctx, objNamespace)
 	}
 
 	// Create an object and wait for the controller to add a finalizer.
 	// Creation is retried because the CRD might still not be ensured.
 	{
 		o := func() error {
-			drainerConfig := &v1alpha1.DrainerConfig{
+			configMap := &v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      objName,
 					Namespace: objNamespace,
 				},
 			}
 
-			_, err := w.CreateObject(ctx, objNamespace, drainerConfig)
+			_, err := w.CreateObject(ctx, objNamespace, configMap)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -237,7 +237,7 @@ func Test_Finalizer_Integration_Controlflow(t *testing.T) {
 	{
 		o := func() error {
 			_, err = w.GetObject(ctx, objName, objNamespace)
-			if drainerconfig.IsNotFound(err) {
+			if configmap.IsNotFound(err) {
 				return nil
 			} else if err != nil {
 				return microerror.Mask(err)

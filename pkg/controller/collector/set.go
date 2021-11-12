@@ -2,11 +2,11 @@ package collector
 
 import (
 	"github.com/giantswarm/exporterkit/collector"
-	"github.com/giantswarm/k8sclient/v5/pkg/k8sclient"
+	"github.com/giantswarm/k8sclient/v6/pkg/k8sclient"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type SetConfig struct {
@@ -14,7 +14,7 @@ type SetConfig struct {
 	K8sClient  k8sclient.Interface
 	Controller string
 
-	NewRuntimeObjectFunc func() runtime.Object
+	NewRuntimeObjectFunc func() client.Object
 	Selector             labels.Selector
 }
 

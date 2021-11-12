@@ -1,4 +1,4 @@
-package drainerconfig
+package example
 
 import "github.com/giantswarm/microerror"
 

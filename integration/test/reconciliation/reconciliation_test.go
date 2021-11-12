@@ -9,15 +9,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/giantswarm/apiextensions/v3/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/giantswarm/operatorkit/v5/integration/testresource"
 	"github.com/giantswarm/operatorkit/v5/integration/wrapper"
-	"github.com/giantswarm/operatorkit/v5/integration/wrapper/drainerconfig"
+	"github.com/giantswarm/operatorkit/v5/integration/wrapper/configmap"
 	"github.com/giantswarm/operatorkit/v5/pkg/resource"
 )
 
@@ -25,7 +25,7 @@ const (
 	objName            = "test-obj"
 	operatorName       = "test-operator"
 	testFinalizer      = "operatorkit.giantswarm.io/test-operator"
-	testNamespace      = "finalizer-integration-reconciliation-test"
+	testNamespace      = "integration-reconciliation-test"
 	testOtherFinalizer = "operatorkit.giantswarm.io/other-operator"
 )
 
@@ -48,7 +48,7 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 
 	var w wrapper.Interface
 	{
-		c := drainerconfig.Config{
+		c := configmap.Config{
 			Resources: []resource.Interface{
 				r,
 			},
@@ -57,13 +57,13 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 			Namespace: testNamespace,
 		}
 
-		w, err = drainerconfig.New(c)
+		w, err = configmap.New(c)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}
 
-		w.MustSetup(testNamespace)
-		defer w.MustTeardown(testNamespace)
+		w.MustSetup(ctx, testNamespace)
+		defer w.MustTeardown(ctx, testNamespace)
 	}
 
 	controller := w.Controller()
@@ -77,10 +77,10 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	// finalizer.
 	//
 	// Creation is retried because the existance of a CRD might have to be ensured.
-	var createdDrainerConfig *v1alpha1.DrainerConfig
+	var createdConfigMap *v1.ConfigMap
 	{
 		o := func() error {
-			drainerConfig := &v1alpha1.DrainerConfig{
+			configMap := &v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      objName,
 					Namespace: testNamespace,
@@ -89,11 +89,11 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 					},
 				},
 			}
-			v, err := w.CreateObject(ctx, testNamespace, drainerConfig)
+			v, err := w.CreateObject(ctx, testNamespace, configMap)
 			if err != nil {
 				return microerror.Mask(err)
 			}
-			createdDrainerConfig = v.(*v1alpha1.DrainerConfig)
+			createdConfigMap = v.(*v1.ConfigMap)
 
 			return nil
 		}
@@ -109,9 +109,9 @@ func Test_Finalizer_Integration_Reconciliation(t *testing.T) {
 	// ResourceVersion of the object.
 	{
 		o := func() error {
-			createdDrainerConfig.SetLabels(map[string]string{"testlabel": "testlabel"})
+			createdConfigMap.SetLabels(map[string]string{"testlabel": "testlabel"})
 
-			_, err = w.UpdateObject(ctx, testNamespace, createdDrainerConfig)
+			_, err = w.UpdateObject(ctx, testNamespace, createdConfigMap)
 			if err != nil {
 				return microerror.Mask(err)
 			}

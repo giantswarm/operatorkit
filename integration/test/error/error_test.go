@@ -8,19 +8,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/giantswarm/apiextensions/v3/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/giantswarm/operatorkit/v5/integration/testresource"
-	"github.com/giantswarm/operatorkit/v5/integration/wrapper/drainerconfig"
+	"github.com/giantswarm/operatorkit/v5/integration/wrapper/configmap"
 	"github.com/giantswarm/operatorkit/v5/pkg/resource"
 )
 
 const (
-	testNamespace = "test-namespace"
+	testNamespace = "integration-error-test"
 	testObjectA   = "test-object-a"
 	testObjectB   = "test-object-b"
 )
@@ -71,23 +71,23 @@ func Test_Controller_Integration_Error(t *testing.T) {
 		rB,
 	}
 
-	var wrapper *drainerconfig.Wrapper
+	var wrapper *configmap.Wrapper
 	{
-		c := drainerconfig.Config{
+		c := configmap.Config{
 			Resources: resources,
 
 			Name:      "operator-name",
 			Namespace: testNamespace,
 		}
 
-		wrapper, err = drainerconfig.New(c)
+		wrapper, err = configmap.New(c)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}
 	}
 
-	wrapper.MustSetup(testNamespace)
-	defer wrapper.MustTeardown(testNamespace)
+	wrapper.MustSetup(ctx, testNamespace)
+	defer wrapper.MustTeardown(ctx, testNamespace)
 	controller := wrapper.Controller()
 	go controller.Boot(ctx)
 	<-controller.Booted()
@@ -95,7 +95,7 @@ func Test_Controller_Integration_Error(t *testing.T) {
 	// We create two test objects. One is used by one resource to error out.
 	{
 		o := func() error {
-			a := &v1alpha1.DrainerConfig{
+			a := &v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testObjectA,
 					Namespace: testNamespace,
@@ -107,7 +107,7 @@ func Test_Controller_Integration_Error(t *testing.T) {
 				return microerror.Mask(err)
 			}
 
-			b := &v1alpha1.DrainerConfig{
+			b := &v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testObjectB,
 					Namespace: testNamespace,
@@ -141,8 +141,8 @@ func Test_Controller_Integration_Error(t *testing.T) {
 				return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", rA.DeleteCount(), 0)
 			}
 
-			if rB.CreateCount() != 3 {
-				return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", rB.CreateCount(), 3)
+			if rB.CreateCount() != 4 {
+				return microerror.Maskf(countMismatchError, "EnsureCreated was hit %v times, want %v", rB.CreateCount(), 4)
 			}
 			if rB.DeleteCount() != 0 {
 				return microerror.Maskf(countMismatchError, "EnsureDeleted was hit %v times, want %v", rB.DeleteCount(), 0)

@@ -11,14 +11,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/giantswarm/apiextensions/v3/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/giantswarm/operatorkit/v5/integration/testresource"
-	"github.com/giantswarm/operatorkit/v5/integration/wrapper/drainerconfig"
+	"github.com/giantswarm/operatorkit/v5/integration/wrapper/configmap"
 	"github.com/giantswarm/operatorkit/v5/pkg/resource"
 )
 
@@ -115,7 +115,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 		}
 	}
 
-	var wrapperA, wrapperB, wrapperC *drainerconfig.Wrapper
+	var wrapperA, wrapperB, wrapperC *configmap.Wrapper
 	{
 		wrapperA, err = newWrapper(objNamespace, controllerNameA, resourceA)
 		if err != nil {
@@ -160,22 +160,22 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	// Setup the test namespace. We use the wrapper A. It makes no
 	// difference if we use the wrapper A or B.
 	{
-		wrapperA.MustSetup(objNamespace)
-		defer wrapperA.MustTeardown(objNamespace)
+		wrapperA.MustSetup(ctx, objNamespace)
+		defer wrapperA.MustTeardown(ctx, objNamespace)
 	}
 
 	// Create an object. Creation is retried because the CRD might still
 	// not be ensured.
 	{
 		o := func() error {
-			drainerConfig := &v1alpha1.DrainerConfig{
+			configMap := &v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      objName,
 					Namespace: objNamespace,
 				},
 			}
 
-			_, err := wrapperA.CreateObject(ctx, objNamespace, drainerConfig)
+			_, err := wrapperA.CreateObject(ctx, objNamespace, configMap)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -344,7 +344,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	{
 		o := func() error {
 			_, err := wrapperA.GetObject(ctx, objName, objNamespace)
-			if drainerconfig.IsNotFound(err) {
+			if configmap.IsNotFound(err) {
 				return nil
 			} else if err != nil {
 				return microerror.Mask(err)
@@ -382,8 +382,8 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	}
 }
 
-func newWrapper(namespace string, controllerName string, r *testresource.Resource) (*drainerconfig.Wrapper, error) {
-	c := drainerconfig.Config{
+func newWrapper(namespace string, controllerName string, r *testresource.Resource) (*configmap.Wrapper, error) {
+	c := configmap.Config{
 		Resources: []resource.Interface{
 			r,
 		},
@@ -392,7 +392,7 @@ func newWrapper(namespace string, controllerName string, r *testresource.Resourc
 		Namespace: namespace,
 	}
 
-	harness, err := drainerconfig.New(c)
+	harness, err := configmap.New(c)
 	if err != nil {
 		return nil, err
 	}

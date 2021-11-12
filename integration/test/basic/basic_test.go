@@ -23,7 +23,7 @@ const (
 	configMapName = "test-cm"
 	operatorName  = "test-operator"
 	testFinalizer = "operatorkit.giantswarm.io/test-operator"
-	testNamespace = "finalizer-integration-basic-test"
+	testNamespace = "integration-basic-test"
 )
 
 // Test_Finalizer_Integration_Basic is a integration test for basic finalizer
@@ -104,7 +104,7 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	// We reconcile the ConfigMap using its name and namespace.
 	// This is expected to only add one finalizer, we want to make sure that we
 	// only use the latest ResourceVersion of an object.
-	_, err = controller.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{
+	_, err = controller.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{
 		Name:      cm.GetName(),
 		Namespace: cm.GetNamespace(),
 	}})
@@ -113,7 +113,7 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 	}
 
 	// We run Reconcile multiple times to check for duplicates.
-	_, err = controller.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{
+	_, err = controller.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{
 		Name:      cm.GetName(),
 		Namespace: cm.GetNamespace(),
 	}})
@@ -164,7 +164,7 @@ func Test_Finalizer_Integration_Basic(t *testing.T) {
 
 	// We directly pass the object to DeleteFunc to remove the finalizer.
 	// We run Reconcile multiple times to check for duplicates.
-	_, _ = controller.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{
+	_, _ = controller.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{
 		Name:      cm.GetName(),
 		Namespace: cm.GetNamespace(),
 	}})

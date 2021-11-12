@@ -23,7 +23,7 @@ import (
 const (
 	configMapName = "test-cm"
 	operatorName  = "test-operator"
-	testNamespace = "event-test"
+	testNamespace = "integration-event-test"
 )
 
 // Test_Kubernetes_Event is a integration test for Kubernetes events.
@@ -98,7 +98,7 @@ func Test_Kubernetes_Event(t *testing.T) {
 		t.Fatal("expected", nil, "got", err)
 	}
 
-	_, err = controller.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{
+	_, err = controller.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{
 		Name:      cm.GetName(),
 		Namespace: cm.GetNamespace(),
 	}})
@@ -107,7 +107,7 @@ func Test_Kubernetes_Event(t *testing.T) {
 	}
 
 	// run Reconcile multiple times to trigger error events.
-	_, err = controller.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{
+	_, err = controller.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{
 		Name:      cm.GetName(),
 		Namespace: cm.GetNamespace(),
 	}})

@@ -14,8 +14,8 @@ type Interface interface {
 	UpdateObject(ctx context.Context, namespace string, obj interface{}) (interface{}, error)
 
 	// Functions for test setup and teardown.
-	MustSetup(namespace string)
-	MustTeardown(namespace string)
+	MustSetup(ctx context.Context, namespace string)
+	MustTeardown(ctx context.Context, namespace string)
 
 	// Getters and setters.
 	Controller() *controller.Controller

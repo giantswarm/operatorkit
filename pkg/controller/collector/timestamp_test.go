@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/giantswarm/k8sclient/v5/pkg/k8sclienttest"
+	"github.com/giantswarm/k8sclient/v6/pkg/k8sclienttest"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger/microloggertest"
 	"github.com/prometheus/client_golang/prometheus"
@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake" //nolint:staticcheck
 )
 
@@ -82,13 +83,16 @@ func Test_Timestamp(t *testing.T) {
 			t.Log(tc.name)
 
 			clients := k8sclienttest.NewClients(k8sclienttest.ClientsConfig{
-				CtrlClient: fake.NewFakeClientWithScheme(scheme.Scheme, pods...),
+				CtrlClient: fake.NewClientBuilder().
+					WithScheme(scheme.Scheme).
+					WithRuntimeObjects(pods...).
+					Build(),
 			})
 
 			config := TimestampConfig{
 				Logger:    microloggertest.New(),
 				K8sClient: clients,
-				NewRuntimeObjectFunc: func() pkgruntime.Object {
+				NewRuntimeObjectFunc: func() client.Object {
 					return new(corev1.Pod)
 				},
 				Selector:   tc.selector,

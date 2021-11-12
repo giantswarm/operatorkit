@@ -8,21 +8,21 @@ import (
 	"testing"
 	"time"
 
-	"github.com/giantswarm/apiextensions/v3/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/giantswarm/operatorkit/v5/integration/testresource"
 	"github.com/giantswarm/operatorkit/v5/integration/wrapper"
-	"github.com/giantswarm/operatorkit/v5/integration/wrapper/drainerconfig"
+	"github.com/giantswarm/operatorkit/v5/integration/wrapper/configmap"
 	"github.com/giantswarm/operatorkit/v5/pkg/resource"
 )
 
 const (
 	objName      = "test-obj"
-	objNamespace = "integration-controlflow-test"
+	objNamespace = "integration-pause-test"
 
 	controllerName = "test-controller"
 	resourceName   = "test-resource"
@@ -49,7 +49,7 @@ func Test_Integration_Pause(t *testing.T) {
 
 	var w wrapper.Interface
 	{
-		c := drainerconfig.Config{
+		c := configmap.Config{
 			Resources: []resource.Interface{
 				r,
 			},
@@ -58,7 +58,7 @@ func Test_Integration_Pause(t *testing.T) {
 			Namespace: objNamespace,
 		}
 
-		w, err = drainerconfig.New(c)
+		w, err = configmap.New(c)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -78,21 +78,21 @@ func Test_Integration_Pause(t *testing.T) {
 
 	// Setup the test namespace.
 	{
-		w.MustSetup(objNamespace)
-		defer w.MustTeardown(objNamespace)
+		w.MustSetup(ctx, objNamespace)
+		defer w.MustTeardown(ctx, objNamespace)
 	}
 
 	// Create a runtime object we can reconcile for our integration test.
 	{
 		o := func() error {
-			drainerConfig := &v1alpha1.DrainerConfig{
+			configMap := &v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      objName,
 					Namespace: objNamespace,
 				},
 			}
 
-			_, err := w.CreateObject(ctx, objNamespace, drainerConfig)
+			_, err := w.CreateObject(ctx, objNamespace, configMap)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -108,15 +108,15 @@ func Test_Integration_Pause(t *testing.T) {
 	}
 
 	// Verify the controller reconciles creation of that object. There
-	// should be 2 ResyncPeriods in 30 seconds so verify there were more
-	// than 2 create events.
+	// should be 2 ResyncPeriods in 30 seconds so verify there were at least
+	// 2 create events.
 	//
 	// 		EnsureCreated: >2, EnsureDeleted: =0
 	//
 	{
 		o := func() error {
-			if r.CreateCount() <= 2 {
-				return microerror.Maskf(waitError, "resource.CreateCount() == %v, want more than %v", r.CreateCount(), 2)
+			if r.CreateCount() < 2 {
+				return microerror.Maskf(waitError, "resource.CreateCount() == %v, want more than %v", r.CreateCount(), 1)
 			}
 			if r.DeleteCount() != 0 {
 				return microerror.Maskf(waitError, "resource.DeleteCount() == %v, want %v", r.DeleteCount(), 0)

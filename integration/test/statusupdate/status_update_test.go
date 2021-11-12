@@ -8,27 +8,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/giantswarm/apiextensions/v3/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/giantswarm/operatorkit/v5/integration/wrapper/drainerconfig"
+	v1 "github.com/giantswarm/operatorkit/v5/api/v1"
+	"github.com/giantswarm/operatorkit/v5/integration/wrapper/example"
 	"github.com/giantswarm/operatorkit/v5/pkg/resource"
 )
 
 const (
-	conditionStatus = "testStatus"
-	conditionType   = "testType"
-)
-
-const (
-	objName      = "test-obj"
-	operatorName = "test-operator"
-)
-
-const (
-	testNamespace = "finalizer-integration-statusupdate-test"
+	objName       = "test"
+	operatorName  = "test-operator"
+	testNamespace = "integration-status-update-test"
 )
 
 func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
@@ -48,9 +40,9 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 		}
 	}
 
-	var w *drainerconfig.Wrapper
+	var w *example.Wrapper
 	{
-		c := drainerconfig.Config{
+		c := example.Config{
 			Resources: []resource.Interface{
 				r,
 			},
@@ -59,13 +51,16 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 			Namespace: testNamespace,
 		}
 
-		w, err = drainerconfig.New(c)
+		w, err = example.New(c)
 		if err != nil {
 			t.Fatal("expected", nil, "got", err)
 		}
 
-		w.MustSetup(testNamespace)
-		defer w.MustTeardown(testNamespace)
+		w.MustSetup(ctx, testNamespace)
+		defer func(w *example.Wrapper) {
+			w.Controller().Stop(ctx)
+			w.MustTeardown(ctx, testNamespace)
+		}(w)
 	}
 
 	{
@@ -77,14 +72,16 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 
 	{
 		o := func() error {
-			drainerConfig := &v1alpha1.DrainerConfig{
+			obj := &v1.Example{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      objName,
 					Namespace: testNamespace,
 				},
-				TypeMeta: v1alpha1.NewDrainerTypeMeta(),
+				Spec: v1.ExampleSpec{
+					Field1: "a",
+				},
 			}
-			_, err := w.CreateObject(ctx, testNamespace, drainerConfig)
+			_, err := w.CreateObject(ctx, testNamespace, obj)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -107,16 +104,16 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 			t.Fatal("expected", nil, "got", err)
 		}
 
-		customResource := newObj.(*v1alpha1.DrainerConfig)
+		newObjTyped := newObj.(*v1.Example)
 
-		if len(customResource.Status.Conditions) != 1 {
-			t.Fatal("expected one status condition")
+		if len(newObjTyped.Status.Conditions) != 1 {
+			t.Error("expected one status condition")
 		}
-		if customResource.Status.Conditions[0].Status != conditionStatus {
-			t.Fatalf("expected status condition status %#q", conditionStatus)
+		if newObjTyped.Status.Conditions[0].Status != conditionStatus {
+			t.Errorf("expected status condition status %#q", conditionStatus)
 		}
-		if customResource.Status.Conditions[0].Type != conditionType {
-			t.Fatalf("expected status condition type %#q", conditionType)
+		if newObjTyped.Status.Conditions[0].Type != conditionType {
+			t.Errorf("expected status condition type %#q", conditionType)
 		}
 	}
 }

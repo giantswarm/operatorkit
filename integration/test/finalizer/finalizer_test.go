@@ -11,15 +11,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/giantswarm/apiextensions/v3/pkg/apis/core/v1alpha1"
 	"github.com/giantswarm/backoff"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/giantswarm/operatorkit/v5/integration/testresource"
-	"github.com/giantswarm/operatorkit/v5/integration/wrapper/drainerconfig"
+	"github.com/giantswarm/operatorkit/v5/integration/wrapper/configmap"
 	"github.com/giantswarm/operatorkit/v5/pkg/resource"
 )
 
@@ -57,7 +57,7 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 		}
 	}
 
-	var wrapper *drainerconfig.Wrapper
+	var wrapper *configmap.Wrapper
 	{
 		wrapper, err = newWrapper(r, newWrapperLogger("a"))
 		if err != nil {
@@ -79,22 +79,22 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 
 	// Setup the test namespace.
 	{
-		wrapper.MustSetup(objNamespace)
-		defer wrapper.MustTeardown(objNamespace)
+		wrapper.MustSetup(ctx, objNamespace)
+		defer wrapper.MustTeardown(ctx, objNamespace)
 	}
 
 	// Create an object. Creation is retried because the CRD might still not be
 	// ensured.
 	{
 		o := func() error {
-			drainerConfig := &v1alpha1.DrainerConfig{
+			configMap := &v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      objName,
 					Namespace: objNamespace,
 				},
 			}
 
-			_, err := wrapper.CreateObject(ctx, objNamespace, drainerConfig)
+			_, err := wrapper.CreateObject(ctx, objNamespace, configMap)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -171,11 +171,11 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 		}
 	}
 
-	// Verify that the test resource received at least 1 deletion event.
+	// Verify that the test resource received at least 2 deletion events.
 	{
 		o := func() error {
-			if r.DeleteCount() < 3 {
-				return microerror.Maskf(waitError, "r.DeleteCount() == %v, want at least %v", r.DeleteCount(), 3)
+			if r.DeleteCount() < 2 {
+				return microerror.Maskf(waitError, "r.DeleteCount() == %v, want at least %v", r.DeleteCount(), 2)
 			}
 
 			return nil
@@ -227,7 +227,7 @@ func Test_Controller_Integration_Finalizer(t *testing.T) {
 	{
 		o := func() error {
 			_, err := wrapper.GetObject(ctx, objName, objNamespace)
-			if drainerconfig.IsNotFound(err) {
+			if configmap.IsNotFound(err) {
 				return nil
 			} else if err != nil {
 				return microerror.Mask(err)
@@ -260,9 +260,8 @@ func newWrapperLogger(w string) micrologger.Logger {
 	return l.With("wrapper", w)
 }
 
-func newWrapper(r *testresource.Resource, l micrologger.Logger) (*drainerconfig.Wrapper, error) {
-	c := drainerconfig.Config{
-		Logger: l,
+func newWrapper(r *testresource.Resource, l micrologger.Logger) (*configmap.Wrapper, error) {
+	c := configmap.Config{
 		Resources: []resource.Interface{
 			r,
 		},
@@ -271,7 +270,7 @@ func newWrapper(r *testresource.Resource, l micrologger.Logger) (*drainerconfig.
 		Namespace: objNamespace,
 	}
 
-	w, err := drainerconfig.New(c)
+	w, err := configmap.New(c)
 	if err != nil {
 		return nil, err
 	}
