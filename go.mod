@@ -1,4 +1,4 @@
-module github.com/giantswarm/operatorkit/v5
+module github.com/giantswarm/operatorkit/v6
 
 go 1.17
 
