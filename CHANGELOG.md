@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.0.0] - 2021-11-12
+
 ### Added
 
 - Add new Kubernetes API, `examples.testing.giantswarm.io`, for integration tests without importing `apiextensions`.
@@ -179,7 +181,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-[Unreleased]: https://github.com/giantswarm/operatorkit/compare/v5.0.0...HEAD
+[Unreleased]: https://github.com/giantswarm/operatorkit/compare/v6.0.0...HEAD
+[6.0.0]: https://github.com/giantswarm/operatorkit/compare/v5.0.0...v6.0.0
 [5.0.0]: https://github.com/giantswarm/operatorkit/compare/v4.3.1...v5.0.0
 [4.3.1]: https://github.com/giantswarm/operatorkit/compare/v4.3.0...v4.3.1
 [4.3.0]: https://github.com/giantswarm/operatorkit/compare/v4.2.0...v4.3.0
