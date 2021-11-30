@@ -1,6 +1,6 @@
 # DO NOT EDIT. Generated with:
 #
-#    devctl@4.10.0
+#    devctl@4.11.0
 #
 name: Create Release
 on:
@@ -92,7 +92,7 @@ jobs:
         uses: giantswarm/install-binary-action@v1.0.0
         with:
           binary: "semver"
-          version: "3.0.0"
+          version: "3.2.0"
           download_url: "https://github.com/fsaintjacques/${binary}-tool/archive/${version}.tar.gz"
           tarball_binary_path: "*/src/${binary}"
           smoke_test: "${binary} --version"
