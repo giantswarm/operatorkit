@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/getsentry/sentry-go v0.11.0
 	github.com/giantswarm/backoff v0.2.0
-	github.com/giantswarm/exporterkit v0.2.2-0.20211214203537-0ed24eaab1d4
+	github.com/giantswarm/exporterkit v1.0.0
 	github.com/giantswarm/k8sclient/v6 v6.0.0
 	github.com/giantswarm/microerror v0.4.0
 	github.com/giantswarm/micrologger v0.6.0
