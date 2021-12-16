@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/getsentry/sentry-go v0.11.0
-	github.com/giantswarm/backoff v0.2.0
+	github.com/giantswarm/backoff v1.0.0
 	github.com/giantswarm/exporterkit v1.0.0
 	github.com/giantswarm/k8sclient/v6 v6.0.0
 	github.com/giantswarm/microerror v0.4.0
@@ -24,7 +24,7 @@ require (
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
+	github.com/cenkalti/backoff/v4 v4.1.2 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/evanphx/json-patch v4.11.0+incompatible // indirect
