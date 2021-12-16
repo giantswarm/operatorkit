@@ -6,7 +6,7 @@ require (
 	github.com/getsentry/sentry-go v0.11.0
 	github.com/giantswarm/backoff v0.2.0
 	github.com/giantswarm/exporterkit v0.2.1
-	github.com/giantswarm/k8sclient/v6 v6.0.1-0.20211216103901-6d88e3226fed
+	github.com/giantswarm/k8sclient/v6 v6.0.1-0.20211216105926-ea56d139d1fe
 	github.com/giantswarm/microerror v0.3.0
 	github.com/giantswarm/micrologger v0.5.0
 	github.com/giantswarm/to v0.4.0
