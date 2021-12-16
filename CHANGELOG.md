@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade github.com/giantswarm/backoff v0.2.0 to v1.0.0
+- Upgrade github.com/giantswarm/exporterkit v0.2.1 to v1.0.0
+- Upgrade github.com/giantswarm/microerror v0.3.0 to v0.4.0
+- Upgrade github.com/giantswarm/micrologger v0.5.0 to v0.6.0
+
 ## [6.0.0] - 2021-11-12
 
 ### Added
