@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Update `k8sclient` to v6.1.0 with CRDClient that was removed in v6.0.0.
+
 ## [6.0.0] - 2021-11-12
 
 ### Added
