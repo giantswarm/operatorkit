@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.0.0] - 2021-12-20
+
 ### Changed
 
 - Upgrade github.com/giantswarm/backoff v0.2.0 to v1.0.0
@@ -195,7 +197,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-[Unreleased]: https://github.com/giantswarm/operatorkit/compare/v6.1.0...HEAD
+[Unreleased]: https://github.com/giantswarm/operatorkit/compare/v7.0.0...HEAD
+[7.0.0]: https://github.com/giantswarm/operatorkit/compare/v6.1.0...v7.0.0
 [6.1.0]: https://github.com/giantswarm/operatorkit/compare/v6.0.0...v6.1.0
 [6.0.0]: https://github.com/giantswarm/operatorkit/compare/v5.0.0...v6.0.0
 [5.0.0]: https://github.com/giantswarm/operatorkit/compare/v4.3.1...v5.0.0
