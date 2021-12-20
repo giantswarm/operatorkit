@@ -15,10 +15,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/giantswarm/operatorkit/v6/integration/testresource"
-	"github.com/giantswarm/operatorkit/v6/integration/wrapper"
-	"github.com/giantswarm/operatorkit/v6/integration/wrapper/configmap"
-	"github.com/giantswarm/operatorkit/v6/pkg/resource"
+	"github.com/giantswarm/operatorkit/v7/integration/testresource"
+	"github.com/giantswarm/operatorkit/v7/integration/wrapper"
+	"github.com/giantswarm/operatorkit/v7/integration/wrapper/configmap"
+	"github.com/giantswarm/operatorkit/v7/pkg/resource"
 )
 
 const (
