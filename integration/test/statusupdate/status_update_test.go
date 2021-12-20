@@ -12,9 +12,9 @@ import (
 	"github.com/giantswarm/microerror"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	v1 "github.com/giantswarm/operatorkit/v6/api/v1"
-	"github.com/giantswarm/operatorkit/v6/integration/wrapper/example"
-	"github.com/giantswarm/operatorkit/v6/pkg/resource"
+	v1 "github.com/giantswarm/operatorkit/v7/api/v1"
+	"github.com/giantswarm/operatorkit/v7/integration/wrapper/example"
+	"github.com/giantswarm/operatorkit/v7/pkg/resource"
 )
 
 const (
