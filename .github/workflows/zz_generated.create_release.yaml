@@ -1,6 +1,6 @@
 # DO NOT EDIT. Generated with:
 #
-#    devctl@4.11.0
+#    devctl@4.12.0
 #
 name: Create Release
 on:
@@ -33,7 +33,10 @@ jobs:
       - name: Get version
         id: get_version
         run: |
-          title="$(echo "${{ github.event.head_commit.message }}" | head -n 1 -)"
+          title="$(cat <<- 'COMMIT_MESSAGE_END' | head -n 1 -
+          ${{ github.event.head_commit.message }}
+          COMMIT_MESSAGE_END
+          )"
           # Matches strings like:
           #
           #   - "Release v1.2.3"
@@ -42,11 +45,11 @@ jobs:
           #   - "Release v1.2.3-r4 (#56)"
           #
           # And outputs version part (1.2.3).
-          if echo $title | grep -iqE '^Release v[0-9]+\.[0-9]+\.[0-9]+([.-][^ .-][^ ]*)?( \(#[0-9]+\))?$' ; then
-            version=$(echo $title | cut -d ' ' -f 2)
+          if echo "${title}" | grep -iqE '^Release v[0-9]+\.[0-9]+\.[0-9]+([.-][^ .-][^ ]*)?( \(#[0-9]+\))?$' ; then
+          version=$(echo "${title}" | cut -d ' ' -f 2)
           fi
           version="${version#v}" # Strip "v" prefix.
-          echo "version=\"$version\""
+          echo "version=\"${version}\""
           echo "::set-output name=version::${version}"
       - name: Checkout code
         if: ${{ steps.get_version.outputs.version != '' }}
@@ -64,18 +67,21 @@ jobs:
       - name: Check if reference version
         id: ref_version
         run: |
-          title="$(echo "${{ github.event.head_commit.message }}" | head -n 1 -)"
-          if echo $title | grep -qE '^release v[0-9]+\.[0-9]+\.[0-9]+([.-][^ .-][^ ]*)?( \(#[0-9]+\))?$' ; then
-            version=$(echo $title | cut -d ' ' -f 2)
+          title="$(cat <<- 'COMMIT_MESSAGE_END' | head -n 1 -
+          ${{ github.event.head_commit.message }}
+          COMMIT_MESSAGE_END
+          )"
+          if echo "${title}" | grep -qE '^release v[0-9]+\.[0-9]+\.[0-9]+([.-][^ .-][^ ]*)?( \(#[0-9]+\))?$' ; then
+            version=$(echo "${title}" | cut -d ' ' -f 2)
           fi
-          version=$(echo $title | cut -d ' ' -f 2)
+          version=$(echo "${title}" | cut -d ' ' -f 2)
           version="${version#v}" # Strip "v" prefix.
           refversion=false
           if [[ "${version}" =~ ^[0-9]+.[0-9]+.[0-9]+-[0-9]+$ ]]; then
             refversion=true
           fi
-          echo "refversion =\"$refversion\""
-          echo "::set-output name=refversion::$refversion"
+          echo "refversion =\"${refversion}\""
+          echo "::set-output name=refversion::${refversion}"
   update_project_go:
     name: Update project.go
     runs-on: ubuntu-20.04
@@ -155,6 +161,12 @@ jobs:
           file="${{ needs.gather_facts.outputs.project_go_path }}"
           version="${{ needs.gather_facts.outputs.version }}"
           grep -qE "version[[:space:]]*=[[:space:]]*\"$version\"" $file
+      - name: Get Changelog Entry
+        id: changelog_reader
+        uses: mindsers/changelog-reader-action@v2
+        with:
+          version: ${{ needs.gather_facts.outputs.version }}
+          path: ./CHANGELOG.md
       - name: Create tag
         run: |
           version="${{ needs.gather_facts.outputs.version }}"
@@ -171,6 +183,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          body: ${{ steps.changelog_reader.outputs.changes }}
           tag_name: "v${{ needs.gather_facts.outputs.version }}"
           release_name: "v${{ needs.gather_facts.outputs.version }}"
 
