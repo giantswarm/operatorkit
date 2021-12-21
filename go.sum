@@ -186,8 +186,8 @@ github.com/giantswarm/backoff v1.0.0 h1:1oeTvyPsm1tJrHlSmfxbIWuoCNWPOkWJCb8kfLvE
 github.com/giantswarm/backoff v1.0.0/go.mod h1:l/WqbggvG5Ndxxws0LUgVEvP5E82Qj5/PF8SMip/1QM=
 github.com/giantswarm/exporterkit v1.0.0 h1:6TwzJ5UklUp/xajBK3sx4gArFfMAAIEDs4/F1FvOCaE=
 github.com/giantswarm/exporterkit v1.0.0/go.mod h1:XO9HfOOIxcWM+9r8KKIuYHtFGdTbYIjIse2wu8UI4Ts=
-github.com/giantswarm/k8sclient/v7 v7.0.0 h1:0R2/LAgBkQKyUA/B7g7xS7ToD/uY19daudP6aIxV3K0=
-github.com/giantswarm/k8sclient/v7 v7.0.0/go.mod h1:zJTXammjLHSiukMIO4+a6eUDgzj/lJxEXFZ22mC0WXc=
+github.com/giantswarm/k8sclient/v7 v7.0.1 h1:UmRwgsw5Uda27tpIblPo7nWjp/nq5qwqxEPHWcvzsHk=
+github.com/giantswarm/k8sclient/v7 v7.0.1/go.mod h1:zJTXammjLHSiukMIO4+a6eUDgzj/lJxEXFZ22mC0WXc=
 github.com/giantswarm/microendpoint v1.0.0/go.mod h1:2fA+TtAMjmrH3I4K6b2wGEdDwiTr0IUsAmZlL4zk1Mg=
 github.com/giantswarm/microerror v0.4.0 h1:QeU+UZL0rRlVXKqYOHMxS0L7g8UD+dn84NT7myWVh4U=
 github.com/giantswarm/microerror v0.4.0/go.mod h1:Ju1YdC6TX/8witv7fIlkgiRr5FQUNyq3f4TX2QYnO7c=
