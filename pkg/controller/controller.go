@@ -270,7 +270,7 @@ func (c *Controller) Boot(ctx context.Context) {
 			os.Exit(1)
 		}
 
-		c.logger.LogCtx(ctx, "level", "debug", "message", "booted controller")
+		c.logger.Debugf(ctx, "booted controller")
 	})
 }
 
