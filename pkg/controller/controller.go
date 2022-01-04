@@ -250,7 +250,7 @@ func (c *Controller) Boot(ctx context.Context) {
 	ctx = setLoggerCtxValue(ctx, loggerKeyController, c.name)
 
 	c.bootOnce.Do(func() {
-		c.logger.LogCtx(ctx, "level", "debug", "message", "booting controller")
+		c.logger.Debugf(ctx, "booting controller")
 
 		operation := func() error {
 			err := c.bootWithError(ctx)
