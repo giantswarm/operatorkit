@@ -250,6 +250,8 @@ func (c *Controller) Boot(ctx context.Context) {
 	ctx = setLoggerCtxValue(ctx, loggerKeyController, c.name)
 
 	c.bootOnce.Do(func() {
+		c.logger.Debugf(ctx, "booting controller")
+
 		operation := func() error {
 			err := c.bootWithError(ctx)
 			if err != nil {
@@ -267,6 +269,8 @@ func (c *Controller) Boot(ctx context.Context) {
 			c.logger.Errorf(ctx, err, "stop controller boot retries due to too many errors")
 			os.Exit(1)
 		}
+
+		c.logger.Debugf(ctx, "booted controller")
 	})
 }
 
