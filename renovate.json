@@ -23,7 +23,15 @@
     {
       "matchPackageNames": ["sigs.k8s.io/controller-runtime"],
       "allowedVersions": "< 0.7.0"
-    }
+    },
+     {
+       "matchPackagePatterns": ["github.com/giantswarm/apiextensions*"],
+       "allowedVersions": ">= 4.0.0"
+     },
+     {
+       "excludePackagePatterns": ["sigs.k8s.io/cluster-api*"],
+       "groupName": "capi modules"
+     }
   ],
   "postUpdateOptions": ["gomodTidy", "gomodUpdateImportPaths"],
   "dependencyDashboard": true,
