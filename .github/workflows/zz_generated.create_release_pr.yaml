@@ -1,6 +1,6 @@
 # DO NOT EDIT. Generated with:
 #
-#    devctl@4.14.0
+#    devctl@4.15.0
 #
 name: Create Release PR
 on:
@@ -15,6 +15,10 @@ on:
       - 'master#release#major'
       - 'master#release#minor'
       - 'master#release#patch'
+      - 'release#v*.*.*'
+      - 'release#major'
+      - 'release#minor'
+      - 'release#patch'
       - 'release-v*.*.x#release#v*.*.*'
       # "!" negates previous positive patterns so it has to be at the end.
       - '!release-v*.x.x#release#v*.*.*'
@@ -48,10 +52,17 @@ jobs:
         run: |
           head="${{ inputs.branch || github.event.ref }}"
           echo "::set-output name=branch::${head}"
+
           head="${head#refs/heads/}" # Strip "refs/heads/" prefix.
-          base="$(echo $head | cut -d '#' -f 1)"
+          if [[ $(echo "$head" | grep -o '#' | wc -l) -gt 1 ]]; then
+            base="$(echo $head | cut -d '#' -f 1)"
+          else
+            base="${{ github.event.base_ref }}"
+          fi
+
           base="${base#refs/heads/}" # Strip "refs/heads/" prefix.
-          version="$(echo $head | cut -d '#' -f 3)"
+
+          version="$(echo $head | awk -F# '{print $NF}')"
           if [[ $version =~ ^major|minor|patch$ ]]; then
             gh auth login --with-token <<<$(echo -n ${{ secrets.GITHUB_TOKEN }})
             version_parts=($(gh api "repos/${{ github.repository }}/releases/latest" --jq '.tag_name[1:] | split(".") | .[0], .[1], .[2]'))
