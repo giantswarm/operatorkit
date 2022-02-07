@@ -34,7 +34,7 @@ func (c *Controller) addFinalizer(ctx context.Context, obj interface{}) (bool, e
 	}
 	// We check if the object has a finalizer here, to avoid unnecessary calls to
 	// the k8s api.
-	if containsString(accessor.GetFinalizers(), getFinalizerName(c.name)) {
+	if containsString(accessor.GetFinalizers(), GetFinalizerName(c.name)) {
 		return false, nil // object already has the finalizer.
 	}
 
@@ -91,7 +91,7 @@ func (c *Controller) hasFinalizer(ctx context.Context, obj interface{}) (bool, e
 	if err != nil {
 		return false, microerror.Mask(err)
 	}
-	finalizerName := getFinalizerName(c.name)
+	finalizerName := GetFinalizerName(c.name)
 	uid := string(accessor.GetUID())
 
 	// Checking if the finalizer exists is not sufficient as there may be
@@ -112,7 +112,7 @@ func (c *Controller) removeFinalizer(ctx context.Context, obj interface{}) error
 	if err != nil {
 		return microerror.Mask(err)
 	}
-	finalizerName := getFinalizerName(c.name)
+	finalizerName := GetFinalizerName(c.name)
 	uid := string(accessor.GetUID())
 
 	// The control flow primitives operatorkit provides supports the mechanism of
@@ -215,7 +215,7 @@ func createAddFinalizerPatch(obj interface{}, operatorName string) (patch []patc
 	if accessor.GetDeletionTimestamp() != nil {
 		return nil, true, nil // object has been marked for deletion, we should ignore it.
 	}
-	finalizerName := getFinalizerName(operatorName)
+	finalizerName := GetFinalizerName(operatorName)
 	if containsString(accessor.GetFinalizers(), finalizerName) {
 		return nil, false, nil // object already has the finalizer.
 	}
@@ -246,7 +246,7 @@ func createAddFinalizerPatch(obj interface{}, operatorName string) (patch []patc
 	return patch, true, nil
 }
 
-func getFinalizerName(name string) string {
+func GetFinalizerName(name string) string {
 	return fmt.Sprintf("%s/%s", finalizerPrefix, name)
 }
 
