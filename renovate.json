@@ -1,7 +1,6 @@
 {
   "extends": [
-    "config:base",
-    ":reviewer(team:sig-operator)"
+    "config:base"
   ],
   "packageRules": [
     {
