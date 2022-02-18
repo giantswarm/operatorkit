@@ -3,6 +3,7 @@
     "config:base",
     ":reviewer(team:sig-operator)"
   ],
+  "labels": ["dependencies"],
   "packageRules": [
     {
       "matchPackagePatterns": [".*giantswarm.*"],
@@ -43,7 +44,8 @@
   ],
   "ignoreDeps": [
     "architect",
-    "zricethezav/gitleaks-action"
+    "zricethezav/gitleaks-action",
+    "actions/setup-go"
   ],
   "schedule": [ "after 6am on thursday" ]
 }
