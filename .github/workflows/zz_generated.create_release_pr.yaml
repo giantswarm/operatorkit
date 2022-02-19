@@ -1,6 +1,6 @@
 # DO NOT EDIT. Generated with:
 #
-#    devctl@4.18.0
+#    devctl@4.19.0
 #
 name: Create Release PR
 on:
@@ -91,7 +91,7 @@ jobs:
           else
             version="${version#v}" # Strip "v" prefix.
           fi
-          repo_name="$(echo '${{ github.repository }}' | awk -F '/' '{print $1}')"
+          repo_name="$(echo '${{ github.repository }}' | awk -F '/' '{print $2}')"
           echo "repo_name=\"$repo_name\" base=\"$base\" head=\"$head\" version=\"$version\""
           echo "::set-output name=repo_name::${repo_name}"
           echo "::set-output name=base::${base}"
