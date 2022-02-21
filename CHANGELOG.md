@@ -207,8 +207,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-[Unreleased]: https://github.com/giantswarm/giantswarm/compare/v7.0.1...HEAD
-[7.0.1]: https://github.com/giantswarm/giantswarm/compare/v7.0.0...v7.0.1
+[Unreleased]: https://github.com/giantswarm/operatorkit/compare/v7.0.1...HEAD
+[7.0.1]: https://github.com/giantswarm/operatorkit/compare/v7.0.0...v7.0.1
 [7.0.0]: https://github.com/giantswarm/operatorkit/compare/v6.1.0...v7.0.0
 [6.1.0]: https://github.com/giantswarm/operatorkit/compare/v6.0.0...v6.1.0
 [6.0.0]: https://github.com/giantswarm/operatorkit/compare/v5.0.0...v6.0.0
