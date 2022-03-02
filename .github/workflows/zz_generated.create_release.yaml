@@ -1,6 +1,6 @@
 # DO NOT EDIT. Generated with:
 #
-#    devctl@4.19.0
+#    devctl@4.20.1
 #
 name: Create Release
 on:
@@ -53,7 +53,7 @@ jobs:
           echo "::set-output name=version::${version}"
       - name: Checkout code
         if: ${{ steps.get_version.outputs.version != '' }}
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Get project.go path
         id: get_project_go_path
         if: ${{ steps.get_version.outputs.version != '' }}
@@ -103,7 +103,7 @@ jobs:
           tarball_binary_path: "*/src/${binary}"
           smoke_test: "${binary} --version"
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Update project.go
         id: update_project_go
         env:
@@ -152,7 +152,7 @@ jobs:
       upload_url: ${{ steps.create_gh_release.outputs.upload_url }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: ${{ github.sha }}
       - name: Ensure correct version in project.go
@@ -203,7 +203,7 @@ jobs:
           tarball_binary_path: "*/src/${binary}"
           smoke_test: "${binary} --version"
       - name: Check out the repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0  # Clone the whole history, not just the most recent commit.
       - name: Fetch all tags and branches
