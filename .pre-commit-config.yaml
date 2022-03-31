@@ -1,0 +1,31 @@
+minimum_pre_commit_version: '2.17'
+repos:
+  # shell scripts
+  - repo: https://github.com/detailyang/pre-commit-shell
+    rev: 1.0.5
+    hooks:
+      - id: shell-lint
+        args: [ --format=json ]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.1.0
+    hooks:
+      - id: check-added-large-files
+      # check for unresolved merge conflicts
+      - id: check-merge-conflict
+      - id: check-shebang-scripts-are-executable
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: trailing-whitespace
+
+  - repo: https://github.com/dnephin/pre-commit-golang
+    rev: v0.5.0
+    hooks:
+      - id: go-fmt
+      - id: go-mod-tidy
+      - id: golangci-lint
+        # timeout is needed for CI
+        args: [ -E, gosec, -E, goconst, -E, govet, --timeout, 300s ]
+      - id: go-imports
+        args: [ -local, github.com/giantswarm/operatorkit ]
