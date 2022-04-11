@@ -1,6 +1,6 @@
 # DO NOT EDIT. Generated with:
 #
-#    devctl@4.23.0
+#    devctl@4.24.1
 #
 
 APPLICATION    := $(shell go list -m | cut -d '/' -f 3)
@@ -21,7 +21,7 @@ LDFLAGS        ?= -w -linkmode 'auto' -extldflags '$(EXTLDFLAGS)' \
 
 ##@ Go
 
-.PHONY: build build-darwin build-darwin-64 build-linux build-linux-arm64
+.PHONY: build build-darwin build-darwin-64 build-linux build-linux-arm64 build-windows-amd64
 build: $(APPLICATION) ## Builds a local binary.
 	@echo "====> $@"
 build-darwin: $(APPLICATION)-darwin ## Builds a local binary for darwin/amd64.
@@ -31,6 +31,8 @@ build-darwin-arm64: $(APPLICATION)-darwin-arm64 ## Builds a local binary for dar
 build-linux: $(APPLICATION)-linux ## Builds a local binary for linux/amd64.
 	@echo "====> $@"
 build-linux-arm64: $(APPLICATION)-linux-arm64 ## Builds a local binary for linux/arm64.
+	@echo "====> $@"
+build-windows-amd64: $(APPLICATION)-windows-amd64.exe ## Builds a local binary for windows/amd64.
 	@echo "====> $@"
 
 $(APPLICATION): $(APPLICATION)-v$(VERSION)-$(OS)-amd64
@@ -53,6 +55,10 @@ $(APPLICATION)-linux-arm64: $(APPLICATION)-v$(VERSION)-linux-arm64
 	@echo "====> $@"
 	cp -a $< $@
 
+$(APPLICATION)-windows-amd64.exe: $(APPLICATION)-v$(VERSION)-windows-amd64.exe
+	@echo "====> $@"
+	cp -a $< $@
+
 $(APPLICATION)-v$(VERSION)-%-amd64: $(SOURCES)
 	@echo "====> $@"
 	CGO_ENABLED=0 GOOS=$* GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $@ .
@@ -60,6 +66,10 @@ $(APPLICATION)-v$(VERSION)-%-amd64: $(SOURCES)
 $(APPLICATION)-v$(VERSION)-%-arm64: $(SOURCES)
 	@echo "====> $@"
 	CGO_ENABLED=0 GOOS=$* GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o $@ .
+
+$(APPLICATION)-v$(VERSION)-windows-amd64.exe: $(SOURCES)
+	@echo "====> $@"
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $@ .
 
 .PHONY: install
 install: ## Install the application.
