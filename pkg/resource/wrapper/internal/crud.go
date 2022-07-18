@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"github.com/giantswarm/operatorkit/v7/pkg/resource"
-	"github.com/giantswarm/operatorkit/v7/pkg/resource/crud"
+	"github.com/giantswarm/operatorkit/v8/pkg/resource"
+	"github.com/giantswarm/operatorkit/v8/pkg/resource/crud"
 )
 
 func CRUD(r resource.Interface) (crud.Interface, bool) {
