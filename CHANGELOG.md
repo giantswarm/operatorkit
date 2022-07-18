@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.1.0] - 2022-07-18
+
 ### Changed
 
 - Change Reconcile errors total to include controller name. 
@@ -211,7 +213,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-[Unreleased]: https://github.com/giantswarm/operatorkit/compare/v7.0.1...HEAD
+[Unreleased]: https://github.com/giantswarm/operatorkit/compare/v7.1.0...HEAD
+[7.1.0]: https://github.com/giantswarm/operatorkit/compare/v7.0.1...v7.1.0
 [7.0.1]: https://github.com/giantswarm/operatorkit/compare/v7.0.0...v7.0.1
 [7.0.0]: https://github.com/giantswarm/operatorkit/compare/v6.1.0...v7.0.0
 [6.1.0]: https://github.com/giantswarm/operatorkit/compare/v6.0.0...v6.1.0
