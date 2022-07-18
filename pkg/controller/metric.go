@@ -10,14 +10,15 @@ const (
 )
 
 var (
-	errorGauge = prometheus.NewGauge(
-		prometheus.GaugeOpts{
-			Namespace: PrometheusNamespace,
-			Subsystem: PrometheusSubsystem,
-			Name:      "error_total",
-			Help:      "Number of reconciliation errors.",
-		},
-	)
+	// ReconcileErrors is a prometheus counter metrics which holds the total
+	// number of errors from the Reconciler.
+	reconcileErrors = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: PrometheusNamespace,
+		Subsystem: PrometheusSubsystem,
+		Name:      "errors_total",
+		Help:      "Total number of reconciliation errors per controller",
+	}, []string{"controller"})
+
 	eventHistogram = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Namespace: PrometheusNamespace,
@@ -39,7 +40,7 @@ var (
 )
 
 func init() {
-	prometheus.MustRegister(errorGauge)
+	prometheus.MustRegister(reconcileErrors)
 	prometheus.MustRegister(eventHistogram)
 	prometheus.MustRegister(lastReconciledGauge)
 }

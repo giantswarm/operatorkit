@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Change Reconcile errors total to include controller name. 
+
 ## [7.0.1] - 2022-02-07
 
 ### Changed
