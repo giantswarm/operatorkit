@@ -17,10 +17,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
-	v1 "github.com/giantswarm/operatorkit/v7/api/v1"
-	"github.com/giantswarm/operatorkit/v7/integration/env"
-	"github.com/giantswarm/operatorkit/v7/pkg/controller"
-	"github.com/giantswarm/operatorkit/v7/pkg/resource"
+	v1 "github.com/giantswarm/operatorkit/v8/api/v1"
+	"github.com/giantswarm/operatorkit/v8/integration/env"
+	"github.com/giantswarm/operatorkit/v8/pkg/controller"
+	"github.com/giantswarm/operatorkit/v8/pkg/resource"
 )
 
 type Config struct {
