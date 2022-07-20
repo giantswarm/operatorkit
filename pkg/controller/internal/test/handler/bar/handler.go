@@ -3,7 +3,7 @@ package bar
 import (
 	"context"
 
-	"github.com/giantswarm/operatorkit/v8/pkg/handler"
+	"github.com/giantswarm/operatorkit/v7/pkg/handler"
 )
 
 type Handler struct{}
