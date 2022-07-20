@@ -3,8 +3,8 @@ package metricsresource
 import (
 	"testing"
 
-	"github.com/giantswarm/operatorkit/v8/pkg/resource/wrapper/internal"
-	"github.com/giantswarm/operatorkit/v8/pkg/resource/wrapper/internal/test"
+	"github.com/giantswarm/operatorkit/v7/pkg/resource/wrapper/internal"
+	"github.com/giantswarm/operatorkit/v7/pkg/resource/wrapper/internal/test"
 )
 
 // Test_CRUD_success tests if wrapping CRUD resource allows extracting
