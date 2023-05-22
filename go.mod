@@ -3,7 +3,7 @@ module github.com/giantswarm/operatorkit/v7
 go 1.17
 
 require (
-	github.com/getsentry/sentry-go v0.12.0
+	github.com/getsentry/sentry-go v0.21.0
 	github.com/giantswarm/backoff v1.0.0
 	github.com/giantswarm/exporterkit v1.0.0
 	github.com/giantswarm/k8sclient/v7 v7.0.1
@@ -11,9 +11,9 @@ require (
 	github.com/giantswarm/micrologger v0.6.0
 	github.com/giantswarm/to v0.4.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/prometheus/client_golang v1.12.1
-	github.com/prometheus/client_model v0.2.0
-	github.com/stretchr/testify v1.7.0
+	github.com/prometheus/client_golang v1.15.1
+	github.com/prometheus/client_model v0.4.0
+	github.com/stretchr/testify v1.8.3
 	k8s.io/api v0.20.15
 	k8s.io/apiextensions-apiserver v0.20.15
 	k8s.io/apimachinery v0.20.15
@@ -80,5 +80,5 @@ require (
 
 replace (
 	github.com/dgrijalva/jwt-go => github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
-	github.com/spf13/viper => github.com/spf13/viper v1.9.0
+	github.com/spf13/viper => github.com/spf13/viper v1.15.0
 )
