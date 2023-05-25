@@ -52,7 +52,6 @@ func NewResource(config ResourceConfig) (*Resource, error) {
 // exposed for wrapping purposes in the wrapper package.
 //
 // NOTE This method should not be used outside operatorkit.
-//
 func (r *Resource) CRUD() Interface {
 	return r.crud
 }
