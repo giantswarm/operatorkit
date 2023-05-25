@@ -31,7 +31,6 @@ const (
 // expected. It does not cover correct behavior with reconciliation.
 //
 // !!! This test does not work with CRs, the controller is not booted !!!
-//
 func Test_Finalizer_Integration_Basic(t *testing.T) {
 	var err error
 
