@@ -30,7 +30,6 @@ const (
 // The test verifies that error events are created when reconciliation returns error.
 //
 // !!! This test does not work with CRs, the controller is not booted !!!
-//
 func Test_Kubernetes_Event(t *testing.T) {
 	ctx := context.Background()
 

@@ -1,0 +1,89 @@
+name: Add Issue to Project when assigned
+
+on:
+  issues:
+    types:
+    - assigned
+    - labeled
+
+jobs:
+  build_user_list:
+    name: Get yaml config of GS users
+    runs-on: ubuntu-latest
+    steps:
+    - name: Get user-mapping
+      run: |
+        mkdir -p artifacts
+        wget --header "Authorization: token ${{ secrets.ISSUE_AUTOMATION }}" \
+          -O artifacts/users.yaml \
+          https://raw.githubusercontent.com/giantswarm/github/master/tools/issue-automation/user-mapping.yaml
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: users
+        path: artifacts/users.yaml
+        retention-days: 1
+    - name: Get label-mapping
+      run: |
+        mkdir -p artifacts
+        wget --header "Authorization: token ${{ secrets.ISSUE_AUTOMATION }}" \
+          -O artifacts/labels.yaml \
+          https://raw.githubusercontent.com/giantswarm/github/master/tools/issue-automation/label-mapping.yaml
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: labels
+        path: artifacts/labels.yaml
+        retention-days: 1
+
+  add_to_personal_board:
+    name: Add issue to personal board
+    runs-on: ubuntu-latest
+    needs: build_user_list
+    if: github.event.action == 'assigned'
+    steps:
+    - uses: actions/download-artifact@v3
+      id: download-users
+      with:
+        name: users
+    - name: Find personal board based on user names
+      run: |
+        event_assignee=$(cat $GITHUB_EVENT_PATH | jq -r .assignee.login | tr '[:upper:]' '[:lower:]')
+        echo "Issue assigned to: ${event_assignee}"
+
+        BOARD=($(cat ${{steps.download-users.outputs.download-path}}/users.yaml | tr '[:upper:]' '[:lower:]' | yq ".${event_assignee}.personalboard"))
+        echo "Personal board URL: ${BOARD}"
+
+        echo "BOARD=${BOARD}" >> $GITHUB_ENV
+    - name: Add issue to personal board
+      if: ${{ env.BOARD != 'null' && env.BOARD != '' }}
+      uses: actions/add-to-project@main
+      with:
+        project-url: ${{ env.BOARD }}
+        github-token: ${{ secrets.ISSUE_AUTOMATION }}
+
+  add_to_team_board:
+    name: Add issue to team board
+    runs-on: ubuntu-latest
+    needs: build_user_list
+    if: github.event.action == 'labeled'
+    steps:
+    - uses: actions/download-artifact@v3
+      id: download-labels
+      with:
+        name: labels
+    - name: Find team board based on label
+      run: |
+        event_label=$(cat $GITHUB_EVENT_PATH | jq -r .label.name | tr '[:upper:]' '[:lower:]')
+        echo "Issue labelled with: ${event_label}"
+
+        BOARD=($(cat ${{steps.download-labels.outputs.download-path}}/labels.yaml | tr '[:upper:]' '[:lower:]' | yq ".[\"${event_label}\"].projectboard"))
+        echo "Team board URL: ${BOARD}"
+
+        echo "BOARD=${BOARD}" >> $GITHUB_ENV
+    - name: Add issue to team board
+      if: ${{ env.BOARD != 'null' && env.BOARD != '' }}
+      uses: actions/add-to-project@main
+      with:
+        project-url: ${{ env.BOARD }}
+        github-token: ${{ secrets.ISSUE_AUTOMATION }}
