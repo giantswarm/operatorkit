@@ -1,6 +1,6 @@
 # DO NOT EDIT. Generated with:
 #
-#    devctl@5.2.0
+#    devctl@6.1.1
 #
 name: Create Release PR
 on:
@@ -44,7 +44,7 @@ jobs:
       repo_name: ${{ steps.gather_facts.outputs.repo_name }}
       branch: ${{ steps.gather_facts.outputs.branch }}
       base: ${{ steps.gather_facts.outputs.base }}
-      is_major: ${{ steps.gather_facts.outputs.is_major }}
+      needs_major_bump: ${{ steps.gather_facts.outputs.needs_major_bump }}
       skip: ${{ steps.pr_exists.outputs.skip }}
       version: ${{ steps.gather_facts.outputs.version }}
     steps:
@@ -52,7 +52,7 @@ jobs:
         id: gather_facts
         run: |
           head="${{ inputs.branch || github.event.ref }}"
-          echo "::set-output name=branch::${head}"
+          echo "branch=${head}" >> $GITHUB_OUTPUT
 
           head="${head#refs/heads/}" # Strip "refs/heads/" prefix.
           if [[ $(echo "$head" | grep -o '#' | wc -l) -gt 1 ]]; then
@@ -65,8 +65,20 @@ jobs:
 
           version="$(echo $head | awk -F# '{print $NF}')"
           if [[ $version =~ ^major|minor|patch$ ]]; then
-            gh auth login --with-token <<<$(echo -n ${{ secrets.GITHUB_TOKEN }})
-            version_parts=($(gh api "repos/${{ github.repository }}/releases/latest" --jq '.tag_name[1:] | split(".") | .[0], .[1], .[2]'))
+            gh auth login --with-token <<<$(echo -n ${{ secrets.TAYLORBOT_GITHUB_ACTION }})
+            gh_api_get_latest_release_version()
+            {
+              if ! version="$(gh api "repos/$1/releases/latest" --jq '.tag_name[1:] | split(".") | .[0], .[1], .[2]')"
+              then
+                case "$version" in
+                  *Not\ Found*) echo Assuming v0.0.0, hooray first release! >&2 ; version="0 0 0" ;;
+                  *) version="" ; return 1 ;;
+                esac
+              fi
+              echo "$version"
+            }
+
+            version_parts=($(gh_api_get_latest_release_version "${{ github.repository }}"))
             version_major=${version_parts[0]}
             version_minor=${version_parts[1]}
             version_patch=${version_parts[2]}
@@ -82,7 +94,9 @@ jobs:
                 version_major=$((version_major+1))
                 version_minor=0
                 version_patch=0
-                echo "::set-output name=is_major::true"
+                if [[ "${version_major}" != "1" ]]; then
+                  echo "needs_major_bump=true" >> $GITHUB_OUTPUT
+                fi
                 ;;
               *)
                 echo "Unknown Semver level provided"
@@ -95,26 +109,30 @@ jobs:
             version_major=$(echo "${version}" | cut -d "." -f 1)
             version_minor=$(echo "${version}" | cut -d "." -f 2)
             version_patch=$(echo "${version}" | cut -d "." -f 3)
-            if [[ $version_minor = 0 && $version_patch = 0 ]]; then
-              echo "::set-output name=is_major::true"
+            # This will help us detect versions with suffixes as majors, i.e 3.0.0-alpha1.
+            # Even though it's a pre-release, it's still a major.
+            if [[ $version_minor = 0 && $version_patch =~ ^0.* && $version_major != 1 ]]; then
+              echo "needs_major_bump=true" >> $GITHUB_OUTPUT
             fi
           fi
           repo_name="$(echo '${{ github.repository }}' | awk -F '/' '{print $2}')"
           echo "repo_name=\"$repo_name\" base=\"$base\" head=\"$head\" version=\"$version\""
-          echo "::set-output name=repo_name::${repo_name}"
-          echo "::set-output name=base::${base}"
-          echo "::set-output name=head::${head}"
-          echo "::set-output name=version::${version}"
+          echo "repo_name=${repo_name}" >> $GITHUB_OUTPUT
+          echo "base=${base}" >> $GITHUB_OUTPUT
+          echo "head=${head}" >> $GITHUB_OUTPUT
+          echo "version=${version}" >> $GITHUB_OUTPUT
       - name: Check if PR exists
         id: pr_exists
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GITHUB_TOKEN: "${{ secrets.TAYLORBOT_GITHUB_ACTION }}"
         run: |
-          if gh pr view --repo ${{ github.repository }} ${{ steps.gather_facts.outputs.branch }} | grep -i 'state:[[:space:]]*open' >/dev/null; then
-            gh pr view --repo ${{ github.repository }} ${{ steps.gather_facts.outputs.branch }}
-            echo "::set-output name=skip::true"
+          head="${{ steps.gather_facts.outputs.branch }}"
+          branch="${head#refs/heads/}" # Strip "refs/heads/" prefix.
+          if gh pr view --repo "${{ github.repository }}" "${branch}" --json state --jq .state | grep -i 'open' > /dev/null; then
+            gh pr view --repo "${{ github.repository }}" "${branch}"
+            echo "skip=true" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=skip::false"
+            echo "skip=false" >> $GITHUB_OUTPUT
           fi
   create_release_pr:
     name: Create release PR
@@ -127,12 +145,12 @@ jobs:
     steps:
       - uses: actions/setup-go@v3
         with:
-          go-version: '=1.17.0'
+          go-version: '=1.18.1'
       - name: Install architect
-        uses: giantswarm/install-binary-action@v1.0.0
+        uses: giantswarm/install-binary-action@v1.1.0
         with:
           binary: "architect"
-          version: "6.1.0"
+          version: "6.11.0"
       - name: Checkout code
         uses: actions/checkout@v3
         with:
@@ -140,29 +158,73 @@ jobs:
       - name: Prepare release changes
         run: |
           architect prepare-release ${{ env.architect_flags }} --version "${{ needs.gather_facts.outputs.version }}"
+      - name: Update version field in Chart.yaml
+        run: |
+          # Define chart_dir
+          repository="${{ needs.gather_facts.outputs.repo_name }}"
+          chart="helm/${repository}"
+
+          # Check chart directory.
+          if [ ! -d "${chart}" ]
+          then
+            echo "Could not find chart directory '${chart}', adding app suffix."
+
+            # Add app suffix.
+            chart="helm/${repository}-app"
+
+            # Check chart directory with app suffix.
+            if [ ! -d "${chart}" ]
+            then
+              echo "Could not find chart directory '${chart}', removing app suffix."
+
+              # Remove app suffix.
+              chart="helm/${repository%-app}"
+
+              if [ ! -d "${chart}" ]
+              then
+                # Print error.
+                echo "Could not find chart directory '${chart}', doing nothing."
+              fi
+            fi
+          fi
+
+          # Define chart YAML.
+          chart_yaml="${chart}/Chart.yaml"
+
+          # Check chart YAML.
+          if [ -f "${chart_yaml}" ]
+          then
+            # check if version in Chart.yaml is templated using architect
+            if [ $(grep -c "^version:.*\.Version.*$" "${chart_yaml}") = "0" ]; then
+              yq -i '.version = "${{ needs.gather_facts.outputs.version }}"' "${chart_yaml}"
+            fi
+          fi
+
       - name: Bump go module defined in go.mod if needed
         run: |
-          if [ "${{ needs.gather_facts.outputs.is_major }}" = true ] && test -f "go.mod"; then
-            go install github.com/marwan-at-work/mod/cmd/mod@v0.4.1
+          if [ "${{ needs.gather_facts.outputs.needs_major_bump }}" = true ] && test -f "go.mod"; then
+            go install github.com/marwan-at-work/mod/cmd/mod@v0.5.0
             mod upgrade
           fi
+      - name: Set up git identity
+        run: |
+          git config --local user.email "dev@giantswarm.io"
+          git config --local user.name "taylorbot"
       - name: Create release commit
         env:
           version: "${{ needs.gather_facts.outputs.version }}"
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "github-actions"
           git add -A
           git commit -m "Release v${{ env.version }}"
       - name: Push changes
         env:
-          remote_repo: "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          remote_repo: "https://${{ github.actor }}:${{ secrets.TAYLORBOT_GITHUB_ACTION }}@github.com/${{ github.repository }}.git"
         run: |
           git push "${remote_repo}" HEAD:${{ needs.gather_facts.outputs.branch }}
       - name: Create PR
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GITHUB_TOKEN: "${{ secrets.TAYLORBOT_GITHUB_ACTION }}"
           base: "${{ needs.gather_facts.outputs.base }}"
           version: "${{ needs.gather_facts.outputs.version }}"
         run: |
-          hub pull-request -f  -m "Release v${{ env.version }}" -a ${{ github.actor }} -b ${{ env.base }} -h ${{ needs.gather_facts.outputs.branch }}
+          hub pull-request -f -m "Release v${{ env.version }}" -a ${{ github.actor }} -b ${{ env.base }} -h ${{ needs.gather_facts.outputs.branch }}

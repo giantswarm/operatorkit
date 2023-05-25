@@ -1,6 +1,6 @@
 # DO NOT EDIT. Generated with:
 #
-#    devctl@5.2.0
+#    devctl@6.1.1
 #
 name: Create Release
 on:
@@ -50,7 +50,7 @@ jobs:
           fi
           version="${version#v}" # Strip "v" prefix.
           echo "version=\"${version}\""
-          echo "::set-output name=version::${version}"
+          echo "version=${version}" >> $GITHUB_OUTPUT
       - name: Checkout code
         if: ${{ steps.get_version.outputs.version != '' }}
         uses: actions/checkout@v3
@@ -63,7 +63,7 @@ jobs:
             path=''
           fi
           echo "path=\"$path\""
-          echo "::set-output name=path::${path}"
+          echo "path=${path}" >> $GITHUB_OUTPUT
       - name: Check if reference version
         id: ref_version
         run: |
@@ -81,7 +81,7 @@ jobs:
             refversion=true
           fi
           echo "refversion =\"${refversion}\""
-          echo "::set-output name=refversion::${refversion}"
+          echo "refversion=${refversion}" >> $GITHUB_OUTPUT
   update_project_go:
     name: Update project.go
     runs-on: ubuntu-20.04
@@ -90,12 +90,12 @@ jobs:
       - gather_facts
     steps:
       - name: Install architect
-        uses: giantswarm/install-binary-action@v1.0.0
+        uses: giantswarm/install-binary-action@v1.1.0
         with:
           binary: "architect"
-          version: "6.1.0"
+          version: "6.11.0"
       - name: Install semver
-        uses: giantswarm/install-binary-action@v1.0.0
+        uses: giantswarm/install-binary-action@v1.1.0
         with:
           binary: "semver"
           version: "3.2.0"
@@ -114,28 +114,30 @@ jobs:
           version="${{ needs.gather_facts.outputs.version }}"
           new_version="$(semver bump patch $version)-dev"
           echo "version=\"$version\" new_version=\"$new_version\""
-          echo "::set-output name=new_version::${new_version}"
+          echo "new_version=${new_version}" >> $GITHUB_OUTPUT
           sed -Ei "s/(version[[:space:]]*=[[:space:]]*)\"${version}\"/\1\"${new_version}\"/" $file
           if git diff --exit-code $file ; then
             echo "error: no changes in \"$file\"" >&2
             exit 1
           fi
+      - name: Set up git identity
+        run: |
+          git config --local user.email "dev@giantswarm.io"
+          git config --local user.name "taylorbot"
       - name: Commit changes
         run: |
           file="${{ needs.gather_facts.outputs.project_go_path }}"
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
           git add $file
           git commit -m "Bump version to ${{ steps.update_project_go.outputs.new_version }}"
       - name: Push changes
         env:
-          REMOTE_REPO: "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          REMOTE_REPO: "https://${{ github.actor }}:${{ secrets.TAYLORBOT_GITHUB_ACTION }}@github.com/${{ github.repository }}.git"
           branch: "${{ github.ref }}-version-bump"
         run: |
           git push "${REMOTE_REPO}" HEAD:${{ env.branch }}
       - name: Create PR
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GITHUB_TOKEN: "${{ secrets.TAYLORBOT_GITHUB_ACTION }}"
           base: "${{ github.ref }}"
           branch: "${{ github.ref }}-version-bump"
           version: "${{ needs.gather_facts.outputs.version }}"
@@ -167,21 +169,24 @@ jobs:
         with:
           version: ${{ needs.gather_facts.outputs.version }}
           path: ./CHANGELOG.md
+      - name: Set up git identity
+        run: |
+          git config --local user.email "dev@giantswarm.io"
+          git config --local user.name "taylorbot"
       - name: Create tag
         run: |
           version="${{ needs.gather_facts.outputs.version }}"
-          git config --local user.name "github-actions"
           git tag "v$version" ${{ github.sha }}
       - name: Push tag
         env:
-          REMOTE_REPO: "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          REMOTE_REPO: "https://${{ github.actor }}:${{ secrets.TAYLORBOT_GITHUB_ACTION }}@github.com/${{ github.repository }}.git"
         run: |
           git push "${REMOTE_REPO}" --tags
       - name: Create release
         id: create_gh_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: "${{ secrets.TAYLORBOT_GITHUB_ACTION }}"
         with:
           body: ${{ steps.changelog_reader.outputs.changes }}
           tag_name: "v${{ needs.gather_facts.outputs.version }}"
@@ -195,7 +200,7 @@ jobs:
     if: ${{ needs.gather_facts.outputs.version }}
     steps:
       - name: Install semver
-        uses: giantswarm/install-binary-action@v1.0.0
+        uses: giantswarm/install-binary-action@v1.1.0
         with:
           binary: "semver"
           version: "3.0.0"
