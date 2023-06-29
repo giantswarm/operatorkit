@@ -1,7 +1,6 @@
 {
   "extends": [
-    "config:base",
-    ":reviewer(team:team-atlas)"
+    "config:base"
   ],
   "labels": ["dependencies", "renovate"],
   "packageRules": [
