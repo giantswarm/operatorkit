@@ -2,7 +2,7 @@ module github.com/giantswarm/apiextensions/hack/tools/code-generator
 
 go 1.17
 
-require sigs.k8s.io/controller-tools v0.12.0
+require sigs.k8s.io/controller-tools v0.12.1
 
 require (
 	github.com/fatih/color v1.15.0 // indirect
