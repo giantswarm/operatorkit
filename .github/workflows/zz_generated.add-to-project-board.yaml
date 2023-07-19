@@ -16,7 +16,7 @@ jobs:
         mkdir -p artifacts
         wget --header "Authorization: token ${{ secrets.ISSUE_AUTOMATION }}" \
           -O artifacts/users.yaml \
-          https://raw.githubusercontent.com/giantswarm/github/master/tools/issue-automation/user-mapping.yaml
+          https://raw.githubusercontent.com/giantswarm/github/main/tools/issue-automation/user-mapping.yaml
     - name: Upload Artifact
       uses: actions/upload-artifact@v3
       with:
@@ -28,7 +28,7 @@ jobs:
         mkdir -p artifacts
         wget --header "Authorization: token ${{ secrets.ISSUE_AUTOMATION }}" \
           -O artifacts/labels.yaml \
-          https://raw.githubusercontent.com/giantswarm/github/master/tools/issue-automation/label-mapping.yaml
+          https://raw.githubusercontent.com/giantswarm/github/main/tools/issue-automation/label-mapping.yaml
     - name: Upload Artifact
       uses: actions/upload-artifact@v3
       with:
