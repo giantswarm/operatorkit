@@ -1,6 +1,6 @@
 # DO NOT EDIT. Generated with:
 #
-#    devctl@6.4.0
+#    devctl@6.5.0
 #
 name: Create Release
 on:
