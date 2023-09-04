@@ -1,6 +1,6 @@
 # DO NOT EDIT. Generated with:
 #
-#    devctl@6.6.0
+#    devctl@6.7.0
 #
 name: Create Release
 on:
@@ -15,7 +15,7 @@ on:
 jobs:
   debug_info:
     name: Debug info
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Print github context JSON
         run: |
@@ -24,7 +24,7 @@ jobs:
           EOF
   gather_facts:
     name: Gather facts
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       project_go_path: ${{ steps.get_project_go_path.outputs.path }}
       ref_version: ${{ steps.ref_version.outputs.refversion }}
@@ -84,7 +84,7 @@ jobs:
           echo "refversion=${refversion}" >> $GITHUB_OUTPUT
   update_project_go:
     name: Update project.go
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: ${{ needs.gather_facts.outputs.version != '' && needs.gather_facts.outputs.project_go_path != '' && needs.gather_facts.outputs.ref_version != 'true' }}
     needs:
       - gather_facts
@@ -146,7 +146,7 @@ jobs:
           hub pull-request -f  -m "${{ env.title }}" -b ${{ env.base }} -h ${{ env.branch }} -r ${{ github.actor }}
   create_release:
     name: Create release
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs:
       - gather_facts
     if: ${{ needs.gather_facts.outputs.version }}
@@ -194,7 +194,7 @@ jobs:
 
   create-release-branch:
     name: Create release branch
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs:
       - gather_facts
     if: ${{ needs.gather_facts.outputs.version }}
