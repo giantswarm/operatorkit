@@ -43,9 +43,10 @@
     ".github/workflows/pre_commit_*.yaml"
   ],
   "ignoreDeps": [
+    "actions/setup-go",
     "architect",
-    "zricethezav/gitleaks-action",
-    "actions/setup-go"
+    "github.com/imdario/mergo",
+    "zricethezav/gitleaks-action"
   ],
   "regexManagers": [
     {
