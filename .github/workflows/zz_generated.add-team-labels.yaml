@@ -45,7 +45,7 @@ jobs:
         done
         echo "EOF" >> $GITHUB_ENV
     - name: Apply label to issue
-      if: ${{ env.LABEL != '' }}
+      if: ${{ env.LABEL != '' && env.LABEL != 'null' && env.LABEL != null }}
       uses: actions-ecosystem/action-add-labels@v1
       with:
         github_token: ${{ secrets.ISSUE_AUTOMATION }}
