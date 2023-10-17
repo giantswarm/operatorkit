@@ -1,6 +1,6 @@
 # DO NOT EDIT. Generated with:
 #
-#    devctl@6.9.0
+#    devctl@6.13.0
 #
 name: Create Release PR
 on:
@@ -152,7 +152,7 @@ jobs:
           binary: "architect"
           version: "6.11.0"
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ needs.gather_facts.outputs.branch }}
       - name: Prepare release changes
@@ -227,4 +227,4 @@ jobs:
           base: "${{ needs.gather_facts.outputs.base }}"
           version: "${{ needs.gather_facts.outputs.version }}"
         run: |
-          hub pull-request -f -m "Release v${{ env.version }}" -a ${{ github.actor }} -b ${{ env.base }} -h ${{ needs.gather_facts.outputs.branch }}
+          gh pr create --assignee ${{ github.actor }} --title "Release v${{ env.version }}" --body "" --base ${{ env.base }} --head "${{ needs.gather_facts.outputs.branch }}"

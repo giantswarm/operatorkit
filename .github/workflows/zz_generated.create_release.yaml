@@ -1,6 +1,6 @@
 # DO NOT EDIT. Generated with:
 #
-#    devctl@6.9.0
+#    devctl@6.13.0
 #
 name: Create Release
 on:
@@ -53,7 +53,7 @@ jobs:
           echo "version=${version}" >> $GITHUB_OUTPUT
       - name: Checkout code
         if: ${{ steps.get_version.outputs.version != '' }}
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Get project.go path
         id: get_project_go_path
         if: ${{ steps.get_version.outputs.version != '' }}
@@ -103,7 +103,7 @@ jobs:
           tarball_binary_path: "*/src/${binary}"
           smoke_test: "${binary} --version"
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Update project.go
         id: update_project_go
         env:
@@ -143,7 +143,7 @@ jobs:
           version: "${{ needs.gather_facts.outputs.version }}"
           title: "Bump version to ${{ steps.update_project_go.outputs.new_version }}"
         run: |
-          hub pull-request -f  -m "${{ env.title }}" -b ${{ env.base }} -h ${{ env.branch }} -r ${{ github.actor }}
+          gh pr create --title "${{ env.title }}" --body "" --base ${{ env.base }} --head ${{ env.branch }} --reviewer ${{ github.actor }}
   create_release:
     name: Create release
     runs-on: ubuntu-22.04
@@ -154,7 +154,7 @@ jobs:
       upload_url: ${{ steps.create_gh_release.outputs.upload_url }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
       - name: Ensure correct version in project.go
@@ -208,7 +208,7 @@ jobs:
           tarball_binary_path: "*/src/${binary}"
           smoke_test: "${binary} --version"
       - name: Check out the repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Clone the whole history, not just the most recent commit.
       - name: Fetch all tags and branches

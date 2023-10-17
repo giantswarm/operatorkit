@@ -56,7 +56,7 @@ jobs:
 
         echo "BOARD=${BOARD}" >> $GITHUB_ENV
     - name: Add issue to personal board
-      if: ${{ env.BOARD != 'null' && env.BOARD != '' }}
+      if: ${{ env.BOARD != 'null' && env.BOARD != ''  && env.BOARD != null }}
       uses: actions/add-to-project@main
       with:
         project-url: ${{ env.BOARD }}
@@ -82,7 +82,7 @@ jobs:
 
         echo "BOARD=${BOARD}" >> $GITHUB_ENV
     - name: Add issue to team board
-      if: ${{ env.BOARD != 'null' && env.BOARD != '' }}
+      if: ${{ env.BOARD != 'null' && env.BOARD != '' && env.BOARD != null }}
       uses: actions/add-to-project@main
       with:
         project-url: ${{ env.BOARD }}
