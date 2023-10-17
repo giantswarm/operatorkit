@@ -1,4 +1,5 @@
-[![GoDoc](https://godoc.org/github.com/giantswarm/operatorkit?status.svg)](http://godoc.org/github.com/giantswarm/operatorkit) [![CircleCI](https://circleci.com/gh/giantswarm/operatorkit.svg?&style=shield&circle-token=5f7e69042df6538d1e9c7ef0dd1387ca4d7a0d55)](https://circleci.com/gh/giantswarm/operatorkit)
+[![Go Reference](https://pkg.go.dev/badge/github.com/giantswarm/operatorkit.svg)](https://pkg.go.dev/github.com/giantswarm/operatorkit)
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/giantswarm/operatorkit/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/giantswarm/operatorkit/tree/master)
 
 # operatorkit
 
@@ -7,8 +8,6 @@ Package `operatorkit` implements an opinionated framework for developing
 number of the operators we developed at [Giant Swarm][giantswarm]. The goal of
 this library is to provide a common structure for operator projects and to
 encapsulate best practices we learned while running operators in production.
-
-
 
 ## Features
 
@@ -29,13 +28,9 @@ encapsulate best practices we learned while running operators in production.
 - [Pause Reconciliation](docs/pause_reconciliation.md) using pausing annotations
   on runtime objects to stop and resume reconciliation on demand.
 
-
-
 ## Roadmap
 
 For future planned features and breaking changes see the [roadmap](ROADMAP.md).
-
-
 
 ## Docs
 
@@ -49,64 +44,52 @@ For future planned features and breaking changes see the [roadmap](ROADMAP.md).
 - [Using Finalizers](docs/using_finalizers.md)
 - [Using Kubernetes Events](docs/using_kubernetes_events.md)
 
-
-
 ## Integration Tests
 
 You can simply create a [`kind`](https://github.com/kubernetes-sigs/kind/)
 cluster to run the integration tests.
 
-```
+```nohighlight
 kind create cluster
 ```
 
 The tests need to figure out how to connect to the Kubernetes cluster. Therefore
 we need to set an environment variable pointing to your local kube config.
 
-```
+```nohighlight
 export E2E_KUBECONFIG=~/.kube/config
 ```
 
 Now you can easily run the integration tests.
 
-```
+```nohighlight
 go test -v -tags=k8srequired ./integration/test/<test-name>
 ```
 
 Once you did your testing you may want to delete your local test cluster again.
 
-```
+```nohighlight
 kind delete cluster
 ```
-
-
 
 ## Projects using operatorkit
 
 [Giant Swarm operators] using `operatorkit`.
-
-
 
 ## Example
 
 For a detailed state of art implementation, please see
 [giantswarm/aws-operator](https://github.com/giantswarm/aws-operator).
 
-
-
 ## Contributing & Reporting Bugs
 
 See [CONTRIBUTING](CONTRIBUTING.md) for details on submitting patches, the
 contribution workflow as well as reporting bugs.
 
-
-
 ## License
 
 `operatorkit` is under the Apache 2.0 license. See the [LICENSE](LICENSE) file
 for details.
-
-
 
 [finalizers]: https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-custom-resource-definitions/#finalizers
 [giantswarm]: https://giantswarm.io
