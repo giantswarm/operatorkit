@@ -8,7 +8,7 @@ repos:
         args: [ --format=json ]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: check-added-large-files
       # check for unresolved merge conflicts
