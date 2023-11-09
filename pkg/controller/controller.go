@@ -24,10 +24,12 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -374,12 +376,21 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 
 	var mgr manager.Manager
 	{
+		var cacheOptions = cache.Options{
+			SyncPeriod: to.DurationP(c.resyncPeriod),
+		}
+		if c.namespace != "" {
+			cacheOptions.DefaultNamespaces = map[string]cache.Config{
+				c.namespace: {},
+			}
+		}
 		o := manager.Options{
-			// MetricsBindAddress is set to 0 in order to disable it. We do this
-			// ourselves.
-			MetricsBindAddress: DisableMetricsServing,
-			Namespace:          c.namespace,
-			SyncPeriod:         to.DurationP(c.resyncPeriod),
+			Cache: cacheOptions,
+			Metrics: server.Options{
+				// MetricsBindAddress is set to 0 in order to disable it. We do this
+				// ourselves.
+				BindAddress: DisableMetricsServing,
+			},
 		}
 
 		mgr, err = manager.New(c.k8sClient.RESTConfig(), o)
