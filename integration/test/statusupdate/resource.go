@@ -74,10 +74,8 @@ func NewResource(config ResourceConfig) (*Resource, error) {
 	}
 
 	r := &Resource{
-		t: config.T,
-
-		ctrlClient: k8sClient.CtrlClient(),
-
+		t:              config.T,
+		ctrlClient:     k8sClient.CtrlClient(),
 		executionCount: 0,
 		mutex:          sync.Mutex{},
 	}
@@ -124,16 +122,15 @@ func (r *Resource) EnsureCreated(ctx context.Context, obj interface{}) error {
 		if err != nil {
 			r.t.Fatal("expected", nil, "got", err)
 		}
-	} else {
-		if len(objTyped.Status.Conditions) != 1 {
-			r.t.Fatalf("expected one status condition but got %d", len(objTyped.Status.Conditions))
-		}
+	} else if len(objTyped.Status.Conditions) == 1 {
 		if objTyped.Status.Conditions[0].Status != conditionStatus {
 			r.t.Fatalf("expected status condition status %#q but got %#q", conditionStatus, objTyped.Status.Conditions[0].Status)
 		}
 		if objTyped.Status.Conditions[0].Type != conditionType {
 			r.t.Fatalf("expected status condition type %#q but got %#q", conditionType, objTyped.Status.Conditions[0].Type)
 		}
+	} else {
+		r.t.Fatalf("expected one status condition but got %d", len(objTyped.Status.Conditions))
 	}
 
 	return nil

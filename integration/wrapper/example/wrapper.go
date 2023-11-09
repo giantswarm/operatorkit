@@ -73,8 +73,7 @@ func New(config Config) (*Wrapper, error) {
 			NewRuntimeObjectFunc: func() client.Object {
 				return new(v1.Example)
 			},
-			Selector: labels.Everything(),
-
+			Selector:     labels.Everything(),
 			Name:         config.Name,
 			ResyncPeriod: 10 * time.Second,
 		}

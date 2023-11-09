@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Upgrade go to 1.20
+- Upgrade go to 1.21
 - Upgrade k8s dependencies to 1.28.x
 
 ## [7.1.0] - 2022-07-18

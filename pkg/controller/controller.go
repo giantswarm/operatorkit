@@ -381,7 +381,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 		}
 		if c.namespace != "" {
 			cacheOptions.DefaultNamespaces = map[string]cache.Config{
-				c.namespace: {},
+				c.namespace: cache.Config{},
 			}
 		}
 		o := manager.Options{
@@ -408,7 +408,6 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 			For(c.newRuntimeObjectFunc()).
 			WithOptions(controller.Options{
 				MaxConcurrentReconciles: 1,
-				Reconciler:              c,
 			}).
 			WithEventFilter(predicate.Funcs{
 				CreateFunc:  func(e event.CreateEvent) bool { return c.selector.Matches(labels.Set(e.Object.GetLabels())) },
