@@ -1,6 +1,6 @@
 # DO NOT EDIT. Generated with:
 #
-#    devctl@6.14.0
+#    devctl@6.17.0
 #
 
 APPLICATION    := $(shell go list -m | cut -d '/' -f 3)
@@ -100,7 +100,7 @@ lint: ## Runs golangci-lint.
 .PHONY: nancy
 nancy: ## Runs nancy (requires v1.0.37 or newer).
 	@echo "====> $@"
-	CGO_ENABLED=0 go list -json -m all | nancy sleuth --skip-update-check --quiet --exclude-vulnerability-file ./.nancy-ignore --additional-exclude-vulnerability-files ./.nancy-ignore.generated
+	CGO_ENABLED=0 go list -json -deps ./... | nancy sleuth --skip-update-check --quiet --exclude-vulnerability-file ./.nancy-ignore --additional-exclude-vulnerability-files ./.nancy-ignore.generated
 
 .PHONY: test
 test: ## Runs go test with default values.
