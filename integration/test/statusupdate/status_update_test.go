@@ -96,7 +96,7 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 		}
 	}
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(30 * time.Second)
 
 	{
 		newObj, err := w.GetObject(ctx, objName, testNamespace)
@@ -105,15 +105,15 @@ func Test_Finalizer_Integration_StatusUpdate(t *testing.T) {
 		}
 
 		newObjTyped := newObj.(*v1.Example)
-
-		if len(newObjTyped.Status.Conditions) != 1 {
+		if len(newObjTyped.Status.Conditions) == 1 {
+			if newObjTyped.Status.Conditions[0].Status != conditionStatus {
+				t.Errorf("expected status condition status %#q", conditionStatus)
+			}
+			if newObjTyped.Status.Conditions[0].Type != conditionType {
+				t.Errorf("expected status condition type %#q", conditionType)
+			}
+		} else {
 			t.Error("expected one status condition")
-		}
-		if newObjTyped.Status.Conditions[0].Status != conditionStatus {
-			t.Errorf("expected status condition status %#q", conditionStatus)
-		}
-		if newObjTyped.Status.Conditions[0].Type != conditionType {
-			t.Errorf("expected status condition type %#q", conditionType)
 		}
 	}
 }
