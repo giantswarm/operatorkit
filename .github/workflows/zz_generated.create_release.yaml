@@ -1,6 +1,6 @@
 # DO NOT EDIT. Generated with:
 #
-#    devctl@6.17.0
+#    devctl@6.17.1
 #
 name: Create Release
 on:
@@ -184,13 +184,12 @@ jobs:
           git push "${REMOTE_REPO}" --tags
       - name: Create release
         id: create_gh_release
-        uses: actions/create-release@v1
+        uses: ncipollo/release-action@v1
         env:
           GITHUB_TOKEN: "${{ secrets.TAYLORBOT_GITHUB_ACTION }}"
         with:
           body: ${{ steps.changelog_reader.outputs.changes }}
-          tag_name: "v${{ needs.gather_facts.outputs.version }}"
-          release_name: "v${{ needs.gather_facts.outputs.version }}"
+          tag: "v${{ needs.gather_facts.outputs.version }}"
 
   create-release-branch:
     name: Create release branch
