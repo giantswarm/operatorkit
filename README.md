@@ -3,6 +3,8 @@
 
 # operatorkit
 
+**:warning: Important: This library has been deprecated in favor of [kubebuilder](https://book.kubebuilder.io/). Please, use kubebuilder if you want to create a new operator.** 
+
 Package `operatorkit` implements an opinionated framework for developing
 [Kubernetes operators]. It emerged as we extracted common functionality from a
 number of the operators we developed at [Giant Swarm][giantswarm]. The goal of
