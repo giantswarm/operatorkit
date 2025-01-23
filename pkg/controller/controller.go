@@ -358,8 +358,8 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 	// emit metrics for the occured errors to ensure we create more awareness of
 	// anything going wrong in our operators.
 	{
-		utilruntime.ErrorHandlers = []func(err error){
-			func(err error) {
+		utilruntime.ErrorHandlers = []utilruntime.ErrorHandler{
+			func(_ context.Context, _ error, _ string, _ ...interface{}) {
 				// When we see a port forwarding error we ignore it because we cannot do
 				// anything about it. Errors like we check here would have to be dealt
 				// with in the third party tools we use. The port forwarding in general
