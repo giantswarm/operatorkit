@@ -359,7 +359,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 	// anything going wrong in our operators.
 	{
 		utilruntime.ErrorHandlers = []utilruntime.ErrorHandler{
-			func(_ context.Context, err error, _ string, _ ...interface{}) {
+			func(ctx context.Context, err error, _ string, _ ...interface{}) {
 				// When we see a port forwarding error we ignore it because we cannot do
 				// anything about it. Errors like we check here would have to be dealt
 				// with in the third party tools we use. The port forwarding in general
@@ -368,7 +368,6 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 					return
 				}
 
-				reconcileErrors.WithLabelValues(c.name).Inc()
 				c.logger.Errorf(ctx, err, "caught third party runtime error")
 			},
 		}
