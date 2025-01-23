@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - golang.org/x/term v0.28.0
   - golang.org/x/text v0.21.0
   - google.golang.org/protobuf v1.36.3
+  - github.com/giantswarm/micrologger v1.1.2
+  - github.com/go-logr/logr v1.4.2
 
 ## [7.2.0] - 2023-11-09
 
