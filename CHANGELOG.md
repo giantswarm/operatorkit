@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Dependencies Upgrade
+  - giantswarm/architect@5.11.4
+  - golang.org/x/net v0.34.0
+  - golang.org/x/sync v0.10.0
+  - golang.org/x/sys v0.29.0
+  - golang.org/x/term v0.28.0
+  - golang.org/x/text v0.21.0
+  - google.golang.org/protobuf v1.36.3
+  - github.com/giantswarm/micrologger v1.1.2
+  - github.com/go-logr/logr v1.4.2
+  - github.com/giantswarm/exporterkit v1.2.0
+  - github.com/prometheus/client_golang v1.19.0
+  - github.com/prometheus/common v0.48.0
+  - golang.org/x/oauth2 v0.16.0
+  - github.com/giantswarm/backoff v1.0.1
+  - github.com/giantswarm/to v0.4.2
+  - github.com/cenkalti/backoff/v4 v4.3.0
+
 ## [7.2.0] - 2023-11-09
 
 ### Changed
