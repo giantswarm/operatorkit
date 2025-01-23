@@ -79,4 +79,4 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 )
 
-replace github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.9.1
+replace github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.10.0
