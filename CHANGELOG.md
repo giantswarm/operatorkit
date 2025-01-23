@@ -24,9 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - github.com/prometheus/common v0.48.0
   - golang.org/x/oauth2 v0.16.0
   - github.com/giantswarm/backoff v1.0.1
-  - github.com/giantswarm/to v0.4.0
+  - github.com/giantswarm/to v0.4.2
   - github.com/cenkalti/backoff/v4 v4.3.0
-
 
 ## [7.2.0] - 2023-11-09
 
