@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - google.golang.org/protobuf v1.36.3
   - github.com/giantswarm/micrologger v1.1.2
   - github.com/go-logr/logr v1.4.2
+  - github.com/giantswarm/exporterkit v1.2.0
+  - github.com/prometheus/client_golang v1.19.0
+  - github.com/prometheus/common v0.48.0
+  - golang.org/x/oauth2 v0.16.0
 
 ## [7.2.0] - 2023-11-09
 
