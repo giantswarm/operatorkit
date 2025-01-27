@@ -35,8 +35,8 @@ const (
 	resourceNameB   = "test-resource-b"
 
 	controllerNameC = "test-controller-c"
-	resourceNameC   = "test-resource-c"
 	finalizerC      = "operatorkit.giantswarm.io/test-controller-c"
+	resourceNameC   = "test-resource-c"
 )
 
 // Test_Finalizer_Integration_Parallel is a integration test to
