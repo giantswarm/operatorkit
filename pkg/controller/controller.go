@@ -22,7 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -352,27 +351,6 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 			reconcileErrors.WithLabelValues(c.name).Set(0)
 		}
 	}()
-
-	// We overwrite the k8s error handlers so they do not intercept our log
-	// streams. The format is way easier to parse for us that way. Here we also
-	// emit metrics for the occured errors to ensure we create more awareness of
-	// anything going wrong in our operators.
-	{
-		utilruntime.ErrorHandlers = []utilruntime.ErrorHandler{
-			func(_ context.Context, err error, msg string, _ ...interface{}) {
-				// When we see a port forwarding error we ignore it because we cannot do
-				// anything about it. Errors like we check here would have to be dealt
-				// with in the third party tools we use. The port forwarding in general
-				// is broken by design which will go away with Helm 3, soon TM.
-				if IsPortforward(err) {
-					return
-				}
-
-				reconcileErrors.WithLabelValues(c.name).Inc()
-				c.logger.Errorf(ctx, err, msg+" caught third party runtime error")
-			},
-		}
-	}
 
 	var mgr manager.Manager
 	{
