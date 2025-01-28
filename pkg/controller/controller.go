@@ -245,7 +245,7 @@ func New(config Config) (*Controller, error) {
 		resyncPeriod: config.ResyncPeriod,
 	}
 	ctx := context.Background()
-	c.logger.Debugf(ctx, "Controller config is %v", config)
+	c.logger.Debugf(ctx, "Controller config is %+v", config)
 
 	return c, nil
 }
