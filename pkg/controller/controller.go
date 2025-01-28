@@ -244,6 +244,8 @@ func New(config Config) (*Controller, error) {
 		namespace:    config.Namespace,
 		resyncPeriod: config.ResyncPeriod,
 	}
+	ctx := context.Background()
+	c.logger.Debugf(ctx, "Controller config is %+v", config)
 
 	return c, nil
 }
@@ -355,11 +357,11 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 
 	// We overwrite the k8s error handlers so they do not intercept our log
 	// streams. The format is way easier to parse for us that way. Here we also
-	// emit metrics for the occured errors to ensure we create more awareness of
+	// emit metrics for the occurred errors to ensure we create more awareness of
 	// anything going wrong in our operators.
 	{
-		utilruntime.ErrorHandlers = []func(err error){
-			func(err error) {
+		utilruntime.ErrorHandlers = []utilruntime.ErrorHandler{
+			func(_ context.Context, err error, msg string, _ ...interface{}) {
 				// When we see a port forwarding error we ignore it because we cannot do
 				// anything about it. Errors like we check here would have to be dealt
 				// with in the third party tools we use. The port forwarding in general
@@ -369,7 +371,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 				}
 
 				reconcileErrors.WithLabelValues(c.name).Inc()
-				c.logger.Errorf(ctx, err, "caught third party runtime error")
+				c.logger.Errorf(ctx, err, msg+" caught third party runtime error")
 			},
 		}
 	}
