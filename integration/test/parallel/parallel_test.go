@@ -383,6 +383,8 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 }
 
 func newWrapper(namespace string, controllerName string, r *testresource.Resource) (*configmap.Wrapper, error) {
+	t.Logf("creating wrapper for controller %s", controllerName)
+
 	c := configmap.Config{
 		Resources: []resource.Interface{
 			r,
