@@ -117,15 +117,15 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 
 	var wrapperA, wrapperB, wrapperC *configmap.Wrapper
 	{
-		wrapperA, err = newWrapper(objNamespace, controllerNameA, resourceA)
+		wrapperA, err = newWrapper(objNamespace, controllerNameA, resourceA, t)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
-		wrapperB, err = newWrapper(objNamespace, controllerNameB, resourceB)
+		wrapperB, err = newWrapper(objNamespace, controllerNameB, resourceB, t)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
-		wrapperC, err = newWrapper(objNamespace, controllerNameC, resourceC)
+		wrapperC, err = newWrapper(objNamespace, controllerNameC, resourceC, t)
 		if err != nil {
 			t.Fatalf("err == %v, want %v", err, nil)
 		}
@@ -382,7 +382,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	}
 }
 
-func newWrapper(namespace string, controllerName string, r *testresource.Resource) (*configmap.Wrapper, error) {
+func newWrapper(namespace string, controllerName string, r *testresource.Resource, t *testing.T) (*configmap.Wrapper, error) {
 	t.Logf("creating wrapper for controller %s", controllerName)
 
 	c := configmap.Config{
