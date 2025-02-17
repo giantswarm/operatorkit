@@ -364,7 +364,7 @@ func Test_Finalizer_Integration_Parallel(t *testing.T) {
 	//
 	//	- resourceA received exactly 1 deletion event as it never
 	//	  fails.
-	//	- resourceB received exectly 2 deletion events as it fails
+	//	- resourceB received exactly 2 deletion events as it fails
 	//	  during the deletion once.
 	//	- resourceB received more than 3 deletion events as it was
 	//	  failing all the time till SetReturnErrorFunc(nil) was called.
