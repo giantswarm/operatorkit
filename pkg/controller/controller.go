@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -360,7 +361,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 	// anything going wrong in our operators.
 	{
 		utilruntime.ErrorHandlers = []utilruntime.ErrorHandler{
-			func(_ context.Context, err error, _ string, _ ...interface{}) {
+			func(ctx context.Context, err error, _ string, _ ...interface{}) {
 				// When we see a port forwarding error we ignore it because we cannot do
 				// anything about it. Errors like we check here would have to be dealt
 				// with in the third party tools we use. The port forwarding in general
