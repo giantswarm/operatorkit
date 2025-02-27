@@ -23,9 +23,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -355,11 +357,11 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 
 	// We overwrite the k8s error handlers so they do not intercept our log
 	// streams. The format is way easier to parse for us that way. Here we also
-	// emit metrics for the occured errors to ensure we create more awareness of
+	// emit metrics for the occurred errors to ensure we create more awareness of
 	// anything going wrong in our operators.
 	{
-		utilruntime.ErrorHandlers = []func(err error){
-			func(err error) {
+		utilruntime.ErrorHandlers = []utilruntime.ErrorHandler{
+			func(ctx context.Context, err error, _ string, _ ...interface{}) {
 				// When we see a port forwarding error we ignore it because we cannot do
 				// anything about it. Errors like we check here would have to be dealt
 				// with in the third party tools we use. The port forwarding in general
@@ -369,7 +371,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 				}
 
 				reconcileErrors.WithLabelValues(c.name).Inc()
-				c.logger.Errorf(ctx, err, "caught third party runtime error")
+				c.logger.Errorf(ctx, err, " caught third party runtime error")
 			},
 		}
 	}
@@ -386,6 +388,9 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 		}
 		o := manager.Options{
 			Cache: cacheOptions,
+			Controller: config.Controller{
+				SkipNameValidation: ptr.To(true),
+			},
 			Metrics: server.Options{
 				// MetricsBindAddress is set to 0 in order to disable it. We do this
 				// ourselves.
