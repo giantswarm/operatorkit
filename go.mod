@@ -8,6 +8,7 @@ require (
 	github.com/getsentry/sentry-go v0.31.1
 	github.com/giantswarm/backoff v1.0.1
 	github.com/giantswarm/exporterkit v1.2.0
+	github.com/giantswarm/k8sclient/v7 v7.2.0
 	github.com/giantswarm/k8sclient/v8 v8.0.0
 	github.com/giantswarm/microerror v0.4.1
 	github.com/giantswarm/micrologger v1.1.2
@@ -24,8 +25,6 @@ require (
 	sigs.k8s.io/controller-runtime v0.20.3
 	sigs.k8s.io/yaml v1.4.0
 )
-
-require github.com/giantswarm/k8sclient/v7 v7.2.0
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
