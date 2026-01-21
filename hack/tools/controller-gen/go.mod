@@ -2,7 +2,7 @@ module github.com/giantswarm/apiextensions/hack/tools/code-generator
 
 go 1.25.0
 
-toolchain go1.25.5
+toolchain go1.25.6
 
 require sigs.k8s.io/controller-tools v0.20.0
 
