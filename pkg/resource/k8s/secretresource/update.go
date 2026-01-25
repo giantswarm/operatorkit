@@ -44,7 +44,7 @@ func (r *Resource) newUpdateChange(ctx context.Context, obj, currentState, desir
 
 		for _, c := range currentSecrets {
 			for _, d := range desiredSecrets {
-				m := newSecretToUpdate(c, d)
+				m := newSecretToUpdate(c, d, r.allowedLabels)
 				if m != nil {
 					secretsToUpdate = append(secretsToUpdate, m)
 				}
