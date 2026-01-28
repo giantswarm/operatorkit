@@ -7,9 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.4.0] - 2026-01-28
+
 ### Added
 
 - Add `AllowedLabels` feature to `secretresource` package to preserve specific labels from current state during updates.
+
+### Changed
+
+- Dependencies Upgrade
+  - go 1.25.6
+  - giantswarm/architect@6.12.0
+  - github.com/getsentry/sentry-go v0.42.0
+  - github.com/giantswarm/exporterkit v1.3.0
+  - github.com/giantswarm/k8sclient/v8 v8.1.0
+  - github.com/gin-gonic/gin v1.11.0
+  - github.com/prometheus/client_golang v1.23.2
+  - github.com/prometheus/client_model v0.6.2
+  - github.com/prometheus/common v0.66.1
+  - github.com/stretchr/testify v1.11.1
+  - golang.org/x/net v0.47.0
+  - golang.org/x/oauth2 v0.30.0
+  - golang.org/x/sync v0.18.0
+  - golang.org/x/sys v0.38.0
+  - golang.org/x/term v0.37.0
+  - golang.org/x/text v0.31.0
+  - golang.org/x/time v0.12.0
+  - google.golang.org/protobuf v1.36.8
+  - k8s.io/api v0.35.0
+  - k8s.io/apiextensions-apiserver v0.35.0
+  - k8s.io/apimachinery v0.35.0
+  - k8s.io/client-go v0.35.0
+  - sigs.k8s.io/controller-runtime v0.23.1
+  - sigs.k8s.io/controller-tools v0.20.0
+  - sigs.k8s.io/yaml v1.6.0
 
 ## [7.3.0] - 2025-02-27
 
@@ -244,7 +275,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-[Unreleased]: https://github.com/giantswarm/operatorkit/compare/v7.3.0...HEAD
+[Unreleased]: https://github.com/giantswarm/operatorkit/compare/v7.4.0...HEAD
+[7.4.0]: https://github.com/giantswarm/operatorkit/compare/v7.3.0...v7.4.0
 [7.3.0]: https://github.com/giantswarm/operatorkit/compare/v7.2.0...v7.3.0
 [7.2.0]: https://github.com/giantswarm/operatorkit/compare/v7.1.0...v7.2.0
 [7.1.0]: https://github.com/giantswarm/operatorkit/compare/v7.0.1...v7.1.0
