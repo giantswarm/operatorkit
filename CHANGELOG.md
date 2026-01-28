@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.4.0] - 2026-01-28
+
 ### Added
 
 - Add `AllowedLabels` feature to `secretresource` package to preserve specific labels from current state during updates.
@@ -244,7 +246,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-[Unreleased]: https://github.com/giantswarm/operatorkit/compare/v7.3.0...HEAD
+[Unreleased]: https://github.com/giantswarm/operatorkit/compare/v7.4.0...HEAD
+[7.4.0]: https://github.com/giantswarm/operatorkit/compare/v7.3.0...v7.4.0
 [7.3.0]: https://github.com/giantswarm/operatorkit/compare/v7.2.0...v7.3.0
 [7.2.0]: https://github.com/giantswarm/operatorkit/compare/v7.1.0...v7.2.0
 [7.1.0]: https://github.com/giantswarm/operatorkit/compare/v7.0.1...v7.1.0
