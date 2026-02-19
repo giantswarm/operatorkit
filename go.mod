@@ -2,7 +2,7 @@ module github.com/giantswarm/operatorkit/v7
 
 go 1.25.0
 
-toolchain go1.25.7
+toolchain go1.26.0
 
 require (
 	github.com/getsentry/sentry-go v0.42.0
