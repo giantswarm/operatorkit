@@ -1,0 +1,22 @@
+# DO NOT EDIT. Generated with:
+#
+#    devctl
+#
+#    https://github.com/giantswarm/devctl/blob/87f30fd3b955a0daf6017834a776c222d93a207c/pkg/gen/input/workflows/internal/file/validate_changelog.yaml.template
+#
+name: Validate changelog
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'CHANGELOG.md'
+
+permissions: {}
+
+jobs:
+  validate-changelog:
+    uses: giantswarm/github-workflows/.github/workflows/validate-changelog.yaml@main
+    permissions:
+      contents: read
+      pull-requests: write

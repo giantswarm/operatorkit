@@ -1,0 +1,41 @@
+# DO NOT EDIT. Generated with:
+#
+#    devctl
+#
+#    https://github.com/giantswarm/devctl/blob/4897b6ea0f98cfba54f8d3003f5bdcefb968a7b5/pkg/gen/input/workflows/internal/file/run_ossf_scorecard.yaml.template
+#
+
+# This workflow uses actions that are not certified by GitHub. They are provided
+# by a third-party and are governed by separate terms of service, privacy
+# policy, and support documentation.
+
+name: Scorecard supply-chain security
+on:
+  # For Branch-Protection check. Only the default branch is supported. See
+  # https://github.com/ossf/scorecard/blob/main/docs/checks.md#branch-protection
+  branch_protection_rule: {}
+  # To guarantee Maintained check is occasionally updated. See
+  # https://github.com/ossf/scorecard/blob/main/docs/checks.md#maintained
+  schedule:
+    - cron: '15 15 15 * *'
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch: {}
+
+permissions: {}
+
+jobs:
+  analysis:
+    uses: giantswarm/github-workflows/.github/workflows/ossf-scorecard.yaml@main
+    permissions:
+      contents: read
+      actions: read
+      issues: read
+      pull-requests: read
+      checks: read
+      security-events: write
+      id-token: write
+    secrets:
+      scorecard_token: ${{ secrets.SCORECARD_TOKEN }}
