@@ -1,2 +1,27 @@
-# pkg:golang/k8s.io/apiserver@v0.28.3
-CVE-2024-45338 until=2025-06-01
+# pkg:golang/go.opentelemetry.io/otel@v1.41.0
+CVE-2026-41178 until=2026-09-10
+
+# pkg:golang/go.opentelemetry.io/otel/sdk@v1.40.0
+CVE-2026-39883 until=2026-09-10
+
+# pkg:golang/golang.org/x/crypto@v0.47.0
+CVE-2026-39830 until=2026-09-10
+CVE-2026-39831 until=2026-09-10
+CVE-2026-39832 until=2026-09-10
+CVE-2026-39833 until=2026-09-10
+CVE-2026-39834 until=2026-09-10
+CVE-2026-46597 until=2026-09-10
+CVE-2026-42508 until=2026-09-10
+CVE-2026-39829 until=2026-09-10
+CVE-2026-39827 until=2026-09-10
+CVE-2026-39828 until=2026-09-10
+CVE-2026-46595 until=2026-09-10
+CVE-2026-46598 until=2026-09-10
+
+# pkg:golang/golang.org/x/net@v0.49.0
+CVE-2026-39821 until=2026-09-10
+CVE-2026-25680 until=2026-09-10
+CVE-2026-27136 until=2026-09-10
+CVE-2026-42506 until=2026-09-10
+CVE-2026-25681 until=2026-09-10
+CVE-2026-42502 until=2026-09-10
