@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  architect: giantswarm/architect@9.5.0
+  architect: giantswarm/architect@9.5.2
 
 workflows:
   test:
