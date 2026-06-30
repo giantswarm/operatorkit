@@ -6,7 +6,7 @@ toolchain go1.26.4
 
 require (
 	github.com/getsentry/sentry-go v0.47.0
-	github.com/giantswarm/backoff v1.0.1
+	github.com/giantswarm/backoff/v2 v2.0.0
 	github.com/giantswarm/backoff/v2 v2.0.0
 	github.com/giantswarm/exporterkit v1.3.0
 	github.com/giantswarm/k8sclient/v7 v7.2.0
