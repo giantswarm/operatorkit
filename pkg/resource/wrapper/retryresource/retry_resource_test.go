@@ -3,7 +3,7 @@ package retryresource
 import (
 	"testing"
 
-	"github.com/giantswarm/backoff"
+	"github.com/giantswarm/backoff/v2"
 	"github.com/giantswarm/micrologger/microloggertest"
 
 	"github.com/giantswarm/operatorkit/v7/pkg/resource/wrapper/internal"

@@ -3,7 +3,7 @@ package retryresource
 import (
 	"time"
 
-	"github.com/giantswarm/backoff"
+	"github.com/giantswarm/backoff/v2"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 
