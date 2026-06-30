@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/giantswarm/backoff"
+	"github.com/giantswarm/backoff/v2"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	v1 "k8s.io/api/core/v1"
