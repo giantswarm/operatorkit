@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/giantswarm/backoff"
+	"github.com/giantswarm/backoff/v2"
 	"github.com/giantswarm/microerror"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
