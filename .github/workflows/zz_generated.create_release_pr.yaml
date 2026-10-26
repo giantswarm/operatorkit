@@ -2,7 +2,7 @@
 #
 #    devctl
 #
-#    https://github.com/giantswarm/devctl/blob/87f30fd3b955a0daf6017834a776c222d93a207c/pkg/gen/input/workflows/internal/file/create_release_pr.yaml.template
+#    https://github.com/giantswarm/devctl/blob/0cc103490e0438858949bc6fe67d9cc67f9b967a/pkg/gen/input/workflows/internal/file/create_release_pr.yaml.template
 #
 name: Create Release PR
 on:
@@ -13,14 +13,29 @@ on:
       - 'main#release#major'
       - 'main#release#minor'
       - 'main#release#patch'
+      - 'main#release#major-rc'
+      - 'main#release#minor-rc'
+      - 'main#release#patch-rc'
+      - 'main#release#rc'
+      - 'main#release#rc-release'
       - 'master#release#v*.*.*'
       - 'master#release#major'
       - 'master#release#minor'
       - 'master#release#patch'
+      - 'master#release#major-rc'
+      - 'master#release#minor-rc'
+      - 'master#release#patch-rc'
+      - 'master#release#rc'
+      - 'master#release#rc-release'
       - 'release#v*.*.*'
       - 'release#major'
       - 'release#minor'
       - 'release#patch'
+      - 'release#major-rc'
+      - 'release#minor-rc'
+      - 'release#patch-rc'
+      - 'release#rc'
+      - 'release#rc-release'
       - 'release-v*.*.x#release#v*.*.*'
       # "!" negates previous positive patterns so it has to be at the end.
       - '!release-v*.x.x#release#v*.*.*'
@@ -40,4 +55,5 @@ jobs:
     with:
       branch: ${{ inputs.branch }}
     secrets:
-      TAYLORBOT_GITHUB_ACTION: ${{ secrets.TAYLORBOT_GITHUB_ACTION }}
+      RELEASE_BOT_CLIENT_ID: ${{ secrets.RELEASE_BOT_CLIENT_ID }}
+      RELEASE_BOT_PRIVATE_KEY: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}

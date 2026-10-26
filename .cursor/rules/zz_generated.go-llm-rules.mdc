@@ -1,0 +1,35 @@
+---
+description: Go language-specific development guidelines and patterns
+globs: **/*.go,go.mod,go.sum
+---
+
+These guidelines apply to Go code and supplement any other general development instructions or workflows.
+
+# Go Code Guidelines
+
+- All Go code is expected to adhere to the rules outlined in the Giant Swarm style guide located at @https://github.com/giantswarm/fmt/tree/main/go .
+- Always fetch and fully understand the style guide before reviewing any code.
+- The Giant Swarm style guide linked above must always be considered definitive. ALL rules and provisions contained in the style guide MUST be met.
+- When applying the style guide, always list all instances of a particular issue, grouped by the finding type.
+
+## Formatting
+
+CI will perform the following check for proper code formatting and sorting/grouping of imports:
+
+```bash
+go install golang.org/x/tools/cmd/goimports@latest && \
+if [[ -n $(goimports -local github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME} -l .) ]];
+then
+  goimports -local github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME} -d . && exit 1;
+fi
+```
+
+When creating or modifying Go files, perform the according check and mitigate any issues before committing.
+
+
+<!--
+DO NOT EDIT. Generated with devctl.
+This file is maintained at:
+https://github.com/giantswarm/devctl/blob/83dbeb7aedca2abc8fd38c99e3cfa49f58d8ff82/pkg/gen/input/llm/internal/file/go_rules.mdc.template
+Manual changes will be overwritten.
+-->

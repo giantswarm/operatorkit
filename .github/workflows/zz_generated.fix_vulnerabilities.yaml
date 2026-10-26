@@ -1,0 +1,39 @@
+# DO NOT EDIT. Generated with:
+#
+#    devctl
+#
+#    https://github.com/giantswarm/devctl/blob/ee062182d7b7130f1153a8c708d493a5aa5fffd3/pkg/gen/input/workflows/internal/file/fix_vulnerabilities.yaml.template
+#
+
+name: Fix Go vulnerabilities
+
+on:
+  schedule:
+    - cron: '0 21 * * 3'
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch on which to fix vulnerabilities
+        default: main
+        required: true
+        type: string
+      log_level:
+        description: Log Level (info / error / debug)
+        default: info
+        type: string
+
+permissions: {}
+
+jobs:
+  fix:
+    uses: giantswarm/github-workflows/.github/workflows/fix-vulnerabilities.yaml@main
+    permissions:
+      contents: read
+    with:
+      branch: ${{ inputs.branch || github.ref }}
+      log_level: ${{ inputs.log_level || 'info' }}
+    secrets:
+      HERALD_APP_ID: ${{ secrets.HERALD_APP_ID }}
+      HERALD_APP_KEY: ${{ secrets.HERALD_APP_KEY }}
+      NANCY_USER: ${{ secrets.NANCY_USER }}
+      NANCY_TOKEN: ${{ secrets.NANCY_TOKEN }}
