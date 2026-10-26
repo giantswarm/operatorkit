@@ -2,7 +2,7 @@
 #
 #    devctl
 #
-#    https://github.com/giantswarm/devctl/blob/0df8c5e633bb1e4fd17c35525a7b382395526f22/pkg/gen/input/workflows/internal/file/create_release.yaml.template
+#    https://github.com/giantswarm/devctl/blob/0cc103490e0438858949bc6fe67d9cc67f9b967a/pkg/gen/input/workflows/internal/file/create_release.yaml.template
 #
 name: Create Release
 
@@ -22,9 +22,9 @@ jobs:
   create-release:
     uses: giantswarm/github-workflows/.github/workflows/create-release.yaml@main
     with:
-      build-release-artifacts: false
       fetch-deep-gitlog-for-build: true
     secrets:
-      TAYLORBOT_GITHUB_ACTION: ${{ secrets.TAYLORBOT_GITHUB_ACTION }}
+      RELEASE_BOT_CLIENT_ID: ${{ secrets.RELEASE_BOT_CLIENT_ID }}
+      RELEASE_BOT_PRIVATE_KEY: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
     permissions:
       contents: write
