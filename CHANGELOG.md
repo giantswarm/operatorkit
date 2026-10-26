@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The release workflows authenticate as the `giantswarm-release` GitHub App instead of the shared taylorbot account (giantswarm/giantswarm#2280).
 - Regenerate `.github/workflows/zz_generated.*.yaml` via devctl to use the centralized reusable workflow, removing the Node-20 `mindsers/changelog-reader-action` dependency.
 
 ## [7.4.0] - 2026-01-28
