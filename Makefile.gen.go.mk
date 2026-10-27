@@ -2,7 +2,7 @@
 #
 #    devctl
 #
-#    https://github.com/giantswarm/devctl/blob/08fb95b2ab602fcd8941aef7eba24edba72982f2/pkg/gen/input/makefile/internal/file/Makefile.gen.go.mk.template
+#    https://github.com/giantswarm/devctl/blob/c64a781d7ee888be4af92da9cce27c321300a589/pkg/gen/input/makefile/internal/file/Makefile.gen.go.mk.template
 #
 
 APPLICATION    := $(shell go list -m | cut -d '/' -f 3)
@@ -108,7 +108,7 @@ imports: ## Runs goimports.
 .PHONY: lint
 lint: ## Runs golangci-lint.
 	@echo "====> $@"
-	golangci-lint run -E gosec -E goconst --timeout=15m ./...
+	golangci-lint run --timeout=15m ./...
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.

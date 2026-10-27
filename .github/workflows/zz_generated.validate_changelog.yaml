@@ -2,7 +2,7 @@
 #
 #    devctl
 #
-#    https://github.com/giantswarm/devctl/blob/aea25951ef3cc7fc904759c833f020c04cd88acd/pkg/gen/input/workflows/internal/file/validate_changelog.yaml.template
+#    https://github.com/giantswarm/devctl/blob/c370873410de970a09ddbfb5ee72adf11259d8f4/pkg/gen/input/workflows/internal/file/validate_changelog.yaml.template
 #
 name: Validate changelog
 
@@ -27,7 +27,7 @@ jobs:
   # workflow, so the next align-files run deletes the Auto Release files again.
   release-workflow-declaration:
     name: Release workflow matches the declaration
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     steps:
