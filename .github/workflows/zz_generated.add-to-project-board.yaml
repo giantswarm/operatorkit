@@ -15,9 +15,20 @@ jobs:
     permissions:
       contents: read
     steps:
+    # giantswarm/github is private: the App reads the mappings through its
+    # single-file permission on the two mapping files, nothing else there.
+    - name: Mint App token for the mappings
+      id: app-token
+      uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+      with:
+        client-id: ${{ secrets.PROJECT_AUTOMATION_CLIENT_ID }}
+        private-key: ${{ secrets.PROJECT_AUTOMATION_PRIVATE_KEY }}
+        owner: giantswarm
+        repositories: github
+        permission-single-file: read
     - name: Get user-mapping
       env:
-        GH_TOKEN: ${{ secrets.ISSUE_AUTOMATION }}
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
       run: |
         mkdir -p artifacts
         # The raw media type returns the file itself. No pipe after gh api, so
@@ -33,7 +44,7 @@ jobs:
         retention-days: 1
     - name: Get label-mapping
       env:
-        GH_TOKEN: ${{ secrets.ISSUE_AUTOMATION }}
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
       run: |
         mkdir -p artifacts
         gh api -H "Accept: application/vnd.github.raw" -H "X-GitHub-Api-Version: 2022-11-28" \
@@ -65,12 +76,21 @@ jobs:
         echo "Personal board URL: ${BOARD}"
 
         echo "BOARD=${BOARD}" >> $GITHUB_ENV
+    - name: Mint App token for the board
+      id: app-token
+      if: ${{ env.BOARD != 'null' && env.BOARD != ''  && env.BOARD != null }}
+      uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+      with:
+        client-id: ${{ secrets.PROJECT_AUTOMATION_CLIENT_ID }}
+        private-key: ${{ secrets.PROJECT_AUTOMATION_PRIVATE_KEY }}
+        permission-issues: read
+        permission-organization-projects: write
     - name: Add issue to personal board
       if: ${{ env.BOARD != 'null' && env.BOARD != ''  && env.BOARD != null }}
       uses: actions/add-to-project@5afcf98fcd03f1c2f92c3c83f58ae24323cc57fd # v2.0.0
       with:
         project-url: ${{ env.BOARD }}
-        github-token: ${{ secrets.ISSUE_AUTOMATION }}
+        github-token: ${{ steps.app-token.outputs.token }}
 
   add_to_team_board:
     name: Add issue to team board
@@ -91,12 +111,21 @@ jobs:
         echo "Team board URL: ${BOARD}"
 
         echo "BOARD=${BOARD}" >> $GITHUB_ENV
+    - name: Mint App token for the board
+      id: app-token
+      if: ${{ env.BOARD != 'null' && env.BOARD != '' && env.BOARD != null }}
+      uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+      with:
+        client-id: ${{ secrets.PROJECT_AUTOMATION_CLIENT_ID }}
+        private-key: ${{ secrets.PROJECT_AUTOMATION_PRIVATE_KEY }}
+        permission-issues: read
+        permission-organization-projects: write
     - name: Add issue to team board
       if: ${{ env.BOARD != 'null' && env.BOARD != '' && env.BOARD != null }}
       uses: actions/add-to-project@5afcf98fcd03f1c2f92c3c83f58ae24323cc57fd # v2.0.0
       with:
         project-url: ${{ env.BOARD }}
-        github-token: ${{ secrets.ISSUE_AUTOMATION }}
+        github-token: ${{ steps.app-token.outputs.token }}
 
   # An issue opened with a label or an assignee also fires `labeled` or
   # `assigned`, which add it above; only a bare one is added here.
@@ -108,8 +137,16 @@ jobs:
       join(github.event.issue.labels.*.name, '') == '' &&
       join(github.event.issue.assignees.*.login, '') == ''
     steps:
+    - name: Mint App token for the board
+      id: app-token
+      uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+      with:
+        client-id: ${{ secrets.PROJECT_AUTOMATION_CLIENT_ID }}
+        private-key: ${{ secrets.PROJECT_AUTOMATION_PRIVATE_KEY }}
+        permission-issues: read
+        permission-organization-projects: write
     - name: Add issue to roadmap board
       uses: actions/add-to-project@5afcf98fcd03f1c2f92c3c83f58ae24323cc57fd # v2.0.0
       with:
         project-url: https://github.com/orgs/giantswarm/projects/273
-        github-token: ${{ secrets.ISSUE_AUTOMATION }}
+        github-token: ${{ steps.app-token.outputs.token }}
