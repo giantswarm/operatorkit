@@ -11,9 +11,20 @@ jobs:
     permissions:
       contents: read
     steps:
+    # giantswarm/github is private: the App reads the mapping through its
+    # single-file permission on the two mapping files, nothing else there.
+    - name: Mint App token for the user mapping
+      id: app-token
+      uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+      with:
+        client-id: ${{ secrets.PROJECT_AUTOMATION_CLIENT_ID }}
+        private-key: ${{ secrets.PROJECT_AUTOMATION_PRIVATE_KEY }}
+        owner: giantswarm
+        repositories: github
+        permission-single-file: read
     - name: Get user-mapping
       env:
-        GH_TOKEN: ${{ secrets.ISSUE_AUTOMATION }}
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
       run: |
         mkdir -p artifacts
         # The raw media type returns the file itself. No pipe after gh api, so
@@ -50,10 +61,20 @@ jobs:
           echo "team/${team}" >> $GITHUB_ENV
         done
         echo "EOF" >> $GITHUB_ENV
+    # An App token, unlike GITHUB_TOKEN, lets the `labeled` event it causes run
+    # add-to-project-board, which puts the issue on the team's board.
+    - name: Mint App token for the label
+      id: app-token
+      if: ${{ env.LABEL != '' && env.LABEL != 'null' && env.LABEL != null }}
+      uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+      with:
+        client-id: ${{ secrets.PROJECT_AUTOMATION_CLIENT_ID }}
+        private-key: ${{ secrets.PROJECT_AUTOMATION_PRIVATE_KEY }}
+        permission-issues: write
     - name: Apply label to issue
       if: ${{ env.LABEL != '' && env.LABEL != 'null' && env.LABEL != null }}
       uses: actions-ecosystem/action-add-labels@18f1af5e3544586314bbe15c0273249c770b2daf  # v1.1.3
       with:
-        github_token: ${{ secrets.ISSUE_AUTOMATION }}
+        github_token: ${{ steps.app-token.outputs.token }}
         labels: |
           ${{ env.LABEL }}
