@@ -2,7 +2,7 @@
 #
 #    devctl
 #
-#    https://github.com/giantswarm/devctl/blob/c64a781d7ee888be4af92da9cce27c321300a589/pkg/gen/input/makefile/internal/file/Makefile.gen.go.mk.template
+#    https://github.com/giantswarm/devctl/blob/2da48e8e991a721cdb632ba78fb4c3cbea2e06f6/pkg/gen/input/makefile/internal/file/Makefile.gen.go.mk.template
 #
 
 APPLICATION    := $(shell go list -m | cut -d '/' -f 3)
@@ -12,12 +12,17 @@ MODULE         := $(shell go list -m)
 # main() is usually in `main.go`, but sometimes in `cmd/main.go` (for example in newer kubebuilder projects)
 MAIN_SOURCE    := $(shell if test -e cmd/main.go; then echo cmd/main.go; else echo main.go; fi)
 OS             := $(shell go env GOOS)
+ARCH           := $(shell go env GOARCH)
 SOURCES        := $(shell find . -name '*.go')
-VERSION        := $(shell gitsemver get)
-# Expanded first in every recipe that stamps VERSION into its output, so a failed
-# `gitsemver get` fails the build instead of producing an unversioned binary.
+# Older gitsemver releases cannot open a worktree's .git file. Fall back to
+# local version tags; without one, leave VERSION empty so shipping targets fail.
+VERSION        := $(shell if version=$$(gitsemver get 2>/dev/null) && [ -n "$$version" ]; then \
+  printf '%s\n' "$$version"; \
+  else git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]*' 2>/dev/null | sed 's/^v//'; fi)
+# Expanded first in every recipe that stamps VERSION into its output, so failed
+# lookups fail the build instead of producing an unversioned binary.
 # Targets that do not ship a version (test, lint, ...) never expand it.
-REQUIRE_VERSION = $(if $(VERSION),,$(error VERSION is empty: `gitsemver get` failed in $(CURDIR); pass VERSION=<version> to override))
+REQUIRE_VERSION = $(if $(VERSION),,$(error VERSION is empty: `gitsemver get` and `git describe` found no version in $(CURDIR); pass VERSION=<version> to override))
 ifeq ($(OS), linux)
 EXTLDFLAGS := -static
 endif
@@ -25,6 +30,13 @@ LDFLAGS        ?= -w -linkmode 'auto' -extldflags '$(EXTLDFLAGS)' \
   -X '$(MODULE)/pkg/project.version=$(VERSION)' \
   -X '$(MODULE)/pkg/project.buildTimestamp=$(BUILDTIMESTAMP)' \
   -X '$(MODULE)/pkg/project.gitSHA=$(GITSHA1)'
+
+# Copy to a unique sibling before renaming so a running binary keeps its inode
+# and readers only see complete files. Keep the versioned artifact for packaging.
+INSTALL_BINARY = tmp=$$(mktemp "$(2).tmp.XXXXXX") || exit $$?; \
+	trap 'rm -f "$$tmp"' EXIT; \
+	trap 'exit 1' HUP INT TERM; \
+	cp -a "$(1)" "$$tmp" && mv -f "$$tmp" "$(2)"
 
 .DEFAULT_GOAL := build
 
@@ -46,27 +58,31 @@ build-windows-amd64: $(APPLICATION)-windows-amd64.exe ## Builds a local binary f
 
 $(APPLICATION): $(APPLICATION)-v$(VERSION)-$(OS)-amd64
 	@echo "====> $@"
-	cp -a $< $@
+	@$(call INSTALL_BINARY,$<,$@)
 
 $(APPLICATION)-darwin: $(APPLICATION)-v$(VERSION)-darwin-amd64
 	@echo "====> $@"
-	cp -a $< $@
+	@$(call INSTALL_BINARY,$<,$@)
 
 $(APPLICATION)-darwin-arm64: $(APPLICATION)-v$(VERSION)-darwin-arm64
 	@echo "====> $@"
-	cp -a $< $@
+	@$(call INSTALL_BINARY,$<,$@)
 
 $(APPLICATION)-linux: $(APPLICATION)-v$(VERSION)-linux-amd64
 	@echo "====> $@"
-	cp -a $< $@
+	@$(call INSTALL_BINARY,$<,$@)
+
+$(APPLICATION)-linux-amd64: $(APPLICATION)-v$(VERSION)-linux-amd64
+	@echo "====> $@"
+	@$(call INSTALL_BINARY,$<,$@)
 
 $(APPLICATION)-linux-arm64: $(APPLICATION)-v$(VERSION)-linux-arm64
 	@echo "====> $@"
-	cp -a $< $@
+	@$(call INSTALL_BINARY,$<,$@)
 
 $(APPLICATION)-windows-amd64.exe: $(APPLICATION)-v$(VERSION)-windows-amd64.exe
 	@echo "====> $@"
-	cp -a $< $@
+	@$(call INSTALL_BINARY,$<,$@)
 
 $(APPLICATION)-v$(VERSION)-%-amd64: $(SOURCES)
 	$(REQUIRE_VERSION)
@@ -87,7 +103,7 @@ $(APPLICATION)-v$(VERSION)-windows-amd64.exe: $(SOURCES)
 install: ## Install the application.
 	$(REQUIRE_VERSION)
 	@echo "====> $@"
-	go build -ldflags "$(LDFLAGS)" -o "$(shell go env GOPATH)/bin/$(APPLICATION)" "$(MAIN_SOURCE)"
+	CGO_ENABLED=0 go build -ldflags "$(LDFLAGS)" -o "$(shell go env GOPATH)/bin/$(APPLICATION)" "$(MAIN_SOURCE)"
 
 .PHONY: run
 run: ## Runs go run main.go.
@@ -106,9 +122,19 @@ imports: ## Runs goimports.
 	goimports -local $(MODULE) -w .
 
 .PHONY: lint
-lint: ## Runs golangci-lint.
+lint: ## Checks import formatting and runs golangci-lint (requires goimports).
 	@echo "====> $@"
+	@files=$$(goimports -local "$(MODULE)" -l .) || exit $$?; \
+	if [ -n "$$files" ]; then \
+		printf '%s\n' "$$files"; \
+		echo "Run 'make imports' to fix import formatting."; \
+		exit 1; \
+	fi
 	golangci-lint run --timeout=15m ./...
+
+# Extend lint from Makefile.custom.mk without replacing its generated recipe.
+.PHONY: lint-custom
+lint: lint-custom
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
@@ -141,8 +167,8 @@ test: ## Runs go test with default values (race detector when a C toolchain is a
 	go test -ldflags "$(LDFLAGS)" $(RACE) ./...
 
 .PHONY: build-docker
-build-docker: build-linux ## Builds docker image to registry.
+build-docker: $(APPLICATION)-linux-$(ARCH) ## Builds docker image to registry for the host architecture.
 	$(REQUIRE_VERSION)
 	@echo "====> $@"
-	cp -a $(APPLICATION)-linux $(APPLICATION)
+	@$(call INSTALL_BINARY,$<,$(APPLICATION))
 	docker build -t ${APPLICATION}:${VERSION} .

@@ -25,7 +25,7 @@ You are an AI assistant acting as an expert software developer and platform engi
 - Write comprehensive tests and documentation.
 - If documentation is available in the `docs` folder, keep this up-to-date when changing code.
 - Maintain the main README.md file for correctness.
-- If a changelog is available as CHANGELOG.md, add your changes to it.
+- If a changelog is available as CHANGELOG.md, add your changes to it, unless the repository has `.github/workflows/zz_generated.auto_release.yaml`: there GitHub Releases are the changelog, written from the pull request titles, and CHANGELOG.md only points at them, so a pull request does not edit it.
 
 ## Release Management
 
@@ -56,6 +56,6 @@ For detailed guidelines and examples, always refer to: @https://github.com/giant
 <!--
 DO NOT EDIT. Generated with devctl.
 This file is maintained at:
-https://github.com/giantswarm/devctl/blob/3bbd5cb47ff855f0b9c88881fbdcaa907d85647c/pkg/gen/input/llm/internal/file/base_llm_rules.mdc.template
+https://github.com/giantswarm/devctl/blob/a412d1a88eafd4543e12c04bb34a07fd32472280/pkg/gen/input/llm/internal/file/base_llm_rules.mdc.template
 Manual changes will be overwritten.
 -->
