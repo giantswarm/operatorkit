@@ -87,7 +87,7 @@ jobs:
         permission-organization-projects: write
     - name: Add issue to personal board
       if: ${{ env.BOARD != 'null' && env.BOARD != ''  && env.BOARD != null }}
-      uses: actions/add-to-project@5afcf98fcd03f1c2f92c3c83f58ae24323cc57fd # v2.0.0
+      uses: actions/add-to-project@f2c1f1fa649a891be84948ea89b5dfba1526ef05 # v2.0.1
       with:
         project-url: ${{ env.BOARD }}
         github-token: ${{ steps.app-token.outputs.token }}
@@ -122,7 +122,7 @@ jobs:
         permission-organization-projects: write
     - name: Add issue to team board
       if: ${{ env.BOARD != 'null' && env.BOARD != '' && env.BOARD != null }}
-      uses: actions/add-to-project@5afcf98fcd03f1c2f92c3c83f58ae24323cc57fd # v2.0.0
+      uses: actions/add-to-project@f2c1f1fa649a891be84948ea89b5dfba1526ef05 # v2.0.1
       with:
         project-url: ${{ env.BOARD }}
         github-token: ${{ steps.app-token.outputs.token }}
@@ -146,7 +146,7 @@ jobs:
         permission-issues: read
         permission-organization-projects: write
     - name: Add issue to roadmap board
-      uses: actions/add-to-project@5afcf98fcd03f1c2f92c3c83f58ae24323cc57fd # v2.0.0
+      uses: actions/add-to-project@f2c1f1fa649a891be84948ea89b5dfba1526ef05 # v2.0.1
       with:
         project-url: https://github.com/orgs/giantswarm/projects/273
         github-token: ${{ steps.app-token.outputs.token }}
