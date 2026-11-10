@@ -2,15 +2,15 @@
 #
 #    devctl
 #
-#    https://github.com/giantswarm/devctl/blob/2da48e8e991a721cdb632ba78fb4c3cbea2e06f6/pkg/gen/input/makefile/internal/file/Makefile.gen.go.mk.template
+#    https://github.com/giantswarm/devctl/blob/30010fbc8809ecb0f1422ee655a8105c299695b1/pkg/gen/input/makefile/internal/file/Makefile.gen.go.mk.template
 #
 
 APPLICATION    := $(shell go list -m | cut -d '/' -f 3)
 BUILDTIMESTAMP := $(shell date -u '+%FT%TZ')
 GITSHA1        := $(shell git rev-parse --verify HEAD)
 MODULE         := $(shell go list -m)
-# main() is usually in `main.go`, but sometimes in `cmd/main.go` (for example in newer kubebuilder projects)
-MAIN_SOURCE    := $(shell if test -e cmd/main.go; then echo cmd/main.go; else echo main.go; fi)
+# Build the whole main package, including sibling files, at the root or in cmd/.
+MAIN_SOURCE    := $(shell if test -e cmd/main.go; then echo ./cmd; else echo .; fi)
 OS             := $(shell go env GOOS)
 ARCH           := $(shell go env GOARCH)
 SOURCES        := $(shell find . -name '*.go')
@@ -106,7 +106,7 @@ install: ## Install the application.
 	CGO_ENABLED=0 go build -ldflags "$(LDFLAGS)" -o "$(shell go env GOPATH)/bin/$(APPLICATION)" "$(MAIN_SOURCE)"
 
 .PHONY: run
-run: ## Runs go run main.go.
+run: ## Runs the main package with go run.
 	@echo "====> $@"
 	go run -ldflags "$(LDFLAGS)" -race "$(MAIN_SOURCE)"
 
@@ -122,9 +122,18 @@ imports: ## Runs goimports.
 	goimports -local $(MODULE) -w .
 
 .PHONY: lint
-lint: ## Checks import formatting and runs golangci-lint (requires goimports).
+lint: ## Checks import formatting and runs golangci-lint (installs goimports if missing).
 	@echo "====> $@"
-	@files=$$(goimports -local "$(MODULE)" -l .) || exit $$?; \
+	@tool=$$(command -v goimports) || { \
+		bindir=$$(go env GOBIN) || exit $$?; \
+		if [ -z "$$bindir" ]; then \
+			gopath=$$(go env GOPATH) || exit $$?; \
+			bindir="$$gopath/bin"; \
+		fi; \
+		GOBIN="$$bindir" go install golang.org/x/tools/cmd/goimports@v0.50.0 || exit $$?; \
+		tool="$$bindir/goimports"; \
+	}; \
+	files=$$("$$tool" -local "$(MODULE)" -l .) || exit $$?; \
 	if [ -n "$$files" ]; then \
 		printf '%s\n' "$$files"; \
 		echo "Run 'make imports' to fix import formatting."; \
