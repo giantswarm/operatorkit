@@ -121,19 +121,113 @@ jobs:
         permission-issues: read
         permission-organization-projects: write
     - name: Add issue to team board
+      id: add-to-board
       if: ${{ env.BOARD != 'null' && env.BOARD != '' && env.BOARD != null }}
       uses: actions/add-to-project@f2c1f1fa649a891be84948ea89b5dfba1526ef05 # v2.0.1
       with:
         project-url: ${{ env.BOARD }}
         github-token: ${{ steps.app-token.outputs.token }}
+    # The roadmap board's Team field is a single select whose options carry
+    # emoji ("Honey Badger 🦡"); a label matches the option with the same
+    # letters, so team/honeybadger and team/honey-badger both match.
+    - name: Set the roadmap Team field from the team label
+      if: >-
+        steps.add-to-board.outputs.itemId != '' &&
+        env.BOARD == 'https://github.com/orgs/giantswarm/projects/273' &&
+        startsWith(github.event.label.name, 'team/') &&
+        github.event.label.name != 'team/null'
+      env:
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        ITEM_ID: ${{ steps.add-to-board.outputs.itemId }}
+        LABEL: ${{ github.event.label.name }}
+      run: |
+        set -euo pipefail
+        team=$(printf '%s' "${LABEL#team/}" | tr -cd '[:alpha:]' | tr '[:upper:]' '[:lower:]')
+        read -r project field option < <(gh api graphql -F number=273 -f query='
+          query($number: Int!) {
+            organization(login: "giantswarm") {
+              projectV2(number: $number) {
+                id
+                field(name: "Team") { ... on ProjectV2SingleSelectField { id options { id name } } }
+              }
+            }
+          }' | jq -r --arg team "$team" '.data.organization.projectV2 as $p
+            | ($p.field.options[] | select((.name | ascii_downcase | gsub("[^a-z]"; "")) == $team) | .id) as $o
+            | [$p.id, $p.field.id, $o] | @tsv') || true
+        if [ -z "${option:-}" ]; then
+          echo "::warning::No roadmap Team option matches ${LABEL}"
+          exit 0
+        fi
+        gh api graphql -f project="$project" -f item="$ITEM_ID" -f field="$field" -f option="$option" -f query='
+          mutation($project: ID!, $item: ID!, $field: ID!, $option: String!) {
+            updateProjectV2ItemFieldValue(input: {projectId: $project, itemId: $item, fieldId: $field, value: {singleSelectOptionId: $option}}) {
+              projectV2Item { id }
+            }
+          }' > /dev/null
+        echo "Team set from ${LABEL}"
 
-  # An issue opened with a label or an assignee also fires `labeled` or
-  # `assigned`, which add it above; only a bare one is added here.
-  add_unlabelled_to_roadmap_board:
-    name: Add unlabelled, unassigned issue to roadmap board
+  # The repository's owning team is the single team of the CODEOWNERS default
+  # rule, which align-files writes from the team file that declares it. Its
+  # label, added as the App, fires `labeled`, and add_to_team_board puts the
+  # issue on the team's board. An issue opened with a team label keeps it.
+  add_owner_team_label:
+    name: Add the owning team's label to a new issue
     runs-on: ubuntu-latest
     if: >-
       github.event.action == 'opened' &&
+      !contains(join(github.event.issue.labels.*.name, ' '), 'team/')
+    permissions:
+      contents: read
+    outputs:
+      team: ${{ steps.owner.outputs.team }}
+    steps:
+    - name: Find the owning team in CODEOWNERS
+      id: owner
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        set -euo pipefail
+        codeowners=""
+        for path in .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS; do
+          if codeowners=$(gh api -H "Accept: application/vnd.github.raw" "repos/${GITHUB_REPOSITORY}/contents/${path}" 2>/dev/null); then
+            break
+          fi
+          codeowners=""
+        done
+        # The last matching rule wins, as GitHub reads CODEOWNERS.
+        rule=$(printf '%s\n' "$codeowners" | sed 's/#.*//' | awk '$1 == "*"' | tail -n 1)
+        teams=$(printf '%s\n' "$rule" | grep -oE '@giantswarm/team-[a-z0-9-]+' | sed 's|@giantswarm/team-||' | sort -u || true)
+        if [ "$(printf '%s' "$teams" | grep -c .)" = 1 ]; then
+          echo "Owning team: ${teams}"
+          echo "team=${teams}" >> "$GITHUB_OUTPUT"
+        else
+          echo "No single owning team in CODEOWNERS"
+        fi
+    - name: Mint App token for the label
+      id: app-token
+      if: steps.owner.outputs.team != ''
+      uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+      with:
+        client-id: ${{ secrets.PROJECT_AUTOMATION_CLIENT_ID }}
+        private-key: ${{ secrets.PROJECT_AUTOMATION_PRIVATE_KEY }}
+        permission-issues: write
+    - name: Apply the owning team's label
+      if: steps.owner.outputs.team != ''
+      env:
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        LABEL: team/${{ steps.owner.outputs.team }}
+        ISSUE: ${{ github.event.issue.number }}
+      run: gh api "repos/${GITHUB_REPOSITORY}/issues/${ISSUE}/labels" -f "labels[]=${LABEL}" > /dev/null
+
+  # A repository without a single owning team: a bare issue still reaches the
+  # roadmap board's inbox. An issue opened with a label or an assignee also
+  # fires `labeled` or `assigned`, which add it above.
+  add_unlabelled_to_roadmap_board:
+    name: Add unlabelled, unassigned issue to roadmap board
+    runs-on: ubuntu-latest
+    needs: add_owner_team_label
+    if: >-
+      needs.add_owner_team_label.outputs.team == '' &&
       join(github.event.issue.labels.*.name, '') == '' &&
       join(github.event.issue.assignees.*.login, '') == ''
     steps:
