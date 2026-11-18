@@ -4,6 +4,10 @@ on:
   issues:
     types: [assigned]
 
+# GITHUB_TOKEN gets no permissions by default. The workflow uses the
+# project-automation App's token.
+permissions: {}
+
 jobs:
   build_user_list:
     name: Get yaml config of GS users
