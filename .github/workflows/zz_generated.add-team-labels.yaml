@@ -19,7 +19,7 @@ jobs:
     # single-file permission on the two mapping files, nothing else there.
     - name: Mint App token for the user mapping
       id: app-token
-      uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+      uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
       with:
         client-id: ${{ secrets.PROJECT_AUTOMATION_CLIENT_ID }}
         private-key: ${{ secrets.PROJECT_AUTOMATION_PRIVATE_KEY }}
@@ -70,7 +70,7 @@ jobs:
     - name: Mint App token for the label
       id: app-token
       if: ${{ env.LABEL != '' && env.LABEL != 'null' && env.LABEL != null }}
-      uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+      uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
       with:
         client-id: ${{ secrets.PROJECT_AUTOMATION_CLIENT_ID }}
         private-key: ${{ secrets.PROJECT_AUTOMATION_PRIVATE_KEY }}
