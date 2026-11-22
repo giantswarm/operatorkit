@@ -1,0 +1,145 @@
+# DO NOT EDIT. Generated with:
+#
+#    devctl
+#
+#    https://github.com/giantswarm/devctl/blob/7dc11ced4fb89a44c36dfe176401b7506769d4c0/pkg/gen/input/workflows/internal/file/nested_go_modules.yaml.template
+#
+
+name: Nested Go modules
+
+on:
+  pull_request: {}
+  merge_group: {}
+  push:
+    branches: ['main']
+  workflow_dispatch:
+    inputs:
+      module:
+        description: 'Tracked nested module directory, for example k8s'
+        type: string
+        required: true
+      version:
+        description: 'Module version, for example v0.1.0'
+        type: string
+        required: true
+
+permissions: {}
+
+concurrency:
+  group: nested-go-modules-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  modules:
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+    outputs:
+      paths: ${{ steps.discover.outputs.paths }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: discover
+        shell: bash
+        run: |
+          set -euo pipefail
+          paths=()
+          while IFS= read -r -d '' file; do
+            directory=${file%/go.mod}
+            [[ "$directory" =~ ^[a-zA-Z0-9_-]+(/[a-zA-Z0-9_-]+)*$ ]] || continue
+            case "/$directory/" in
+              */testdata/*|*/vendor/*|*/node_modules/*) continue ;;
+            esac
+            [[ -f "$file" && ! -L "$file" ]] || continue
+            paths+=("$directory")
+          done < <(git ls-files -z -- '*/go.mod')
+          printf 'paths=%s\n' "$(printf '%s\0' "${paths[@]}" | jq -Rsc 'split("\u0000") | map(select(length > 0)) | sort')" >> "$GITHUB_OUTPUT"
+
+  test:
+    needs: modules
+    if: needs.modules.outputs.paths != '[]'
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        module: ${{ fromJSON(needs.modules.outputs.paths) }}
+    env:
+      GOWORK: 'off'
+      GOFLAGS: '-p=2'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: ${{ matrix.module }}/go.mod
+          cache-dependency-path: ${{ matrix.module }}/go.sum
+      - name: Verify independent module
+        working-directory: ${{ matrix.module }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          go mod tidy
+          git diff --exit-code -- go.mod go.sum
+          go test -race ./...
+          go vet ./...
+
+  release:
+    needs: [modules, test]
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: write
+    env:
+      GOWORK: 'off'
+      GH_TOKEN: ${{ github.token }}
+      MODULE_PATH: ${{ inputs.module }}
+      MODULE_VERSION: ${{ inputs.version }}
+      MODULE_PATHS: ${{ needs.modules.outputs.paths }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate release
+        id: validate
+        shell: bash
+        run: |
+          set -euo pipefail
+          jq -e --arg module "$MODULE_PATH" 'index($module) != null' <<< "$MODULE_PATHS" > /dev/null
+          [[ "$MODULE_VERSION" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$ ]]
+          if [[ "$MODULE_VERSION" == *-* ]]; then
+            IFS=. read -r -a identifiers <<< "${MODULE_VERSION#*-}"
+            for identifier in "${identifiers[@]}"; do
+              if [[ "$identifier" =~ ^[0-9]+$ && "$identifier" == 0?* ]]; then exit 1; fi
+            done
+          fi
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: ${{ inputs.module }}/go.mod
+          cache: false
+      - name: Publish module tag
+        id: publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="github.com/$GITHUB_REPOSITORY/$MODULE_PATH"
+          major=${MODULE_VERSION%%.*}
+          if [[ "$major" != v0 && "$major" != v1 ]]; then expected+="/$major"; fi
+          actual=$(cd "$MODULE_PATH" && go list -m)
+          [[ "$actual" == "$expected" ]]
+          tag="$MODULE_PATH/$MODULE_VERSION"
+          if git show-ref --verify --quiet "refs/tags/$tag"; then
+            [[ "$(git rev-parse "refs/tags/$tag^{commit}")" == "$GITHUB_SHA" ]]
+          else
+            gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" -f "ref=refs/tags/$tag" -f "sha=$GITHUB_SHA" > /dev/null
+          fi
+          if ! gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            options=()
+            if [[ "$MODULE_VERSION" == *-* ]]; then options+=(--prerelease); fi
+            gh release create "$tag" --repo "$GITHUB_REPOSITORY" --verify-tag --title "$tag" --generate-notes --latest=false "${options[@]}"
+          fi
