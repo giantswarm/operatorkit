@@ -2,7 +2,7 @@
 #
 #    devctl
 #
-#    https://github.com/giantswarm/devctl/blob/7dc11ced4fb89a44c36dfe176401b7506769d4c0/pkg/gen/input/workflows/internal/file/nested_go_modules.yaml.template
+#    https://github.com/giantswarm/devctl/blob/c189ac5af54ac0238ae2dcd7d4710aba69d5f19e/pkg/gen/input/workflows/internal/file/nested_go_modules.yaml.template
 #
 
 name: Nested Go modules
@@ -79,13 +79,14 @@ jobs:
           go-version-file: ${{ matrix.module }}/go.mod
           cache-dependency-path: ${{ matrix.module }}/go.sum
       - name: Verify independent module
+        id: verify
         working-directory: ${{ matrix.module }}
         shell: bash
         run: |
           set -euo pipefail
           go mod tidy
           git diff --exit-code -- go.mod go.sum
-          go test -race ./...
+          go test -short -race ./...
           go vet ./...
 
   release:
