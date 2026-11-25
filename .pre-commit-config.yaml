@@ -24,12 +24,35 @@ repos:
       - id: trailing-whitespace
         exclude: ".*testdata/.*"
 
-  - repo: https://github.com/dnephin/pre-commit-golang
-    rev: v0.5.1
+  # Go hooks run the tools on the PATH: gofmt and go from the Go toolchain,
+  # goimports and golangci-lint at the versions pre_commit_go.yaml installs.
+  # They replace the archived dnephin/pre-commit-golang and keep its behaviour.
+  - repo: local
     hooks:
       - id: go-fmt
+        name: go fmt
+        language: system
+        files: '\.go$'
+        entry: >-
+          bash -c 'command -v gofmt > /dev/null || { echo "gofmt not installed or available in the PATH, see https://go.dev/doc/install"; exit 1; };
+          out="$(gofmt -l -w "$@")"; rc=$?;
+          [ -z "$out" ] || echo "$out";
+          [ $rc -eq 0 ] && [ -z "$out" ]' --
       - id: go-mod-tidy
+        name: go mod tidy
+        language: system
+        files: '\.go$'
+        pass_filenames: false
+        entry: >-
+          bash -c 'if go mod tidy -v 2>&1 | grep -q "updates to go.mod needed"; then exit 1; fi;
+          git diff --exit-code go.* > /dev/null 2>&1;
+          if [ $? -eq 1 ]; then echo "go.mod or go.sum differs, please re-add it to your commit"; exit 1; fi' --
       - id: golangci-lint
+        name: golangci-lint
+        language: system
+        types: [go]
+        pass_filenames: false
+        entry: golangci-lint run
         args:
           - -E=gosec
           - -E=goconst
@@ -40,4 +63,12 @@ repos:
           - --max-same-issues=0
           - --max-issues-per-linter=0
       - id: go-imports
+        name: go imports
+        language: system
+        files: '\.go$'
+        entry: >-
+          bash -c 'command -v goimports > /dev/null || { echo "goimports not installed or available in the PATH, see https://pkg.go.dev/golang.org/x/tools/cmd/goimports"; exit 1; };
+          out="$(goimports -l -w "$@")"; rc=$?;
+          [ -z "$out" ] || echo "$out";
+          [ $rc -eq 0 ] && [ -z "$out" ]' --
         args: [ -local, github.com/giantswarm/operatorkit ]
